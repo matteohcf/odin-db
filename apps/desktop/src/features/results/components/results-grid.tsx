@@ -34,6 +34,7 @@ import {
   Copy,
   Filter,
   FilterX,
+  GitCompareArrows,
   ListChecks,
   PencilLine,
   Trash2,
@@ -50,6 +51,7 @@ import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { useResultsView } from "../store/results-view-store";
 import { ColumnMenu } from "./column-menu";
+import { CompareDialog } from "./compare-dialog";
 import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
 import { RowMenuItems } from "./row-menu-items";
@@ -145,6 +147,7 @@ export function ResultsGrid({
   const anchor = useRef<number | null>(null);
   const [editingCell, setEditingCell] = useState<{ index: number; field: string } | null>(null);
   const [columnMenu, setColumnMenu] = useState<string | null>(null);
+  const [comparing, setComparing] = useState<readonly JsonObject[] | null>(null);
   // Top-level scalars only: documents and arrays need the full editor.
   const inlineEditable = (row: JsonObject, field: string) => {
     if (!actions.onSetField || field === "_id" || field.includes(".")) return false;
@@ -565,6 +568,12 @@ export function ResultsGrid({
           {multiple ? (
             <>
               <CopyAsMenu value={markedRows} label={t("rows.copy", { count: markedRows.length })} />
+              {markedRows.length === 2 && (
+                <ContextMenuItem onSelect={() => setComparing(markedRows)}>
+                  <GitCompareArrows />
+                  {t("compare.menu")}
+                </ContextMenuItem>
+              )}
               {actions.onUpdateMany && (
                 <ContextMenuItem onSelect={() => actions.onUpdateMany?.(markedRows)}>
                   <PencilLine />
@@ -663,6 +672,13 @@ export function ResultsGrid({
             </>
           )}
         </ContextMenuContent>
+      )}
+      {comparing?.[0] && comparing[1] && (
+        <CompareDialog
+          left={comparing[0]}
+          right={comparing[1]}
+          onClose={() => setComparing(null)}
+        />
       )}
     </ContextMenu>
   );

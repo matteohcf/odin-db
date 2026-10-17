@@ -107,5 +107,15 @@
     "pathCopied": "Copied {{path}}",
     "copyValue": "Copy value",
     "filter": "Filter by this value"
+  },
+  "compare": {
+    "menu": "Compare the 2 documents",
+    "title": "Compare documents",
+    "identical": "The documents have the same fields and values.",
+    "summary_one": "{{count}} of {{total}} fields differs.",
+    "summary_other": "{{count}} of {{total}} fields differ.",
+    "onlyDifferences": "Only differences",
+    "field": "Field",
+    "missing": "missing"
   }
 }

@@ -107,5 +107,15 @@
     "pathCopied": "Copiato {{path}}",
     "copyValue": "Copia valore",
     "filter": "Filtra per questo valore"
+  },
+  "compare": {
+    "menu": "Confronta i 2 documenti",
+    "title": "Confronta documenti",
+    "identical": "I documenti hanno gli stessi campi e valori.",
+    "summary_one": "{{count}} campo su {{total}} è diverso.",
+    "summary_other": "{{count}} campi su {{total}} sono diversi.",
+    "onlyDifferences": "Solo le differenze",
+    "field": "Campo",
+    "missing": "assente"
   }
 }
