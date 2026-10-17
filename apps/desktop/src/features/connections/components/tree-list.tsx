@@ -121,6 +121,14 @@ export function TreeList({
     handler();
   }
 
+  // Sticky scroll: while a database's collections fill the view, its row stays on top.
+  const scrolled = virtualizer.scrollOffset ?? 0;
+  const top = virtualizer.getVirtualItems().find((item) => item.end > scrolled + ROW_HEIGHT);
+  const topRow = top ? rows[top.index] : undefined;
+  const stickyIndex = top && topRow?.kind === "collection" ? parentIndex(rows, top.index) : -1;
+  const stickyRow =
+    stickyIndex >= 0 && stickyIndex < (top?.index ?? 0) ? rows[stickyIndex] : undefined;
+
   return (
     // biome-ignore lint/a11y/noNoninteractiveElementInteractions: the keys move focus between the row buttons inside.
     <ul
@@ -129,6 +137,22 @@ export function TreeList({
       className="relative"
       style={{ height: virtualizer.getTotalSize() }}
     >
+      {stickyRow && scrolled > offset && (
+        <li
+          data-index={stickyIndex}
+          data-sticky
+          className="sticky top-0 z-10 border-b bg-sidebar shadow-xs"
+          style={{ height: ROW_HEIGHT }}
+        >
+          <Row
+            row={stickyRow}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onExport={onExport}
+            onNewConnection={onNewConnection}
+          />
+        </li>
+      )}
       {rows.length === 0 && filter && (
         <li>
           <TreeMessage depth={0}>{t("explorer.noMatch", { filter })}</TreeMessage>
