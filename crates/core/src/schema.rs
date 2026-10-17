@@ -141,11 +141,18 @@ fn record(value: &Bson, path: &str, depth: usize, seen: &mut HashMap<String, See
     if !found.types.contains(&kind) {
         found.types.push(kind);
     }
-    if let Bson::String(text) = value
-        && text.len() <= MAX_VALUE_LENGTH
-        && !found.strings.contains(text)
-    {
-        found.strings.push(text.clone());
+    // Strings inside an array count for the array's path: `{ tags: "x" }` matches them.
+    let strings: &[Bson] = match value {
+        Bson::Array(items) => items,
+        other => std::slice::from_ref(other),
+    };
+    for item in strings {
+        if let Bson::String(text) = item
+            && text.len() <= MAX_VALUE_LENGTH
+            && !found.strings.contains(text)
+        {
+            found.strings.push(text.clone());
+        }
     }
     if depth + 1 >= MAX_DEPTH {
         return;
