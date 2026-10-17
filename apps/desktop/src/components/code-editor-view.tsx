@@ -46,7 +46,7 @@ const highlight = HighlightStyle.define([
   { tag: [tags.punctuation, tags.bracket, tags.separator], color: "var(--muted-foreground)" },
 ]);
 
-interface CodeEditorProps {
+export interface CodeEditorProps {
   initialValue: string;
   onChange?: (value: string) => void;
   /** Bound to Mod-Enter. */
@@ -61,7 +61,8 @@ interface CodeEditorProps {
  * CodeMirror in mongosh (JavaScript) mode. Uncontrolled: `initialValue` seeds the
  * document once; remount with a `key` to load different content.
  */
-export function CodeEditor({
+/** Loaded lazily through `code-editor.tsx`: CodeMirror is a large chunk. */
+export default function CodeEditorView({
   initialValue,
   onChange,
   onSubmit,

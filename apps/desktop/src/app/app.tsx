@@ -1,14 +1,26 @@
+import { lazy, Suspense } from "react";
 import { ThemeMenu } from "@/components/theme-menu";
 import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
-import { PerfLab, useAutorunEnabled } from "@/features/perf-lab";
+import { useAutorunEnabled } from "@/features/perf-lab";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { Welcome } from "./welcome";
+
+// Benchmarks (xterm.js, large fixtures) only load for `--perf-autorun`.
+const PerfLab = lazy(() =>
+  import("@/features/perf-lab/components/perf-lab").then((m) => ({ default: m.PerfLab })),
+);
 
 /** Composition root: the only place that wires features together. */
 export function App() {
   const { data: perfAutorun } = useAutorunEnabled();
-  if (perfAutorun) return <PerfLab />;
+  if (perfAutorun) {
+    return (
+      <Suspense fallback={null}>
+        <PerfLab />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="flex h-full">

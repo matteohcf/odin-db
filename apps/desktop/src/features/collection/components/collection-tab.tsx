@@ -3,13 +3,19 @@ import { Button } from "@odin-db/ui/components/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { Braces, Eye, ListTree, Lock, Unplug, Workflow } from "lucide-react";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AggregationView } from "@/features/aggregation";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
-import { IndexesView } from "@/features/indexes";
 import type { CollectionTab as CollectionTabModel } from "@/features/workspace";
+
+// Secondary views load on first visit to keep startup light.
+const AggregationView = lazy(() =>
+  import("@/features/aggregation").then((module) => ({ default: module.AggregationView })),
+);
+const IndexesView = lazy(() =>
+  import("@/features/indexes").then((module) => ({ default: module.IndexesView })),
+);
 
 const VIEWS = ["documents", "aggregation", "indexes"] as const;
 type View = (typeof VIEWS)[number];
@@ -122,10 +128,14 @@ function CollectionWorkspace({
               editable={editable}
               isView={isView}
             />
-          ) : value === "aggregation" ? (
-            <AggregationView connection={connection} namespace={namespace} />
           ) : (
-            <IndexesView connection={connection} namespace={namespace} editable={editable} />
+            <Suspense fallback={null}>
+              {value === "aggregation" ? (
+                <AggregationView connection={connection} namespace={namespace} />
+              ) : (
+                <IndexesView connection={connection} namespace={namespace} editable={editable} />
+              )}
+            </Suspense>
           )}
         </TabsContent>
       ))}
