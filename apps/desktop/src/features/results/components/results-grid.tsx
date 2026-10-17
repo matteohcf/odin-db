@@ -72,11 +72,12 @@ export interface RowActions {
   onDelete?: ((row: JsonObject) => void) | undefined;
   /** Edits one top-level field. Omitted for read-only results. */
   onEditField?: ((row: JsonObject, field: string) => void) | undefined;
-  /** Several selected documents at once (Shift/Cmd-click in the table). */
   /** Documents pasted with Cmd+V while the table has focus. */
   onPaste?: (() => void) | undefined;
   /** Saves a value edited in place (double-click a cell). Omitted for read-only results. */
   onSetField?: ((row: JsonObject, field: string, value: JsonValue) => Promise<void>) | undefined;
+  /** Several selected documents at once (Shift/Cmd-click in the table). */
+  onUpdateMany?: ((rows: JsonObject[]) => void) | undefined;
   onDeleteMany?: ((rows: JsonObject[]) => void) | undefined;
 }
 
@@ -483,6 +484,12 @@ export function ResultsGrid({
           {multiple ? (
             <>
               <CopyAsMenu value={markedRows} label={t("rows.copy", { count: markedRows.length })} />
+              {actions.onUpdateMany && (
+                <ContextMenuItem onSelect={() => actions.onUpdateMany?.(markedRows)}>
+                  <PencilLine />
+                  {t("rows.update", { count: markedRows.length })}
+                </ContextMenuItem>
+              )}
               {actions.onDeleteMany && (
                 <>
                   <ContextMenuSeparator />

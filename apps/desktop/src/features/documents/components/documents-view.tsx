@@ -485,7 +485,14 @@ export function DocumentsView({
                 refresh(true);
               }
             : undefined,
-          // Deleting by `_id` reuses the bulk dialog, which shows the count first.
+          // Selected documents reuse the bulk dialogs, filtered by `_id`.
+          onUpdateMany: editable
+            ? (rows) =>
+                setBulk({
+                  mode: "update",
+                  filter: { _id: { $in: rows.map((row) => row._id ?? null) } },
+                })
+            : undefined,
           onDeleteMany: editable
             ? (rows) =>
                 setBulk({

@@ -64,6 +64,8 @@
   "rows": {
     "copy_one": "Copia {{count}} documento",
     "copy_other": "Copia {{count}} documenti",
+    "update_one": "Aggiorna {{count}} documento…",
+    "update_other": "Aggiorna {{count}} documenti…",
     "delete_one": "Elimina {{count}} documento…",
     "delete_other": "Elimina {{count}} documenti…",
     "copied_other": "Copiati {{count}} documenti come array per la shell.",
