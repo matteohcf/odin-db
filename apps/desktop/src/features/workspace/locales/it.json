@@ -13,7 +13,8 @@
       "reopen": "Riapri la scheda chiusa",
       "moveLeft": "Sposta a sinistra",
       "moveRight": "Sposta a destra",
-      "copyNamespace": "Copia il namespace"
+      "copyNamespace": "Copia il namespace",
+      "duplicate": "Duplica scheda"
     },
     "backups": "Backup",
     "settings": "Impostazioni",

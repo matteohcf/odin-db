@@ -77,6 +77,31 @@ describe("tabs store", () => {
     expect(tabs[0]).toMatchObject({ id: "p1/shop/orders_2026", collection: "orders_2026" });
   });
 
+  it("duplicates a collection tab next to it, and renames duplicates too", () => {
+    const { openCollection, duplicate } = useTabs.getState();
+    openCollection(target("users"));
+    openCollection(target("orders"));
+    duplicate("p1/shop/users");
+    const { tabs, activeTabId } = useTabs.getState();
+    expect(tabs.map((tab) => (tab.kind === "collection" ? tab.collection : ""))).toEqual([
+      "users",
+      "users",
+      "orders",
+    ]);
+    expect(activeTabId).toMatch(/^p1\/shop\/users#/);
+    useTabs.getState().renameCollection("p1", "shop", "users", "people");
+    const renamed = useTabs.getState();
+    expect(renamed.tabs.map((tab) => tab.id.split("#")[0])).toEqual([
+      "p1/shop/people",
+      "p1/shop/people",
+      "p1/shop/orders",
+    ]);
+    expect(renamed.activeTabId).toMatch(/^p1\/shop\/people#/);
+    // Opening the collection again focuses the original tab.
+    useTabs.getState().openCollection(target("people"));
+    expect(useTabs.getState().activeTabId).toBe("p1/shop/people");
+  });
+
   it("closes other tabs, tabs to the right, or all", () => {
     const { openCollection } = useTabs.getState();
     for (const name of ["a", "b", "c", "d"]) openCollection(target(name));

@@ -13,7 +13,8 @@
       "reopen": "Reopen closed tab",
       "moveLeft": "Move left",
       "moveRight": "Move right",
-      "copyNamespace": "Copy namespace"
+      "copyNamespace": "Copy namespace",
+      "duplicate": "Duplicate tab"
     },
     "backups": "Backups",
     "settings": "Settings",

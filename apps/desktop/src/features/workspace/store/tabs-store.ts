@@ -77,6 +77,8 @@ interface TabsState {
   openBackups: () => void;
   openSettings: () => void;
   activate: (id: string) => void;
+  /** A second, independent tab on the same collection, right after this one. */
+  duplicate: (id: string) => void;
   /** Pinned tabs stay at the left and survive "close others" and "close all". */
   togglePin: (id: string) => void;
   /** Moves a tab to `index`, within its group (pinned or not). */
@@ -158,6 +160,21 @@ export const useTabs = create<TabsState>()(
             activeTabId: id,
             recent,
           };
+        }),
+      duplicate: (id) =>
+        set((state) => {
+          const index = state.tabs.findIndex((tab) => tab.id === id);
+          const tab = state.tabs[index];
+          if (tab?.kind !== "collection") return {};
+          const copy: CollectionTab = {
+            ...tab,
+            id: `${collectionTabId(tab.profileId, tab.database, tab.collection)}#${crypto.randomUUID()}`,
+          };
+          const tabs = [...state.tabs];
+          // A copy of a pinned tab starts unpinned, after the pinned group.
+          const at = state.pinned.includes(id) ? state.pinned.length : index + 1;
+          tabs.splice(at, 0, copy);
+          return { tabs, activeTabId: copy.id };
         }),
       openShell: (profileId) =>
         set((state) => {
@@ -274,14 +291,17 @@ export const useTabs = create<TabsState>()(
         set((state) => {
           const oldId = collectionTabId(profileId, database, from);
           const newId = collectionTabId(profileId, database, to);
+          // Duplicated tabs keep their suffix: `<namespace id>#<uuid>`.
+          const renamed = (id: string) =>
+            id === oldId || id.startsWith(`${oldId}#`) ? newId + id.slice(oldId.length) : id;
           return {
             tabs: state.tabs.map((tab) =>
-              tab.id === oldId && tab.kind === "collection"
-                ? { ...tab, id: newId, collection: to }
+              tab.kind === "collection" && renamed(tab.id) !== tab.id
+                ? { ...tab, id: renamed(tab.id), collection: to }
                 : tab,
             ),
-            activeTabId: state.activeTabId === oldId ? newId : state.activeTabId,
-            pinned: state.pinned.map((pinnedId) => (pinnedId === oldId ? newId : pinnedId)),
+            activeTabId: state.activeTabId && renamed(state.activeTabId),
+            pinned: state.pinned.map(renamed),
             recent: state.recent.map((r) =>
               sameCollection(r, { ...r, profileId, database, collection: from })
                 ? { ...r, collection: to }

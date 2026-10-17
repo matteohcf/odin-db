@@ -7,7 +7,7 @@ import {
   ContextMenuTrigger,
 } from "@odin-db/ui/components/context-menu";
 import { cn } from "@odin-db/ui/lib/utils";
-import { Copy, Pin, PinOff, X } from "lucide-react";
+import { Copy, CopyPlus, Pin, PinOff, X } from "lucide-react";
 import { memo, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShortcut } from "@/hooks/use-shortcut";
@@ -43,6 +43,7 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
   const togglePin = useTabs((s) => s.togglePin);
   const move = useTabs((s) => s.move);
   const reopenClosed = useTabs((s) => s.reopenClosed);
+  const duplicate = useTabs((s) => s.duplicate);
   const [dragging, setDragging] = useState<string | null>(null);
   const tabList = useRef<HTMLDivElement>(null);
 
@@ -176,6 +177,12 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                   {isPinned ? <PinOff /> : <Pin />}
                   {isPinned ? t("tabs.menu.unpin") : t("tabs.menu.pin")}
                 </ContextMenuItem>
+                {tab.kind === "collection" && (
+                  <ContextMenuItem onSelect={() => duplicate(tab.id)}>
+                    <CopyPlus />
+                    {t("tabs.menu.duplicate")}
+                  </ContextMenuItem>
+                )}
                 {tab.kind === "collection" && (
                   <ContextMenuItem
                     onSelect={() =>
