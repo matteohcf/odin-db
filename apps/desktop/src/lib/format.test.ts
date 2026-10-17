@@ -3,7 +3,8 @@ import { formatBytes, formatCount, formatRelativeTime } from "./format";
 
 describe("format", () => {
   it("formats byte sizes with the largest fitting unit", () => {
-    expect(formatBytes(0, "en")).toBe("0 byte");
+    expect(formatBytes(0, "en")).toBe("0 B");
+    expect(formatBytes(390, "en")).toBe("390 B");
     expect(formatBytes(1536, "en")).toBe("1.5 kB");
     expect(formatBytes(50 * 1024 * 1024, "en")).toBe("50 MB");
   });

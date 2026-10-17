@@ -640,6 +640,20 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     Object.entries(serverOf(id("connectionId", args)).databases[id("database", args)] ?? {})
       .map(([name, coll]): CollectionInfo => ({ name, kind: coll.kind }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+  collection_stats: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const size = coll.docs.reduce((sum, doc) => sum + JSON.stringify(doc).length, 0);
+    const indexes = indexesOf(coll).length;
+    return {
+      documents: coll.docs.length,
+      size,
+      averageDocumentSize: coll.docs.length ? size / coll.docs.length : 0,
+      storageSize: Math.round(size * 0.4) + 4096,
+      indexes,
+      indexSize: indexes * 20_480,
+    };
+  },
   create_collection: (args) => {
     const { connection, databases } = serverOf(id("connectionId", args));
     ensureWritable(connection);

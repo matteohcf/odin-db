@@ -18,6 +18,7 @@ export const commands = {
 	listConnections: () => typedError<ConnectionInfo[], IpcError>(__TAURI_INVOKE("list_connections")),
 	listDatabases: (connectionId: ConnectionId) => typedError<DatabaseInfo[], IpcError>(__TAURI_INVOKE("list_databases", { connectionId })),
 	listCollections: (connectionId: ConnectionId, database: string) => typedError<CollectionInfo[], IpcError>(__TAURI_INVOKE("list_collections", { connectionId, database })),
+	collectionStats: (connectionId: ConnectionId, namespace: Namespace) => typedError<CollectionStats, IpcError>(__TAURI_INVOKE("collection_stats", { connectionId, namespace })),
 	findDocuments: (connectionId: ConnectionId, namespace: Namespace, request: FindRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("find_documents", { connectionId, namespace, request })),
 	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
 	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
@@ -122,6 +123,16 @@ export type CollectionInfo = {
 };
 
 export type CollectionKind = "collection" | "view" | "timeseries";
+
+/**  Sizes in bytes; `f64` because TypeScript numbers cannot hold every `u64`. */
+export type CollectionStats = {
+	documents: number | null,
+	size: number | null,
+	averageDocumentSize: number | null,
+	storageSize: number | null,
+	indexes: number | null,
+	indexSize: number | null,
+};
 
 /**  A connection's servers stopped answering, or answer again. */
 export type ConnectionHealthChanged = {

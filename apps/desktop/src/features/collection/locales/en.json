@@ -15,5 +15,14 @@
     "title": "{{name}} is disconnected",
     "body": "Connect again to work with {{namespace}}.",
     "connect": "Connect"
+  },
+  "stats": {
+    "summary": "{{documents}} documents · {{size}}",
+    "documents": "Documents",
+    "size": "Data size",
+    "averageSize": "Average document",
+    "storageSize": "Storage size",
+    "indexes": "Indexes",
+    "indexSize": "Index size"
   }
 }

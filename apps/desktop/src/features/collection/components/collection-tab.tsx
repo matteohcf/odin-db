@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
 import type { CollectionTab as CollectionTabModel } from "@/features/workspace";
+import { CollectionStats } from "./collection-stats";
 
 // Secondary views load on first visit to keep startup light.
 const AggregationView = lazy(() =>
@@ -102,7 +103,9 @@ function CollectionWorkspace({
             </TooltipContent>
           </Tooltip>
         )}
-        <TabsList className="ml-auto h-8" aria-label={t("views.label")}>
+        <div className="ml-auto" />
+        {!isView && <CollectionStats connectionId={connection.id} namespace={namespace} />}
+        <TabsList className="h-8" aria-label={t("views.label")}>
           {VIEWS.map((value) => {
             const Icon = viewIcon[value];
             return (
