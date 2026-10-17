@@ -14,7 +14,7 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { useEffect, useRef } from "react";
 import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
-import { opensFieldReferences } from "@/lib/query-completion";
+import { reopensCompletion } from "@/lib/query-completion";
 
 // A query is one expression, not a script: `{ a: 1 }` is an object, not a block.
 const queryLanguage = new LanguageSupport(
@@ -104,7 +104,7 @@ export default function QueryEditorView({
             override: completions ? [completions] : [],
             icons: false,
             maxRenderedOptions: 200,
-            activateOnCompletion: opensFieldReferences,
+            activateOnCompletion: reopensCompletion,
           }),
           Prec.high(
             keymap.of([

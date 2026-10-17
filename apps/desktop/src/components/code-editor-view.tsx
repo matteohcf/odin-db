@@ -8,7 +8,7 @@ import { basicSetup } from "codemirror";
 import { useEffect, useRef } from "react";
 import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
-import { opensFieldReferences } from "@/lib/query-completion";
+import { reopensCompletion } from "@/lib/query-completion";
 
 // Colors come from the design tokens, so the editor follows light/dark automatically.
 const theme = EditorView.theme({
@@ -95,7 +95,7 @@ export default function CodeEditorView({
             ? autocompletion({
                 override: [completions],
                 icons: false,
-                activateOnCompletion: opensFieldReferences,
+                activateOnCompletion: reopensCompletion,
               })
             : [],
           completionTheme,

@@ -5,11 +5,12 @@ import { describe, expect, it } from "vitest";
 import { type QueryKind, queryCompletionSource } from "./query-completion";
 
 const fields: FieldSummary[] = [
-  { path: "_id", types: ["objectId"], frequency: 1 },
-  { path: "name", types: ["string"], frequency: 1 },
-  { path: "address.city", types: ["string"], frequency: 0.5 },
-  { path: "items", types: ["array"], frequency: 0.4 },
-  { path: "items.sku", types: ["string"], frequency: 0.4 },
+  { path: "_id", types: ["objectId"], frequency: 1, values: [] },
+  { path: "name", types: ["string"], frequency: 1, values: [] },
+  { path: "plan", types: ["string"], frequency: 1, values: ["free", "pro", "team"] },
+  { path: "address.city", types: ["string"], frequency: 0.5, values: [] },
+  { path: "items", types: ["array"], frequency: 0.4, values: [] },
+  { path: "items.sku", types: ["string"], frequency: 0.4, values: [] },
 ];
 
 /** `|` marks the cursor. */
@@ -83,5 +84,13 @@ describe("queryCompletionSource", () => {
     const nested = labels(complete("{ _id: 1, total: { $|", "expression"));
     expect(nested).toEqual(expect.arrayContaining(["$sum", "$concat", "$cond"]));
     expect(labels(complete("{ |", "expression"))).toContain("name");
+  });
+
+  it("suggests the known values of enum-like fields first", () => {
+    const result = complete("{ plan: |", "filter", true);
+    expect(labels(result).slice(0, 3)).toEqual(['"free"', '"pro"', '"team"']);
+    expect(labels(complete('{ plan: { $in: ["|', "filter"))).toEqual(["free", "pro", "team"]);
+    expect(labels(complete('{ plan: "p|', "filter"))).toContain("pro");
+    expect(complete('{ name: "a|', "filter")).toBeNull();
   });
 });

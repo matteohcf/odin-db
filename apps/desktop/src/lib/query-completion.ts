@@ -205,14 +205,32 @@ export function queryCompletionSource(input: QueryCompletionOptions): Completion
         ? { from: at.from, options: references, validFor: /^\$[\w.]*$/ }
         : null;
     }
-    if (at.kind === "value" && at.quoted) return null;
-    // Typing opens the list only once a word starts or a key is due; Ctrl-Space always does.
-    if (!context.explicit && at.prefix === "" && at.kind === "value") return null;
+    if (at.kind === "value" && at.quoted) {
+      // Inside a string: the field's known values, without the quotes already typed.
+      if (kind !== "filter" && kind !== "expression") return null;
+      const values = knownValues(options, at.key, at.path).map((value, rank) => ({
+        label: value,
+        type: "text",
+        section: options.sections.values,
+        boost: -rank,
+      }));
+      return values.length > 0 ? { from: at.from, options: values } : null;
+    }
+    // Typing opens the list only once a word starts, a key is due, or the field has known
+    // values; Ctrl-Space always does.
+    if (
+      !context.explicit &&
+      at.prefix === "" &&
+      at.kind === "value" &&
+      knownValues(options, at.key, at.path).length === 0
+    ) {
+      return null;
+    }
 
     const options_ =
       at.kind === "key"
         ? keyCompletions(options, at.path, at.quoted, doc.slice(context.pos))
-        : valueCompletions(options, at.key);
+        : valueCompletions(options, at.key, at.path);
     if (options_.length === 0) return null;
     return { from: at.from, options: options_, validFor: /^[\w$.]*$/ };
   };
@@ -273,7 +291,7 @@ function fieldCompletions(
     .map((field, rank) => {
       const name = field.path.slice(relativeTo.length);
       const key = quoted || IDENTIFIER.test(name) ? name : JSON.stringify(name);
-      return {
+      const completion: Completion = {
         label: name,
         apply: hasColon ? key : applyKey(key, quoted),
         detail: field.types.join(" | "),
@@ -282,6 +300,8 @@ function fieldCompletions(
         // Common fields first; the sample is already sorted by frequency.
         boost: -Math.min(rank, 99),
       };
+      if (!hasColon && field.values.length > 0) reopening.add(completion);
+      return completion;
     });
 }
 
@@ -325,7 +345,21 @@ function fieldReferences(options: Resolved): Completion[] {
   }));
 }
 
-function valueCompletions(options: Resolved, key: string | null): Completion[] {
+/** Operators whose operand is compared with the field's own values. */
+const VALUE_OPERATORS = new Set(["$eq", "$ne", "$in", "$nin", "$all"]);
+
+/** Sampled string values of the field a value belongs to. */
+function knownValues(options: Resolved, key: string | null, path: string[]): string[] {
+  const field =
+    key && !key.startsWith("$")
+      ? key
+      : key && VALUE_OPERATORS.has(key)
+        ? path.findLast((part) => !part.startsWith("$"))
+        : undefined;
+  return field ? (options.fields().find((f) => f.path === field)?.values ?? []) : [];
+}
+
+function valueCompletions(options: Resolved, key: string | null, path: string[]): Completion[] {
   const { kind, sections } = options;
   const choice = (label: string, meaning: string, boost: number): Completion => ({
     label,
@@ -352,16 +386,24 @@ function valueCompletions(options: Resolved, key: string | null): Completion[] {
   const constructors = snippets(CONSTRUCTORS, options, sections.values).map((completion) =>
     preferred.has(completion.label) ? { ...completion, boost: 50 } : completion,
   );
-  return [...constructors, ...literals(["true", "false", "null"], sections.values)];
+  // Known values come first: for an enum-like field they are what the user wants.
+  const values = knownValues(options, key, path).map((value, rank) => ({
+    label: JSON.stringify(value),
+    type: "text",
+    section: sections.values,
+    boost: 90 - rank,
+  }));
+  return [...values, ...constructors, ...literals(["true", "false", "null"], sections.values)];
 }
 
-const awaitingReference = new WeakSet<Completion>();
+const reopening = new WeakSet<Completion>();
 
 /**
- * For the editors' `activateOnCompletion`: after a snippet that leaves the cursor
- * in a `"$…"` reference, the field list opens right away.
+ * For the editors' `activateOnCompletion`: the list opens again right after a
+ * snippet that leaves the cursor in a `"$…"` reference, or a key whose field
+ * has known values.
  */
-export const opensFieldReferences = (completion: Completion) => awaitingReference.has(completion);
+export const reopensCompletion = (completion: Completion) => reopening.has(completion);
 
 function snippets(list: Snippet[], options: Resolved, section: CompletionSection) {
   // Catalogs are ordered by how common each entry is.
@@ -373,7 +415,7 @@ function snippets(list: Snippet[], options: Resolved, section: CompletionSection
       section,
       ...detail(options.describe(label)),
     });
-    if (template.includes('"$#{}')) awaitingReference.add(completion);
+    if (template.includes('"$#{}')) reopening.add(completion);
     return completion;
   });
 }
@@ -381,5 +423,6 @@ function snippets(list: Snippet[], options: Resolved, section: CompletionSection
 const detail = (text: string | undefined) => (text ? { detail: text } : {});
 
 function literals(values: string[], section: CompletionSection): Completion[] {
-  return values.map((label) => ({ label, type: "constant", section }));
+  // After the field's values and the constructors, in the order given.
+  return values.map((label, rank) => ({ label, type: "constant", section, boost: -50 - rank }));
 }

@@ -19,6 +19,7 @@ describe("fieldPathsOf", () => {
       path: "address.city",
       types: ["string"],
       frequency: 0.5,
+      values: ["Rome"],
     });
     expect(byPath["items.sku"]?.types).toEqual(["string"]);
     expect(byPath.age?.types).toEqual(["int"]);

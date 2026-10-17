@@ -19,6 +19,8 @@ const WRAPPERS: Record<string, string> = {
   $code: "javascript",
 };
 const MAX_DEPTH = 6;
+const MAX_VALUES = 12;
+const MAX_VALUE_LENGTH = 64;
 
 function typeOf(value: JsonValue): string {
   if (value === null) return "null";
@@ -35,13 +37,20 @@ function typeOf(value: JsonValue): string {
  * `schema::sample_fields`: dot notation, array items share the array's path.
  */
 export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
-  const stats = new Map<string, { count: number; types: Map<string, number> }>();
+  const stats = new Map<
+    string,
+    { count: number; types: Map<string, number>; strings: Map<string, number> | null }
+  >();
 
   for (const document of documents) {
     const seen = new Map<string, Set<string>>();
+    const strings = new Map<string, Set<string>>();
     const visit = (value: JsonValue, path: string, depth: number) => {
       const type = typeOf(value);
       seen.set(path, (seen.get(path) ?? new Set()).add(type));
+      if (typeof value === "string" && value.length <= MAX_VALUE_LENGTH) {
+        strings.set(path, (strings.get(path) ?? new Set()).add(value));
+      }
       if (depth + 1 >= MAX_DEPTH) return;
       const children = Array.isArray(value) ? value : type === "object" ? [value] : [];
       for (const child of children) {
@@ -59,21 +68,31 @@ export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
     for (const [key, value] of Object.entries(document)) visit(value, key, 0);
 
     for (const [path, types] of seen) {
-      const entry = stats.get(path) ?? { count: 0, types: new Map() };
+      const entry = stats.get(path) ?? { count: 0, types: new Map(), strings: new Map() };
       entry.count += 1;
       for (const type of types) entry.types.set(type, (entry.types.get(type) ?? 0) + 1);
+      if (entry.strings) {
+        for (const value of strings.get(path) ?? []) {
+          entry.strings.set(value, (entry.strings.get(value) ?? 0) + 1);
+        }
+        // Too many distinct values: not an enum-like field.
+        if (entry.strings.size > MAX_VALUES) entry.strings = null;
+      }
       stats.set(path, entry);
     }
   }
 
   const total = Math.max(documents.length, 1);
   return [...stats]
-    .map(([path, { count, types }]) => ({
+    .map(([path, { count, types, strings }]) => ({
       path,
       types: [...types]
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([type]) => type),
       frequency: count / total,
+      values: [...(strings ?? [])]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([value]) => value),
     }))
     .sort((a, b) => b.frequency - a.frequency || a.path.localeCompare(b.path));
 }

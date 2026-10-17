@@ -240,6 +240,11 @@ export type FieldSummary = {
 	types: string[],
 	/**  Share of sampled documents that contain the path, from 0 to 1. */
 	frequency: number | null,
+	/**
+	 *  The field's string values, most common first, when there are only a few
+	 *  (an enum-like field such as `status`); empty otherwise.
+	 */
+	values: string[],
 };
 
 export type FilePreview = { kind: "json"; documents: EJsonDocument[] } | { kind: "csv"; headers: string[]; rows: string[][]; suggested: CsvType[] };
