@@ -8,6 +8,7 @@ import {
   Lock,
   Pencil,
   Plug,
+  SquareTerminal,
   Trash2,
   Unplug,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
+import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
 import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect } from "../api/mutations";
@@ -38,6 +40,7 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   const [expanded, setExpanded] = useExpanded(profile.id);
   const [toolDialog, setToolDialog] = useState<"backup" | "restore" | null>(null);
   const queryClient = useQueryClient();
+  const openShell = useTabs((s) => s.openShell);
 
   function open() {
     if (connection) {
@@ -102,6 +105,10 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
             )}
             {connection && (
               <>
+                <DropdownMenuItem onSelect={() => openShell(profile.id)}>
+                  <SquareTerminal />
+                  {t("profile.openShell")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
                   <HardDriveDownload />
                   {t("menu.backupAll", { ns: "backup" })}

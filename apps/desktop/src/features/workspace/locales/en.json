@@ -1,6 +1,7 @@
 {
   "tabs": {
     "close": "Close {{name}}",
-    "label": "Open collections"
+    "label": "Open collections",
+    "shell": "Shell"
   }
 }

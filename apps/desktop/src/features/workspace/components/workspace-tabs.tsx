@@ -74,7 +74,9 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
               </button>
               <button
                 type="button"
-                aria-label={t("tabs.close", { name: tab.collection })}
+                aria-label={t("tabs.close", {
+                  name: tab.kind === "collection" ? tab.collection : t("tabs.shell"),
+                })}
                 onClick={() => close(tab.id)}
                 className={cn(
                   "mr-1 rounded-sm p-0.5 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",

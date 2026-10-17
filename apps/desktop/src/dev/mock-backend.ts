@@ -468,6 +468,34 @@ function simulateTool(channel: unknown, lines: string[], summary: unknown) {
   return operationId;
 }
 
+/** A tiny fake mongosh: echoes keystrokes and answers a few commands. */
+const shells = new Map<string, { send: (message: unknown) => void; line: string }>();
+const PROMPT = "\u001b[32mtest\u001b[0m> ";
+
+function shellOutput(id: string, data: string) {
+  shells.get(id)?.send({ kind: "output", data, bytes: data.length });
+}
+
+function evaluateShell(id: string, line: string) {
+  const command = line.trim();
+  if (command === "exit") {
+    shells.get(id)?.send({ kind: "exited", code: 0 });
+    shells.delete(id);
+    return;
+  }
+  const answers: Record<string, string> = {
+    "db.version()": "8.0.4",
+    "show dbs": "admin       40.00 KiB\r\nanalytics    9.90 MiB\r\nshop       680.00 KiB",
+    "db.getName()": "test",
+  };
+  const answer =
+    command === ""
+      ? ""
+      : (answers[command] ??
+        `\u001b[31mReferenceError\u001b[0m: ${command.split(/[.(]/)[0]} is not defined`);
+  shellOutput(id, `${answer ? `${answer}\r\n` : ""}${PROMPT}`);
+}
+
 /** `localStorage["odin-mock-no-tools"] = "1"` simulates a machine without Database Tools. */
 const toolsInstalled = () => localStorage.getItem("odin-mock-no-tools") !== "1";
 
@@ -761,6 +789,44 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       "1590 document(s) restored successfully. 0 document(s) failed to restore.",
     ];
     return simulateTool(args.channel, lines, { collections: 2, documents: 1590, failures: 0 });
+  },
+  mongosh_status: () =>
+    localStorage.getItem("odin-mock-no-mongosh") === "1"
+      ? { available: false, version: null }
+      : { available: true, version: "2.13.0" },
+  open_shell: (args) => {
+    serverOf(id("connectionId", args));
+    const shellId = crypto.randomUUID();
+    shells.set(shellId, { send: channelSender(args.channel), line: "" });
+    setTimeout(() => shellOutput(shellId, PROMPT), 300);
+    return shellId;
+  },
+  shell_write: (args) => {
+    const shellId = id("id", args);
+    const session = shells.get(shellId) ?? fail("notFound", "shell session not found");
+    for (const char of args.data as string) {
+      if (char === "\r") {
+        const line = session.line;
+        session.line = "";
+        shellOutput(shellId, "\r\n");
+        evaluateShell(shellId, line);
+      } else if (char === "\u007f") {
+        if (session.line.length > 0) {
+          session.line = session.line.slice(0, -1);
+          shellOutput(shellId, "\b \b");
+        }
+      } else {
+        session.line += char;
+        shellOutput(shellId, char);
+      }
+    }
+    return null;
+  },
+  shell_resize: () => null,
+  shell_ack: () => null,
+  close_shell: (args) => {
+    shells.delete(id("id", args));
+    return null;
   },
   find_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };

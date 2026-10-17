@@ -17,7 +17,10 @@ describe("tabs store", () => {
     openCollection(target("orders"));
     openCollection(target("users"));
     const { tabs, activeTabId } = useTabs.getState();
-    expect(tabs.map((tab) => tab.collection)).toEqual(["users", "orders"]);
+    expect(tabs.map((tab) => (tab.kind === "collection" ? tab.collection : tab.kind))).toEqual([
+      "users",
+      "orders",
+    ]);
     expect(activeTabId).toBe("p1/shop/users");
   });
 
@@ -31,6 +34,14 @@ describe("tabs store", () => {
     expect(useTabs.getState().activeTabId).toBe("p1/shop/a");
     useTabs.getState().close("p1/shop/a");
     expect(useTabs.getState().activeTabId).toBeNull();
+  });
+
+  it("opens a new shell tab every time", () => {
+    useTabs.getState().openShell("p1");
+    useTabs.getState().openShell("p1");
+    const { tabs, activeTabId } = useTabs.getState();
+    expect(tabs.map((tab) => tab.kind)).toEqual(["shell", "shell"]);
+    expect(activeTabId).toBe(tabs[1]?.id);
   });
 
   it("closes every tab of a profile", () => {

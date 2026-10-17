@@ -3,6 +3,7 @@ import { ThemeMenu } from "@/components/theme-menu";
 import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
 import { useAutorunEnabled } from "@/features/perf-lab";
+import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { Welcome } from "./welcome";
 
@@ -43,6 +44,8 @@ function renderLabel(tab: WorkspaceTab, context: TabLabelContext) {
   switch (tab.kind) {
     case "collection":
       return <CollectionTabLabel tab={tab} context={context} />;
+    case "shell":
+      return <ShellTabLabel tab={tab} />;
   }
 }
 
@@ -50,5 +53,7 @@ function renderTab(tab: WorkspaceTab) {
   switch (tab.kind) {
     case "collection":
       return <CollectionTab tab={tab} />;
+    case "shell":
+      return <ShellTab tab={tab} />;
   }
 }

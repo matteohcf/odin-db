@@ -1,0 +1,23 @@
+{
+  "tab": {
+    "title": "Shell"
+  },
+  "status": {
+    "starting": "Starting mongosh…",
+    "exited": "mongosh exited",
+    "exitedWithCode": "mongosh exited with code {{code}}",
+    "restart": "Restart shell",
+    "failed": "Couldn't start mongosh: {{message}}"
+  },
+  "readOnly": "{{name}} is read-only in odin-db, but the shell runs with your database user's permissions. Use a read-only database user to prevent changes.",
+  "missing": {
+    "title": "mongosh not found",
+    "body": "The shell runs MongoDB's own mongosh. Install it and make sure it is on your PATH, then open the shell again.",
+    "download": "Download page: {{url}}"
+  },
+  "disconnected": {
+    "title": "{{name}} is disconnected",
+    "body": "Connect again to start a shell.",
+    "connect": "Connect"
+  }
+}

@@ -12,12 +12,20 @@ export interface CollectionTab {
   collectionKind: CollectionKind;
 }
 
-export type WorkspaceTab = CollectionTab;
+/** A mongosh session for a profile. Several can be open at once. */
+export interface ShellTab {
+  kind: "shell";
+  id: string;
+  profileId: ProfileId;
+}
+
+export type WorkspaceTab = CollectionTab | ShellTab;
 
 interface TabsState {
   tabs: WorkspaceTab[];
   activeTabId: string | null;
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
+  openShell: (profileId: ProfileId) => void;
   activate: (id: string) => void;
   close: (id: string) => void;
   closeForProfile: (profileId: ProfileId) => void;
@@ -39,6 +47,11 @@ export const useTabs = create<TabsState>()((set) => ({
       const id = `${target.profileId}/${target.database}/${target.collection}`;
       if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
       return { tabs: [...state.tabs, { kind: "collection", id, ...target }], activeTabId: id };
+    }),
+  openShell: (profileId) =>
+    set((state) => {
+      const id = `shell:${crypto.randomUUID()}`;
+      return { tabs: [...state.tabs, { kind: "shell", id, profileId }], activeTabId: id };
     }),
   activate: (id) => set({ activeTabId: id }),
   close: (id) =>

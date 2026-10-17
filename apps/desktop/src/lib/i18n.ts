@@ -9,6 +9,7 @@ import documents from "@/features/documents/locales/en.json";
 import indexes from "@/features/indexes/locales/en.json";
 import perfLab from "@/features/perf-lab/locales/en.json";
 import results from "@/features/results/locales/en.json";
+import shell from "@/features/shell/locales/en.json";
 import transfer from "@/features/transfer/locales/en.json";
 import workspace from "@/features/workspace/locales/en.json";
 import common from "@/locales/en.json";
@@ -25,6 +26,7 @@ export const resources = {
     indexes,
     perfLab,
     results,
+    shell,
     transfer,
     workspace,
   },

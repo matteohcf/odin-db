@@ -16,7 +16,8 @@
     "readOnly": "Read-only",
     "connecting": "Connecting…",
     "connected": "Connected to MongoDB {{version}}",
-    "connectFailed": "Couldn't connect to {{name}}"
+    "connectFailed": "Couldn't connect to {{name}}",
+    "openShell": "Open shell"
   },
   "tree": {
     "loading": "Loading…",
