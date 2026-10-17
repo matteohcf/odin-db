@@ -22,6 +22,12 @@ pub struct ConnectionHealthChanged {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
 pub struct BackupsChanged {}
 
+/// The user asked to quit while operations run; the UI asks for confirmation.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
+pub struct QuitRequested {
+    pub operations: u32,
+}
+
 /// Forwards core's health changes to the webview for the app's lifetime.
 pub fn forward_health_changes(app: AppHandle, state: &Arc<AppState>) {
     let mut changes = state.connections.health_changes();

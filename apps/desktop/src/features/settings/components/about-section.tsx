@@ -1,3 +1,4 @@
+import { commands } from "@odin-db/bindings";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +13,6 @@ import {
 import { Button } from "@odin-db/ui/components/button";
 import { useTheme } from "@odin-db/ui/components/theme-provider";
 import { useQuery } from "@tanstack/react-query";
-import { getVersion } from "@tauri-apps/api/app";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useSettings } from "@/lib/settings";
@@ -25,13 +25,24 @@ export function AboutSection() {
   const { t } = useTranslation("settings");
   const reset = useSettings((s) => s.reset);
   const { setTheme } = useTheme();
-  const version = useQuery({ queryKey: ["app-version"], queryFn: getVersion, staleTime: Infinity });
+  const info = useQuery({
+    queryKey: ["app-info"],
+    queryFn: () => commands.appInfo(),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
   return (
     <>
       <SettingsSection title={t("about.title")}>
         <SettingRow label="odin-db" description={t("about.tagline")}>
           <span className="font-mono text-muted-foreground text-sm selectable">
-            {version.data ? `v${version.data}` : "—"}
+            {info.data ? `v${info.data.version}` : "—"}
+          </span>
+        </SettingRow>
+        <SettingRow label={t("about.platform")}>
+          <span className="max-w-72 truncate font-mono text-muted-foreground text-xs selectable">
+            {info.data
+              ? `${info.data.os} ${info.data.arch} · Tauri ${info.data.tauriVersion} · WebView ${info.data.webviewVersion}`
+              : "—"}
           </span>
         </SettingRow>
         <SettingRow label={t("about.license")}>

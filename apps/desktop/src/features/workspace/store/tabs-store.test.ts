@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useTabs } from "./tabs-store";
+import { restorableTabs, useTabs } from "./tabs-store";
 
 const target = (collection: string, profileId = "p1") => ({
   profileId,
@@ -104,5 +104,17 @@ describe("tabs store", () => {
     useTabs.getState().openSettings();
     expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["settings", "backups"]);
     expect(useTabs.getState().activeTabId).toBe("settings");
+  });
+
+  it("restores every tab but shells after a restart", () => {
+    useTabs.getState().openCollection(target("a"));
+    useTabs.getState().openSettings();
+    useTabs.getState().openShell("p1");
+    const restored = restorableTabs(useTabs.getState());
+    expect(restored.tabs.map((tab) => tab.id)).toEqual(["p1/shop/a", "settings"]);
+    // The active shell is gone: the last restored tab takes over.
+    expect(restored.activeTabId).toBe("settings");
+    useTabs.getState().activate("p1/shop/a");
+    expect(restorableTabs(useTabs.getState()).activeTabId).toBe("p1/shop/a");
   });
 });

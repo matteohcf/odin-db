@@ -4,5 +4,12 @@
     "title": "Open a collection",
     "body": "Connect to a server in the sidebar, then pick a collection to browse, query and edit its documents.",
     "palette": "Press <kbd>{{shortcut}}</kbd> to jump to any collection or action."
+  },
+  "quit": {
+    "title_one": "Quit while an operation is running?",
+    "title_other": "Quit while {{count}} operations are running?",
+    "description": "Running backups, restores, imports, exports and copies are cancelled first. Backups interrupted this way are marked as such in the history.",
+    "keep": "Keep working",
+    "confirm": "Quit anyway"
   }
 }

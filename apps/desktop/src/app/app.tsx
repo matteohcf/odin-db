@@ -9,7 +9,9 @@ import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/set
 import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { BackupsButton } from "./backups-button";
+import { QuitDialog } from "./quit-dialog";
 import { SettingsButton } from "./settings-button";
+import { usePruneRestoredTabs } from "./use-prune-restored-tabs";
 import { Welcome } from "./welcome";
 
 // Benchmarks (xterm.js, large fixtures) only load for `--perf-autorun`.
@@ -21,6 +23,7 @@ const PerfLab = lazy(() =>
 export function App() {
   const { data: perfAutorun } = useAutorunEnabled();
   useApplySettings();
+  usePruneRestoredTabs();
   if (perfAutorun) {
     return (
       <Suspense fallback={null}>
@@ -45,6 +48,7 @@ export function App() {
         <WorkspaceTabs renderTab={renderTab} renderLabel={renderLabel} emptyState={<Welcome />} />
       </main>
       <ShortcutsDialog />
+      <QuitDialog />
     </div>
   );
 }

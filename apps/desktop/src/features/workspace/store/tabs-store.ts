@@ -1,5 +1,6 @@
 import type { CollectionKind, ProfileId } from "@odin-db/bindings";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 /** A tab bound to a collection. New tab kinds (aggregation, shell…) join this union. */
 export interface CollectionTab {
@@ -59,80 +60,102 @@ function nextActive(state: TabsState, remaining: WorkspaceTab[]): string | null 
   return remaining[Math.min(Math.max(index, 0), remaining.length - 1)]?.id ?? null;
 }
 
-export const useTabs = create<TabsState>()((set) => ({
-  tabs: [],
-  activeTabId: null,
-  openCollection: (target) =>
-    set((state) => {
-      // One tab per collection: opening it again focuses the existing tab.
-      const id = collectionTabId(target.profileId, target.database, target.collection);
-      if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
-      return { tabs: [...state.tabs, { kind: "collection", id, ...target }], activeTabId: id };
-    }),
-  openShell: (profileId) =>
-    set((state) => {
-      const id = `shell:${crypto.randomUUID()}`;
-      return { tabs: [...state.tabs, { kind: "shell", id, profileId }], activeTabId: id };
-    }),
-  openBackups: () =>
-    set((state) =>
-      state.tabs.some((tab) => tab.id === "backups")
-        ? { activeTabId: "backups" }
-        : { tabs: [...state.tabs, { kind: "backups", id: "backups" }], activeTabId: "backups" },
-    ),
-  openSettings: () =>
-    set((state) =>
-      state.tabs.some((tab) => tab.id === "settings")
-        ? { activeTabId: "settings" }
-        : { tabs: [...state.tabs, { kind: "settings", id: "settings" }], activeTabId: "settings" },
-    ),
-  activate: (id) => set({ activeTabId: id }),
-  close: (id) =>
-    set((state) => {
-      const tabs = state.tabs.filter((tab) => tab.id !== id);
-      return { tabs, activeTabId: nextActive(state, tabs) };
-    }),
-  closeOthers: (id) =>
-    set((state) => ({ tabs: state.tabs.filter((tab) => tab.id === id), activeTabId: id })),
-  closeToTheRight: (id) =>
-    set((state) => {
-      const index = state.tabs.findIndex((tab) => tab.id === id);
-      const tabs = state.tabs.slice(0, index + 1);
-      return { tabs, activeTabId: nextActive(state, tabs) };
-    }),
-  closeAll: () => set({ tabs: [], activeTabId: null }),
-  closeForProfile: (profileId) =>
-    set((state) => {
-      const tabs = state.tabs.filter((tab) => !("profileId" in tab) || tab.profileId !== profileId);
-      return { tabs, activeTabId: nextActive(state, tabs) };
-    }),
-  closeCollections: (profileId, database, collection) =>
-    set((state) => {
-      const tabs = state.tabs.filter(
-        (tab) =>
-          !(
-            tab.kind === "collection" &&
-            tab.profileId === profileId &&
-            tab.database === database &&
-            (collection === undefined || tab.collection === collection)
-          ),
-      );
-      return { tabs, activeTabId: nextActive(state, tabs) };
-    }),
-  renameCollection: (profileId, database, from, to) =>
-    set((state) => {
-      const oldId = collectionTabId(profileId, database, from);
-      const newId = collectionTabId(profileId, database, to);
-      return {
-        tabs: state.tabs.map((tab) =>
-          tab.id === oldId && tab.kind === "collection"
-            ? { ...tab, id: newId, collection: to }
-            : tab,
+/**
+ * What survives a restart: every tab but shells, whose sessions end with the app.
+ * Collection tabs come back disconnected and offer to reconnect.
+ */
+export function restorableTabs(state: Pick<TabsState, "tabs" | "activeTabId">) {
+  const tabs = state.tabs.filter((tab) => tab.kind !== "shell");
+  const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
+    ? state.activeTabId
+    : (tabs.at(-1)?.id ?? null);
+  return { tabs, activeTabId };
+}
+
+export const useTabs = create<TabsState>()(
+  persist(
+    (set) => ({
+      tabs: [],
+      activeTabId: null,
+      openCollection: (target) =>
+        set((state) => {
+          // One tab per collection: opening it again focuses the existing tab.
+          const id = collectionTabId(target.profileId, target.database, target.collection);
+          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
+          return { tabs: [...state.tabs, { kind: "collection", id, ...target }], activeTabId: id };
+        }),
+      openShell: (profileId) =>
+        set((state) => {
+          const id = `shell:${crypto.randomUUID()}`;
+          return { tabs: [...state.tabs, { kind: "shell", id, profileId }], activeTabId: id };
+        }),
+      openBackups: () =>
+        set((state) =>
+          state.tabs.some((tab) => tab.id === "backups")
+            ? { activeTabId: "backups" }
+            : { tabs: [...state.tabs, { kind: "backups", id: "backups" }], activeTabId: "backups" },
         ),
-        activeTabId: state.activeTabId === oldId ? newId : state.activeTabId,
-      };
+      openSettings: () =>
+        set((state) =>
+          state.tabs.some((tab) => tab.id === "settings")
+            ? { activeTabId: "settings" }
+            : {
+                tabs: [...state.tabs, { kind: "settings", id: "settings" }],
+                activeTabId: "settings",
+              },
+        ),
+      activate: (id) => set({ activeTabId: id }),
+      close: (id) =>
+        set((state) => {
+          const tabs = state.tabs.filter((tab) => tab.id !== id);
+          return { tabs, activeTabId: nextActive(state, tabs) };
+        }),
+      closeOthers: (id) =>
+        set((state) => ({ tabs: state.tabs.filter((tab) => tab.id === id), activeTabId: id })),
+      closeToTheRight: (id) =>
+        set((state) => {
+          const index = state.tabs.findIndex((tab) => tab.id === id);
+          const tabs = state.tabs.slice(0, index + 1);
+          return { tabs, activeTabId: nextActive(state, tabs) };
+        }),
+      closeAll: () => set({ tabs: [], activeTabId: null }),
+      closeForProfile: (profileId) =>
+        set((state) => {
+          const tabs = state.tabs.filter(
+            (tab) => !("profileId" in tab) || tab.profileId !== profileId,
+          );
+          return { tabs, activeTabId: nextActive(state, tabs) };
+        }),
+      closeCollections: (profileId, database, collection) =>
+        set((state) => {
+          const tabs = state.tabs.filter(
+            (tab) =>
+              !(
+                tab.kind === "collection" &&
+                tab.profileId === profileId &&
+                tab.database === database &&
+                (collection === undefined || tab.collection === collection)
+              ),
+          );
+          return { tabs, activeTabId: nextActive(state, tabs) };
+        }),
+      renameCollection: (profileId, database, from, to) =>
+        set((state) => {
+          const oldId = collectionTabId(profileId, database, from);
+          const newId = collectionTabId(profileId, database, to);
+          return {
+            tabs: state.tabs.map((tab) =>
+              tab.id === oldId && tab.kind === "collection"
+                ? { ...tab, id: newId, collection: to }
+                : tab,
+            ),
+            activeTabId: state.activeTabId === oldId ? newId : state.activeTabId,
+          };
+        }),
     }),
-}));
+    { name: "odin-tabs", version: 1, partialize: (state) => restorableTabs(state) },
+  ),
+);
 
 function collectionTabId(profileId: ProfileId, database: string, collection: string) {
   return `${profileId}/${database}/${collection}`;

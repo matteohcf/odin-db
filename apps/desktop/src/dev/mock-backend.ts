@@ -665,13 +665,17 @@ const toolsInstalled = () => localStorage.getItem("odin-mock-no-tools") !== "1";
 
 const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   app_info: () => ({
-    version: "0.0.0",
+    version: "0.1.0",
     tauriVersion: "mock",
     webviewVersion: navigator.userAgent,
     os: "browser",
     arch: "mock",
   }),
   perf_autorun_enabled: () => false,
+  confirm_quit: () => {
+    Object.assign(window, { odinMockQuit: true });
+    return null;
+  },
   list_profiles: () => [...profiles].sort((a, b) => a.name.localeCompare(b.name)),
   create_profile: (args) => {
     const input = args.input as ProfileInput;
@@ -1085,7 +1089,6 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       }),
     );
   },
-  "plugin:app|version": () => "0.1.0",
   database_tools_status: () =>
     toolsInstalled()
       ? { available: true, version: "100.19.1" }
@@ -1406,6 +1409,7 @@ export function installMockBackend() {
   // UI reviews and browser tests simulate a server going down or coming back.
   Object.assign(window, {
     odinMock: {
+      requestQuit: (operations: number) => void emit("quit-requested", { operations }),
       setReachable: (profileName: string, reachable: boolean) => {
         const profile = profiles.find((p) => p.name === profileName);
         const connection = [...connections.values()].find((c) => c.profileId === profile?.id);

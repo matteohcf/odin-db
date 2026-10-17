@@ -80,7 +80,8 @@
     "title": "About",
     "tagline": "An open source desktop client for MongoDB.",
     "license": "License",
-    "source": "Source code"
+    "source": "Source code",
+    "platform": "Platform"
   },
   "reset": {
     "title": "Reset",

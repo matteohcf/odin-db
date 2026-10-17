@@ -11,9 +11,9 @@ use odin_core::backup::schedule::{self, ScheduleId};
 use odin_core::backup::{
     self, BackupRequest, DatabaseTools, ToolConnection, ToolEvent, ToolSummary,
 };
-use odin_core::operations::CancellationToken;
+use odin_core::operations::{CancellationToken, OperationRegistry};
 use odin_core::profiles::ProfileId;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::sync::mpsc;
 
@@ -199,5 +199,7 @@ pub async fn run_schedule(
     // Scheduled runs have no window to stream output to.
     let (output, mut drain) = mpsc::channel(64);
     tauri::async_runtime::spawn(async move { while drain.recv().await.is_some() {} });
-    run_backup(app, state, tools, job, output, CancellationToken::new()).await
+    // Registered like UI operations, so quitting counts and cancels it.
+    let guard = app.state::<Arc<OperationRegistry>>().start();
+    run_backup(app, state, tools, job, output, guard.token()).await
 }

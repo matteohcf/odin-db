@@ -6,6 +6,11 @@ import * as __TAURI_EVENT from "@tauri-apps/api/event";
 /** Commands */
 export const commands = {
 	appInfo: () => __TAURI_INVOKE<AppInfo>("app_info"),
+	/**
+	 *  Quits after the user confirmed: cancels running operations and gives them a
+	 *  moment to clean up (exports delete their partial file) before exiting.
+	 */
+	confirmQuit: () => typedError<null, IpcError>(__TAURI_INVOKE("confirm_quit")),
 	listProfiles: () => typedError<ConnectionProfile[], IpcError>(__TAURI_INVOKE("list_profiles")),
 	createProfile: (input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("create_profile", { input })),
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
@@ -133,6 +138,7 @@ export const commands = {
 export const events = {
 	backupsChanged: makeEvent<BackupsChanged>("backups-changed"),
 	connectionHealthChanged: makeEvent<ConnectionHealthChanged>("connection-health-changed"),
+	quitRequested: makeEvent<QuitRequested>("quit-requested"),
 };
 
 /* Types */
@@ -546,6 +552,11 @@ export type QueryPlan = {
 	milliseconds: number | null,
 	/**  The full `explain` output, for details the summary leaves out. */
 	raw: EJsonDocument,
+};
+
+/**  The user asked to quit while operations run; the UI asks for confirmation. */
+export type QuitRequested = {
+	operations: number,
 };
 
 export type RecordError = {

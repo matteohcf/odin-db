@@ -80,7 +80,8 @@
     "title": "Informazioni",
     "tagline": "Un client desktop open source per MongoDB.",
     "license": "Licenza",
-    "source": "Codice sorgente"
+    "source": "Codice sorgente",
+    "platform": "Piattaforma"
   },
   "reset": {
     "title": "Ripristino",

@@ -4,5 +4,12 @@
     "title": "Apri una collezione",
     "body": "Connettiti a un server nella barra laterale, poi scegli una collezione per sfogliarne, interrogarne e modificarne i documenti.",
     "palette": "Premi <kbd>{{shortcut}}</kbd> per passare a qualsiasi collezione o azione."
+  },
+  "quit": {
+    "title_one": "Uscire mentre un'operazione è in corso?",
+    "title_other": "Uscire mentre {{count}} operazioni sono in corso?",
+    "description": "Backup, ripristini, importazioni, esportazioni e copie in corso vengono prima annullati. I backup interrotti così vengono segnalati nella cronologia.",
+    "keep": "Continua a lavorare",
+    "confirm": "Esci comunque"
   }
 }

@@ -67,6 +67,7 @@ docs/adr/                Architecture Decision Records
 - **The shell is mongosh in a PTY** (ADR-0030), with credit-based flow control: the UI acknowledges output after xterm.js renders it, and sends input one write at a time. Read-only cannot be enforced inside mongosh, so the tab warns instead.
 - **Backups are recorded and schedulable** (ADR-0034): every mongodump goes through `src-tauri/src/backups.rs::run_backup`, which records it in the history before anything can fail; the scheduler lives there too.
 - **User preferences** live in one typed, persisted store, `useSettings` (`src/lib/settings.ts`). A new setting is a field with a default there, a row on the settings page, and a reader where it applies (read with `getState()` at use time when nothing needs to re-render). Window-wide effects (zoom, language, editor font) are applied by `useApplySettings` (ADR-0035).
+- **Every long operation is registered** in `OperationRegistry`, scheduled backups included: quitting while any runs asks first (`src-tauri/src/quit.rs`, `QuitRequested`), then cancels them. Open tabs except shells are restored on launch (`restorableTabs`).
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions

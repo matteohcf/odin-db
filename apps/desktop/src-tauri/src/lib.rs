@@ -7,19 +7,21 @@ use odin_core::query::CursorRegistry;
 use odin_core::secrets::KeyringStore;
 use odin_core::storage::Storage;
 use specta_typescript::Typescript;
-use tauri::Manager;
+use tauri::{Manager, RunEvent, WindowEvent};
 use tauri_specta::{Builder, collect_commands, collect_events};
 
 mod backups;
 mod commands;
 mod events;
 mod ipc;
+mod quit;
 mod state;
 
 fn specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
             commands::app::app_info,
+            commands::app::confirm_quit,
             commands::profiles::list_profiles,
             commands::profiles::create_profile,
             commands::profiles::update_profile,
@@ -87,7 +89,8 @@ fn specta_builder() -> Builder<tauri::Wry> {
         ])
         .events(collect_events![
             events::ConnectionHealthChanged,
-            events::BackupsChanged
+            events::BackupsChanged,
+            events::QuitRequested
         ])
 }
 
@@ -102,7 +105,16 @@ pub fn run() {
 
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(Arc::new(OperationRegistry::default()))
+        .manage(quit::QuitConfirmation::default())
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event
+                && quit::hold_for_confirmation(window.app_handle())
+            {
+                api.prevent_close();
+            }
+        })
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
@@ -136,10 +148,20 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!());
+        .build(tauri::generate_context!());
 
-    if let Err(error) = result {
-        eprintln!("odin-db failed to start: {error}");
-        std::process::exit(1);
+    match result {
+        // Cmd+Q and the app menu's Quit skip the window's close request.
+        Ok(app) => app.run(|app, event| {
+            if let RunEvent::ExitRequested { api, .. } = event
+                && quit::hold_for_confirmation(app)
+            {
+                api.prevent_exit();
+            }
+        }),
+        Err(error) => {
+            eprintln!("odin-db failed to start: {error}");
+            std::process::exit(1);
+        }
     }
 }
