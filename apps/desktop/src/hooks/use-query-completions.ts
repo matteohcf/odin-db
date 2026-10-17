@@ -2,7 +2,7 @@ import type { CompletionSource } from "@codemirror/autocomplete";
 import type { FieldSummary } from "@odin-db/bindings";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { type QueryKind, queryCompletionSource } from "@/lib/query-completion";
+import type { QueryKind } from "@/lib/query-completion";
 import locale from "@/locales/en.json";
 
 type HelpKey = keyof typeof locale.queryAssist.help;
@@ -30,7 +30,19 @@ export function useQueryCompletions(fields: readonly FieldSummary[]) {
     return (kind: QueryKind) => {
       let source = sources.get(kind);
       if (!source) {
-        source = queryCompletionSource({ kind, fields: () => fieldsRef.current, describe, labels });
+        // Loaded with the first suggestion, not at startup: it brings CodeMirror with it,
+        // which only the (lazily loaded) editors need.
+        let loaded: CompletionSource | undefined;
+        source = async (context) => {
+          const { queryCompletionSource } = await import("@/lib/query-completion");
+          loaded ??= queryCompletionSource({
+            kind,
+            fields: () => fieldsRef.current,
+            describe,
+            labels,
+          });
+          return loaded(context);
+        };
         sources.set(kind, source);
       }
       return source;

@@ -1,6 +1,4 @@
-import { parse } from "@mongodb-js/shell-bson-parser";
 import type { EJsonDocument, JsonValue } from "@odin-db/bindings";
-import { EJSON } from "bson";
 import { isJsonObject, type JsonObject } from "./ejson-display";
 
 /**
@@ -21,6 +19,11 @@ export class ShellSyntaxError extends Error {
 /** Parses mongosh syntax into a canonical EJSON document. Empty input is `{}`. */
 export async function parseShellDocument(text: string): Promise<EJsonDocument> {
   if (text.trim() === "") return {};
+  // The parser and bson are large and only needed on the first parse, not at startup.
+  const [{ parse }, { EJSON }] = await Promise.all([
+    import("@mongodb-js/shell-bson-parser"),
+    import("bson"),
+  ]);
   let parsed: unknown;
   try {
     parsed = await parse(text, { mode: "strict" });

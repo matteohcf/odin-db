@@ -8,7 +8,9 @@ import {
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { COPY_FORMATS, formatValue } from "@/lib/copy-formats";
+import type { CopyFormat } from "@/lib/copy-formats";
+
+const FORMATS: readonly CopyFormat[] = ["shell", "json", "relaxed", "canonical"];
 
 /** "Copy as" with every text format, for one document or several. */
 export function CopyAsMenu({ value, label }: { value: JsonValue; label: string }) {
@@ -20,13 +22,16 @@ export function CopyAsMenu({ value, label }: { value: JsonValue; label: string }
         {label}
       </ContextMenuSubTrigger>
       <ContextMenuSubContent className="w-56">
-        {COPY_FORMATS.map((format) => (
+        {FORMATS.map((format) => (
           <ContextMenuItem
             key={format}
-            onSelect={() => {
-              void navigator.clipboard.writeText(formatValue(value, format));
-              toast.success(t("row.copied"));
-            }}
+            onSelect={() =>
+              // The converters bring bson along: loaded on first use, not at startup.
+              void import("@/lib/copy-formats").then(async ({ formatValue }) => {
+                await navigator.clipboard.writeText(formatValue(value, format));
+                toast.success(t("row.copied"));
+              })
+            }
           >
             <span className="flex flex-col">
               <span>{t(`copyAs.${format}`)}</span>
