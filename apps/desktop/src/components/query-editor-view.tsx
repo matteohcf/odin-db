@@ -64,6 +64,8 @@ export interface QueryEditorProps {
   ariaLabel: string;
   invalid?: boolean;
   autoFocus?: boolean;
+  /** Focuses the editor, selecting its text, each time this number changes. */
+  focusSignal?: number;
   className?: string;
 }
 
@@ -75,6 +77,7 @@ export default function QueryEditorView({
   completions,
   placeholder: placeholderText = "",
   ariaLabel,
+  focusSignal,
   invalid = false,
   autoFocus = false,
   className,
@@ -149,6 +152,13 @@ export default function QueryEditorView({
       selection: { anchor: value.length },
     });
   }, [value]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!focusSignal || !view) return;
+    view.focus();
+    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+  }, [focusSignal]);
 
   useEffect(() => {
     viewRef.current?.contentDOM.setAttribute("aria-invalid", String(invalid));

@@ -7,6 +7,8 @@ let listening = false;
 
 /** One window listener dispatches every registered shortcut. */
 function onKeyDown(event: KeyboardEvent) {
+  // An editor already handled the key (e.g. CodeMirror's own search).
+  if (event.defaultPrevented) return;
   for (const [id, registered] of handlers) {
     if (registered.size === 0 || !matches(SHORTCUTS[id], event)) continue;
     event.preventDefault();

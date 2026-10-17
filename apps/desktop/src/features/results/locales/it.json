@@ -38,7 +38,9 @@
     "copy": "Copia valore di {{field}}",
     "filter": "Filtra per questo valore di {{field}}",
     "edit": "Modifica valore di {{field}}…",
-    "distinct": "Valori distinti di {{field}}…"
+    "distinct": "Valori distinti di {{field}}…",
+    "inline": "Valore",
+    "inlineHint": "Invio o Tab salva, Esc annulla. La sintassi mongosh mantiene i tipi: \"testo\", 42, Double(4), ISODate(\"2024-01-01\")"
   },
   "view": {
     "label": "Vista dei risultati",
@@ -64,5 +66,16 @@
     "copied_other": "Copiati {{count}} documenti come array per la shell.",
     "selected_one": "{{count}} selezionato · clic destro per le azioni, Esc per annullare",
     "selected_other": "{{count}} selezionati · clic destro per le azioni, Esc per annullare"
+  },
+  "copyAs": {
+    "label": "Copia come",
+    "shell": "Sintassi mongosh",
+    "shellHint": "Tipi esatti, per la shell e l'editor",
+    "json": "JSON",
+    "jsonHint": "Valori semplici, per codice e test",
+    "relaxed": "Extended JSON (relaxed)",
+    "relaxedHint": "Leggibile, mantiene il tipo di id e date",
+    "canonical": "Extended JSON (canonical)",
+    "canonicalHint": "Ogni tipo esatto, per altri strumenti"
   }
 }

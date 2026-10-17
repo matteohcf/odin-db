@@ -32,6 +32,7 @@ const GROUPS = [
   {
     id: "query",
     shortcuts: [
+      ["focusFilter", [label(SHORTCUTS.focusFilter)]],
       ["run", ["↵", `${mod} ↵`]],
       ["rerun", [label(SHORTCUTS.rerun)]],
       ["suggest", ["Ctrl Space"]],
@@ -45,6 +46,7 @@ const GROUPS = [
       ["move", ["↑", "↓"]],
       ["jump", ["Home", "End"]],
       ["open", ["↵"]],
+      ["inlineEdit", ["t:shortcuts.keys.doubleClick"]],
       ["delete", [isMac ? "⌫" : "Delete"]],
     ],
   },
@@ -66,7 +68,10 @@ export function ShortcutsList() {
                 <dt>{t(`shortcuts.actions.${action}`)}</dt>
                 <dd className="flex items-center gap-1">
                   {keys.map((key) => (
-                    <Kbd key={key}>{key}</Kbd>
+                    // `t:` marks a key described in words, which must be translated.
+                    <Kbd key={key}>
+                      {key.startsWith("t:") ? t(key.slice(2) as "shortcuts.keys.doubleClick") : key}
+                    </Kbd>
                   ))}
                 </dd>
               </div>

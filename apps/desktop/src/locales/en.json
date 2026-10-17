@@ -4,7 +4,9 @@
     "fields_other": "{ {{count}} fields }",
     "items_one": "[ {{count}} element ]",
     "items_other": "[ {{count}} elements ]",
-    "showAll": "Show all {{count}}"
+    "showAll": "Show all {{count}}",
+    "created": "Created {{date}} ({{relative}})",
+    "localTime": "{{date}} local time ({{relative}})"
   },
   "types": {
     "null": "Null",
@@ -165,7 +167,12 @@
       "goToTab": "Go to tab 1–8",
       "lastTab": "Go to the last tab",
       "filterSidebar": "Filter the sidebar",
-      "rerun": "Run the query or pipeline again"
+      "rerun": "Run the query or pipeline again",
+      "inlineEdit": "Edit a value in place",
+      "focusFilter": "Focus the filter"
+    },
+    "keys": {
+      "doubleClick": "Double-click a value"
     }
   },
   "queryCode": {

@@ -28,6 +28,8 @@ interface QueryBarProps {
   explaining: boolean;
   /** View actions shown after Run, e.g. Insert document. */
   actions?: ReactNode;
+  /** Focuses the filter each time it changes (Mod+F). */
+  focusSignal?: number;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
@@ -46,6 +48,7 @@ export function QueryBar({
   onExplain,
   explaining,
   actions,
+  focusSignal,
 }: QueryBarProps) {
   const { t } = useTranslation("documents");
   const hasOptions = hasOptionsIn(form);
@@ -85,6 +88,7 @@ export function QueryBar({
             ariaLabel={t("query.filter")}
             invalid={Boolean(errors.filter)}
             autoFocus
+            {...(focusSignal ? { focusSignal } : {})}
           />
         </QueryFieldFrame>
         <VisualQueryBuilder

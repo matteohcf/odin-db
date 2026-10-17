@@ -40,10 +40,12 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
-import type { JsonObject } from "@/lib/ejson-display";
+import { compactEJson, type JsonObject } from "@/lib/ejson-display";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnWidth, dominantKind } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
+import { CopyAsMenu } from "./copy-as-menu";
+import { InlineCellEditor } from "./inline-cell-editor";
 import { RowMenuItems } from "./row-menu-items";
 
 const ROW_HEIGHT = 30;
@@ -68,7 +70,10 @@ export interface RowActions {
   /** Edits one top-level field. Omitted for read-only results. */
   onEditField?: ((row: JsonObject, field: string) => void) | undefined;
   /** Several selected documents at once (Shift/Cmd-click in the table). */
-  onCopyMany?: ((rows: JsonObject[]) => void) | undefined;
+  /** Documents pasted with Cmd+V while the table has focus. */
+  onPaste?: (() => void) | undefined;
+  /** Saves a value edited in place (double-click a cell). Omitted for read-only results. */
+  onSetField?: ((row: JsonObject, field: string, value: JsonValue) => Promise<void>) | undefined;
   onDeleteMany?: ((rows: JsonObject[]) => void) | undefined;
 }
 
@@ -123,6 +128,13 @@ export function ResultsGrid({
   // Rows marked with Shift/Cmd-click; the selected row is the active one among them.
   const [marked, setMarked] = useState<ReadonlySet<number>>(() => new Set());
   const anchor = useRef<number | null>(null);
+  const [editingCell, setEditingCell] = useState<{ index: number; field: string } | null>(null);
+  // Top-level scalars only: documents and arrays need the full editor.
+  const inlineEditable = (row: JsonObject, field: string) => {
+    if (!actions.onSetField || field === "_id" || field.includes(".")) return false;
+    const value = row[field];
+    return value === undefined || !["document", "array"].includes(compactEJson(value).kind);
+  };
   const firstRow = rows[0];
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new first row means a new result set.
   useEffect(() => {
@@ -194,6 +206,11 @@ export function ResultsGrid({
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
     const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / ROW_HEIGHT) - 1;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "v" && actions.onPaste) {
+      event.preventDefault();
+      actions.onPaste();
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
       event.preventDefault();
       setMarked(new Set(rows.keys()));
@@ -367,10 +384,27 @@ export function ResultsGrid({
                       <td
                         key={header.id}
                         onContextMenu={() => setMenuColumn(header.id)}
+                        onDoubleClick={(event) => {
+                          if (!inlineEditable(row, header.id)) return;
+                          // Edits the value here instead of opening the document.
+                          event.stopPropagation();
+                          setEditingCell({ index: item.index, field: header.id });
+                        }}
                         className="flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5"
                         style={{ width: header.getSize() }}
                       >
-                        <EJsonCell value={row[header.id]} />
+                        {editingCell?.index === item.index && editingCell.field === header.id ? (
+                          <InlineCellEditor
+                            value={row[header.id]}
+                            onSave={async (value) => {
+                              await actions.onSetField?.(row, header.id, value);
+                              setEditingCell(null);
+                            }}
+                            onCancel={() => setEditingCell(null)}
+                          />
+                        ) : (
+                          <EJsonCell value={row[header.id]} />
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -392,14 +426,7 @@ export function ResultsGrid({
         <ContextMenuContent className="w-60">
           {multiple ? (
             <>
-              <ContextMenuItem
-                onSelect={() => {
-                  if (actions.onCopyMany) actions.onCopyMany(markedRows);
-                }}
-              >
-                <Copy />
-                {t("rows.copy", { count: markedRows.length })}
-              </ContextMenuItem>
+              <CopyAsMenu value={markedRows} label={t("rows.copy", { count: markedRows.length })} />
               {actions.onDeleteMany && (
                 <>
                   <ContextMenuSeparator />

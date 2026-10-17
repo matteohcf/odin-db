@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
 import {
+  ClipboardPaste,
   Code2,
   DatabaseZap,
   Download,
@@ -53,6 +54,7 @@ import {
   useReplaceDocument,
   useSetDocumentField,
 } from "../api/mutations";
+import { parseDocuments } from "../lib/clipboard-documents";
 import { suggestIndexKeys } from "../lib/index-suggestion";
 import { addFilterCondition, nextSort, simpleSort, sortText } from "../lib/query-edits";
 import {
@@ -68,6 +70,7 @@ import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DistinctValuesDialog } from "./distinct-values-dialog";
 import { EditFieldDialog } from "./edit-field-dialog";
 import { ExplainDialog } from "./explain-dialog";
+import { PasteDocumentsDialog } from "./paste-documents-dialog";
 import { QueryBar } from "./query-bar";
 import { SqlDialog } from "./sql-dialog";
 
@@ -107,6 +110,17 @@ export function DocumentsView({
   const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
   const [codeQuery, setCodeQuery] = useState<FindQuery | null>(null);
   const [sqlOpen, setSqlOpen] = useState(false);
+  const [pasted, setPasted] = useState<EJsonDocument[] | null>(null);
+
+  async function pasteDocuments() {
+    try {
+      const documents = await parseDocuments(await navigator.clipboard.readText());
+      if (documents.length === 0) toast.info(t("paste.empty"));
+      else setPasted(documents);
+    } catch (error) {
+      toast.error(t("paste.invalid", { message: errorMessage(error) }));
+    }
+  }
   const [distinct, setDistinct] = useState<{ field: string; filter: EJsonDocument } | null>(null);
   const [bulk, setBulk] = useState<{
     mode: "update" | "delete";
@@ -216,6 +230,8 @@ export function DocumentsView({
   }
 
   useShortcut("rerun", () => void runForm(), active);
+  const [focusFilter, setFocusFilter] = useState(0);
+  useShortcut("focusFilter", () => setFocusFilter((value) => value + 1), active);
 
   /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
   const refresh = (keepRows = false) => void execute(lastQuery.current, { keepRows });
@@ -297,6 +313,7 @@ export function DocumentsView({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <QueryBar
+        focusSignal={focusFilter}
         form={form}
         errors={formErrors}
         running={running}
@@ -354,6 +371,12 @@ export function DocumentsView({
                     <DropdownMenuSeparator />
                   </>
                 )}
+                {editable && (
+                  <DropdownMenuItem onSelect={() => void pasteDocuments()}>
+                    <ClipboardPaste />
+                    {t("paste.menu")}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onSelect={() => setSqlOpen(true)}>
                   <DatabaseZap />
                   {t("sql.menu")}
@@ -401,11 +424,27 @@ export function DocumentsView({
                   ? t("results.emptyView")
                   : t("results.emptyCollection")}
             </p>
-            {editable && !hasFilter && (
-              <Button size="sm" variant="outline" onClick={() => openInsert()}>
-                <Plus />
-                {t("insert")}
+            {hasFilter ? (
+              <Button size="sm" variant="outline" onClick={() => void runForm(emptyQueryForm)}>
+                {t("results.clearFilter")}
               </Button>
+            ) : (
+              editable && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button size="sm" onClick={() => openInsert()}>
+                    <Plus />
+                    {t("insert")}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => void pasteDocuments()}>
+                    <ClipboardPaste />
+                    {t("paste.menu")}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setTransfer("import")}>
+                    <Upload />
+                    {t("menu.import", { ns: "transfer" })}
+                  </Button>
+                </div>
+              )
             )}
           </>
         }
@@ -430,10 +469,21 @@ export function DocumentsView({
             : undefined,
           onDelete: editable ? setToDelete : undefined,
           onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
-          onCopyMany: (rows) => {
-            void navigator.clipboard.writeText(toShellSyntax(rows));
-            toast.success(t("rows.copied", { ns: "results", count: rows.length }));
-          },
+          onPaste: editable ? () => void pasteDocuments() : undefined,
+          onSetField: editable
+            ? async (row, field, value) => {
+                const id = row._id;
+                if (id === undefined) return;
+                try {
+                  await setField.mutateAsync({ ...target, id, field, value });
+                } catch (error) {
+                  toast.error(errorMessage(error));
+                  throw error;
+                }
+                toast.success(t("field.saved", { field }));
+                refresh(true);
+              }
+            : undefined,
           // Deleting by `_id` reuses the bulk dialog, which shows the count first.
           onDeleteMany: editable
             ? (rows) =>
@@ -475,6 +525,15 @@ export function DocumentsView({
           onSave={saveDocument}
           completions={completionsFor("document")}
           onClose={() => setEditor({ open: false })}
+        />
+      )}
+      {pasted && (
+        <PasteDocumentsDialog
+          connectionId={connection.id}
+          namespace={namespace}
+          documents={pasted}
+          onDone={() => refresh(true)}
+          onClose={() => setPasted(null)}
         />
       )}
       {sqlOpen && (

@@ -23,7 +23,8 @@
     "label": "Documents in {{collection}}",
     "empty": "No documents match this filter.",
     "emptyCollection": "This collection is empty.",
-    "emptyView": "This view returns no documents."
+    "emptyView": "This view returns no documents.",
+    "clearFilter": "Clear the filter"
   },
   "count": {
     "action": "Count matches",
@@ -168,5 +169,20 @@
     "use": "Use in the query bar",
     "copyPipeline": "Copy pipeline",
     "copied": "Pipeline copied."
+  },
+  "paste": {
+    "menu": "Paste documents",
+    "title_one": "Insert {{count}} pasted document?",
+    "title_other": "Insert {{count}} pasted documents?",
+    "description": "From the clipboard into {{namespace}}. Documents keep their _id when they have one.",
+    "more_one": "…and {{count}} more document",
+    "more_other": "…and {{count}} more documents",
+    "insert_one": "Insert {{count}} document",
+    "insert_other": "Insert {{count}} documents",
+    "done_one": "Inserted {{count}} document.",
+    "done_other": "Inserted {{count}} documents.",
+    "partial": "Inserted {{count}}, {{failed}} failed.",
+    "empty": "The clipboard is empty.",
+    "invalid": "The clipboard does not hold documents: {{message}}"
   }
 }

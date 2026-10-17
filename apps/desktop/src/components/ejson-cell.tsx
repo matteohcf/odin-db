@@ -2,6 +2,7 @@ import type { JsonValue } from "@odin-db/bindings";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { compactEJson, describeEJson, type EJsonKind } from "@/lib/ejson-display";
+import { momentOf, relativeTime } from "@/lib/value-hints";
 
 export const kindTextClass: Record<EJsonKind, string> = {
   null: "text-type-null italic",
@@ -18,8 +19,16 @@ export const kindTextClass: Record<EJsonKind, string> = {
 
 /** One BSON value in a grid cell: typed color, nested values summarized. */
 export function EJsonCell({ value }: { value: JsonValue | undefined }) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   if (value === undefined) return null;
+  const moment = momentOf(value);
+  // Dates and ObjectIds also say when, in local time and relative to now.
+  const when = moment
+    ? `\n${t(moment.kind === "objectId" ? "value.created" : "value.localTime", {
+        date: moment.date.toLocaleString(i18n.language),
+        relative: relativeTime(moment.date, new Date(), i18n.language),
+      })}`
+    : "";
 
   const { kind, text } = compactEJson(value);
   const label =
@@ -33,7 +42,7 @@ export function EJsonCell({ value }: { value: JsonValue | undefined }) {
     <span
       className={cn("truncate font-mono text-xs", kindTextClass[kind], text === "" && "italic")}
       // The exact mongosh form, e.g. NumberLong("5"), stays one hover away.
-      title={describeEJson(value).text}
+      title={`${describeEJson(value).text}${when}`}
     >
       {text === "" && kind === "string" ? '""' : label}
     </span>

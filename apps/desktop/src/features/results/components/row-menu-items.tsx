@@ -1,13 +1,14 @@
 import { ContextMenuItem, ContextMenuSeparator } from "@odin-db/ui/components/context-menu";
-import { Copy, CopyPlus, Eye, Pencil, Trash2 } from "lucide-react";
+import { CopyPlus, Eye, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { JsonObject } from "@/lib/ejson-display";
+import { CopyAsMenu } from "./copy-as-menu";
 import type { RowActions } from "./results-grid";
 
 /** Document commands, shared by the table and the list. */
 export function RowMenuItems({ row, actions }: { row: JsonObject; actions: RowActions }) {
   const { t } = useTranslation("results");
-  const { onOpen, openMode, onCopy, onDuplicate, onDelete } = actions;
+  const { onOpen, openMode, onDuplicate, onDelete } = actions;
   return (
     <>
       <ContextMenuItem onSelect={() => onOpen(row)}>
@@ -20,10 +21,7 @@ export function RowMenuItems({ row, actions }: { row: JsonObject; actions: RowAc
           {t("row.duplicate")}
         </ContextMenuItem>
       )}
-      <ContextMenuItem onSelect={() => onCopy(row)}>
-        <Copy />
-        {t("row.copy")}
-      </ContextMenuItem>
+      <CopyAsMenu value={row} label={t("copyAs.label")} />
       {onDelete && (
         <>
           <ContextMenuSeparator />

@@ -4,7 +4,9 @@
     "fields_other": "{ {{count}} campi }",
     "items_one": "[ {{count}} elemento ]",
     "items_other": "[ {{count}} elementi ]",
-    "showAll": "Mostra tutti ({{count}})"
+    "showAll": "Mostra tutti ({{count}})",
+    "created": "Creato il {{date}} ({{relative}})",
+    "localTime": "{{date}} ora locale ({{relative}})"
   },
   "types": {
     "null": "Null",
@@ -165,7 +167,12 @@
       "goToTab": "Vai alla scheda 1–8",
       "lastTab": "Vai all'ultima scheda",
       "filterSidebar": "Filtra la barra laterale",
-      "rerun": "Esegui di nuovo la query o la pipeline"
+      "rerun": "Esegui di nuovo la query o la pipeline",
+      "inlineEdit": "Modifica un valore in linea",
+      "focusFilter": "Vai al filtro"
+    },
+    "keys": {
+      "doubleClick": "Doppio clic sul valore"
     }
   },
   "queryCode": {

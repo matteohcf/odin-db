@@ -23,7 +23,8 @@
     "label": "Documenti in {{collection}}",
     "empty": "Nessun documento corrisponde a questo filtro.",
     "emptyCollection": "Questa collezione è vuota.",
-    "emptyView": "Questa vista non restituisce documenti."
+    "emptyView": "Questa vista non restituisce documenti.",
+    "clearFilter": "Rimuovi il filtro"
   },
   "count": {
     "action": "Conta corrispondenze",
@@ -168,5 +169,20 @@
     "use": "Usa nella barra delle query",
     "copyPipeline": "Copia la pipeline",
     "copied": "Pipeline copiata."
+  },
+  "paste": {
+    "menu": "Incolla documenti",
+    "title_one": "Inserire {{count}} documento incollato?",
+    "title_other": "Inserire {{count}} documenti incollati?",
+    "description": "Dagli appunti in {{namespace}}. I documenti mantengono il loro _id se ce l'hanno.",
+    "more_one": "…e {{count}} altro documento",
+    "more_other": "…e altri {{count}} documenti",
+    "insert_one": "Inserisci {{count}} documento",
+    "insert_other": "Inserisci {{count}} documenti",
+    "done_one": "Inserito {{count}} documento.",
+    "done_other": "Inseriti {{count}} documenti.",
+    "partial": "Inseriti {{count}}, {{failed}} non riusciti.",
+    "empty": "Gli appunti sono vuoti.",
+    "invalid": "Gli appunti non contengono documenti: {{message}}"
   }
 }
