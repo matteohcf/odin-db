@@ -39,6 +39,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
         commands::indexes::list_indexes,
         commands::indexes::create_index,
         commands::indexes::drop_index,
+        commands::transfer::export_documents,
+        commands::transfer::choose_import_file,
+        commands::transfer::import_documents,
         commands::operations::cancel_operation,
         commands::perf_lab::stream_sample_documents,
         commands::perf_lab::stream_terminal_output,
@@ -58,6 +61,7 @@ pub fn run() {
     let builder = specta_builder();
 
     let result = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(Arc::new(OperationRegistry::default()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
@@ -70,6 +74,7 @@ pub fn run() {
                 secrets: Box::new(KeyringStore),
                 connections: ConnectionManager::default(),
                 cursors: CursorRegistry::default(),
+                import_files: std::sync::Mutex::default(),
             }));
 
             // Webviews throttle animation frames in occluded windows, which would

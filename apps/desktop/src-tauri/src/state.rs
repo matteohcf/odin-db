@@ -1,4 +1,6 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 use odin_core::CoreError;
 use odin_core::connection::ConnectionManager;
@@ -12,6 +14,8 @@ pub struct AppState {
     pub secrets: Box<dyn SecretStore>,
     pub connections: ConnectionManager,
     pub cursors: CursorRegistry,
+    /// Files the user picked for import, by opaque token: paths never reach the webview.
+    pub import_files: Mutex<HashMap<uuid::Uuid, PathBuf>>,
 }
 
 /// SQLite and the OS keyring block (the keyring may even show a system prompt),

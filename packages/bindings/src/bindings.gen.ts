@@ -31,6 +31,16 @@ export const commands = {
 	/**  Returns the name of the new index. */
 	createIndex: (connectionId: ConnectionId, namespace: Namespace, request: CreateIndexRequest) => typedError<string, IpcError>(__TAURI_INVOKE("create_index", { connectionId, namespace, request })),
 	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
+	/**  Asks where to save, then exports in the background. `None` if the user cancels. */
+	exportDocuments: (connectionId: ConnectionId, namespace: Namespace, request: ExportRequest, channel: Channel<StreamEvent<TransferEvent<TransferSummary>>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_documents", { connectionId, namespace, request, channel })),
+	/**  Asks for a JSON, NDJSON or CSV file and previews it. `None` if the user cancels. */
+	chooseImportFile: () => typedError<{
+	/**  Opaque handle for `import_documents`; the path stays in the backend. */
+	token: string,
+	name: string,
+	preview: FilePreview,
+} | null, IpcError>(__TAURI_INVOKE("choose_import_file")),
+	importDocuments: (connectionId: ConnectionId, namespace: Namespace, token: string, options: ImportOptions, channel: Channel<StreamEvent<TransferEvent<ImportSummary>>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_documents", { connectionId, namespace, token, options, channel })),
 	/**  Returns `false` if the operation already finished. */
 	cancelOperation: (id: OperationId) => __TAURI_INVOKE<boolean>("cancel_operation", { id }),
 	streamSampleDocuments: (options: DocumentStreamOptions, channel: Channel<StreamEvent<EJsonDocument[]>>) => __TAURI_INVOKE<OperationId>("stream_sample_documents", { options, channel }),
@@ -95,6 +105,17 @@ export type CreateIndexRequest = {
 	partialFilter: EJsonDocument | null,
 };
 
+export type CsvColumn = {
+	header: string,
+	/**  Destination field, a dotted path for nested documents. */
+	field: string,
+	kind: CsvType,
+};
+
+export type CsvType = "skip" | "string" | "int32" | "int64" | "double" | "decimal" | "boolean" | "date" | "objectId" | 
+/**  Extended JSON (canonical or relaxed), for nested documents and arrays. */
+"json";
+
 export type CursorId = string;
 
 export type DatabaseInfo = {
@@ -129,6 +150,20 @@ export type EJsonValue = JsonValue;
 /**  Stable error classification exposed to the UI, which switches on it exhaustively. */
 export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | "internal";
 
+export type ExportFormat = "jsonArray" | "ndjson" | "csv";
+
+export type ExportRequest = {
+	source: ExportSource,
+	format: ExportFormat,
+	jsonMode: JsonMode,
+	/**  CSV columns as dotted paths; empty means "discover from the data". */
+	csvFields: string[],
+};
+
+export type ExportSource = { kind: "find"; request: FindRequest } | { kind: "aggregate"; pipeline: EJsonDocument[] };
+
+export type FilePreview = { kind: "json"; documents: EJsonDocument[] } | { kind: "csv"; headers: string[]; rows: string[][]; suggested: CsvType[] };
+
 export type FindRequest = {
 	filter: EJsonDocument,
 	projection: EJsonDocument | null,
@@ -136,6 +171,31 @@ export type FindRequest = {
 	skip: number | null,
 	limit: number | null,
 	batchSize: number,
+};
+
+export type ImportFile = {
+	/**  Opaque handle for `import_documents`; the path stays in the backend. */
+	token: string,
+	name: string,
+	preview: FilePreview,
+};
+
+export type ImportFormat = 
+/**  A JSON array, NDJSON, or concatenated documents, in canonical or relaxed Extended JSON. */
+{ kind: "json" } | { kind: "csv"; columns: CsvColumn[] };
+
+export type ImportOptions = {
+	format: ImportFormat,
+	/**  Stop at the first failing document instead of skipping it. */
+	stopOnError: boolean,
+};
+
+export type ImportSummary = {
+	inserted: number | null,
+	failed: number | null,
+	/**  The first errors, enough to fix the file. */
+	errors: RecordError[],
+	stopped: boolean,
 };
 
 export type IndexInfo = {
@@ -159,6 +219,12 @@ export type IpcError = {
 	kind: ErrorKind,
 	message: string,
 };
+
+/**
+ *  Canonical keeps every BSON type and is the default (ADR-0007); relaxed is
+ *  friendlier to other tools but loses numeric types on re-import.
+ */
+export type JsonMode = "canonical" | "relaxed";
 
 /**
  *  TypeScript shape of a JSON value. Exists only because specta refuses to export
@@ -189,6 +255,12 @@ export type ProfileInput = {
 	readOnly: boolean,
 };
 
+export type RecordError = {
+	/**  1-based position of the document or CSV row in the file. */
+	record: number | null,
+	message: string,
+};
+
 /**
  *  A secret value whose `Debug` output is redacted, so it cannot leak through logs.
  *  Deliberately not `Serialize`: secrets flow from the UI to the backend, never back.
@@ -205,6 +277,19 @@ export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" }
 export type TerminalStreamOptions = {
 	totalBytes: number,
 	chunkBytes: number,
+};
+
+/**  Progress of a transfer, then exactly one `finished` with its result. */
+export type TransferEvent<S> = { kind: "progress"; value: TransferProgress } | { kind: "finished"; value: S };
+
+export type TransferProgress = {
+	documents: number | null,
+	bytes: number | null,
+};
+
+export type TransferSummary = {
+	documents: number | null,
+	bytes: number | null,
 };
 
 /* Tauri Specta runtime */
