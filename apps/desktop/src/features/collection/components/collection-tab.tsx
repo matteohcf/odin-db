@@ -8,7 +8,7 @@ import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
-import type { CollectionTab as CollectionTabModel } from "@/features/workspace";
+import { type CollectionTab as CollectionTabModel, useTabs } from "@/features/workspace";
 import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
 import { CollectionStats } from "./collection-stats";
 
@@ -86,6 +86,8 @@ function CollectionWorkspace({
   // Views are read-only in MongoDB itself, whatever the connection allows.
   const editable = !connection.readOnly && !isView;
   const [view, setView] = useState<View>("documents");
+  // Every collection tab stays mounted: only the visible one takes shortcuts.
+  const tabActive = useTabs((s) => s.activeTabId === tab.id);
   const [indexDraft, setIndexDraft] = useState<string | null>(null);
   // Views mount on first visit and then stay mounted, keeping their state.
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
@@ -154,6 +156,7 @@ function CollectionWorkspace({
         >
           {value === "documents" ? (
             <DocumentsView
+              active={tabActive && view === "documents"}
               connection={connection}
               namespace={namespace}
               editable={editable}
@@ -170,7 +173,11 @@ function CollectionWorkspace({
           ) : (
             <Suspense fallback={null}>
               {value === "aggregation" ? (
-                <AggregationView connection={connection} namespace={namespace} />
+                <AggregationView
+                  connection={connection}
+                  namespace={namespace}
+                  active={tabActive && view === "aggregation"}
+                />
               ) : value === "schema" ? (
                 <SchemaView connection={connection} namespace={namespace} />
               ) : (

@@ -33,6 +33,7 @@ const GROUPS = [
     id: "query",
     shortcuts: [
       ["run", ["↵", `${mod} ↵`]],
+      ["rerun", [label(SHORTCUTS.rerun)]],
       ["suggest", ["Ctrl Space"]],
       ["accept", ["Tab", "↵"]],
       ["dismiss", ["Esc"]],

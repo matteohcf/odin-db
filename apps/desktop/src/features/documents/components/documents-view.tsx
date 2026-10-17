@@ -32,6 +32,7 @@ import {
 import { ExportDialog, ImportDialog } from "@/features/transfer";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { useSampleFields } from "@/hooks/use-sample-fields";
+import { useShortcut } from "@/hooks/use-shortcut";
 import type { JsonObject } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
@@ -72,6 +73,8 @@ interface DocumentsViewProps {
   isView: boolean;
   /** Opens index creation with suggested keys, from a query plan. */
   onCreateIndex?: ((keys: string) => void) | undefined;
+  /** Whether this view is the one on screen, which takes the rerun shortcut. */
+  active: boolean;
 }
 
 const matchAll: FindQuery = { filter: {}, sort: null, projection: null, skip: null, limit: null };
@@ -85,6 +88,7 @@ export function DocumentsView({
   editable,
   isView,
   onCreateIndex,
+  active,
 }: DocumentsViewProps) {
   const { t } = useTranslation("documents");
   const label = `${namespace.database}.${namespace.collection}`;
@@ -196,6 +200,8 @@ export function DocumentsView({
     const query = await currentQuery();
     if (query) setBulk({ mode, filter: query.filter });
   }
+
+  useShortcut("rerun", () => void runForm(), active);
 
   /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
   const refresh = (keepRows = false) => void execute(lastQuery.current, { keepRows });

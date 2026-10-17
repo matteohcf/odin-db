@@ -164,7 +164,8 @@
       "reopenTab": "Riapri la scheda chiusa",
       "goToTab": "Vai alla scheda 1–8",
       "lastTab": "Vai all'ultima scheda",
-      "filterSidebar": "Filtra la barra laterale"
+      "filterSidebar": "Filtra la barra laterale",
+      "rerun": "Esegui di nuovo la query o la pipeline"
     }
   },
   "queryCode": {

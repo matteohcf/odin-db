@@ -164,7 +164,8 @@
       "reopenTab": "Reopen the closed tab",
       "goToTab": "Go to tab 1–8",
       "lastTab": "Go to the last tab",
-      "filterSidebar": "Filter the sidebar"
+      "filterSidebar": "Filter the sidebar",
+      "rerun": "Run the query or pipeline again"
     }
   },
   "queryCode": {

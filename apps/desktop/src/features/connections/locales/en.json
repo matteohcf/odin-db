@@ -12,7 +12,7 @@
     "filter": "Filter collections",
     "filterLabel": "Filter databases and collections",
     "clearFilter": "Clear the filter",
-    "more": "More actions",
+    "more": "Connections menu",
     "import": "Import connections…",
     "exportAll": "Export all connections…",
     "imported_one": "Imported {{count}} connection ({{skipped}} already there).",

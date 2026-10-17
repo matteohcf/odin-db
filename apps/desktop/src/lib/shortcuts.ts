@@ -6,6 +6,7 @@ export const SHORTCUTS = {
   nextTab: { key: "Tab", ctrl: true },
   previousTab: { key: "Tab", ctrl: true, shift: true },
   settings: { key: ",", mod: true },
+  rerun: { key: "r", mod: true },
   filterSidebar: { key: "f", mod: true, shift: true },
   reopenTab: { key: "t", mod: true, shift: true },
   goToTab1: { key: "1", mod: true },

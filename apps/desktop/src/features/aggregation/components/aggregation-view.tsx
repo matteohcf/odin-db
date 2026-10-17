@@ -29,6 +29,7 @@ import {
   useResultsState,
 } from "@/features/results";
 import { ExportDialog } from "@/features/transfer";
+import { useShortcut } from "@/hooks/use-shortcut";
 import { call } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { isWriteOperator } from "../lib/operators";
@@ -41,12 +42,14 @@ import { StageCard } from "./stage-card";
 interface AggregationViewProps {
   connection: ConnectionInfo;
   namespace: Namespace;
+  /** Whether this view is the one on screen, which takes the rerun shortcut. */
+  active: boolean;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
 
 /** Build a pipeline stage by stage with live previews, then run it in full. */
-export function AggregationView({ connection, namespace }: AggregationViewProps) {
+export function AggregationView({ connection, namespace, active }: AggregationViewProps) {
   const { t } = useTranslation("aggregation");
   const [store] = useState(createPipelineStore);
   const stages = useStore(store, (s) => s.stages);
@@ -65,6 +68,8 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
 
   const writeStage = stages.find((s) => s.enabled && isWriteOperator(s.operator));
   const label = `${namespace.database}.${namespace.collection}`;
+
+  useShortcut("rerun", () => void run(), active);
 
   async function showCode() {
     const built = await buildPipeline(stages);
