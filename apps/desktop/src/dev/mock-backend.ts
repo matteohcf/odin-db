@@ -31,9 +31,12 @@ type Collections = Record<
 >;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const fail = (kind: IpcError["kind"], message: string): never => {
-  throw { kind, message } satisfies IpcError;
+const fail = (kind: IpcError["kind"], message: string, detail: string | null = null): never => {
+  throw { kind, message, detail } satisfies IpcError;
 };
+
+/** What the fake bastion presents, as an SSH server's SHA-256 host key fingerprint. */
+const BASTION_KEY = "SHA256:q6z8m1Kc0rTQ3o5vY2bX9eW4nJ7hLsF0aUuD1pG8kM4";
 
 let counter = 0;
 const oid = () => {
@@ -146,6 +149,9 @@ const profiles: ConnectionProfile[] = [
     readOnly: false,
     hasPassword: false,
     color: "green",
+    ssh: null,
+    hasSshSecret: false,
+    sshHostKey: null,
   },
   {
     id: "0192f000-0000-7000-8000-000000000002",
@@ -154,6 +160,25 @@ const profiles: ConnectionProfile[] = [
     readOnly: true,
     hasPassword: true,
     color: "red",
+    ssh: null,
+    hasSshSecret: false,
+    sshHostKey: null,
+  },
+  {
+    id: "0192f000-0000-7000-8000-000000000003",
+    name: "Staging (bastion)",
+    connectionString: "mongodb://app@db.staging.internal:27017",
+    readOnly: false,
+    hasPassword: true,
+    color: "orange",
+    ssh: {
+      host: "bastion.example.com",
+      port: 22,
+      username: "deploy",
+      auth: { kind: "privateKey", path: "/Users/ada/.ssh/id_ed25519" },
+    },
+    hasSshSecret: true,
+    sshHostKey: null,
   },
 ];
 
@@ -724,6 +749,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       readOnly: input.readOnly,
       hasPassword: input.password !== null || /\/\/[^:@/]+:[^@/]*@/.test(input.connectionString),
       color: input.color ?? null,
+      ssh: input.ssh ?? null,
+      hasSshSecret: input.ssh != null && input.sshSecret != null,
+      sshHostKey: input.ssh ? (input.sshHostKey ?? null) : null,
     };
     profiles.push(profile);
     return profile;
@@ -740,6 +768,11 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       readOnly: input.readOnly,
       hasPassword: profile.hasPassword || input.password !== null,
       color: input.color ?? null,
+      ssh: input.ssh ?? null,
+      hasSshSecret: input.ssh != null && (profile.hasSshSecret || input.sshSecret != null),
+      sshHostKey: input.ssh
+        ? (input.sshHostKey ?? (profile.ssh?.host === input.ssh.host ? profile.sshHostKey : null))
+        : null,
     });
     return { ...profile };
   },
@@ -755,6 +788,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
           readOnly: true,
           hasPassword: false,
           color: "blue" as const,
+          ssh: null,
+          hasSshSecret: false,
+          sshHostKey: null,
         };
         profiles.push(profile);
         return { ...profile };
@@ -782,8 +818,24 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       fail("network", "cannot reach the server: Server selection timeout: No available servers.");
     }
     validate(input);
+    const saved = profiles.find((p) => p.id === args.profileId);
+    if (input.ssh && !(input.sshHostKey ?? saved?.sshHostKey)) {
+      fail(
+        "unknownHostKey",
+        `the SSH server's host key (${BASTION_KEY}) is not trusted yet`,
+        BASTION_KEY,
+      );
+    }
     return { serverVersion: "8.0.4" };
   },
+  trust_ssh_host_key: (args) => {
+    const profile =
+      profiles.find((p) => p.id === id("id", args)) ??
+      fail("notFound", "connection profile not found");
+    profile.sshHostKey = String(args.fingerprint);
+    return null;
+  },
+  choose_ssh_key: () => "/Users/ada/.ssh/id_ed25519",
   connect: (args) => {
     const profileId = id("profileId", args);
     const existing = [...connections.values()].find((c) => c.profileId === profileId);
@@ -792,6 +844,13 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       profiles.find((p) => p.id === profileId) ?? fail("notFound", "connection profile not found");
     if (profile.connectionString.includes("unreachable")) {
       fail("network", "cannot reach the server: Server selection timeout: No available servers.");
+    }
+    if (profile.ssh && profile.sshHostKey !== BASTION_KEY) {
+      fail(
+        profile.sshHostKey ? "hostKeyChanged" : "unknownHostKey",
+        `the SSH server's host key (${BASTION_KEY}) is not trusted yet`,
+        BASTION_KEY,
+      );
     }
     const info: ConnectionInfo = {
       id: crypto.randomUUID(),

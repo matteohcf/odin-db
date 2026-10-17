@@ -62,7 +62,7 @@
     "namePlaceholder": "Local development",
     "connectionString": "Connection string",
     "connectionStringHint": "If it contains a password, odin-db moves it to your keychain.",
-    "password": "Password",
+    "password": "Database password",
     "passwordPlaceholder": "Optional",
     "passwordSaved": "Saved in keychain. Leave empty to keep it.",
     "readOnly": "Read-only connection",
@@ -184,5 +184,38 @@
     "add": "Add to favorites",
     "remove": "Remove from favorites",
     "starred": "Favorite"
+  },
+  "ssh": {
+    "tab": "SSH tunnel",
+    "enable": "Connect through an SSH tunnel",
+    "enableHint": "For servers reachable only from a bastion host. The connection string then names the server as the bastion sees it.",
+    "host": "SSH host",
+    "port": "Port",
+    "username": "SSH user",
+    "auth": "Authentication",
+    "password": "Password",
+    "privateKey": "Private key",
+    "passphrase": "Key passphrase",
+    "passphraseOptional": "Only if the key is encrypted",
+    "chooseKey": "Choose key…",
+    "noKey": "No key chosen",
+    "secretSaved": "Saved in the system keychain. Leave empty to keep it.",
+    "trusted": "Trusted host key: {{fingerprint}}",
+    "limits": "Through a tunnel odin-db connects directly to one server: SRV (mongodb+srv) addresses and replica set discovery are not available.",
+    "sshPassword": "SSH password"
+  },
+  "hostKey": {
+    "unknownTitle": "Trust this SSH server?",
+    "changedTitle": "The SSH server's key has changed",
+    "unknownBody": "This is the first connection to {{host}} for {{name}}. Check that the fingerprint below is the server's (ask its administrator if unsure), then trust it. It will be checked on every connection.",
+    "changedBody": "{{host}} now presents a different key than the one trusted for {{name}}. If the server was not reinstalled or rekeyed, someone may be intercepting the connection: do not continue.",
+    "unknownShort": "First connection to this server: check the fingerprint before trusting it.",
+    "changedShort": "A different key than the one trusted before. Continue only if you know why it changed.",
+    "fingerprint": "Host key fingerprint (SHA-256)",
+    "changedConfirm": "I know why the key changed and I trust the new one.",
+    "trust": "Trust and connect",
+    "trustNew": "Trust the new key",
+    "trustAndTest": "Trust and test again",
+    "trustNewAndTest": "Trust the new key and test"
   }
 }

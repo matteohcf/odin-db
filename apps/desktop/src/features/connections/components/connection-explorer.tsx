@@ -32,6 +32,7 @@ import { useExplorer } from "../store/explorer-store";
 import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { FavoritesSection } from "./favorites-section";
+import { HostKeyDialog } from "./host-key-dialog";
 import { ProfileDialog } from "./profile-dialog";
 import { ProfileNode } from "./profile-node";
 import { TryLocalhostButton } from "./try-localhost-button";
@@ -243,6 +244,7 @@ export function ConnectionExplorer() {
         profile={dialog.type === "edit" ? dialog.profile : undefined}
         onClose={closeDialog}
       />
+      <HostKeyDialog />
       <DeleteProfileDialog
         profile={dialog.type === "delete" ? dialog.profile : undefined}
         onClose={closeDialog}

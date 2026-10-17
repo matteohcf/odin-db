@@ -62,7 +62,7 @@
     "namePlaceholder": "Sviluppo locale",
     "connectionString": "Stringa di connessione",
     "connectionStringHint": "Se contiene una password, odin-db la sposta nel portachiavi.",
-    "password": "Password",
+    "password": "Password del database",
     "passwordPlaceholder": "Facoltativa",
     "passwordSaved": "Salvata nel portachiavi. Lascia vuoto per mantenerla.",
     "readOnly": "Connessione di sola lettura",
@@ -184,5 +184,38 @@
     "add": "Aggiungi ai preferiti",
     "remove": "Rimuovi dai preferiti",
     "starred": "Preferito"
+  },
+  "ssh": {
+    "tab": "Tunnel SSH",
+    "enable": "Connetti tramite un tunnel SSH",
+    "enableHint": "Per server raggiungibili solo da un bastion host. La stringa di connessione indica allora il server come lo vede il bastion.",
+    "host": "Host SSH",
+    "port": "Porta",
+    "username": "Utente SSH",
+    "auth": "Autenticazione",
+    "password": "Password",
+    "privateKey": "Chiave privata",
+    "passphrase": "Passphrase della chiave",
+    "passphraseOptional": "Solo se la chiave è cifrata",
+    "chooseKey": "Scegli chiave…",
+    "noKey": "Nessuna chiave scelta",
+    "secretSaved": "Salvata nel portachiavi di sistema. Lascia vuoto per mantenerla.",
+    "trusted": "Chiave host attendibile: {{fingerprint}}",
+    "limits": "Tramite un tunnel odin-db si connette direttamente a un solo server: indirizzi SRV (mongodb+srv) e rilevamento del replica set non sono disponibili.",
+    "sshPassword": "Password SSH"
+  },
+  "hostKey": {
+    "unknownTitle": "Considerare attendibile questo server SSH?",
+    "changedTitle": "La chiave del server SSH è cambiata",
+    "unknownBody": "È la prima connessione a {{host}} per {{name}}. Verifica che l'impronta qui sotto sia quella del server (chiedi all'amministratore se hai dubbi), poi considerala attendibile. Verrà controllata a ogni connessione.",
+    "changedBody": "{{host}} presenta ora una chiave diversa da quella considerata attendibile per {{name}}. Se il server non è stato reinstallato o non ha cambiato chiavi, qualcuno potrebbe intercettare la connessione: non continuare.",
+    "unknownShort": "Prima connessione a questo server: verifica l'impronta prima di considerarla attendibile.",
+    "changedShort": "Una chiave diversa da quella attendibile in precedenza. Continua solo se sai perché è cambiata.",
+    "fingerprint": "Impronta della chiave host (SHA-256)",
+    "changedConfirm": "So perché la chiave è cambiata e considero attendibile quella nuova.",
+    "trust": "Considera attendibile e connetti",
+    "trustNew": "Considera attendibile la nuova chiave",
+    "trustAndTest": "Considera attendibile e riprova",
+    "trustNewAndTest": "Considera attendibile la nuova chiave e prova"
   }
 }

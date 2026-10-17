@@ -16,6 +16,13 @@ export const commands = {
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
 	/**  A copy of the profile under `name` (localized by the UI), password included. */
 	duplicateProfile: (id: ProfileId, name: string) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("duplicate_profile", { id, name })),
+	/**  Trusts the SSH host key the user confirmed after an `unknownHostKey` error. */
+	trustSshHostKey: (id: ProfileId, fingerprint: string) => typedError<null, IpcError>(__TAURI_INVOKE("trust_ssh_host_key", { id, fingerprint })),
+	/**
+	 *  Asks for a private key file for an SSH tunnel. The path is shown to the
+	 *  user and stored with the profile; the key itself is read only to connect.
+	 */
+	chooseSshKey: () => typedError<string | null, IpcError>(__TAURI_INVOKE("choose_ssh_key")),
 	/**
 	 *  Asks where to save, then writes the profiles (all when `ids` is empty)
 	 *  without passwords. `None` if the user cancels.
@@ -277,6 +284,12 @@ export type ConnectionProfile = {
 	readOnly: boolean,
 	hasPassword: boolean,
 	color: ProfileColor | null,
+	/**  Reach the server through this SSH bastion (ADR-0036). */
+	ssh: SshSettings | null,
+	/**  Whether an SSH password or key passphrase is in the keychain. */
+	hasSshSecret: boolean,
+	/**  SHA-256 fingerprint of the trusted SSH host key. */
+	sshHostKey: string | null,
 };
 
 export type CopyRequest = {
@@ -409,7 +422,11 @@ export type EJsonValue = JsonValue;
 /**  Stable error classification exposed to the UI, which switches on it exhaustively. */
 export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | 
 /**  A download failed verification: damaged in transit, or altered. */
-"integrity" | "internal";
+"integrity" | 
+/**  An SSH server presented a host key the profile does not trust yet. */
+"unknownHostKey" | 
+/**  An SSH server presented a different key than the one trusted before. */
+"hostKeyChanged" | "internal";
 
 export type ExplainRequest = {
 	filter: EJsonDocument,
@@ -534,6 +551,8 @@ export type IndexInfo = {
 export type IpcError = {
 	kind: ErrorKind,
 	message: string,
+	/**  What the UI needs to act on some errors, e.g. a host key fingerprint. */
+	detail: string | null,
 };
 
 /**
@@ -602,6 +621,11 @@ export type ProfileInput = {
 	password: Secret | null,
 	readOnly: boolean,
 	color?: ProfileColor | null,
+	ssh?: SshSettings | null,
+	/**  SSH password or key passphrase. On update, `None` keeps the stored one. */
+	sshSecret?: Secret | null,
+	/**  A host key fingerprint the user confirmed while testing, to trust it. */
+	sshHostKey?: string | null,
 };
 
 export type QueryPlan = {
@@ -701,6 +725,19 @@ export type ServerStatus = {
 export type ShellEvent = 
 /**  Terminal output. `bytes` is what the UI acknowledges once rendered (ADR-0030). */
 { kind: "output"; data: string; bytes: number | null } | { kind: "exited"; code: number | null };
+
+export type SshAuth = 
+/**  The password is kept in the OS keychain. */
+{ kind: "password" } | 
+/**  A private key file; its passphrase, if any, is kept in the OS keychain. */
+{ kind: "privateKey"; path: string };
+
+export type SshSettings = {
+	host: string,
+	port: number,
+	username: string,
+	auth: SshAuth,
+};
 
 /**  Every long operation emits data events followed by exactly one terminal event. */
 export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" } | { event: "cancelled" } | { event: "failed"; data: IpcError };

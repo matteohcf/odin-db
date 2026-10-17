@@ -87,14 +87,26 @@ pub async fn test_connection(
     profile_id: Option<ProfileId>,
 ) -> Result<ServerInfo, IpcError> {
     let (connection_string, embedded) = split_password(&input.connection_string)?;
-    let password = match input.password.or(embedded) {
-        Some(password) => Some(password),
-        None => match profile_id {
-            Some(id) => blocking(&state, move |s| s.secrets.password(id)).await?,
-            None => None,
-        },
+    let (saved_password, saved_ssh_secret, saved_pin) = match profile_id {
+        Some(id) => {
+            blocking(&state, move |s| {
+                let pin = profiles::get(&s.storage, s.secrets.as_ref(), id)?.ssh_host_key;
+                Ok((s.secrets.password(id)?, s.secrets.ssh_secret(id)?, pin))
+            })
+            .await?
+        }
+        None => (None, None, None),
     };
-    Ok(connection::test_connection(&connection_string, password).await?)
+    let password = input.password.or(embedded).or(saved_password);
+    let ssh_secret = input.ssh_secret.or(saved_ssh_secret);
+    // A fingerprint confirmed in the dialog wins; otherwise the saved pin applies.
+    let pinned = input.ssh_host_key.or(saved_pin);
+    let ssh = input.ssh.as_ref().map(|settings| connection::SshRoute {
+        settings,
+        secret: ssh_secret.as_ref(),
+        pinned: pinned.as_deref(),
+    });
+    Ok(connection::test_connection(&connection_string, password, ssh).await?)
 }
 
 /// Asks where to save, then writes the profiles (all when `ids` is empty)
@@ -146,4 +158,33 @@ pub async fn import_connections(
         })
         .await?,
     ))
+}
+
+/// Trusts the SSH host key the user confirmed after an `unknownHostKey` error.
+#[tauri::command]
+#[specta::specta]
+pub async fn trust_ssh_host_key(
+    state: State<'_, Arc<AppState>>,
+    id: ProfileId,
+    fingerprint: String,
+) -> Result<(), IpcError> {
+    Ok(blocking(&state, move |s| {
+        profiles::trust_host_key(&s.storage, id, &fingerprint)
+    })
+    .await?)
+}
+
+/// Asks for a private key file for an SSH tunnel. The path is shown to the
+/// user and stored with the profile; the key itself is read only to connect.
+#[tauri::command]
+#[specta::specta]
+pub async fn choose_ssh_key(app: AppHandle) -> Result<Option<String>, IpcError> {
+    let dialog = app.dialog().file();
+    let Some(path) = blocking_dialog(move || dialog.blocking_pick_file()).await? else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?;
+    Ok(Some(path.display().to_string()))
 }

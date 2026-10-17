@@ -1,7 +1,7 @@
 import { MutationCache, QueryClient } from "@tanstack/react-query";
 import i18n from "i18next";
 import { toast } from "sonner";
-import { errorMessage } from "@/lib/ipc";
+import { errorMessage, hostKeyError } from "@/lib/ipc";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -20,7 +20,8 @@ export function createQueryClient() {
     },
     mutationCache: new MutationCache({
       onError: (error, _variables, _context, mutation) => {
-        if (mutation.meta?.handlesErrors) return;
+        // Host keys are confirmed in their own dialog, not reported as failures.
+        if (mutation.meta?.handlesErrors || hostKeyError(error)) return;
         toast.error(i18n.t("common:errors.unexpected", { message: errorMessage(error) }));
       },
     }),

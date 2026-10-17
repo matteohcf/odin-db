@@ -55,36 +55,66 @@ where
 }
 
 /// What external tools (mongodump, mongosh) need to connect as a profile:
-/// the sanitized URI and the password from the keyring.
+/// the sanitized URI (through the SSH tunnel, if any) and the password.
 pub struct Credentials {
     pub profile_id: ProfileId,
     pub uri: String,
     pub password: Option<odin_core::secrets::Secret>,
     pub read_only: bool,
+    /// A tunnel opened just for these credentials, closed when they are dropped.
+    _tunnel: Option<odin_core::ssh::SshTunnel>,
 }
 
+/// Credentials of an open connection: tools reuse its tunnel.
 pub async fn profile_credentials(
     state: &Arc<AppState>,
     connection_id: ConnectionId,
 ) -> Result<Credentials, CoreError> {
     let handle = state.connections.get(connection_id).await?;
-    credentials_for_profile(state, handle.info.profile_id).await
+    let profile_id = handle.info.profile_id;
+    let password = blocking(state, move |s| s.secrets.password(profile_id)).await?;
+    Ok(Credentials {
+        profile_id,
+        uri: handle.uri.clone(),
+        password,
+        read_only: handle.info.read_only,
+        _tunnel: None,
+    })
 }
 
-/// Credentials straight from the stored profile and keychain, without a live
-/// connection (scheduled backups run while the profile may be disconnected).
+/// Credentials for a profile whether or not it is connected (scheduled
+/// backups run on their own): an open connection's tunnel is reused,
+/// otherwise one is opened for as long as the credentials live.
 pub async fn credentials_for_profile(
     state: &Arc<AppState>,
     profile_id: ProfileId,
 ) -> Result<Credentials, CoreError> {
-    blocking(state, move |s| {
+    if let Some(handle) = state.connections.find_by_profile(profile_id).await {
+        return profile_credentials(state, handle.info.id).await;
+    }
+    let (profile, password, ssh_secret) = blocking(state, move |s| {
         let profile = odin_core::profiles::get(&s.storage, s.secrets.as_ref(), profile_id)?;
-        Ok(Credentials {
-            profile_id,
-            uri: profile.connection_string,
-            password: s.secrets.password(profile_id)?,
-            read_only: profile.read_only,
-        })
+        Ok((
+            profile,
+            s.secrets.password(profile_id)?,
+            s.secrets.ssh_secret(profile_id)?,
+        ))
     })
-    .await
+    .await?;
+    let ssh = profile
+        .ssh
+        .as_ref()
+        .map(|settings| odin_core::connection::SshRoute {
+            settings,
+            secret: ssh_secret.as_ref(),
+            pinned: profile.ssh_host_key.as_deref(),
+        });
+    let (uri, tunnel) = odin_core::connection::route(&profile.connection_string, ssh).await?;
+    Ok(Credentials {
+        profile_id,
+        uri,
+        password,
+        read_only: profile.read_only,
+        _tunnel: tunnel,
+    })
 }

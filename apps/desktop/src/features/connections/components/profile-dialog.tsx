@@ -17,11 +17,12 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { Ban, CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { errorMessage } from "@/lib/ipc";
+import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { PROFILE_COLOR_CLASS, PROFILE_COLORS } from "@/lib/profile-colors";
 import { useConnect, useSaveProfile, useTestConnection } from "../api/mutations";
 import { useExplorer } from "../store/explorer-store";
 import { ConnectionFormFields } from "./connection-form-fields";
+import { SshFields, type SshForm } from "./ssh-fields";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -36,6 +37,9 @@ interface FormState {
   password: string;
   readOnly: boolean;
   color: ProfileColor | null;
+  ssh: SshForm;
+  /** A host key fingerprint confirmed while testing, saved as trusted. */
+  sshHostKey: string | null;
 }
 
 function initialState(profile: ConnectionProfile | undefined): FormState {
@@ -45,6 +49,16 @@ function initialState(profile: ConnectionProfile | undefined): FormState {
     password: "",
     readOnly: profile?.readOnly ?? false,
     color: profile?.color ?? null,
+    ssh: {
+      enabled: profile?.ssh != null,
+      host: profile?.ssh?.host ?? "",
+      port: String(profile?.ssh?.port ?? 22),
+      username: profile?.ssh?.username ?? "",
+      auth: profile?.ssh?.auth.kind ?? "password",
+      keyPath: profile?.ssh?.auth.kind === "privateKey" ? profile.ssh.auth.path : "",
+      secret: "",
+    },
+    sshHostKey: null,
   };
 }
 
@@ -56,6 +70,19 @@ function toInput(form: FormState): ProfileInput {
     password: form.password === "" ? null : form.password,
     readOnly: form.readOnly,
     color: form.color,
+    ssh: form.ssh.enabled
+      ? {
+          host: form.ssh.host.trim(),
+          port: Number(form.ssh.port) || 22,
+          username: form.ssh.username.trim(),
+          auth:
+            form.ssh.auth === "password"
+              ? { kind: "password" }
+              : { kind: "privateKey", path: form.ssh.keyPath },
+        }
+      : null,
+    sshSecret: form.ssh.secret === "" ? null : form.ssh.secret,
+    sshHostKey: form.sshHostKey,
   };
 }
 
@@ -145,6 +172,7 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
         <TabsList className="w-full">
           <TabsTrigger value="string">{t("form.tabString")}</TabsTrigger>
           <TabsTrigger value="form">{t("form.tabForm")}</TabsTrigger>
+          <TabsTrigger value="ssh">{t("ssh.tab")}</TabsTrigger>
         </TabsList>
         <TabsContent value="string">
           <Field
@@ -167,6 +195,14 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
           <ConnectionFormFields
             connectionString={form.connectionString}
             onChange={(value) => update("connectionString", value)}
+          />
+        </TabsContent>
+        <TabsContent value="ssh">
+          <SshFields
+            value={form.ssh}
+            onChange={(patch) => update("ssh", { ...form.ssh, ...patch })}
+            hasSavedSecret={profile?.hasSshSecret ?? false}
+            trustedKey={form.sshHostKey ?? profile?.sshHostKey ?? null}
           />
         </TabsContent>
       </Tabs>
@@ -236,6 +272,11 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
         pending={test.isPending}
         error={test.error ?? save.error}
         version={test.data?.serverVersion}
+        onTrustHostKey={(fingerprint) => {
+          const next = { ...form, sshHostKey: fingerprint };
+          setForm(next);
+          test.mutate({ input: toInput(next), ...(profile ? { profileId: profile.id } : {}) });
+        }}
       />
 
       <DialogFooter className="sm:justify-between">
@@ -285,12 +326,45 @@ function TestResult({
   pending,
   error,
   version,
+  onTrustHostKey,
 }: {
   pending: boolean;
   error: Error | null;
   version: string | undefined;
+  onTrustHostKey: (fingerprint: string) => void;
 }) {
   const { t } = useTranslation("connections");
+  const hostKey = hostKeyError(error);
+  if (!pending && hostKey) {
+    return (
+      <div
+        role="alert"
+        className={cn(
+          "flex flex-col gap-2 rounded-md border p-3 text-xs",
+          hostKey.changed
+            ? "border-destructive/50 bg-destructive/5"
+            : "border-warning/50 bg-warning/5",
+        )}
+      >
+        <p className="font-medium">
+          {hostKey.changed ? t("hostKey.changedTitle") : t("hostKey.unknownTitle")}
+        </p>
+        <p className="text-muted-foreground">
+          {hostKey.changed ? t("hostKey.changedShort") : t("hostKey.unknownShort")}
+        </p>
+        <code className="break-all font-mono selectable">{hostKey.fingerprint}</code>
+        <Button
+          type="button"
+          size="sm"
+          variant={hostKey.changed ? "destructive" : "outline"}
+          className="self-start"
+          onClick={() => onTrustHostKey(hostKey.fingerprint)}
+        >
+          {hostKey.changed ? t("hostKey.trustNewAndTest") : t("hostKey.trustAndTest")}
+        </Button>
+      </div>
+    );
+  }
   if (pending) {
     return (
       <p className="flex items-center gap-2 text-muted-foreground text-xs">

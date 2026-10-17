@@ -15,13 +15,19 @@ pub async fn connect(
     state: State<'_, Arc<AppState>>,
     profile_id: ProfileId,
 ) -> Result<ConnectionInfo, IpcError> {
-    let (profile, password) = blocking(&state, move |s| {
+    let (profile, password, ssh_secret) = blocking(&state, move |s| {
         let profile = profiles::get(&s.storage, s.secrets.as_ref(), profile_id)?;
-        let password = s.secrets.password(profile_id)?;
-        Ok((profile, password))
+        Ok((
+            profile,
+            s.secrets.password(profile_id)?,
+            s.secrets.ssh_secret(profile_id)?,
+        ))
     })
     .await?;
-    Ok(state.connections.connect(&profile, password).await?)
+    Ok(state
+        .connections
+        .connect(&profile, password, ssh_secret)
+        .await?)
 }
 
 #[tauri::command]

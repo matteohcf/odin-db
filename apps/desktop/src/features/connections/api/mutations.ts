@@ -7,8 +7,9 @@ import {
 } from "@odin-db/bindings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTabs } from "@/features/workspace";
-import { call } from "@/lib/ipc";
+import { call, hostKeyError } from "@/lib/ipc";
 import { useFavorites } from "../store/favorites-store";
+import { useHostKeyPrompt } from "../store/host-key-store";
 import { connectionKeys } from "./keys";
 
 export function useSaveProfile() {
@@ -72,9 +73,23 @@ export function useTestConnection() {
 
 export function useConnect() {
   const queryClient = useQueryClient();
+  const askHostKey = useHostKeyPrompt((s) => s.ask);
   return useMutation({
     mutationFn: (profileId: ProfileId) => call(commands.connect(profileId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.connections }),
+    onError: (error, profileId) => {
+      const hostKey = hostKeyError(error);
+      if (hostKey) askHostKey({ profileId, ...hostKey });
+    },
+  });
+}
+
+export function useTrustHostKey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ profileId, fingerprint }: { profileId: ProfileId; fingerprint: string }) =>
+      call(commands.trustSshHostKey(profileId, fingerprint)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.profiles }),
   });
 }
 

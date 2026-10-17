@@ -13,6 +13,8 @@ use tokio::sync::mpsc;
 pub struct IpcError {
     pub kind: ErrorKind,
     pub message: String,
+    /// What the UI needs to act on some errors, e.g. a host key fingerprint.
+    pub detail: Option<String>,
 }
 
 impl From<CoreError> for IpcError {
@@ -20,6 +22,7 @@ impl From<CoreError> for IpcError {
         Self {
             kind: error.kind(),
             message: error.to_string(),
+            detail: error.detail(),
         }
     }
 }

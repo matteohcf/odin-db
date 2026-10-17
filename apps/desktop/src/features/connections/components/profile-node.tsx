@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { ProfileColorMark } from "@/components/profile-color-mark";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
-import { errorMessage } from "@/lib/ipc";
+import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect, useDuplicateProfile } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
@@ -70,10 +70,13 @@ export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNode
     }
     connect.mutate(profile.id, {
       onSuccess: () => setExpanded(true),
-      onError: (error) =>
+      onError: (error) => {
+        // Host keys get their own dialog, opened by `useConnect`.
+        if (hostKeyError(error)) return;
         toast.error(t("profile.connectFailed", { name: profile.name }), {
           description: errorMessage(error),
-        }),
+        });
+      },
     });
   }
 

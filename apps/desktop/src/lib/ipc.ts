@@ -4,11 +4,21 @@ import type { ErrorKind, IpcError } from "@odin-db/bindings";
 class AppError extends Error {
   override name = "AppError";
   readonly kind: ErrorKind;
+  /** What the UI needs to act on some errors, e.g. a host key fingerprint. */
+  readonly detail: string | null;
 
   constructor(error: IpcError) {
     super(error.message);
     this.kind = error.kind;
+    this.detail = error.detail ?? null;
   }
+}
+
+/** An SSH host key to confirm: unknown, or changed since it was trusted (ADR-0036). */
+export function hostKeyError(error: unknown): { fingerprint: string; changed: boolean } | null {
+  if (!(error instanceof AppError) || !error.detail) return null;
+  if (error.kind !== "unknownHostKey" && error.kind !== "hostKeyChanged") return null;
+  return { fingerprint: error.detail, changed: error.kind === "hostKeyChanged" };
 }
 
 type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: IpcError };
