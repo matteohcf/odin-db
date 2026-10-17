@@ -24,7 +24,7 @@ use odin_core::transfer::{
     CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
     JsonMode, TransferProgress, export_documents, import_documents,
 };
-use odin_core::{CoreError, browse, documents};
+use odin_core::{CoreError, browse, documents, schema};
 use std::str::FromStr;
 use std::sync::Arc;
 use testcontainers_modules::mongo::Mongo;
@@ -183,6 +183,30 @@ async fn pages_through_results_with_a_server_cursor() {
     .await
     .expect("count");
     assert!((count - 10.0).abs() < f64::EPSILON);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn samples_field_paths_for_autocompletion() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(true).await;
+    let ns = namespace("people");
+    let docs = (0..20).map(|i| doc! { "name": format!("p{i}"), "address": { "city": "Rome" } });
+    handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection)
+        .insert_many(docs)
+        .await
+        .expect("seeded");
+
+    let fields = schema::sample_fields(&handle, &ns, 100)
+        .await
+        .expect("sampling is allowed on read-only connections");
+    let paths: Vec<_> = fields.iter().map(|field| field.path.as_str()).collect();
+    assert_eq!(paths, ["_id", "address", "address.city", "name"]);
+    assert_eq!(fields[0].types, ["objectId"]);
+    assert!(schema::sample_fields(&handle, &ns, 0).await.is_err());
 }
 
 #[tokio::test]

@@ -10,6 +10,7 @@ pub mod indexes;
 pub mod operations;
 pub mod profiles;
 pub mod query;
+pub mod schema;
 pub mod secrets;
 pub mod shell;
 pub mod storage;
