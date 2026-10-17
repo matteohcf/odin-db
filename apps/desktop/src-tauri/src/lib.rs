@@ -1,17 +1,39 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use odin_core::connection::ConnectionManager;
 use odin_core::operations::OperationRegistry;
+use odin_core::query::CursorRegistry;
+use odin_core::secrets::KeyringStore;
+use odin_core::storage::Storage;
 use specta_typescript::Typescript;
 use tauri::Manager;
 use tauri_specta::{Builder, collect_commands};
 
 mod commands;
 mod ipc;
+mod state;
 
 fn specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         commands::app::app_info,
+        commands::profiles::list_profiles,
+        commands::profiles::create_profile,
+        commands::profiles::update_profile,
+        commands::profiles::delete_profile,
+        commands::profiles::test_connection,
+        commands::connections::connect,
+        commands::connections::disconnect,
+        commands::connections::list_connections,
+        commands::connections::list_databases,
+        commands::connections::list_collections,
+        commands::documents::find_documents,
+        commands::documents::fetch_more_documents,
+        commands::documents::close_cursor,
+        commands::documents::count_documents,
+        commands::documents::insert_document,
+        commands::documents::replace_document,
+        commands::documents::delete_document,
         commands::operations::cancel_operation,
         commands::perf_lab::stream_sample_documents,
         commands::perf_lab::stream_terminal_output,
@@ -35,6 +57,16 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+
+            let data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&data_dir)?;
+            app.manage(Arc::new(state::AppState {
+                storage: Storage::open(&data_dir.join("odin-db.sqlite3"))?,
+                secrets: Box::new(KeyringStore),
+                connections: ConnectionManager::default(),
+                cursors: CursorRegistry::default(),
+            }));
+
             // Webviews throttle animation frames in occluded windows, which would
             // stall frame-based benchmarks: keep the window visible during autorun.
             if commands::perf_lab::autorun_requested()

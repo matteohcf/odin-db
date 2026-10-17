@@ -5,6 +5,25 @@ import { invoke as __TAURI_INVOKE, Channel } from "@tauri-apps/api/core";
 /** Commands */
 export const commands = {
 	appInfo: () => __TAURI_INVOKE<AppInfo>("app_info"),
+	listProfiles: () => typedError<ConnectionProfile[], IpcError>(__TAURI_INVOKE("list_profiles")),
+	createProfile: (input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("create_profile", { input })),
+	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
+	/**  Closes the profile's connection, if open, before deleting it and its password. */
+	deleteProfile: (id: ProfileId) => typedError<null, IpcError>(__TAURI_INVOKE("delete_profile", { id })),
+	/**  Tests unsaved settings. Without a new password, the saved one of `profile_id` is used. */
+	testConnection: (input: ProfileInput, profileId: string | null) => typedError<ServerInfo, IpcError>(__TAURI_INVOKE("test_connection", { input, profileId })),
+	connect: (profileId: ProfileId) => typedError<ConnectionInfo, IpcError>(__TAURI_INVOKE("connect", { profileId })),
+	disconnect: (connectionId: ConnectionId) => typedError<null, IpcError>(__TAURI_INVOKE("disconnect", { connectionId })),
+	listConnections: () => typedError<ConnectionInfo[], IpcError>(__TAURI_INVOKE("list_connections")),
+	listDatabases: (connectionId: ConnectionId) => typedError<DatabaseInfo[], IpcError>(__TAURI_INVOKE("list_databases", { connectionId })),
+	listCollections: (connectionId: ConnectionId, database: string) => typedError<CollectionInfo[], IpcError>(__TAURI_INVOKE("list_collections", { connectionId, database })),
+	findDocuments: (connectionId: ConnectionId, namespace: Namespace, request: FindRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("find_documents", { connectionId, namespace, request })),
+	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
+	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
+	countDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("count_documents", { connectionId, namespace, filter })),
+	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
+	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
+	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
 	/**  Returns `false` if the operation already finished. */
 	cancelOperation: (id: OperationId) => __TAURI_INVOKE<boolean>("cancel_operation", { id }),
 	streamSampleDocuments: (options: DocumentStreamOptions, channel: Channel<StreamEvent<EJsonDocument[]>>) => __TAURI_INVOKE<OperationId>("stream_sample_documents", { options, channel }),
@@ -29,6 +48,46 @@ export type AppInfo = {
 	arch: string,
 };
 
+export type CollectionInfo = {
+	name: string,
+	kind: CollectionKind,
+};
+
+export type CollectionKind = "collection" | "view" | "timeseries";
+
+export type ConnectionId = string;
+
+export type ConnectionInfo = {
+	id: ConnectionId,
+	profileId: ProfileId,
+	serverVersion: string,
+	readOnly: boolean,
+};
+
+export type ConnectionProfile = {
+	id: ProfileId,
+	name: string,
+	/**  Never contains a password. */
+	connectionString: string,
+	readOnly: boolean,
+	hasPassword: boolean,
+};
+
+export type CursorId = string;
+
+export type DatabaseInfo = {
+	name: string,
+	/**  Bytes. `f64` because TypeScript numbers cannot hold every `u64`. */
+	sizeOnDisk: number | null,
+	empty: boolean,
+};
+
+export type DocumentPage = {
+	documents: EJsonDocument[],
+	/**  `None` once the cursor is exhausted; otherwise pass it to `fetch_more`. */
+	cursorId: CursorId | null,
+};
+
 export type DocumentStreamOptions = {
 	count: number,
 	batchSize: number,
@@ -42,8 +101,20 @@ export type DocumentStreamOptions = {
  */
 export type EJsonDocument = JsonValue;
 
+/**  Any BSON value encoded as canonical Extended JSON v2, e.g. an `_id`. */
+export type EJsonValue = JsonValue;
+
 /**  Stable error classification exposed to the UI, which switches on it exhaustively. */
-export type ErrorKind = "cancelled" | "validation" | "internal";
+export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | "internal";
+
+export type FindRequest = {
+	filter: EJsonDocument,
+	projection: EJsonDocument | null,
+	sort: EJsonDocument | null,
+	skip: number | null,
+	limit: number | null,
+	batchSize: number,
+};
 
 export type IpcError = {
 	kind: ErrorKind,
@@ -57,8 +128,37 @@ export type IpcError = {
  */
 export type JsonValue = null | boolean | number | null | string | JsonValue[] | { [key in string]: JsonValue };
 
+export type Namespace = {
+	database: string,
+	collection: string,
+};
+
 /**  Identifies a long-running, cancellable operation (ADR-0006). */
 export type OperationId = string;
+
+export type ProfileId = string;
+
+export type ProfileInput = {
+	name: string,
+	/**  May contain a password; it is moved to the keyring. */
+	connectionString: string,
+	/**
+	 *  Takes precedence over a password embedded in the connection string.
+	 *  On update, `None` keeps the stored password.
+	 */
+	password: Secret | null,
+	readOnly: boolean,
+};
+
+/**
+ *  A secret value whose `Debug` output is redacted, so it cannot leak through logs.
+ *  Deliberately not `Serialize`: secrets flow from the UI to the backend, never back.
+ */
+export type Secret = string;
+
+export type ServerInfo = {
+	serverVersion: string,
+};
 
 /**  Every long operation emits data events followed by exactly one terminal event. */
 export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" } | { event: "cancelled" } | { event: "failed"; data: IpcError };
@@ -67,4 +167,14 @@ export type TerminalStreamOptions = {
 	totalBytes: number,
 	chunkBytes: number,
 };
+
+/* Tauri Specta runtime */
+async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {
+    try {
+        return { status: "ok", data: await result };
+    } catch (e) {
+        if (e instanceof Error) throw e;
+        return { status: "error", error: e as any };
+    }
+}
 
