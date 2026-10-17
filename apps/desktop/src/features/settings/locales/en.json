@@ -50,7 +50,8 @@
     "maxRows": "Documents kept in memory",
     "maxRowsHint": "Beyond this, a result stops loading and shows that it was truncated.",
     "documents_one": "{{count, number}} document",
-    "documents_other": "{{count, number}} documents"
+    "documents_other": "{{count, number}} documents",
+    "json": "JSON"
   },
   "data": {
     "title": "Query history",

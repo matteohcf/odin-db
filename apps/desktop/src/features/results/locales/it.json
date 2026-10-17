@@ -37,7 +37,8 @@
     "table": "Tabella",
     "list": "Elenco",
     "expandAll": "Espandi tutti i campi",
-    "collapseAll": "Comprimi i campi"
+    "collapseAll": "Comprimi i campi",
+    "json": "JSON"
   },
   "columns": {
     "choose": "Scegli colonne",

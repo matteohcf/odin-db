@@ -1,5 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
-import { CircleAlert, List, Loader2, Table2 } from "lucide-react";
+import { Braces, CircleAlert, List, Loader2, Table2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { formatCount } from "@/lib/format";
@@ -73,6 +73,14 @@ export function ResultsStatusBar({
             className="h-6 px-1.5"
           >
             <List className="size-3.5" />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="json"
+            aria-label={t("view.json")}
+            title={t("view.json")}
+            className="h-6 px-1.5"
+          >
+            <Braces className="size-3.5" />
           </ToggleGroupItem>
         </ToggleGroup>
       </span>

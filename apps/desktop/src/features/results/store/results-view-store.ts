@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type ResultsView = "table" | "list";
+export type ResultsView = "table" | "list" | "json";
 
 /** How results are shown, remembered across tabs and restarts. */
 export const useResultsView = create<{ view: ResultsView; setView: (view: ResultsView) => void }>()(

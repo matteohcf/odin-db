@@ -1,5 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
-import { List, Table2 } from "lucide-react";
+import { Braces, List, Table2 } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsView } from "@/features/results";
@@ -34,6 +34,10 @@ export function ResultsSection() {
           <ToggleGroupItem value="list" className="gap-1.5 px-3">
             <List className="size-3.5" />
             {t("results.list")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="json" className="gap-1.5 px-3">
+            <Braces className="size-3.5" />
+            {t("results.json")}
           </ToggleGroupItem>
         </ToggleGroup>
       </SettingRow>

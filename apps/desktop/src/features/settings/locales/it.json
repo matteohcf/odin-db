@@ -50,7 +50,8 @@
     "maxRows": "Documenti tenuti in memoria",
     "maxRowsHint": "Oltre questo limite il risultato smette di caricarsi e indica che è stato troncato.",
     "documents_one": "{{count, number}} documento",
-    "documents_other": "{{count, number}} documenti"
+    "documents_other": "{{count, number}} documenti",
+    "json": "JSON"
   },
   "data": {
     "title": "Cronologia query",

@@ -12,6 +12,7 @@ import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState 
 import { useTranslation } from "react-i18next";
 import type { JsonObject } from "@/lib/ejson-display";
 import { DocumentTree } from "./document-tree";
+import { JsonDocument } from "./json-document";
 import type { RowActions } from "./results-grid";
 import { RowMenuItems } from "./row-menu-items";
 
@@ -19,6 +20,8 @@ import { RowMenuItems } from "./row-menu-items";
 const PREFETCH_ROWS = 10;
 
 interface ResultsListProps {
+  /** Expandable field trees, or the documents as text. */
+  format: "tree" | "json";
   label: string;
   rows: readonly JsonObject[];
   hasMore: boolean;
@@ -33,6 +36,7 @@ interface ResultsListProps {
  * so the virtualizer measures them as they render.
  */
 export function ResultsList({
+  format,
   label,
   rows,
   hasMore,
@@ -48,6 +52,8 @@ export function ResultsList({
     getScrollElement: () => scrollRef.current,
     // Roughly one line per top-level field; measured precisely once rendered.
     estimateSize: (index) => Object.keys(rows[index] ?? {}).length * 20 + 26,
+    // Switching between trees and text changes every card's height.
+    getItemKey: (index) => `${format}-${index}`,
     overscan: 4,
     gap: 8,
   });
@@ -110,6 +116,7 @@ export function ResultsList({
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
                   <DocumentCard
+                    format={format}
                     id={`${listId}-${item.index}`}
                     row={row}
                     selected={item.index === selectedIndex}
@@ -132,12 +139,14 @@ export function ResultsList({
 }
 
 function DocumentCard({
+  format,
   id,
   row,
   selected,
   onSelect,
   actions,
 }: {
+  format: "tree" | "json";
   id: string;
   row: JsonObject;
   selected: boolean;
@@ -168,15 +177,17 @@ function DocumentCard({
       )}
     >
       <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-md bg-background opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        <CardAction
-          label={expanded ? t("view.collapseAll") : t("view.expandAll")}
-          onClick={() => {
-            setExpanded((value) => !value);
-            setTreeKey((value) => value + 1);
-          }}
-        >
-          {expanded ? <ChevronsDownUp /> : <ChevronsUpDown />}
-        </CardAction>
+        {format === "tree" && (
+          <CardAction
+            label={expanded ? t("view.collapseAll") : t("view.expandAll")}
+            onClick={() => {
+              setExpanded((value) => !value);
+              setTreeKey((value) => value + 1);
+            }}
+          >
+            {expanded ? <ChevronsDownUp /> : <ChevronsUpDown />}
+          </CardAction>
+        )}
         <CardAction label={t("row.copy")} onClick={() => actions.onCopy(row)}>
           <Copy />
         </CardAction>
@@ -196,7 +207,11 @@ function DocumentCard({
           </CardAction>
         )}
       </div>
-      <DocumentTree key={treeKey} document={row} expanded={expanded} />
+      {format === "tree" ? (
+        <DocumentTree key={treeKey} document={row} expanded={expanded} />
+      ) : (
+        <JsonDocument document={row} />
+      )}
     </div>
   );
 }

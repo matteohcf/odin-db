@@ -68,9 +68,10 @@ export function ResultsPanel({
       </div>
     );
   }
-  if (view === "list") {
+  if (view === "list" || view === "json") {
     return (
       <ResultsList
+        format={view === "list" ? "tree" : "json"}
         label={label}
         rows={rows}
         hasMore={hasMore}

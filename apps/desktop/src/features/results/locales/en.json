@@ -37,7 +37,8 @@
     "table": "Table",
     "list": "List",
     "expandAll": "Expand all fields",
-    "collapseAll": "Collapse fields"
+    "collapseAll": "Collapse fields",
+    "json": "JSON"
   },
   "columns": {
     "choose": "Choose columns",
