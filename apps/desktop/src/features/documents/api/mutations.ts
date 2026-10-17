@@ -65,8 +65,13 @@ export function useSetDocumentField() {
       id,
       field,
       value,
-    }: Target & { id: EJsonValue; field: string; value: EJsonValue | null }) =>
-      call(commands.setDocumentField(connectionId, namespace, id, field, value)),
+    }: Target & { id: EJsonValue; field: string; value: EJsonValue | undefined }) =>
+      // `undefined` removes the field; `null` is a value like any other.
+      call(
+        value === undefined
+          ? commands.unsetDocumentField(connectionId, namespace, id, field)
+          : commands.setDocumentField(connectionId, namespace, id, field, value),
+      ),
     meta: { handlesErrors: true },
   });
 }

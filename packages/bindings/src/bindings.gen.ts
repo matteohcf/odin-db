@@ -76,7 +76,8 @@ export const commands = {
 	updateDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, update: EJsonDocument) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("update_documents", { connectionId, namespace, filter, update })),
 	deleteDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("delete_documents", { connectionId, namespace, filter })),
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
-	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: JsonValue | null) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
+	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
+	unsetDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string) => typedError<null, IpcError>(__TAURI_INVOKE("unset_document_field", { connectionId, namespace, id, field })),
 	aggregateDocuments: (connectionId: ConnectionId, namespace: Namespace, request: AggregateRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("aggregate_documents", { connectionId, namespace, request })),
 	/**  First results of a pipeline for the builder's stage previews. Never runs `$out`/`$merge`. */
 	previewAggregation: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], limit: number) => typedError<EJsonDocument[], IpcError>(__TAURI_INVOKE("preview_aggregation", { connectionId, namespace, pipeline, limit })),

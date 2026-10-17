@@ -1195,6 +1195,11 @@ async fn sets_and_unsets_single_fields_keeping_types() {
     documents::set_field(&handle, &ns, id(), "name", None)
         .await
         .expect("unsets");
+    // A JSON null from the UI is a value: the field stays, holding null.
+    let null: EJsonValue = serde_json::from_value(serde_json::Value::Null).expect("null value");
+    documents::set_field(&handle, &ns, id(), "nothing", Some(null))
+        .await
+        .expect("sets null");
     let stored = collection
         .find_one(doc! { "_id": 1 })
         .await
@@ -1202,7 +1207,7 @@ async fn sets_and_unsets_single_fields_keeping_types() {
         .expect("exists");
     assert_eq!(
         stored,
-        doc! { "_id": 1, "count": 7_i64, "keep": true },
+        doc! { "_id": 1, "count": 7_i64, "keep": true, "nothing": Bson::Null },
         "type kept, other fields untouched"
     );
 

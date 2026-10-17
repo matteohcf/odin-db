@@ -22,8 +22,8 @@ interface EditFieldDialogProps {
   /** `undefined` when the document does not have the field yet. */
   value: JsonValue | undefined;
   pending: boolean;
-  /** `null` removes the field. */
-  onSave: (value: JsonValue | null) => Promise<void>;
+  /** `undefined` removes the field. */
+  onSave: (value: JsonValue | undefined) => Promise<void>;
   onClose: () => void;
 }
 
@@ -37,7 +37,7 @@ export function EditFieldDialog({ field, value, pending, onSave, onClose }: Edit
     setError(null);
     try {
       if (remove) {
-        await onSave(null);
+        await onSave(undefined);
         return;
       }
       // The parser reads documents; a one-field wrapper turns the value into one.

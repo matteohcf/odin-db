@@ -113,10 +113,24 @@ pub async fn set_document_field(
     namespace: Namespace,
     id: EJsonValue,
     field: String,
-    value: Option<EJsonValue>,
+    // Required: an optional value would read a JSON `null` as "remove the field".
+    value: EJsonValue,
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
-    Ok(documents::set_field(&handle, &namespace, id, &field, value).await?)
+    Ok(documents::set_field(&handle, &namespace, id, &field, Some(value)).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn unset_document_field(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    id: EJsonValue,
+    field: String,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(documents::set_field(&handle, &namespace, id, &field, None).await?)
 }
 
 #[tauri::command]

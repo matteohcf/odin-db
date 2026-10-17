@@ -531,7 +531,8 @@ function indexesOf(coll: { indexes?: Doc[] }): Doc[] {
 
 function page(id: string, batchSize: number): DocumentPage {
   const cursor = cursors.get(id) ?? fail("notFound", "cursor not found");
-  const documents = cursor.docs.slice(cursor.offset, cursor.offset + batchSize);
+  // Copies, like real IPC: later writes must not change rows the UI already holds.
+  const documents = structuredClone(cursor.docs.slice(cursor.offset, cursor.offset + batchSize));
   cursor.offset += documents.length;
   const exhausted = cursor.offset >= cursor.docs.length;
   if (exhausted) cursors.delete(id);
@@ -1644,8 +1645,17 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const doc =
       coll.docs.find((d) => JSON.stringify(d._id) === JSON.stringify(args.id)) ??
       fail("notFound", "document not found");
-    if (args.value === null) delete doc[field];
-    else doc[field] = args.value as JsonValue;
+    doc[field] = args.value as JsonValue;
+    return null;
+  },
+  unset_document_field: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const doc =
+      coll.docs.find((d) => JSON.stringify(d._id) === JSON.stringify(args.id)) ??
+      fail("notFound", "document not found");
+    delete doc[args.field as string];
     return null;
   },
   replace_document: (args) => {
