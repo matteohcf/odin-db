@@ -100,25 +100,7 @@ impl CursorRegistry {
         request: FindRequest,
     ) -> Result<DocumentPage, CoreError> {
         let batch_size = validate_batch_size(request.batch_size)?;
-        let collection = namespace.collection(handle)?;
-
-        let mut find = collection
-            .find(Document::try_from(request.filter)?)
-            .batch_size(batch_size);
-        if let Some(projection) = request.projection {
-            find = find.projection(Document::try_from(projection)?);
-        }
-        if let Some(sort) = request.sort {
-            find = find.sort(Document::try_from(sort)?);
-        }
-        if let Some(skip) = request.skip {
-            find = find.skip(u64::from(skip));
-        }
-        if let Some(limit) = request.limit {
-            find = find.limit(i64::from(limit));
-        }
-
-        let cursor = find.await?;
+        let cursor = find_cursor(handle, namespace, request).await?;
         self.first_page(handle, cursor, batch_size).await
     }
 
@@ -131,16 +113,7 @@ impl CursorRegistry {
         request: AggregateRequest,
     ) -> Result<DocumentPage, CoreError> {
         let batch_size = validate_batch_size(request.batch_size)?;
-        let pipeline = to_pipeline(request.pipeline)?;
-        if has_write_stage(&pipeline) {
-            handle.ensure_writable()?;
-        }
-        let cursor = namespace
-            .collection(handle)?
-            .aggregate(pipeline)
-            .batch_size(batch_size)
-            .allow_disk_use(true)
-            .await?;
+        let cursor = aggregate_cursor(handle, namespace, request.pipeline, batch_size).await?;
         self.first_page(handle, cursor, batch_size).await
     }
 
@@ -208,6 +181,52 @@ impl CursorRegistry {
     fn lock(&self) -> MutexGuard<'_, HashMap<CursorId, OpenCursor>> {
         self.cursors.lock().unwrap_or_else(PoisonError::into_inner)
     }
+}
+
+/// Opens a find cursor; shared by paging and export.
+pub(crate) async fn find_cursor(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    request: FindRequest,
+) -> Result<Cursor<Document>, CoreError> {
+    let batch_size = validate_batch_size(request.batch_size)?;
+    let collection = namespace.collection(handle)?;
+    let mut find = collection
+        .find(Document::try_from(request.filter)?)
+        .batch_size(batch_size);
+    if let Some(projection) = request.projection {
+        find = find.projection(Document::try_from(projection)?);
+    }
+    if let Some(sort) = request.sort {
+        find = find.sort(Document::try_from(sort)?);
+    }
+    if let Some(skip) = request.skip {
+        find = find.skip(u64::from(skip));
+    }
+    if let Some(limit) = request.limit {
+        find = find.limit(i64::from(limit));
+    }
+    Ok(find.await?)
+}
+
+/// Opens an aggregation cursor; write stages require a writable connection.
+pub(crate) async fn aggregate_cursor(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    pipeline: Vec<EJsonDocument>,
+    batch_size: u32,
+) -> Result<Cursor<Document>, CoreError> {
+    let batch_size = validate_batch_size(batch_size)?;
+    let pipeline = to_pipeline(pipeline)?;
+    if has_write_stage(&pipeline) {
+        handle.ensure_writable()?;
+    }
+    let collection = namespace.collection(handle)?;
+    Ok(collection
+        .aggregate(pipeline)
+        .batch_size(batch_size)
+        .allow_disk_use(true)
+        .await?)
 }
 
 /// The first `limit` results of a pipeline, for the stage previews of the

@@ -14,6 +14,7 @@ specta = ["dep:specta"]
 
 [dependencies]
 bson.workspace = true
+csv.workspace = true
 keyring.workspace = true
 mongodb.workspace = true
 rusqlite.workspace = true

@@ -15,12 +15,17 @@ use odin_core::query::{
 };
 use odin_core::secrets::{MemoryStore, Secret};
 use odin_core::storage::Storage;
+use odin_core::transfer::{
+    CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
+    JsonMode, TransferProgress, export_documents, import_documents,
+};
 use odin_core::{CoreError, browse, documents};
 use std::str::FromStr;
 use std::sync::Arc;
 use testcontainers_modules::mongo::Mongo;
 use testcontainers_modules::testcontainers::runners::AsyncRunner;
 use testcontainers_modules::testcontainers::{ContainerAsync, ImageExt};
+use tokio_util::sync::CancellationToken;
 
 struct Fixture {
     _container: ContainerAsync<Mongo>,
@@ -398,4 +403,260 @@ async fn creates_lists_and_drops_indexes() {
         indexes::drop(&read_only, &ns, "anything").await,
         Err(CoreError::ReadOnly)
     ));
+}
+
+fn temp_path(name: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!("odin-it-{}-{name}", uuid::Uuid::now_v7()))
+}
+
+fn progress() -> tokio::sync::mpsc::Sender<TransferProgress> {
+    // Progress is lossy by design; tests only care about results.
+    tokio::sync::mpsc::channel(1024).0
+}
+
+fn find_everything() -> ExportSource {
+    ExportSource::Find {
+        request: find_all(1000),
+    }
+}
+
+async fn read_back(handle: &ConnectionHandle, ns: &Namespace) -> Vec<Document> {
+    let page = CursorRegistry::default()
+        .find(handle, ns, find_all(1000))
+        .await
+        .expect("read back");
+    page.documents
+        .into_iter()
+        .map(|d| Document::try_from(d).expect("doc"))
+        .collect()
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn json_exports_round_trip_exactly() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let source = namespace("source");
+    let typed = doc! {
+        "_id": ObjectId::new(),
+        "n": 1_i32,
+        "long": i64::MAX,
+        "double": 5.0_f64,
+        "decimal": Decimal128::from_str("0.1").expect("decimal"),
+        "date": DateTime::from_millis(1_700_000_000_000),
+        "nested": { "list": [1_i32, "two"] },
+    };
+    handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("source")
+        .insert_one(typed.clone())
+        .await
+        .expect("seed");
+
+    for format in [ExportFormat::JsonArray, ExportFormat::Ndjson] {
+        let path = temp_path("export.json");
+        let request = ExportRequest {
+            source: find_everything(),
+            format,
+            json_mode: JsonMode::Canonical,
+            csv_fields: Vec::new(),
+        };
+        let summary = export_documents(
+            &handle,
+            &source,
+            request,
+            &path,
+            progress(),
+            CancellationToken::new(),
+        )
+        .await
+        .expect("export");
+        assert!((summary.documents - 1.0).abs() < f64::EPSILON);
+
+        let target = namespace(&format!("target_{format:?}"));
+        let imported = import_documents(
+            &handle,
+            &target,
+            path.clone(),
+            ImportOptions {
+                format: ImportFormat::Json,
+                stop_on_error: false,
+            },
+            progress(),
+            CancellationToken::new(),
+        )
+        .await
+        .expect("import");
+        assert!((imported.inserted - 1.0).abs() < f64::EPSILON);
+        assert_eq!(
+            read_back(&handle, &target).await,
+            vec![typed.clone()],
+            "{format:?} keeps every type"
+        );
+        let _ = std::fs::remove_file(path);
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn csv_round_trips_with_explicit_column_types() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let source = namespace("people");
+    handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("people")
+        .insert_many([
+            doc! { "_id": 1, "name": "Ada, Countess", "age": 36, "address": { "city": "London" } },
+            doc! { "_id": 2, "name": "Alan", "age": 41, "address": { "city": "Wilmslow" } },
+        ])
+        .await
+        .expect("seed");
+
+    let path = temp_path("people.csv");
+    let request = ExportRequest {
+        source: find_everything(),
+        format: ExportFormat::Csv,
+        json_mode: JsonMode::Canonical,
+        csv_fields: vec![
+            "_id".into(),
+            "name".into(),
+            "age".into(),
+            "address.city".into(),
+        ],
+    };
+    export_documents(
+        &handle,
+        &source,
+        request,
+        &path,
+        progress(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("export");
+
+    let column = |header: &str, field: &str, kind| CsvColumn {
+        header: header.into(),
+        field: field.into(),
+        kind,
+    };
+    let options = ImportOptions {
+        format: ImportFormat::Csv {
+            columns: vec![
+                column("_id", "_id", CsvType::Int32),
+                column("name", "name", CsvType::String),
+                column("age", "age", CsvType::Int32),
+                column("address.city", "address.city", CsvType::String),
+            ],
+        },
+        stop_on_error: false,
+    };
+    let target = namespace("people_copy");
+    let summary = import_documents(
+        &handle,
+        &target,
+        path.clone(),
+        options,
+        progress(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("import");
+    assert!((summary.inserted - 2.0).abs() < f64::EPSILON);
+    assert_eq!(
+        read_back(&handle, &source).await,
+        read_back(&handle, &target).await
+    );
+    let _ = std::fs::remove_file(path);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn import_reports_failures_and_can_stop_at_the_first() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let path = temp_path("dupes.ndjson");
+    std::fs::write(&path, "{\"_id\": 1}\n{\"_id\": 1}\n[2]\n{\"_id\": 3}\n").expect("write");
+
+    let run = |stop_on_error: bool, collection: &str| {
+        let handle = std::sync::Arc::clone(&handle);
+        let path = path.clone();
+        let ns = namespace(collection);
+        async move {
+            import_documents(
+                &handle,
+                &ns,
+                path,
+                ImportOptions {
+                    format: ImportFormat::Json,
+                    stop_on_error,
+                },
+                progress(),
+                CancellationToken::new(),
+            )
+            .await
+            .expect("import")
+        }
+    };
+
+    let skipping = run(false, "dupes_skip").await;
+    assert!(
+        (skipping.inserted - 2.0).abs() < f64::EPSILON,
+        "{skipping:?}"
+    );
+    assert!(
+        (skipping.failed - 2.0).abs() < f64::EPSILON,
+        "duplicate key and non-document"
+    );
+    assert!(!skipping.stopped);
+
+    let stopping = run(true, "dupes_stop").await;
+    assert!(stopping.stopped);
+    assert!(stopping.inserted < 2.0, "{stopping:?}");
+    let _ = std::fs::remove_file(path);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn failed_exports_leave_no_file_and_read_only_blocks_imports() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let path = temp_path("broken.json");
+    let request = ExportRequest {
+        source: ExportSource::Aggregate {
+            pipeline: vec![EJsonDocument::from(doc! { "$notAStage": {} })],
+        },
+        format: ExportFormat::JsonArray,
+        json_mode: JsonMode::Canonical,
+        csv_fields: Vec::new(),
+    };
+    let result = export_documents(
+        &handle,
+        &namespace("any"),
+        request,
+        &path,
+        progress(),
+        CancellationToken::new(),
+    )
+    .await;
+    assert!(result.is_err());
+    assert!(!path.exists());
+
+    let read_only = fx.connect(true).await;
+    let result = import_documents(
+        &read_only,
+        &namespace("locked"),
+        path,
+        ImportOptions {
+            format: ImportFormat::Json,
+            stop_on_error: false,
+        },
+        progress(),
+        CancellationToken::new(),
+    )
+    .await;
+    assert!(matches!(result, Err(CoreError::ReadOnly)));
 }

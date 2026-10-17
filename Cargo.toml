@@ -14,6 +14,7 @@ publish = false
 odin-core = { path = "crates/core" }
 
 bson = { version = "3.1.0", features = ["serde", "serde_json-1"] }
+csv = "1.4.0"
 keyring = "4.2.0"
 mongodb = { version = "3.9.1", default-features = false, features = ["compat-3-3-0", "bson-3", "rustls-tls", "dns-resolver", "aws-auth"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
@@ -22,7 +23,7 @@ testcontainers-modules = { version = "0.15.0", features = ["mongo"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 thiserror = "2.0.21"
-tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util"] }
 tokio-util = "0.7.20"
 tracing = "0.1.44"
 uuid = { version = "1.28.0", features = ["v7", "serde"] }
@@ -34,6 +35,7 @@ tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 
 tauri = "2.12.4"
 tauri-build = "2.7.3"
+tauri-plugin-dialog = "2.8.3"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

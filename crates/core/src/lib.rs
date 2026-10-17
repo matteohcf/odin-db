@@ -12,5 +12,6 @@ pub mod query;
 pub mod secrets;
 pub mod storage;
 pub mod synthetic;
+pub mod transfer;
 
 pub use error::{CoreError, ErrorKind};
