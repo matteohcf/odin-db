@@ -17,6 +17,7 @@
     "backups": "Backup",
     "settings": "Impostazioni",
     "unpinNamed": "Sblocca {{name}}",
-    "server": "Stato del server"
+    "server": "Stato del server",
+    "users": "Utenti"
   }
 }

@@ -80,6 +80,12 @@ export const commands = {
 	serverStatus: (connectionId: ConnectionId) => typedError<ServerStatus, IpcError>(__TAURI_INVOKE("server_status", { connectionId })),
 	currentOps: (connectionId: ConnectionId) => typedError<CurrentOp[], IpcError>(__TAURI_INVOKE("current_ops", { connectionId })),
 	killOp: (connectionId: ConnectionId, opid: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("kill_op", { connectionId, opid })),
+	listUsers: (connectionId: ConnectionId) => typedError<UserInfo[], IpcError>(__TAURI_INVOKE("list_users", { connectionId })),
+	listRoles: (connectionId: ConnectionId, database: string) => typedError<RoleInfo[], IpcError>(__TAURI_INVOKE("list_roles", { connectionId, database })),
+	createUser: (connectionId: ConnectionId, database: string, name: string, password: Secret, roles: RoleRef[]) => typedError<null, IpcError>(__TAURI_INVOKE("create_user", { connectionId, database, name, password, roles })),
+	setUserRoles: (connectionId: ConnectionId, database: string, name: string, roles: RoleRef[]) => typedError<null, IpcError>(__TAURI_INVOKE("set_user_roles", { connectionId, database, name, roles })),
+	changeUserPassword: (connectionId: ConnectionId, database: string, name: string, password: Secret) => typedError<null, IpcError>(__TAURI_INVOKE("change_user_password", { connectionId, database, name, password })),
+	dropUser: (connectionId: ConnectionId, database: string, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_user", { connectionId, database, name })),
 	/**  Asks where to save, then exports in the background. `None` if the user cancels. */
 	exportDocuments: (connectionId: ConnectionId, namespace: Namespace, request: ExportRequest, channel: Channel<StreamEvent<TransferEvent<TransferSummary>>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_documents", { connectionId, namespace, request, channel })),
 	/**  Asks for a JSON, NDJSON or CSV file and previews it. `None` if the user cancels. */
@@ -676,6 +682,18 @@ export type RestoreSource =
 /**  A directory written by `mongodump --out`. */
 "directory";
 
+export type RoleInfo = {
+	role: string,
+	db: string,
+	builtIn: boolean,
+};
+
+export type RoleRef = {
+	role: string,
+	/**  The database the role applies to. */
+	db: string,
+};
+
 export type RunId = string;
 
 export type RunStatus = "running" | "completed" | "failed" | "cancelled";
@@ -790,6 +808,14 @@ export type TransferSummary = {
 export type UpdateManyResult = {
 	matched: number | null,
 	modified: number | null,
+};
+
+export type UserInfo = {
+	user: string,
+	/**  The authentication database the user belongs to. */
+	db: string,
+	roles: RoleRef[],
+	mechanisms: string[],
 };
 
 /**  What happens to a write that breaks the rules. */

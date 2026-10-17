@@ -1,0 +1,60 @@
+{
+  "tab": "Users",
+  "title": "Users and roles",
+  "new": "New user",
+  "loading": "Loading users…",
+  "failed": "Cannot list users: {{message}}",
+  "none": "No users yet: the server accepts connections without authentication.",
+  "disconnected": "{{name}} is not connected.",
+  "connect": "Connect",
+  "table": {
+    "user": "User",
+    "database": "Database",
+    "roles": "Roles",
+    "noRoles": "No roles"
+  },
+  "actions": {
+    "roles": "Edit the roles of {{name}}",
+    "password": "Change the password of {{name}}",
+    "drop": "Delete {{name}}"
+  },
+  "roles": {
+    "role": "Role {{number}}",
+    "db": "Database of role {{number}}",
+    "on": "on",
+    "remove": "Remove role {{number}}",
+    "add": "Add a role"
+  },
+  "dialog": {
+    "createTitle": "New user",
+    "createDescription": "The user authenticates against the chosen database (admin for users of the whole deployment).",
+    "editTitle": "Roles of {{name}}",
+    "editDescription": "The roles replace the current ones. The user authenticates against {{db}}.",
+    "name": "User name",
+    "database": "Authentication database",
+    "password": "Password",
+    "generate": "Generate another password",
+    "copyPassword": "Copy the password",
+    "passwordCopied": "Password copied.",
+    "passwordHint": "Generated randomly. Copy it now: it cannot be read back later.",
+    "roles": "Roles",
+    "rolesHint": "For example read or readWrite on one database, readAnyDatabase on admin.",
+    "create": "Create user",
+    "saveRoles": "Save roles",
+    "created": "User {{name}} created.",
+    "rolesSaved": "Roles of {{name}} saved."
+  },
+  "password": {
+    "title": "New password for {{name}}",
+    "description": "A random password is filled in; it is copied to the clipboard when saved.",
+    "new": "New password",
+    "save": "Change password",
+    "changed": "Password of {{name}} changed and copied to the clipboard."
+  },
+  "drop": {
+    "title": "Delete the user {{name}}?",
+    "body": "Applications using this user can no longer connect. This cannot be undone.",
+    "confirm": "Delete user",
+    "done": "User {{name}} deleted."
+  }
+}

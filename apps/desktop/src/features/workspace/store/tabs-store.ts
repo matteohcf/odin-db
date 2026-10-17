@@ -27,6 +27,13 @@ export interface ServerTab {
   profileId: ProfileId;
 }
 
+/** Users and roles of a deployment; one per connection. */
+export interface UsersTab {
+  kind: "users";
+  id: string;
+  profileId: ProfileId;
+}
+
 /** Backup history and schedules of every connection; at most one is open. */
 interface BackupsTab {
   kind: "backups";
@@ -39,7 +46,13 @@ interface SettingsTab {
   id: "settings";
 }
 
-export type WorkspaceTab = CollectionTab | ShellTab | ServerTab | BackupsTab | SettingsTab;
+export type WorkspaceTab =
+  | CollectionTab
+  | ShellTab
+  | ServerTab
+  | UsersTab
+  | BackupsTab
+  | SettingsTab;
 
 export type RecentCollection = Omit<CollectionTab, "kind" | "id">;
 
@@ -60,6 +73,7 @@ interface TabsState {
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
+  openUsers: (profileId: ProfileId) => void;
   openBackups: () => void;
   openSettings: () => void;
   activate: (id: string) => void;
@@ -155,6 +169,12 @@ export const useTabs = create<TabsState>()(
           const id = `server:${profileId}`;
           if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
           return { tabs: [...state.tabs, { kind: "server", id, profileId }], activeTabId: id };
+        }),
+      openUsers: (profileId) =>
+        set((state) => {
+          const id = `users:${profileId}`;
+          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
+          return { tabs: [...state.tabs, { kind: "users", id, profileId }], activeTabId: id };
         }),
       openBackups: () =>
         set((state) =>

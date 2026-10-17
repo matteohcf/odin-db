@@ -41,7 +41,8 @@
     "copyUri": "Copia la stringa di connessione",
     "uriCopied": "Stringa di connessione copiata, senza password.",
     "serverStatus": "Stato del server",
-    "export": "Esporta…"
+    "export": "Esporta…",
+    "users": "Utenti e ruoli"
   },
   "tree": {
     "loading": "Caricamento…",

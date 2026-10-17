@@ -18,6 +18,7 @@ import {
   SquareTerminal,
   Trash2,
   Unplug,
+  UsersRound,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,6 +62,7 @@ export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNode
   const queryClient = useQueryClient();
   const openShell = useTabs((s) => s.openShell);
   const openServer = useTabs((s) => s.openServer);
+  const openUsers = useTabs((s) => s.openUsers);
   const openBackups = useTabs((s) => s.openBackups);
 
   function open() {
@@ -157,6 +159,10 @@ export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNode
                     {t("profile.createDatabase")}
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onSelect={() => openUsers(profile.id)}>
+                  <UsersRound />
+                  {t("profile.users")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openServer(profile.id)}>
                   <Activity />
                   {t("profile.serverStatus")}

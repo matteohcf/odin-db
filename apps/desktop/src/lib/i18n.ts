@@ -30,6 +30,8 @@ import shell from "@/features/shell/locales/en.json";
 import shellIt from "@/features/shell/locales/it.json";
 import transfer from "@/features/transfer/locales/en.json";
 import transferIt from "@/features/transfer/locales/it.json";
+import users from "@/features/users/locales/en.json";
+import usersIt from "@/features/users/locales/it.json";
 import workspace from "@/features/workspace/locales/en.json";
 import workspaceIt from "@/features/workspace/locales/it.json";
 import { type Settings, useSettings } from "@/lib/settings";
@@ -54,6 +56,7 @@ export const resources = {
     settings,
     shell,
     transfer,
+    users,
     workspace,
   },
   it: {
@@ -73,6 +76,7 @@ export const resources = {
     settings: settingsIt,
     shell: shellIt,
     transfer: transferIt,
+    users: usersIt,
     workspace: workspaceIt,
   },
 } as const;

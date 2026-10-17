@@ -17,6 +17,7 @@
     "backups": "Backups",
     "settings": "Settings",
     "unpinNamed": "Unpin {{name}}",
-    "server": "Server status"
+    "server": "Server status",
+    "users": "Users"
   }
 }

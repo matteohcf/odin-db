@@ -8,6 +8,7 @@ import { MonitorTab, MonitorTabLabel } from "@/features/monitor";
 import { useAutorunEnabled } from "@/features/perf-lab";
 import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
 import { ShellTab, ShellTabLabel } from "@/features/shell";
+import { UsersTab, UsersTabLabel } from "@/features/users";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { useSettings } from "@/lib/settings";
 import { BackupsButton } from "./backups-button";
@@ -69,6 +70,8 @@ function renderLabel(tab: WorkspaceTab, context: TabLabelContext) {
       return <ShellTabLabel tab={tab} />;
     case "server":
       return <MonitorTabLabel tab={tab} />;
+    case "users":
+      return <UsersTabLabel tab={tab} />;
     case "backups":
       return <BackupsTabLabel />;
     case "settings":
@@ -84,6 +87,8 @@ function renderTab(tab: WorkspaceTab) {
       return <ShellTab tab={tab} />;
     case "server":
       return <MonitorTab tab={tab} />;
+    case "users":
+      return <UsersTab tab={tab} />;
     case "backups":
       return <BackupsView />;
     case "settings":

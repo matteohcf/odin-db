@@ -1,0 +1,60 @@
+{
+  "tab": "Utenti",
+  "title": "Utenti e ruoli",
+  "new": "Nuovo utente",
+  "loading": "Caricamento utenti…",
+  "failed": "Impossibile elencare gli utenti: {{message}}",
+  "none": "Nessun utente: il server accetta connessioni senza autenticazione.",
+  "disconnected": "{{name}} non è connesso.",
+  "connect": "Connetti",
+  "table": {
+    "user": "Utente",
+    "database": "Database",
+    "roles": "Ruoli",
+    "noRoles": "Nessun ruolo"
+  },
+  "actions": {
+    "roles": "Modifica i ruoli di {{name}}",
+    "password": "Cambia la password di {{name}}",
+    "drop": "Elimina {{name}}"
+  },
+  "roles": {
+    "role": "Ruolo {{number}}",
+    "db": "Database del ruolo {{number}}",
+    "on": "su",
+    "remove": "Rimuovi il ruolo {{number}}",
+    "add": "Aggiungi un ruolo"
+  },
+  "dialog": {
+    "createTitle": "Nuovo utente",
+    "createDescription": "L'utente si autentica sul database scelto (admin per gli utenti dell'intero deployment).",
+    "editTitle": "Ruoli di {{name}}",
+    "editDescription": "I ruoli sostituiscono quelli attuali. L'utente si autentica su {{db}}.",
+    "name": "Nome utente",
+    "database": "Database di autenticazione",
+    "password": "Password",
+    "generate": "Genera un'altra password",
+    "copyPassword": "Copia la password",
+    "passwordCopied": "Password copiata.",
+    "passwordHint": "Generata a caso. Copiala ora: non si potrà rileggere in seguito.",
+    "roles": "Ruoli",
+    "rolesHint": "Per esempio read o readWrite su un database, readAnyDatabase su admin.",
+    "create": "Crea utente",
+    "saveRoles": "Salva i ruoli",
+    "created": "Utente {{name}} creato.",
+    "rolesSaved": "Ruoli di {{name}} salvati."
+  },
+  "password": {
+    "title": "Nuova password per {{name}}",
+    "description": "È proposta una password casuale; al salvataggio viene copiata negli appunti.",
+    "new": "Nuova password",
+    "save": "Cambia password",
+    "changed": "Password di {{name}} cambiata e copiata negli appunti."
+  },
+  "drop": {
+    "title": "Eliminare l'utente {{name}}?",
+    "body": "Le applicazioni che usano questo utente non potranno più connettersi. L'operazione non si può annullare.",
+    "confirm": "Elimina utente",
+    "done": "Utente {{name}} eliminato."
+  }
+}

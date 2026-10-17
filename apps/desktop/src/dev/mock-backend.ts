@@ -530,6 +530,21 @@ function simulateTransfer(
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
 const importFolders = new Set<string>();
 
+const mockUsers = [
+  {
+    user: "admin",
+    db: "admin",
+    roles: [{ role: "root", db: "admin" }],
+    mechanisms: ["SCRAM-SHA-256"],
+  },
+  {
+    user: "shop-api",
+    db: "shop",
+    roles: [{ role: "readWrite", db: "shop" }],
+    mechanisms: ["SCRAM-SHA-1", "SCRAM-SHA-256"],
+  },
+];
+
 const mockOps = [
   {
     opid: { $numberInt: "4721" },
@@ -1537,6 +1552,47 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const index = coll.docs.findIndex((d) => JSON.stringify(d._id) === JSON.stringify(args.id));
     if (index < 0) fail("notFound", "document not found");
     coll.docs.splice(index, 1);
+    return null;
+  },
+  list_users: (args) => {
+    serverOf(id("connectionId", args));
+    return mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
+  },
+  list_roles: () =>
+    ["read", "readWrite", "dbAdmin", "dbOwner", "userAdmin", "readAnyDatabase", "root"].map(
+      (role) => ({ role, db: "admin", builtIn: true }),
+    ),
+  create_user: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const name = String(args.name).trim();
+    if (mockUsers.some((u) => u.user === name && u.db === args.database))
+      fail("database", `User "${name}@${String(args.database)}" already exists`);
+    mockUsers.push({
+      user: name,
+      db: String(args.database),
+      roles: args.roles as { role: string; db: string }[],
+      mechanisms: ["SCRAM-SHA-256"],
+    });
+    return null;
+  },
+  set_user_roles: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const user = mockUsers.find((u) => u.user === args.name && u.db === args.database);
+    if (user) user.roles = args.roles as { role: string; db: string }[];
+    return null;
+  },
+  change_user_password: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    return null;
+  },
+  drop_user: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const index = mockUsers.findIndex((u) => u.user === args.name && u.db === args.database);
+    if (index >= 0) mockUsers.splice(index, 1);
     return null;
   },
   server_status: (args) => {

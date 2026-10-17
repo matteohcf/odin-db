@@ -41,7 +41,8 @@
     "copyUri": "Copy connection string",
     "uriCopied": "Connection string copied, without the password.",
     "serverStatus": "Server status",
-    "export": "Export…"
+    "export": "Export…",
+    "users": "Users and roles"
   },
   "tree": {
     "loading": "Loading…",

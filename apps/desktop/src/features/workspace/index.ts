@@ -4,6 +4,7 @@ export {
   type CollectionTab,
   type ServerTab,
   type ShellTab,
+  type UsersTab,
   useTabs,
   type WorkspaceTab,
 } from "./store/tabs-store";
