@@ -1,5 +1,8 @@
+import type { FindRequest } from "@odin-db/bindings";
 import { parseShellDocument } from "@/lib/shell-syntax";
-import type { ResultsQuery } from "./results-controller";
+
+/** A find without its page size, which the results controller chooses. */
+export type FindQuery = Omit<FindRequest, "batchSize">;
 
 export interface QueryForm {
   filter: string;
@@ -20,7 +23,7 @@ export const emptyQueryForm: QueryForm = {
 };
 
 export type ParsedQueryForm =
-  | { ok: true; query: ResultsQuery }
+  | { ok: true; query: FindQuery }
   | { ok: false; errors: Partial<Record<QueryField, string>> };
 
 /** Parses every field, collecting all errors at once so the user sees them together. */

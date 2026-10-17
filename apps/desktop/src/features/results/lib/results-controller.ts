@@ -1,12 +1,12 @@
-import type { CursorId, DocumentPage, FindRequest } from "@odin-db/bindings";
+import type { CursorId, DocumentPage } from "@odin-db/bindings";
 import { createStore } from "zustand/vanilla";
 import { isJsonObject, type JsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 
-export type ResultsQuery = Omit<FindRequest, "batchSize">;
+/** Opens a server cursor (a find, an aggregate…) and returns its first page. */
+export type OpenCursor = (batchSize: number) => Promise<DocumentPage>;
 
 export interface ResultsBackend {
-  find: (request: FindRequest) => Promise<DocumentPage>;
   fetchMore: (cursorId: CursorId, batchSize: number) => Promise<DocumentPage>;
   close: (cursorId: CursorId) => void;
 }
@@ -91,7 +91,7 @@ export function createResultsController(
     });
   }
 
-  async function run(query: ResultsQuery) {
+  async function run(open: OpenCursor) {
     generation += 1;
     const current = generation;
     releaseCursor();
@@ -99,7 +99,7 @@ export function createResultsController(
     const startedAt = performance.now();
 
     try {
-      const page = await backend.find({ ...query, batchSize: options.batchSize });
+      const page = await open(options.batchSize);
       if (current !== generation) {
         if (page.cursorId) backend.close(page.cursorId);
         return;
@@ -132,12 +132,19 @@ export function createResultsController(
     }
   }
 
+  /** Back to the empty state, e.g. when the query that produced the rows is gone. */
+  function reset() {
+    generation += 1;
+    releaseCursor();
+    store.setState(initialState);
+  }
+
   function dispose() {
     generation += 1;
     releaseCursor();
   }
 
-  return { store, run, loadMore, dispose };
+  return { store, run, loadMore, reset, dispose };
 }
 
 export type ResultsController = ReturnType<typeof createResultsController>;

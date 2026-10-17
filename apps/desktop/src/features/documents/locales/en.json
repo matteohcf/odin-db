@@ -1,12 +1,6 @@
 {
-  "header": {
-    "readOnly": "Read-only",
-    "readOnlyHint": "This connection is read-only. Documents can be viewed but not changed.",
-    "refresh": "Run again",
-    "insert": "Insert document",
-    "view": "View",
-    "viewHint": "Views are read-only. Change documents in the source collection instead."
-  },
+  "insert": "Insert document",
+  "copied": "Copied to clipboard",
   "query": {
     "filter": "Filter",
     "sort": "Sort",
@@ -24,41 +18,17 @@
   },
   "results": {
     "label": "Documents in {{collection}}",
-    "loading": "Running query…",
     "empty": "No documents match this filter.",
     "emptyCollection": "This collection is empty.",
-    "failed": "The query failed",
-    "row": "Document {{index}}",
     "emptyView": "This view returns no documents."
   },
-  "status": {
-    "loaded_one": "{{count, number}} document",
-    "loaded_other": "{{count, number}} documents",
-    "more": "Scroll for more",
-    "truncated": "Showing the first {{count}}. Narrow the filter to see the rest.",
-    "duration": "{{ms}} ms",
-    "count": "Count matches",
-    "counting": "Counting…",
-    "counted_one": "{{count, number}} match in total",
-    "counted_other": "{{count, number}} matches in total"
-  },
-  "row": {
-    "edit": "Edit document",
-    "view": "View document",
-    "duplicate": "Duplicate",
-    "copy": "Copy as shell syntax",
-    "copied": "Copied to clipboard",
-    "delete": "Delete document"
+  "count": {
+    "action": "Count matches",
+    "pending": "Counting…",
+    "result_one": "{{count, number}} match in total",
+    "result_other": "{{count, number}} matches in total"
   },
   "editor": {
-    "editTitle": "Edit document",
-    "viewTitle": "View document",
-    "insertTitle": "Insert document",
-    "description": "Document in {{namespace}}, written in mongosh syntax. Press {{shortcut}} to save.",
-    "label": "Document",
-    "save": "Save",
-    "insert": "Insert",
-    "saving": "Saving…",
     "saved": "Document saved",
     "inserted": "Document inserted"
   },
@@ -67,10 +37,5 @@
     "body": "The document with _id {{id}} is permanently removed from {{collection}}.",
     "confirm": "Delete document",
     "deleted": "Document deleted"
-  },
-  "disconnected": {
-    "title": "{{name}} is disconnected",
-    "body": "Connect again to query {{namespace}}.",
-    "connect": "Connect"
   }
 }

@@ -1,0 +1,75 @@
+{
+  "toolbar": {
+    "addStage": "Add stage",
+    "copy": "Copy pipeline",
+    "copied": "Pipeline copied as mongosh syntax",
+    "run": "Run",
+    "runHint": "Run the whole pipeline"
+  },
+  "stage": {
+    "label": "Stage {{number}}",
+    "operator": "Stage operator",
+    "searchOperator": "Search stages…",
+    "noOperator": "No stage matches.",
+    "enabled": "Include this stage",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove stage",
+    "addAfter": "Add stage after",
+    "editor": "Stage {{number}} body",
+    "disabled": "Skipped. Turn it on to include it in the pipeline."
+  },
+  "preview": {
+    "title_one": "{{count}} document",
+    "title_other": "{{count}} documents",
+    "sampleNote": "First {{limit}} results, from a sample of {{sample}} documents",
+    "loading": "Updating preview…",
+    "empty": "No documents at this stage.",
+    "writeStage": "Not previewed: this stage writes to the database. Run the pipeline to execute it.",
+    "fixStage": "Fix the syntax of stage {{number}} to preview this one.",
+    "failed": "Preview failed: {{message}}"
+  },
+  "results": {
+    "title": "Pipeline results",
+    "close": "Close results",
+    "label": "Pipeline results for {{collection}}",
+    "empty": "The pipeline returned no documents.",
+    "idle": "Run the pipeline to see its results."
+  },
+  "write": {
+    "title": "Run a pipeline that writes data?",
+    "body": "This pipeline ends with {{operator}} and will write its results into another collection, replacing or merging documents there.",
+    "confirm": "Run and write",
+    "readOnly": "This connection is read-only, so pipelines with $out or $merge can't run."
+  },
+  "operators": {
+    "$match": "Filter documents",
+    "$project": "Include, exclude or reshape fields",
+    "$addFields": "Add computed fields",
+    "$set": "Set fields (alias of $addFields)",
+    "$unset": "Remove fields",
+    "$group": "Group documents and accumulate values",
+    "$sort": "Sort documents",
+    "$limit": "Keep the first N documents",
+    "$skip": "Skip the first N documents",
+    "$unwind": "One document per array element",
+    "$lookup": "Join documents from another collection",
+    "$count": "Count the documents",
+    "$sortByCount": "Group by a value and count, sorted",
+    "$facet": "Run several pipelines on the same input",
+    "$bucket": "Group values into given ranges",
+    "$bucketAuto": "Group values into evenly sized ranges",
+    "$sample": "Pick random documents",
+    "$replaceRoot": "Promote a nested document to the top",
+    "$replaceWith": "Replace each document with an expression",
+    "$unionWith": "Append documents from another collection",
+    "$densify": "Fill gaps in a sequence",
+    "$fill": "Fill missing values",
+    "$setWindowFields": "Compute values over a window of documents",
+    "$graphLookup": "Recursive search across documents",
+    "$geoNear": "Sort by distance from a point (must be first)",
+    "$redact": "Restrict content by a condition",
+    "$out": "Write results to a collection (replaces it)",
+    "$merge": "Merge results into a collection"
+  }
+}

@@ -46,7 +46,7 @@ function DocumentEditor({
   onSave,
   onClose,
 }: DocumentEditorDialogProps) {
-  const { t } = useTranslation("documents");
+  const { t } = useTranslation("results");
   const [text, setText] = useState(initialText);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -76,7 +76,9 @@ function DocumentEditor({
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          {t("editor.description", { namespace, shortcut: isMac ? "⌘↵" : "Ctrl+Enter" })}
+          {readOnly
+            ? t("editor.viewDescription", { namespace })
+            : t("editor.description", { namespace, shortcut: isMac ? "⌘↵" : "Ctrl+Enter" })}
         </DialogDescription>
       </DialogHeader>
       <CodeEditor

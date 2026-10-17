@@ -1,0 +1,30 @@
+{
+  "loading": "Running…",
+  "failed": "The query failed",
+  "row": {
+    "edit": "Edit document",
+    "view": "View document",
+    "duplicate": "Duplicate",
+    "copy": "Copy as shell syntax",
+    "copied": "Copied to clipboard",
+    "delete": "Delete document"
+  },
+  "status": {
+    "loaded_one": "{{count, number}} document",
+    "loaded_other": "{{count, number}} documents",
+    "more": "Scroll for more",
+    "truncated": "Showing the first {{count}}. Narrow the query to see the rest.",
+    "duration": "{{ms}} ms"
+  },
+  "editor": {
+    "editTitle": "Edit document",
+    "viewTitle": "View document",
+    "insertTitle": "Insert document",
+    "description": "Document in {{namespace}}, written in mongosh syntax. Press {{shortcut}} to save.",
+    "viewDescription": "Result from {{namespace}}, in mongosh syntax.",
+    "label": "Document",
+    "save": "Save",
+    "insert": "Insert",
+    "saving": "Saving…"
+  }
+}

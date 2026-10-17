@@ -25,19 +25,24 @@ const PREFETCH_ROWS = 40;
 const features = tableFeatures({});
 const helper = createColumnHelper<typeof features, JsonObject>();
 
+/** Row commands. Omitting `onDuplicate`/`onDelete` makes the results view-only. */
+export interface RowActions {
+  onOpen: (row: JsonObject) => void;
+  openMode: "edit" | "view";
+  onCopy: (row: JsonObject) => void;
+  onDuplicate?: ((row: JsonObject) => void) | undefined;
+  onDelete?: ((row: JsonObject) => void) | undefined;
+}
+
 interface ResultsGridProps {
   label: string;
   rows: readonly JsonObject[];
   columns: readonly string[];
   hasMore: boolean;
-  readOnly: boolean;
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onLoadMore: () => void;
-  onOpen: (row: JsonObject) => void;
-  onDuplicate: (row: JsonObject) => void;
-  onCopy: (row: JsonObject) => void;
-  onDelete: (row: JsonObject) => void;
+  actions: RowActions;
 }
 
 /**
@@ -52,16 +57,13 @@ export function ResultsGrid({
   rows,
   columns,
   hasMore,
-  readOnly,
   selectedIndex,
   onSelect,
   onLoadMore,
-  onOpen,
-  onDuplicate,
-  onCopy,
-  onDelete,
+  actions,
 }: ResultsGridProps) {
-  const { t } = useTranslation("documents");
+  const { t } = useTranslation("results");
+  const { onOpen, openMode, onCopy, onDuplicate, onDelete } = actions;
   const gridId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -118,8 +120,8 @@ export function ResultsGrid({
       Home: () => move(0),
       End: () => move(rows.length - 1),
       Enter: () => selected && onOpen(selected),
-      Delete: () => selected && !readOnly && onDelete(selected),
-      Backspace: () => selected && !readOnly && onDelete(selected),
+      Delete: () => selected && onDelete?.(selected),
+      Backspace: () => selected && onDelete?.(selected),
     };
     const handler = handlers[event.key];
     if (handler) {
@@ -218,10 +220,10 @@ export function ResultsGrid({
       {selected && (
         <ContextMenuContent className="w-52">
           <ContextMenuItem onSelect={() => onOpen(selected)}>
-            {readOnly ? <Eye /> : <Pencil />}
-            {readOnly ? t("row.view") : t("row.edit")}
+            {openMode === "view" ? <Eye /> : <Pencil />}
+            {openMode === "view" ? t("row.view") : t("row.edit")}
           </ContextMenuItem>
-          {!readOnly && (
+          {onDuplicate && (
             <ContextMenuItem onSelect={() => onDuplicate(selected)}>
               <CopyPlus />
               {t("row.duplicate")}
@@ -231,7 +233,7 @@ export function ResultsGrid({
             <Copy />
             {t("row.copy")}
           </ContextMenuItem>
-          {!readOnly && (
+          {onDelete && (
             <>
               <ContextMenuSeparator />
               <ContextMenuItem variant="destructive" onSelect={() => onDelete(selected)}>

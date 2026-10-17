@@ -2,7 +2,7 @@ import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronDown, Play } from "lucide-react";
-import { type KeyboardEvent, useId, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { QueryField, QueryForm } from "../lib/query-form";
 
@@ -12,11 +12,13 @@ interface QueryBarProps {
   running: boolean;
   onChange: (field: QueryField, value: string) => void;
   onRun: () => void;
+  /** View actions shown after Run, e.g. Insert document. */
+  actions?: ReactNode;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
 
-export function QueryBar({ form, errors, running, onChange, onRun }: QueryBarProps) {
+export function QueryBar({ form, errors, running, onChange, onRun, actions }: QueryBarProps) {
   const { t } = useTranslation("documents");
   const hasOptions =
     form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
@@ -63,6 +65,12 @@ export function QueryBar({ form, errors, running, onChange, onRun }: QueryBarPro
             {isMac ? "⌘↵" : "Ctrl ↵"}
           </Kbd>
         </Button>
+        {actions && (
+          <>
+            <div className="mx-1 h-5 w-px bg-border" />
+            {actions}
+          </>
+        )}
       </div>
 
       {showOptions && (

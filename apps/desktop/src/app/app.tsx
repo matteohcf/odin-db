@@ -1,6 +1,6 @@
 import { ThemeMenu } from "@/components/theme-menu";
+import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
-import { CollectionTab, CollectionTabLabel } from "@/features/documents";
 import { PerfLab, useAutorunEnabled } from "@/features/perf-lab";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { Welcome } from "./welcome";

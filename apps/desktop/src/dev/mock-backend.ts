@@ -2,7 +2,7 @@
  * In-memory stand-in for the Rust backend, installed only by `vite dev` outside Tauri.
  * It honors the same command contract (typed errors, cursor paging, read-only
  * profiles) so the UI can be developed and reviewed in a plain browser.
- * Query support is deliberately shallow: equality filters and inclusion projections.
+ * Query support is deliberately shallow: simple filters, projections and common stages.
  */
 import type {
   CollectionInfo,
@@ -18,7 +18,7 @@ import type {
 import { mockIPC } from "@tauri-apps/api/mocks";
 
 type Doc = { [key: string]: JsonValue };
-type Collections = Record<string, { kind: CollectionInfo["kind"]; docs: Doc[] }>;
+type Collections = Record<string, { kind: CollectionInfo["kind"]; docs: Doc[]; indexes?: Doc[] }>;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const fail = (kind: IpcError["kind"], message: string): never => {
@@ -97,7 +97,25 @@ function event(i: number): Doc {
 const servers: Record<string, Record<string, Collections>> = {
   local: {
     shop: {
-      users: { kind: "collection", docs: Array.from({ length: 1240 }, (_, i) => user(i)) },
+      users: {
+        kind: "collection",
+        docs: Array.from({ length: 1240 }, (_, i) => user(i)),
+        indexes: [
+          { v: { $numberInt: "2" }, key: { _id: { $numberInt: "1" } }, name: "_id_" },
+          {
+            v: { $numberInt: "2" },
+            key: { email: { $numberInt: "1" } },
+            name: "email_1",
+            unique: true,
+          },
+          {
+            v: { $numberInt: "2" },
+            key: { plan: { $numberInt: "1" }, createdAt: { $numberInt: "-1" } },
+            name: "plan_1_createdAt_-1",
+            partialFilterExpression: { active: true },
+          },
+        ],
+      },
       orders: { kind: "collection", docs: Array.from({ length: 350 }, (_, i) => order(i)) },
       active_users: { kind: "view", docs: [] },
       "system.views": { kind: "collection", docs: [] },
@@ -145,12 +163,6 @@ function collectionOf(connectionId: string, database: string, collection: string
   return { connection, coll: db[collection] };
 }
 
-function matches(doc: Doc, filter: Doc) {
-  return Object.entries(filter).every(
-    ([key, value]) => key.startsWith("$") || JSON.stringify(doc[key]) === JSON.stringify(value),
-  );
-}
-
 function project(doc: Doc, projection: Doc | null) {
   if (!projection || Object.keys(projection).length === 0) return doc;
   const keys = Object.keys(projection).filter(
@@ -159,6 +171,190 @@ function project(doc: Doc, projection: Doc | null) {
   return Object.fromEntries(
     Object.entries(doc).filter(([key]) => key === "_id" || keys.includes(key)),
   );
+}
+
+/** Plain JS value of a canonical EJSON scalar, for comparisons. */
+function scalar(value: JsonValue | undefined): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
+  const [key] = Object.keys(value);
+  const inner = key === undefined ? undefined : value[key];
+  if (
+    key === "$numberInt" ||
+    key === "$numberLong" ||
+    key === "$numberDouble" ||
+    key === "$numberDecimal"
+  ) {
+    return Number(inner);
+  }
+  if (key === "$date" && inner && typeof inner === "object" && !Array.isArray(inner)) {
+    return Number(inner.$numberLong);
+  }
+  if (key === "$oid") return inner;
+  return JSON.stringify(value);
+}
+
+const num = (n: number): JsonValue =>
+  Number.isInteger(n) ? { $numberInt: String(n) } : { $numberDouble: String(n) };
+
+function compare(a: unknown, b: unknown) {
+  if (a === b) return 0;
+  if (a === undefined || a === null) return -1;
+  if (b === undefined || b === null) return 1;
+  return a < b ? -1 : 1;
+}
+
+function fieldValue(doc: Doc, path: string): JsonValue | undefined {
+  let current: JsonValue | undefined = doc;
+  for (const part of path.split(".")) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) return undefined;
+    current = current[part];
+  }
+  return current;
+}
+
+function matchesFilter(doc: Doc, filter: Doc): boolean {
+  return Object.entries(filter).every(([key, condition]) => {
+    if (key.startsWith("$")) return true;
+    const value = scalar(fieldValue(doc, key));
+    if (condition && typeof condition === "object" && !Array.isArray(condition)) {
+      const ops = Object.entries(condition);
+      if (
+        ops.every(
+          ([op]) =>
+            op.startsWith("$") &&
+            ![
+              "$oid",
+              "$numberInt",
+              "$numberLong",
+              "$numberDouble",
+              "$numberDecimal",
+              "$date",
+            ].includes(op),
+        )
+      ) {
+        return ops.every(([op, target]) => {
+          const t = scalar(target);
+          if (op === "$gt") return compare(value, t) > 0;
+          if (op === "$gte") return compare(value, t) >= 0;
+          if (op === "$lt") return compare(value, t) < 0;
+          if (op === "$lte") return compare(value, t) <= 0;
+          if (op === "$ne") return value !== t;
+          if (op === "$in" && Array.isArray(target)) return target.some((v) => scalar(v) === value);
+          return true;
+        });
+      }
+    }
+    return value === scalar(condition);
+  });
+}
+
+/** A deliberately small aggregation engine: enough stages to exercise the builder UI. */
+function aggregate(input: Doc[], pipeline: Doc[]): Doc[] {
+  let docs = input;
+  for (const stage of pipeline) {
+    const [op] = Object.keys(stage);
+    const arg = op === undefined ? undefined : stage[op];
+    const n = Number(scalar(arg));
+    switch (op) {
+      case "$match":
+        docs = docs.filter((doc) => matchesFilter(doc, arg as Doc));
+        break;
+      case "$limit":
+        docs = docs.slice(0, n);
+        break;
+      case "$skip":
+        docs = docs.slice(n);
+        break;
+      case "$sort": {
+        const keys = Object.entries(arg as Doc).map(
+          ([k, dir]) => [k, Number(scalar(dir))] as const,
+        );
+        docs = [...docs].sort((a, b) => {
+          for (const [k, dir] of keys) {
+            const c = compare(scalar(fieldValue(a, k)), scalar(fieldValue(b, k)));
+            if (c !== 0) return c * dir;
+          }
+          return 0;
+        });
+        break;
+      }
+      case "$project":
+        docs = docs.map((doc) => project(doc, arg as Doc));
+        break;
+      case "$addFields":
+      case "$set":
+        docs = docs.map((doc) => {
+          const added = Object.fromEntries(
+            Object.entries(arg as Doc).map(([k, v]) => [
+              k,
+              typeof v === "string" && v.startsWith("$")
+                ? (fieldValue(doc, v.slice(1)) ?? null)
+                : v,
+            ]),
+          );
+          return { ...doc, ...added };
+        });
+        break;
+      case "$unset": {
+        const fields = Array.isArray(arg) ? arg : [arg];
+        docs = docs.map((doc) =>
+          Object.fromEntries(Object.entries(doc).filter(([k]) => !fields.includes(k))),
+        );
+        break;
+      }
+      case "$count":
+        docs = [{ [String(arg)]: num(docs.length) }];
+        break;
+      case "$unwind": {
+        const path = String(typeof arg === "string" ? arg : (arg as Doc).path).slice(1);
+        docs = docs.flatMap((doc) => {
+          const value = fieldValue(doc, path);
+          return Array.isArray(value) ? value.map((item) => ({ ...doc, [path]: item })) : [];
+        });
+        break;
+      }
+      case "$group": {
+        const spec = arg as Doc;
+        const groups = new Map<string, { id: JsonValue; docs: Doc[] }>();
+        for (const doc of docs) {
+          const idSpec = spec._id;
+          const id =
+            typeof idSpec === "string" && idSpec.startsWith("$")
+              ? (fieldValue(doc, idSpec.slice(1)) ?? null)
+              : (idSpec ?? null);
+          const key = JSON.stringify(id);
+          const group = groups.get(key) ?? { id, docs: [] };
+          group.docs.push(doc);
+          groups.set(key, group);
+        }
+        docs = [...groups.values()].map(({ id, docs: members }) => {
+          const out: Doc = { _id: id };
+          for (const [field, acc] of Object.entries(spec)) {
+            if (field === "_id" || !acc || typeof acc !== "object" || Array.isArray(acc)) continue;
+            const [accOp] = Object.keys(acc);
+            const expr = accOp === undefined ? undefined : acc[accOp];
+            const values = members.map((m) =>
+              typeof expr === "string" && expr.startsWith("$")
+                ? Number(scalar(fieldValue(m, expr.slice(1))))
+                : Number(scalar(expr)),
+            );
+            const sum = values.reduce((a, b) => a + (Number.isNaN(b) ? 0 : b), 0);
+            out[field] = num(accOp === "$avg" ? sum / Math.max(values.length, 1) : sum);
+          }
+          return out;
+        });
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  return docs;
+}
+
+function indexesOf(coll: { indexes?: Doc[] }): Doc[] {
+  coll.indexes ??= [{ v: num(2), key: { _id: num(1) }, name: "_id_" }];
+  return coll.indexes;
 }
 
 function page(id: string, batchSize: number): DocumentPage {
@@ -273,11 +469,86 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     Object.entries(serverOf(id("connectionId", args)).databases[id("database", args)] ?? {})
       .map(([name, coll]): CollectionInfo => ({ name, kind: coll.kind }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+  aggregate_documents: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const request = args.request as { pipeline: Doc[]; batchSize: number };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    if (request.pipeline.some((s) => "$out" in s || "$merge" in s)) ensureWritable(connection);
+    const cursorId = crypto.randomUUID();
+    cursors.set(cursorId, { docs: aggregate(coll.docs, request.pipeline), offset: 0 });
+    return page(cursorId, request.batchSize);
+  },
+  preview_aggregation: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const pipeline = args.pipeline as Doc[];
+    if (pipeline.some((s) => "$out" in s || "$merge" in s)) {
+      fail("validation", "invalid input: pipelines with $out or $merge cannot be previewed");
+    }
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    return aggregate(coll.docs, pipeline).slice(0, args.limit as number);
+  },
+  list_indexes: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    return indexesOf(coll).map((spec, position) => ({
+      name: spec.name,
+      keys: spec.key,
+      unique: spec.unique === true,
+      sparse: spec.sparse === true,
+      hidden: spec.hidden === true,
+      expireAfterSeconds:
+        spec.expireAfterSeconds === undefined ? null : Number(scalar(spec.expireAfterSeconds)),
+      partialFilter: spec.partialFilterExpression ?? null,
+      definition: spec,
+      size: 20_480 + coll.docs.length * (position === 0 ? 24 : 40),
+      usageCount: position === 0 ? 1532 : 87,
+      usageSince: "2026-10-01T08:00:00Z",
+    }));
+  },
+  create_index: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const request = args.request as {
+      keys: Doc;
+      name: string | null;
+      unique: boolean;
+      sparse: boolean;
+      hidden: boolean;
+      expireAfterSeconds: number | null;
+      partialFilter: Doc | null;
+    };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const name =
+      request.name ??
+      Object.entries(request.keys)
+        .map(([k, v]) => `${k}_${String(scalar(v))}`)
+        .join("_");
+    if (indexesOf(coll).some((spec) => spec.name === name)) {
+      fail("database", `An existing index has the same name as the requested index: ${name}`);
+    }
+    const spec: Doc = { v: num(2), key: request.keys, name };
+    if (request.unique) spec.unique = true;
+    if (request.sparse) spec.sparse = true;
+    if (request.hidden) spec.hidden = true;
+    if (request.expireAfterSeconds !== null)
+      spec.expireAfterSeconds = num(request.expireAfterSeconds);
+    if (request.partialFilter) spec.partialFilterExpression = request.partialFilter;
+    indexesOf(coll).push(spec);
+    return name;
+  },
+  drop_index: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    if (args.name === "_id_") fail("validation", "invalid input: the _id index cannot be dropped");
+    coll.indexes = indexesOf(coll).filter((spec) => spec.name !== args.name);
+    return null;
+  },
   find_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const request = args.request as FindRequest;
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
-    let docs = coll.docs.filter((doc) => matches(doc, request.filter as Doc));
+    let docs = coll.docs.filter((doc) => matchesFilter(doc, request.filter as Doc));
     docs = docs.slice(
       request.skip ?? 0,
       request.limit ? (request.skip ?? 0) + request.limit : undefined,
@@ -297,7 +568,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   count_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
-    return coll.docs.filter((doc) => matches(doc, args.filter as Doc)).length;
+    return coll.docs.filter((doc) => matchesFilter(doc, args.filter as Doc)).length;
   },
   insert_document: (args) => {
     const ns = args.namespace as { database: string; collection: string };

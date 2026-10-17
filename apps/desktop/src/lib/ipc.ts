@@ -1,7 +1,7 @@
 import type { ErrorKind, IpcError } from "@odin-db/bindings";
 
 /** A backend error with its stable classification (ADR-0006). */
-export class AppError extends Error {
+class AppError extends Error {
   override name = "AppError";
   readonly kind: ErrorKind;
 

@@ -1,0 +1,57 @@
+{
+  "toolbar": {
+    "create": "Create index",
+    "refresh": "Refresh"
+  },
+  "table": {
+    "label": "Indexes of {{collection}}",
+    "name": "Name",
+    "keys": "Keys",
+    "properties": "Properties",
+    "size": "Size",
+    "usage": "Usage",
+    "usageSince": "{{count, number}} since {{date}}",
+    "actions": "Actions",
+    "drop": "Drop {{name}}",
+    "loading": "Loading indexes…",
+    "failed": "Couldn't load indexes: {{message}}"
+  },
+  "badge": {
+    "unique": "Unique",
+    "sparse": "Sparse",
+    "hidden": "Hidden",
+    "ttl": "TTL {{seconds}}s",
+    "partial": "Partial",
+    "partialHint": "Only documents matching {{filter}}",
+    "default": "Default"
+  },
+  "create": {
+    "title": "Create index",
+    "description": "Building an index on a large collection can take a while and adds load to the server.",
+    "keys": "Keys",
+    "keysHint": "1 for ascending, -1 for descending, or \"text\", \"2dsphere\", \"hashed\".",
+    "name": "Name",
+    "namePlaceholder": "Generated from the keys",
+    "unique": "Unique",
+    "uniqueHint": "Reject documents with a duplicate value.",
+    "sparse": "Sparse",
+    "sparseHint": "Skip documents without the indexed fields.",
+    "hidden": "Hidden",
+    "hiddenHint": "Build it without letting queries use it yet.",
+    "ttl": "Expire documents after (seconds)",
+    "ttlHint": "TTL index: documents are deleted once the date in the key field is older than this.",
+    "partial": "Partial filter",
+    "partialHint": "Only index documents matching this filter.",
+    "submit": "Create index",
+    "creating": "Building…",
+    "created": "Index {{name}} created",
+    "keysRequired": "Enter at least one key, for example { email: 1 }."
+  },
+  "drop": {
+    "title": "Drop index {{name}}?",
+    "body": "Queries that rely on it will get slower. Rebuilding it later takes time on large collections.",
+    "confirm": "Drop index",
+    "dropped": "Index {{name}} dropped"
+  },
+  "readOnly": "Read-only: indexes can be viewed but not changed."
+}

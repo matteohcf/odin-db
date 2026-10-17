@@ -1,0 +1,19 @@
+{
+  "views": {
+    "label": "Collection views",
+    "documents": "Documents",
+    "aggregation": "Aggregation",
+    "indexes": "Indexes"
+  },
+  "header": {
+    "readOnly": "Read-only",
+    "readOnlyHint": "This connection is read-only. Data can be viewed but not changed.",
+    "view": "View",
+    "viewHint": "Views are read-only. Change documents in the source collection instead."
+  },
+  "disconnected": {
+    "title": "{{name}} is disconnected",
+    "body": "Connect again to work with {{namespace}}.",
+    "connect": "Connect"
+  }
+}

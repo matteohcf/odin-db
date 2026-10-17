@@ -56,6 +56,12 @@ describe("shell syntax", () => {
     expect(await parseShellDocument("   ")).toEqual({});
   });
 
+  it("reports syntax errors without echoing the input", async () => {
+    const error = await parseShellDocument("{ a: }").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ShellSyntaxError);
+    expect((error as Error).message).not.toContain("{ a: }");
+  });
+
   it("rejects non-documents and invalid syntax", async () => {
     await expect(parseShellDocument("[1, 2]")).rejects.toBeInstanceOf(ShellSyntaxError);
     await expect(parseShellDocument("{ a: ")).rejects.toBeInstanceOf(ShellSyntaxError);

@@ -25,7 +25,9 @@ export async function parseShellDocument(text: string): Promise<EJsonDocument> {
   try {
     parsed = await parse(text, { mode: "strict" });
   } catch (error) {
-    throw new ShellSyntaxError(error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    // The parser echoes the whole input after the position; the editor already shows it.
+    throw new ShellSyntaxError(message.replace(/\s+in \([\s\S]*\)$/, ""));
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new ShellSyntaxError("Expected a document like { field: value }");
