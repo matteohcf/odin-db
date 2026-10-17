@@ -2,7 +2,7 @@ import { Kbd } from "@odin-db/ui/components/kbd";
 import { Clock, Eye, Table2 } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { ProfileColorMark } from "@/components/profile-color-mark";
-import { useConnect, useConnections, useProfiles } from "@/features/connections";
+import { useOpenCollection, useProfiles } from "@/features/connections";
 import { useTabs } from "@/features/workspace";
 
 const isMac = navigator.userAgent.includes("Mac");
@@ -11,10 +11,8 @@ const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 export function Welcome() {
   const { t } = useTranslation("app");
   const recent = useTabs((s) => s.recent);
-  const openCollection = useTabs((s) => s.openCollection);
+  const openCollection = useOpenCollection();
   const { data: profiles = [] } = useProfiles();
-  const { data: connections = [] } = useConnections();
-  const connect = useConnect();
   // Collections of deleted connections are not offered.
   const shown = recent.flatMap((entry) => {
     const profile = profiles.find((p) => p.id === entry.profileId);
@@ -53,13 +51,7 @@ export function Welcome() {
                 >
                   <button
                     type="button"
-                    onClick={() => {
-                      openCollection(entry);
-                      // A recent collection opens ready to query, not on a "Connect" screen.
-                      if (!connections.some((c) => c.profileId === entry.profileId)) {
-                        connect.mutate(entry.profileId);
-                      }
-                    }}
+                    onClick={() => openCollection(entry)}
                     className="flex w-full items-center gap-2.5 px-3 py-2 text-sm outline-none hover:bg-accent focus-visible:bg-accent"
                   >
                     <ProfileColorMark color={profile.color} />

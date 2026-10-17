@@ -2,8 +2,8 @@ import { DropdownMenuItem } from "@odin-db/ui/components/dropdown-menu";
 import { Star, StarOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ProfileColorMark } from "@/components/profile-color-mark";
-import { useTabs } from "@/features/workspace";
 import { useProfiles } from "../api/queries";
+import { useOpenCollection } from "../hooks/use-open-collection";
 import { useExpanded } from "../store/explorer-store";
 import { useFavorites } from "../store/favorites-store";
 import { NodeMenu } from "./node-menu";
@@ -15,7 +15,7 @@ export function FavoritesSection() {
   const favorites = useFavorites((s) => s.favorites);
   const toggle = useFavorites((s) => s.toggle);
   const { data: profiles = [] } = useProfiles();
-  const openCollection = useTabs((s) => s.openCollection);
+  const openCollection = useOpenCollection();
   // Stored like tree nodes, but inverted: collapsed is the exception.
   const [collapsed, setCollapsed] = useExpanded("favorites:collapsed");
 
