@@ -16,6 +16,20 @@ export const commands = {
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
 	/**  A copy of the profile under `name` (localized by the UI), password included. */
 	duplicateProfile: (id: ProfileId, name: string) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("duplicate_profile", { id, name })),
+	/**
+	 *  Asks where to save, then writes the profiles (all when `ids` is empty)
+	 *  without passwords. `None` if the user cancels.
+	 */
+	exportConnections: (ids: ProfileId[]) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_connections", { ids })),
+	/**
+	 *  Asks for a connections file (odin-db or Compass) and imports it.
+	 *  `None` if the user cancels.
+	 */
+	importConnections: () => typedError<{
+	created: ConnectionProfile[],
+	/**  Entries identical to an existing profile (same name and connection string). */
+	skipped: number | null,
+} | null, IpcError>(__TAURI_INVOKE("import_connections")),
 	/**  Closes the profile's connection, if open, before deleting it and its password. */
 	deleteProfile: (id: ProfileId) => typedError<null, IpcError>(__TAURI_INVOKE("delete_profile", { id })),
 	/**  Tests unsaved settings. Without a new password, the saved one of `profile_id` is used. */
@@ -489,6 +503,12 @@ export type ImportSummary = {
 	/**  The first errors, enough to fix the file. */
 	errors: RecordError[],
 	stopped: boolean,
+};
+
+export type ImportedProfiles = {
+	created: ConnectionProfile[],
+	/**  Entries identical to an existing profile (same name and connection string). */
+	skipped: number | null,
 };
 
 export type IndexInfo = {

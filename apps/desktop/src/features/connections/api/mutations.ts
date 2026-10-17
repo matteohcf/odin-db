@@ -31,6 +31,22 @@ export function useDuplicateProfile() {
   });
 }
 
+export function useImportConnections() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => call(commands.importConnections()),
+    meta: { handlesErrors: true },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.profiles }),
+  });
+}
+
+export function useExportConnections() {
+  return useMutation({
+    mutationFn: (ids: ProfileId[]) => call(commands.exportConnections(ids)),
+    meta: { handlesErrors: true },
+  });
+}
+
 export function useDeleteProfile() {
   const queryClient = useQueryClient();
   const closeForProfile = useTabs((s) => s.closeForProfile);

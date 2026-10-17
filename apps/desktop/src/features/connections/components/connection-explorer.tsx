@@ -1,12 +1,31 @@
-import type { ConnectionProfile } from "@odin-db/bindings";
+import type { ConnectionProfile, ProfileId } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@odin-db/ui/components/dropdown-menu";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
-import { ChevronsDownUp, ListFilter, Plus, Search, Server, X } from "lucide-react";
+import {
+  ChevronsDownUp,
+  FileDown,
+  FileUp,
+  ListFilter,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Server,
+  X,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useShortcut } from "@/hooks/use-shortcut";
+import { errorMessage } from "@/lib/ipc";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
+import { useExportConnections, useImportConnections } from "../api/mutations";
 import { useProfiles } from "../api/queries";
 import { useHealthEvents } from "../hooks/use-health-events";
 import { useExplorer } from "../store/explorer-store";
@@ -38,6 +57,29 @@ export function ConnectionExplorer() {
   const filterInput = useRef<HTMLInputElement>(null);
   useShortcut("filterSidebar", () => filterInput.current?.focus());
   useHealthEvents();
+  const importMutation = useImportConnections();
+  const exportMutation = useExportConnections();
+
+  async function importConnections() {
+    try {
+      const result = await importMutation.mutateAsync();
+      if (!result) return;
+      toast.success(
+        t("explorer.imported", { count: result.created.length, skipped: result.skipped ?? 0 }),
+      );
+    } catch (error) {
+      toast.error(t("explorer.importFailed", { message: errorMessage(error) }));
+    }
+  }
+
+  async function exportConnections(ids: ProfileId[]) {
+    try {
+      const path = await exportMutation.mutateAsync(ids);
+      if (path) toast.success(t("explorer.exported", { path }));
+    } catch (error) {
+      toast.error(t("explorer.exportFailed", { message: errorMessage(error) }));
+    }
+  }
 
   return (
     <aside className="flex h-full flex-col bg-sidebar" aria-label={t("explorer.label")}>
@@ -75,6 +117,31 @@ export function ConnectionExplorer() {
               <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
             </TooltipContent>
           </Tooltip>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                aria-label={t("explorer.more")}
+              >
+                <MoreHorizontal className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={() => void importConnections()}>
+                <FileUp />
+                {t("explorer.import")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!profiles?.length}
+                onSelect={() => void exportConnections([])}
+              >
+                <FileDown />
+                {t("explorer.exportAll")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -160,6 +227,7 @@ export function ConnectionExplorer() {
                 <li key={profile.id}>
                   <ProfileNode
                     profile={profile}
+                    onExport={() => void exportConnections([profile.id])}
                     onEdit={() => setDialog({ type: "edit", profile })}
                     onDelete={() => setDialog({ type: "delete", profile })}
                   />

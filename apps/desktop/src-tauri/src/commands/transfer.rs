@@ -325,7 +325,7 @@ fn forward_progress<S: Send + 'static>(
 }
 
 /// Native dialogs block until dismissed: keep them off the async workers.
-async fn blocking_dialog<T: Send + 'static>(
+pub(crate) async fn blocking_dialog<T: Send + 'static>(
     open: impl FnOnce() -> T + Send + 'static,
 ) -> Result<T, CoreError> {
     tauri::async_runtime::spawn_blocking(open)

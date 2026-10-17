@@ -11,7 +11,15 @@
     "collapseAll": "Comprimi tutto",
     "filter": "Filtra le collezioni",
     "filterLabel": "Filtra database e collezioni",
-    "clearFilter": "Cancella il filtro"
+    "clearFilter": "Cancella il filtro",
+    "more": "Altre azioni",
+    "import": "Importa connessioni…",
+    "exportAll": "Esporta tutte le connessioni…",
+    "imported_one": "Importata {{count}} connessione ({{skipped}} già presenti).",
+    "imported_other": "Importate {{count}} connessioni ({{skipped}} già presenti).",
+    "importFailed": "Importazione non riuscita: {{message}}",
+    "exported": "Salvato in {{path}}. Le password non sono incluse.",
+    "exportFailed": "Esportazione non riuscita: {{message}}"
   },
   "profile": {
     "connect": "Connetti",
@@ -32,7 +40,8 @@
     "duplicated": "Creata {{name}}.",
     "copyUri": "Copia la stringa di connessione",
     "uriCopied": "Stringa di connessione copiata, senza password.",
-    "serverStatus": "Stato del server"
+    "serverStatus": "Stato del server",
+    "export": "Esporta…"
   },
   "tree": {
     "loading": "Caricamento…",

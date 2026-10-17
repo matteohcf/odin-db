@@ -1,8 +1,14 @@
 use std::sync::Arc;
 
+use odin_core::CoreError;
 use odin_core::connection::{self, ServerInfo};
-use odin_core::profiles::{self, ConnectionProfile, ProfileId, ProfileInput, split_password};
-use tauri::State;
+use odin_core::profiles::{
+    self, ConnectionProfile, ImportedProfiles, ProfileId, ProfileInput, split_password,
+};
+use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
+
+use super::transfer::blocking_dialog;
 
 use crate::ipc::IpcError;
 use crate::state::{AppState, blocking};
@@ -89,4 +95,55 @@ pub async fn test_connection(
         },
     };
     Ok(connection::test_connection(&connection_string, password).await?)
+}
+
+/// Asks where to save, then writes the profiles (all when `ids` is empty)
+/// without passwords. `None` if the user cancels.
+#[tauri::command]
+#[specta::specta]
+pub async fn export_connections(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    ids: Vec<ProfileId>,
+) -> Result<Option<String>, IpcError> {
+    let json = blocking(&state, move |s| profiles::export_profiles(&s.storage, &ids)).await?;
+    let dialog = app
+        .dialog()
+        .file()
+        .set_file_name("odin-db-connections.json")
+        .add_filter("JSON", &["json"]);
+    let Some(path) = blocking_dialog(move || dialog.blocking_save_file()).await? else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?;
+    std::fs::write(&path, json)
+        .map_err(|error| CoreError::Internal(format!("cannot write the file: {error}")))?;
+    Ok(Some(path.display().to_string()))
+}
+
+/// Asks for a connections file (odin-db or Compass) and imports it.
+/// `None` if the user cancels.
+#[tauri::command]
+#[specta::specta]
+pub async fn import_connections(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<ImportedProfiles>, IpcError> {
+    let dialog = app.dialog().file().add_filter("JSON", &["json"]);
+    let Some(path) = blocking_dialog(move || dialog.blocking_pick_file()).await? else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?;
+    let json = std::fs::read_to_string(&path)
+        .map_err(|error| CoreError::Validation(format!("cannot read the file: {error}")))?;
+    Ok(Some(
+        blocking(&state, move |s| {
+            profiles::import_profiles(&s.storage, s.secrets.as_ref(), &json)
+        })
+        .await?,
+    ))
 }

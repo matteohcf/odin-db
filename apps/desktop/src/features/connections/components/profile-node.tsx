@@ -7,6 +7,7 @@ import {
   CalendarClock,
   CopyPlus,
   DatabaseZap,
+  FileDown,
   HardDriveDownload,
   HardDriveUpload,
   Link,
@@ -39,9 +40,10 @@ interface ProfileNodeProps {
   profile: ConnectionProfile;
   onEdit: () => void;
   onDelete: () => void;
+  onExport: () => void;
 }
 
-export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
+export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNodeProps) {
   const { t } = useTranslation("connections");
   const connection = useConnectionOf(profile.id);
   const unreachable = useConnectionHealth((s) =>
@@ -202,6 +204,10 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
             >
               <Link />
               {t("profile.copyUri")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onExport}>
+              <FileDown />
+              {t("profile.export")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={onDelete}>

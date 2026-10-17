@@ -11,7 +11,15 @@
     "collapseAll": "Collapse all",
     "filter": "Filter collections",
     "filterLabel": "Filter databases and collections",
-    "clearFilter": "Clear the filter"
+    "clearFilter": "Clear the filter",
+    "more": "More actions",
+    "import": "Import connections…",
+    "exportAll": "Export all connections…",
+    "imported_one": "Imported {{count}} connection ({{skipped}} already there).",
+    "imported_other": "Imported {{count}} connections ({{skipped}} already there).",
+    "importFailed": "Import failed: {{message}}",
+    "exported": "Saved to {{path}}. Passwords are not included.",
+    "exportFailed": "Export failed: {{message}}"
   },
   "profile": {
     "connect": "Connect",
@@ -32,7 +40,8 @@
     "duplicated": "Created {{name}}.",
     "copyUri": "Copy connection string",
     "uriCopied": "Connection string copied, without the password.",
-    "serverStatus": "Server status"
+    "serverStatus": "Server status",
+    "export": "Export…"
   },
   "tree": {
     "loading": "Loading…",

@@ -735,6 +735,24 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     });
     return { ...profile };
   },
+  export_connections: () => "/Users/ada/odin-db-connections.json",
+  import_connections: () => {
+    const created = ["Staging", "Reporting replica"]
+      .filter((name) => !profiles.some((p) => p.name === name))
+      .map((name) => {
+        const profile = {
+          id: crypto.randomUUID(),
+          name,
+          connectionString: `mongodb://${name.toLowerCase().replace(/ /g, "-")}.example.com:27017`,
+          readOnly: true,
+          hasPassword: false,
+          color: "blue" as const,
+        };
+        profiles.push(profile);
+        return { ...profile };
+      });
+    return { created, skipped: 2 - created.length };
+  },
   duplicate_profile: (args) => {
     const source =
       profiles.find((p) => p.id === id("id", args)) ??
