@@ -3,6 +3,7 @@ import {
   commands,
   type EJsonDocument,
   type EJsonValue,
+  type ExplainRequest,
   type Namespace,
 } from "@odin-db/bindings";
 import { useMutation } from "@tanstack/react-query";
@@ -45,5 +46,13 @@ export function useCountDocuments() {
   return useMutation({
     mutationFn: ({ connectionId, namespace, filter }: Target & { filter: EJsonDocument }) =>
       call(commands.countDocuments(connectionId, namespace, filter)),
+  });
+}
+
+export function useExplainFind() {
+  return useMutation({
+    mutationFn: ({ connectionId, namespace, request }: Target & { request: ExplainRequest }) =>
+      call(commands.explainFind(connectionId, namespace, request)),
+    meta: { handlesErrors: true },
   });
 }

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use odin_core::connection::ConnectionId;
 use odin_core::documents;
 use odin_core::ejson::{EJsonDocument, EJsonValue};
+use odin_core::explain::{self, ExplainRequest, QueryPlan};
 use odin_core::query::{self, AggregateRequest, CursorId, DocumentPage, FindRequest, Namespace};
 use odin_core::schema::{self, FieldSummary};
 use tauri::State;
@@ -48,6 +49,19 @@ pub async fn count_documents(
 ) -> Result<f64, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(query::count_documents(&handle, &namespace, filter).await?)
+}
+
+/// How the server runs a find: winning plan, indexes and counts.
+#[tauri::command]
+#[specta::specta]
+pub async fn explain_find(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    request: ExplainRequest,
+) -> Result<QueryPlan, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(explain::explain_find(&handle, &namespace, request).await?)
 }
 
 /// Field paths of a sample of the collection, for query autocompletion.

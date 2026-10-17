@@ -1,8 +1,9 @@
 import type { FieldSummary } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
-import { ChevronDown, Play } from "lucide-react";
+import { ChevronDown, Gauge, Loader2, Play } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
@@ -22,6 +23,8 @@ interface QueryBarProps {
   onRun: () => void;
   /** Replaces the whole form and runs it (history, reset). */
   onRunForm: (form: QueryForm) => void;
+  onExplain: () => void;
+  explaining: boolean;
   /** View actions shown after Run, e.g. Insert document. */
   actions?: ReactNode;
 }
@@ -39,6 +42,8 @@ export function QueryBar({
   onChange,
   onRun,
   onRunForm,
+  onExplain,
+  explaining,
   actions,
 }: QueryBarProps) {
   const { t } = useTranslation("documents");
@@ -82,6 +87,21 @@ export function QueryBar({
           />
         </QueryFieldFrame>
         <QueryHistoryMenu historyKey={historyKey} onSelect={onRunForm} />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("explain.open")}
+              disabled={explaining}
+              onClick={onExplain}
+              className="text-muted-foreground"
+            >
+              {explaining ? <Loader2 className="animate-spin" /> : <Gauge />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("explain.open")}</TooltipContent>
+        </Tooltip>
         <Button
           variant="ghost"
           size="sm"

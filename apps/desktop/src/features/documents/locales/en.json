@@ -49,5 +49,23 @@
     "matchAll": "All documents",
     "search": "Search recent queries",
     "noMatch": "No query matches."
+  },
+  "explain": {
+    "open": "Explain query",
+    "title": "Query plan",
+    "description": "How MongoDB ran this query on {{collection}}. The query ran on the server to measure it; nothing was changed.",
+    "usedIndex_one": "Used the index {{indexes}}",
+    "usedIndex_other": "Used the indexes {{indexes}}",
+    "collectionScan": "Read every document of the collection",
+    "noIndex": "No index was needed",
+    "collectionScanHint": "An index on the filtered or sorted fields would let MongoDB skip documents that cannot match.",
+    "returned": "Returned",
+    "documentsExamined": "Documents examined",
+    "keysExamined": "Index keys examined",
+    "time": "Server time",
+    "milliseconds": "{{value}} ms",
+    "stages": "Stages",
+    "raw": "Raw explain output",
+    "failed": "Couldn't explain the query: {{message}}"
   }
 }

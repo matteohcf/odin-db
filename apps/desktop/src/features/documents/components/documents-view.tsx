@@ -4,6 +4,7 @@ import type {
   EJsonValue,
   FieldSummary,
   Namespace,
+  QueryPlan,
 } from "@odin-db/bindings";
 import { commands } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
@@ -28,11 +29,12 @@ import {
 import { ExportDialog, ImportDialog } from "@/features/transfer";
 import { useSampleFields } from "@/hooks/use-sample-fields";
 import type { JsonObject } from "@/lib/ejson-display";
-import { call } from "@/lib/ipc";
+import { call, errorMessage } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import {
   useCountDocuments,
   useDeleteDocument,
+  useExplainFind,
   useInsertDocument,
   useReplaceDocument,
 } from "../api/mutations";
@@ -46,6 +48,7 @@ import {
 } from "../lib/query-form";
 import { historyKey, useQueryHistory } from "../store/query-history-store";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
+import { ExplainDialog } from "./explain-dialog";
 import { QueryBar } from "./query-bar";
 
 type EditorState =
@@ -92,6 +95,8 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const replace = useReplaceDocument();
   const remove = useDeleteDocument();
   const count = useCountDocuments();
+  const explainFind = useExplainFind();
+  const [plan, setPlan] = useState<QueryPlan | null>(null);
   const target = { connectionId: connection.id, namespace };
 
   const execute = useCallback(
@@ -109,6 +114,23 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
     },
     [results, count.reset, connection.id, namespace],
   );
+
+  async function explain() {
+    const parsed = await parseQueryForm(form, { invalidNumber: t("query.invalidNumber") });
+    if (!parsed.ok) {
+      setFormErrors(parsed.errors);
+      return;
+    }
+    setFormErrors({});
+    const { filter, sort, projection, skip, limit } = parsed.query;
+    explainFind.mutate(
+      { ...target, request: { filter, sort, projection, skip, limit } },
+      {
+        onSuccess: setPlan,
+        onError: (error) => toast.error(t("explain.failed", { message: errorMessage(error) })),
+      },
+    );
+  }
 
   async function runForm(toRun: QueryForm = form) {
     setForm(toRun);
@@ -174,6 +196,8 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         onChange={(field, value) => setForm((current) => ({ ...current, [field]: value }))}
         onRun={() => void runForm()}
         onRunForm={(next) => void runForm(next)}
+        onExplain={() => void explain()}
+        explaining={explainFind.isPending}
         fields={fields.data ?? NO_FIELDS}
         historyKey={queryHistoryKey}
         actions={
@@ -325,6 +349,13 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         onConfirm={confirmDelete}
         onClose={() => setToDelete(undefined)}
       />
+      {plan && (
+        <ExplainDialog
+          collection={namespace.collection}
+          plan={plan}
+          onClose={() => setPlan(null)}
+        />
+      )}
     </div>
   );
 }

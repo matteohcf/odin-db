@@ -980,6 +980,34 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     shells.delete(id("id", args));
     return null;
   },
+  explain_find: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const request = args.request as { filter: Doc };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const matched = coll.docs.filter((doc) => matchesFilter(doc, request.filter)).length;
+    const fields = Object.keys(request.filter);
+    const index = indexesOf(coll).find(
+      (spec) => fields.length > 0 && Object.keys((spec.key as Doc) ?? {})[0] === fields[0],
+    );
+    const stages = index ? ["IXSCAN", "FETCH"] : ["COLLSCAN"];
+    return {
+      stages,
+      indexes: index ? [index.name as string] : [],
+      collectionScan: !index,
+      returned: matched,
+      documentsExamined: index ? matched : coll.docs.length,
+      keysExamined: index ? matched : 0,
+      milliseconds: 3,
+      raw: {
+        queryPlanner: {
+          winningPlan: index
+            ? { stage: "FETCH", inputStage: { stage: "IXSCAN", indexName: index.name as string } }
+            : { stage: "COLLSCAN" },
+        },
+        executionStats: { nReturned: { $numberInt: String(matched) } },
+      },
+    };
+  },
   sample_fields: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);

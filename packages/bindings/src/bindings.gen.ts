@@ -27,6 +27,8 @@ export const commands = {
 	dropDatabase: (connectionId: ConnectionId, database: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_database", { connectionId, database })),
 	/**  Field paths of a sample of the collection, for query autocompletion. */
 	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size })),
+	/**  How the server runs a find: winning plan, indexes and counts. */
+	explainFind: (connectionId: ConnectionId, namespace: Namespace, request: ExplainRequest) => typedError<QueryPlan, IpcError>(__TAURI_INVOKE("explain_find", { connectionId, namespace, request })),
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
 	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
@@ -194,6 +196,14 @@ export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected"
 /**  A download failed verification: damaged in transit, or altered. */
 "integrity" | "internal";
 
+export type ExplainRequest = {
+	filter: EJsonDocument,
+	projection: EJsonDocument | null,
+	sort: EJsonDocument | null,
+	skip: number | null,
+	limit: number | null,
+};
+
 export type ExportFormat = "jsonArray" | "ndjson" | "csv";
 
 export type ExportRequest = {
@@ -322,6 +332,21 @@ export type ProfileInput = {
 	 */
 	password: Secret | null,
 	readOnly: boolean,
+};
+
+export type QueryPlan = {
+	/**  Stages of the winning plan, from the first one that runs to the last. */
+	stages: string[],
+	/**  Indexes the winning plan reads. */
+	indexes: string[],
+	/**  The plan reads every document of the collection. */
+	collectionScan: boolean,
+	returned: number | null,
+	documentsExamined: number | null,
+	keysExamined: number | null,
+	milliseconds: number | null,
+	/**  The full `explain` output, for details the summary leaves out. */
+	raw: EJsonDocument,
 };
 
 export type RecordError = {

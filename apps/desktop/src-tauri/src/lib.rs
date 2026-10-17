@@ -36,6 +36,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
         commands::catalog::drop_collection,
         commands::catalog::drop_database,
         commands::documents::sample_fields,
+        commands::documents::explain_find,
         commands::documents::insert_document,
         commands::documents::replace_document,
         commands::documents::delete_document,
