@@ -26,9 +26,10 @@ pub enum ShellEvent {
     },
 }
 
-/// Finds mongosh: the configured path, then the user's `PATH` (ADR-0014).
+/// Finds mongosh: the configured path, the user's `PATH`, then a copy downloaded
+/// into `downloads` (ADR-0014).
 #[must_use]
-pub fn locate_mongosh(configured: Option<&Path>) -> Option<PathBuf> {
+pub fn locate_mongosh(configured: Option<&Path>, downloads: Option<&Path>) -> Option<PathBuf> {
     if let Some(path) = configured.filter(|path| path.is_file()) {
         return Some(path.to_path_buf());
     }
@@ -43,6 +44,7 @@ pub fn locate_mongosh(configured: Option<&Path>) -> Option<PathBuf> {
         .into_iter()
         .map(|dir| dir.join(name))
         .find(|candidate| candidate.is_file())
+        .or_else(|| downloads.and_then(super::installed_mongosh))
 }
 
 pub struct ShellOptions<'a> {

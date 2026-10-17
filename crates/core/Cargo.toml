@@ -15,18 +15,23 @@ specta = ["dep:specta"]
 [dependencies]
 bson.workspace = true
 csv.workspace = true
+flate2.workspace = true
 keyring.workspace = true
 mongodb.workspace = true
 portable-pty.workspace = true
+reqwest.workspace = true
 rusqlite.workspace = true
 rusqlite_migration.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 specta = { workspace = true, optional = true }
+tar.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 uuid.workspace = true
+zip.workspace = true
 
 [dev-dependencies]
 testcontainers-modules.workspace = true

@@ -16,6 +16,8 @@ pub enum ErrorKind {
     Database,
     Storage,
     SecretStore,
+    /// A download failed verification: damaged in transit, or altered.
+    Integrity,
     Internal,
 }
 
@@ -43,6 +45,8 @@ pub enum CoreError {
     Storage(String),
     #[error("system keyring error: {0}")]
     SecretStore(String),
+    #[error("{0}")]
+    Integrity(String),
     #[error("internal error: {0}")]
     Internal(String),
 }
@@ -62,6 +66,7 @@ impl CoreError {
             Self::Database(_) => ErrorKind::Database,
             Self::Storage(_) => ErrorKind::Storage,
             Self::SecretStore(_) => ErrorKind::SecretStore,
+            Self::Integrity(_) => ErrorKind::Integrity,
             Self::Internal(_) => ErrorKind::Internal,
         }
     }

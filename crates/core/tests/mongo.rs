@@ -18,7 +18,9 @@ use odin_core::query::{
     AggregateRequest, CursorRegistry, FindRequest, Namespace, count_documents, preview_aggregation,
 };
 use odin_core::secrets::{MemoryStore, Secret};
-use odin_core::shell::{HIGH_WATERMARK, ShellEvent, ShellOptions, ShellSession, locate_mongosh};
+use odin_core::shell::{
+    self, HIGH_WATERMARK, ShellEvent, ShellOptions, ShellSession, locate_mongosh,
+};
 use odin_core::storage::Storage;
 use odin_core::transfer::{
     CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
@@ -788,7 +790,8 @@ fn byte_count(bytes: f64) -> usize {
 /// Needs mongosh: on `PATH`, or `ODIN_MONGOSH` (CI downloads it).
 fn mongosh() -> std::path::PathBuf {
     let configured = std::env::var_os("ODIN_MONGOSH").map(std::path::PathBuf::from);
-    locate_mongosh(configured.as_deref()).expect("mongosh: set ODIN_MONGOSH or add it to PATH")
+    locate_mongosh(configured.as_deref(), None)
+        .expect("mongosh: set ODIN_MONGOSH or add it to PATH")
 }
 
 async fn shell_output_until(
@@ -945,4 +948,62 @@ async fn shell_answers_the_password_prompt_through_the_pty() {
         "the password must never be echoed"
     );
     session.close();
+}
+
+/// Downloads the real pinned mongosh (about 70 MB). Opt in with `ODIN_TEST_DOWNLOADS=1`.
+#[tokio::test]
+#[ignore = "requires network"]
+async fn downloads_verifies_and_installs_mongosh() {
+    if std::env::var_os("ODIN_TEST_DOWNLOADS").is_none() {
+        return;
+    }
+    let dir = std::env::temp_dir().join(format!("odin-download-{}", uuid::Uuid::now_v7()));
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1024);
+    let path = shell::download_mongosh(&dir, tx, CancellationToken::new())
+        .await
+        .expect("download");
+
+    assert_eq!(shell::installed_mongosh(&dir), Some(path.clone()));
+    assert!(locate_mongosh(None, Some(&dir)).is_some());
+    let mut last = None;
+    while let Ok(progress) = rx.try_recv() {
+        last = Some(progress);
+    }
+    let last = last.expect("progress events");
+    assert_eq!(Some(last.received), last.total);
+    let version = std::process::Command::new(&path)
+        .arg("--version")
+        .output()
+        .expect("runs");
+    assert_eq!(
+        String::from_utf8_lossy(&version.stdout).trim(),
+        shell::MONGOSH_VERSION
+    );
+    std::fs::remove_dir_all(dir).expect("cleanup");
+}
+
+#[tokio::test]
+#[ignore = "requires network"]
+async fn a_cancelled_download_leaves_nothing_behind() {
+    if std::env::var_os("ODIN_TEST_DOWNLOADS").is_none() {
+        return;
+    }
+    let dir = std::env::temp_dir().join(format!("odin-download-{}", uuid::Uuid::now_v7()));
+    let cancel = CancellationToken::new();
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1024);
+    let download = tokio::spawn({
+        let (dir, cancel) = (dir.clone(), cancel.clone());
+        async move { shell::download_mongosh(&dir, tx, cancel).await }
+    });
+    rx.recv().await.expect("download started");
+    cancel.cancel();
+    assert!(matches!(
+        download.await.expect("joins"),
+        Err(CoreError::Cancelled)
+    ));
+    assert!(
+        std::fs::read_dir(&dir).expect("dir").next().is_none(),
+        "no partial files"
+    );
+    std::fs::remove_dir_all(dir).expect("cleanup");
 }
