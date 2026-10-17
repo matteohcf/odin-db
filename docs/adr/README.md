@@ -31,3 +31,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0025](0025-pull-based-result-paging.md) | Pull-based result paging | Accepted |
 | [0026](0026-result-grid-rendering.md) | Result grid rendering | Accepted |
 | [0027](0027-ui-development-harness.md) | UI development harness | Accepted |
+| [0028](0028-aggregation-builder.md) | Aggregation builder | Accepted |

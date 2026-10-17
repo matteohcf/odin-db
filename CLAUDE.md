@@ -15,6 +15,7 @@ apps/desktop/            React UI (Vite)
   src/features/<name>/   one folder per feature: api/ components/ hooks/ lib/ store/ locales/
     index.ts             the feature's public API (the only importable surface)
   src/components/        app-level shared components (EJSON cell, code editor, theme menu)
+  src/hooks/             app-level shared React hooks
   src/lib/               framework-free helpers: IPC, EJSON display, shell syntax, formatting
   src/dev/               dev-only code (mock backend), never shipped
   src-tauri/             Tauri host: thin commands only
@@ -36,7 +37,11 @@ docs/adr/                Architecture Decision Records
 - `packages/ui` never imports from `apps/*` or `packages/bindings`.
 - The UI talks to the backend only through `packages/bindings`. Never call `invoke()` with string command names.
 - `packages/bindings` is generated. Never edit it by hand. Regenerate with `pnpm bindings`.
-- Features import other features only through their `index.ts`. Dependencies point one way: `connections` and `documents` may use `workspace`; `workspace` knows no feature (the app passes render props). Only `src/app` wires features together.
+- Features import other features only through their `index.ts`, and dependencies point one way:
+  - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
+  - `documents` and `aggregation` build on `results`; `indexes` stands alone;
+  - `collection` (the collection tab) composes `documents`, `aggregation` and `indexes` with `connections`;
+  - `connections` may use `workspace` to open tabs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
 ## Core concepts
@@ -70,6 +75,7 @@ docs/adr/                Architecture Decision Records
 - No `any`. No non-null `!` without a comment explaining why it cannot be null.
 - Components: function components, named exports, one component per file. File names `kebab-case.tsx`.
 - Every user-visible string goes through i18next (ADR-0024). English is the source language.
+- Never put `TooltipTrigger asChild` (or any Radix trigger with `asChild`) directly on another stateful Radix component (Switch, Checkbox…): the trigger's `data-state` overwrites theirs. Wrap them in a `span`.
 - UI primitives come from `packages/ui` (shadcn). Do not hand-roll a button, dialog, menu, etc. Add components with the shadcn CLI from `packages/ui` (`pnpm dlx shadcn@latest add <name>`) and follow the official docs; class merging uses the official `cn` package, re-exported from `@odin-db/ui/lib/utils`.
 - Biome for lint and format. knip must report no unused exports or dependencies.
 
