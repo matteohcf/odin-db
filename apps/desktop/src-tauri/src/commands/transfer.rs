@@ -9,8 +9,9 @@ use odin_core::connection::ConnectionId;
 use odin_core::operations::{OperationId, OperationRegistry};
 use odin_core::query::Namespace;
 use odin_core::transfer::{
-    self, DatabaseExportRequest, DatabaseProgress, DatabaseTransferSummary, ExportFormat,
-    ExportRequest, FilePreview, ImportOptions, ImportSummary, TransferProgress, TransferSummary,
+    self, CopyRequest, DatabaseExportRequest, DatabaseProgress, DatabaseTransferSummary,
+    ExportFormat, ExportRequest, FilePreview, ImportOptions, ImportSummary, TransferProgress,
+    TransferSummary,
 };
 use serde::Serialize;
 use tauri::ipc::Channel;
@@ -265,6 +266,32 @@ pub async fn import_database(
             let summary =
                 transfer::import_database(&handle, &database, files, options, progress, cancel)
                     .await?;
+            let _ = tx.send(DatabaseTransferEvent::Finished(summary)).await;
+            Ok(())
+        },
+    ))
+}
+
+/// Copies a collection or a database from one connection to another, or within one.
+#[tauri::command]
+#[specta::specta]
+pub async fn copy_data(
+    state: State<'_, Arc<AppState>>,
+    registry: State<'_, Arc<OperationRegistry>>,
+    source_connection_id: ConnectionId,
+    target_connection_id: ConnectionId,
+    request: CopyRequest,
+    channel: Channel<StreamEvent<DatabaseTransferEvent>>,
+) -> Result<OperationId, IpcError> {
+    let source = state.connections.get(source_connection_id).await?;
+    let target = state.connections.get(target_connection_id).await?;
+    target.ensure_writable()?;
+    Ok(spawn_streaming_operation(
+        &registry,
+        channel,
+        move |tx, cancel| async move {
+            let progress = forward_database_progress(tx.clone());
+            let summary = transfer::copy(&source, &target, request, progress, cancel).await?;
             let _ = tx.send(DatabaseTransferEvent::Finished(summary)).await;
             Ok(())
         },

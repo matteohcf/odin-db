@@ -56,6 +56,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::transfer::export_database,
             commands::transfer::choose_import_folder,
             commands::transfer::import_database,
+            commands::transfer::copy_data,
             commands::backup::database_tools_status,
             commands::backup::backup_database,
             commands::backup::choose_restore_source,

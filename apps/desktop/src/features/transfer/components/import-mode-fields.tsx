@@ -27,7 +27,7 @@ interface ImportModeFieldsProps {
   value: ImportModeValue;
   onChange: (value: ImportModeValue) => void;
   /** What "empty first" empties: the collection or the database's collections. */
-  scope: "collection" | "database";
+  scope: "collection" | "database" | "copyCollection" | "copyDatabase";
   /** Name to type to confirm emptying. */
   target: string;
 }

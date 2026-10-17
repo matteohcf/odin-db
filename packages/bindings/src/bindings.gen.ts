@@ -67,6 +67,8 @@ export const commands = {
 	collections: string[],
 } | null, IpcError>(__TAURI_INVOKE("choose_import_folder")),
 	importDatabase: (connectionId: ConnectionId, database: string, token: string, options: ImportOptions, channel: Channel<StreamEvent<DatabaseTransferEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_database", { connectionId, database, token, options, channel })),
+	/**  Copies a collection or a database from one connection to another, or within one. */
+	copyData: (sourceConnectionId: ConnectionId, targetConnectionId: ConnectionId, request: CopyRequest, channel: Channel<StreamEvent<DatabaseTransferEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("copy_data", { sourceConnectionId, targetConnectionId, request, channel })),
 	databaseToolsStatus: () => typedError<ToolsStatus, IpcError>(__TAURI_INVOKE("database_tools_status")),
 	/**  Asks where to save the archive, then runs mongodump. `None` if the user cancels. */
 	backupDatabase: (connectionId: ConnectionId, request: BackupRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("backup_database", { connectionId, request, channel })),
@@ -243,6 +245,22 @@ export type ConnectionProfile = {
 	connectionString: string,
 	readOnly: boolean,
 	hasPassword: boolean,
+};
+
+export type CopyRequest = {
+	sourceDatabase: string,
+	/**  One collection, or `None` for every collection and view of the database. */
+	sourceCollection: string | null,
+	targetDatabase: string,
+	/**  Collection copies only: the new name; defaults to the source name. */
+	targetCollection: string | null,
+	mode: ImportMode,
+	/**
+	 *  Drops each target collection first, indexes included. Destructive:
+	 *  confirmed in the UI.
+	 */
+	dropTarget: boolean,
+	copyIndexes: boolean,
 };
 
 export type CreateIndexRequest = {

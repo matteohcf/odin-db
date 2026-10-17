@@ -80,15 +80,19 @@
     "insert": "Solo inserimento",
     "insertHint": "I documenti il cui _id esiste già non vengono importati e sono elencati alla fine.",
     "upsert": "Sostituisci per _id",
-    "upsertHint": "Un documento esistente viene sostituito dalla versione del file; quelli nuovi vengono inseriti.",
+    "upsertHint": "Un documento esistente viene sostituito da quello in arrivo; quelli nuovi vengono inseriti.",
     "merge": "Unisci per _id",
-    "mergeHint": "I campi del file vengono impostati sul documento esistente; gli altri campi restano invariati.",
+    "mergeHint": "I campi in arrivo vengono impostati sul documento esistente; gli altri campi restano.",
     "dropFirst": {
       "collection": "Svuota prima la collezione",
       "collectionHint": "Elimina tutti i documenti prima dell'importazione. Gli indici vengono mantenuti.",
       "database": "Svuota prima ogni collezione",
       "databaseHint": "Elimina tutti i documenti delle collezioni importate. Le altre collezioni non vengono toccate.",
-      "confirm": "Digita {{name}} per confermare"
+      "confirm": "Digita {{name}} per confermare",
+      "copyCollection": "Sostituisci la collezione di destinazione",
+      "copyCollectionHint": "La elimina prima, indici compresi, così diventa identica alla sorgente.",
+      "copyDatabase": "Sostituisci le collezioni di destinazione",
+      "copyDatabaseHint": "Elimina prima ogni collezione di destinazione che ha una corrispondente nella sorgente. Le altre collezioni non vengono toccate."
     }
   },
   "database": {
@@ -126,5 +130,30 @@
       "cancelled": "Importazione annullata. I documenti importati prima dell'annullamento restano nel database.",
       "failed": "Importazione non riuscita: {{message}}"
     }
+  },
+  "copy": {
+    "menuCollection": "Copia in…",
+    "menuDatabase": "Copia database in…",
+    "collectionTitle": "Copia collezione",
+    "databaseTitle": "Copia database",
+    "collectionDescription": "Copia documenti, opzioni e indici di {{source}} in un'altra connessione o con un nuovo nome.",
+    "databaseDescription": "Copia tutte le collezioni e le viste di {{source}}, con opzioni e indici, in un'altra connessione o database.",
+    "target": "Connessione di destinazione",
+    "targetHint": "Sono elencate solo le connessioni aperte. Connettiti a un server per copiare lì.",
+    "thisConnection": "(questa connessione)",
+    "readOnly": "(sola lettura)",
+    "database": "Database",
+    "collection": "Collezione",
+    "ontoItself": "Scegli un altro database o nome: una collezione non può essere copiata su se stessa.",
+    "indexes": "Copia gli indici",
+    "indexesHint": "Ricreati dopo i documenti. Un indice che non riesce, ad esempio uno unique su duplicati, viene segnalato.",
+    "noTargets": "Nessuna connessione aperta accetta scritture. Connettiti a un server non in sola lettura per copiare lì.",
+    "submit": "Copia",
+    "running": "Copia in corso…",
+    "progress": "{{collection}} ({{index}} di {{total}}) · {{documents, number}} documenti",
+    "done_one": "Copiata {{count, number}} collezione: {{documents, number}} documenti inseriti, {{updated, number}} aggiornati.",
+    "done_other": "Copiate {{count, number}} collezioni: {{documents, number}} documenti inseriti, {{updated, number}} aggiornati.",
+    "cancelled": "Copia annullata. I documenti copiati prima dell'annullamento restano nella destinazione.",
+    "failed": "Copia non riuscita: {{message}}"
   }
 }

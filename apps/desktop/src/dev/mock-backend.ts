@@ -1000,6 +1000,60 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       }),
     );
   },
+  copy_data: (args) => {
+    const source = serverOf(id("sourceConnectionId", args));
+    const target = serverOf(id("targetConnectionId", args));
+    ensureWritable(target.connection);
+    const request = args.request as {
+      sourceDatabase: string;
+      sourceCollection: string | null;
+      targetDatabase: string;
+      targetCollection: string | null;
+      dropTarget: boolean;
+    };
+    const names = request.sourceCollection
+      ? [request.sourceCollection]
+      : Object.keys(source.databases[request.sourceDatabase] ?? {}).filter(
+          (name) => !name.startsWith("system."),
+        );
+    const jobs = names.map((name) => ({
+      from: name,
+      to: request.sourceCollection ? (request.targetCollection ?? name) : name,
+    }));
+    if (
+      source.connection === target.connection &&
+      request.sourceDatabase === request.targetDatabase &&
+      jobs.some((job) => job.from === job.to)
+    ) {
+      fail("validation", "invalid input: choose another database or name");
+    }
+    target.databases[request.targetDatabase] ??= {};
+    const targetDb = target.databases[request.targetDatabase];
+    let documents = 0;
+    for (const job of jobs) {
+      const from = source.databases[request.sourceDatabase]?.[job.from];
+      if (!from || !targetDb) continue;
+      if (request.dropTarget || !targetDb[job.to]) {
+        targetDb[job.to] = { ...from, docs: [] };
+      }
+      const into = targetDb[job.to];
+      if (!into) continue;
+      into.docs.push(...from.docs.map((doc) => structuredClone(doc)));
+      documents += from.docs.length;
+    }
+    return simulateTransfer(
+      args.channel,
+      jobs.length,
+      { collections: jobs.length, documents, updated: 0, failed: 0, errors: [] },
+      0,
+      (done) => ({
+        collection: jobs[Math.max(0, done - 1)]?.to ?? "",
+        index: done,
+        total: jobs.length,
+        documents: Math.round(documents / Math.max(1, jobs.length)),
+      }),
+    );
+  },
   choose_import_folder: () => {
     const token = crypto.randomUUID();
     importFolders.add(token);

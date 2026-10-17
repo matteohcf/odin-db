@@ -80,15 +80,19 @@
     "insert": "Insert only",
     "insertHint": "Documents whose _id already exists fail and are listed at the end.",
     "upsert": "Replace by _id",
-    "upsertHint": "An existing document is replaced by the file's version; new ones are inserted.",
+    "upsertHint": "An existing document is replaced by the incoming one; new ones are inserted.",
     "merge": "Merge by _id",
-    "mergeHint": "The file's fields are set on the existing document; other fields are kept.",
+    "mergeHint": "The incoming fields are set on the existing document; other fields are kept.",
     "dropFirst": {
       "collection": "Empty the collection first",
       "collectionHint": "Deletes every document before importing. Indexes are kept.",
       "database": "Empty each collection first",
       "databaseHint": "Deletes every document of the collections being imported. Other collections are not touched.",
-      "confirm": "Type {{name}} to confirm"
+      "confirm": "Type {{name}} to confirm",
+      "copyCollection": "Replace the target collection",
+      "copyCollectionHint": "Drops it first, indexes included, so it ends up identical to the source.",
+      "copyDatabase": "Replace the target collections",
+      "copyDatabaseHint": "Drops each target collection that has a source counterpart first. Other collections are not touched."
     }
   },
   "database": {
@@ -126,5 +130,30 @@
       "cancelled": "Import cancelled. Documents imported before cancelling stay in the database.",
       "failed": "Import failed: {{message}}"
     }
+  },
+  "copy": {
+    "menuCollection": "Copy to…",
+    "menuDatabase": "Copy database to…",
+    "collectionTitle": "Copy collection",
+    "databaseTitle": "Copy database",
+    "collectionDescription": "Copies the documents, options and indexes of {{source}} to another connection, or under a new name.",
+    "databaseDescription": "Copies every collection and view of {{source}}, with their options and indexes, to another connection or database.",
+    "target": "Target connection",
+    "targetHint": "Only open connections are listed. Connect to a server to copy to it.",
+    "thisConnection": "(this connection)",
+    "readOnly": "(read-only)",
+    "database": "Database",
+    "collection": "Collection",
+    "ontoItself": "Choose another database or name: a collection cannot be copied onto itself.",
+    "indexes": "Copy indexes",
+    "indexesHint": "Recreated after the documents. An index that fails, such as a unique one over duplicates, is reported.",
+    "noTargets": "No open connection accepts writes. Connect to a server that is not read-only to copy to it.",
+    "submit": "Copy",
+    "running": "Copying…",
+    "progress": "{{collection}} ({{index}} of {{total}}) · {{documents, number}} documents",
+    "done_one": "Copied {{count, number}} collection: {{documents, number}} documents inserted, {{updated, number}} updated.",
+    "done_other": "Copied {{count, number}} collections: {{documents, number}} documents inserted, {{updated, number}} updated.",
+    "cancelled": "Copy cancelled. Documents copied before cancelling stay in the target.",
+    "failed": "Copy failed: {{message}}"
   }
 }

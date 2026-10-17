@@ -20,6 +20,7 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { call, errorMessage } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
+import { DatabaseTransferResult } from "./database-transfer-result";
 import { DEFAULT_IMPORT_MODE, ImportModeFields, importModeReady } from "./import-mode-fields";
 import { TransferStatus } from "./transfer-status";
 
@@ -104,7 +105,16 @@ export function DatabaseImportDialog({
                   })
                 : ""
             }
-            finished={(summary) => <DatabaseImportResult summary={summary} />}
+            finished={(summary) => (
+              <DatabaseTransferResult
+                summary={summary}
+                done={t("database.import.done", {
+                  collections: summary.collections ?? 0,
+                  documents: summary.documents ?? 0,
+                  updated: summary.updated ?? 0,
+                })}
+              />
+            )}
             cancelledText={t("database.import.cancelled")}
             failedText={(message) => t("database.import.failed", { message })}
           />
@@ -200,33 +210,5 @@ export function DatabaseImportDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function DatabaseImportResult({ summary }: { summary: DatabaseTransferSummary }) {
-  const { t } = useTranslation("transfer");
-  const failed = summary.failed ?? 0;
-  return (
-    <>
-      <p className={failed === 0 ? "text-success" : undefined}>
-        {t("database.import.done", {
-          collections: summary.collections ?? 0,
-          documents: summary.documents ?? 0,
-          updated: summary.updated ?? 0,
-        })}
-      </p>
-      {failed > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-destructive">{t("database.import.failedCount", { count: failed })}</p>
-          <ul className="max-h-40 overflow-y-auto rounded-md border p-2 font-mono text-xs selectable">
-            {summary.errors.map((error) => (
-              <li key={error} className="break-words">
-                {error}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </>
   );
 }

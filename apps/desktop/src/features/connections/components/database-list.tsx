@@ -3,6 +3,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Clock,
+  Copy,
   Database,
   Eye,
   FileDown,
@@ -17,11 +18,12 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
-import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
+import { CopyDialog, DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
 import { formatBytes } from "@/lib/format";
 import { connectionKeys } from "../api/keys";
 import { useCollections, useDatabases, useProfile } from "../api/queries";
+import { useCopyTargets } from "../hooks/use-copy-targets";
 import { useExpanded } from "../store/explorer-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
@@ -60,7 +62,7 @@ function DatabaseNode({
   const { t } = useTranslation("connections");
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
   const [toolDialog, setToolDialog] = useState<
-    "backup" | "restore" | "export" | "import" | "createCollection" | "drop" | null
+    "backup" | "restore" | "export" | "import" | "copy" | "createCollection" | "drop" | null
   >(null);
   const collections = useCollections(
     connection.id,
@@ -106,6 +108,10 @@ function DatabaseNode({
             <DropdownMenuItem onSelect={() => setToolDialog("export")}>
               <FileDown />
               {t("database.menuExport", { ns: "transfer" })}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setToolDialog("copy")}>
+              <Copy />
+              {t("copy.menuDatabase", { ns: "transfer" })}
             </DropdownMenuItem>
             {writable && (
               <>
@@ -156,6 +162,13 @@ function DatabaseNode({
           collections={collections.data
             ?.filter((collection) => collection.kind !== "view" && !isSystem(collection))
             .map((collection) => collection.name)}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
+      {toolDialog === "copy" && (
+        <CopyDialogFor
+          connection={connection}
+          database={database.name}
           onClose={() => setToolDialog(null)}
         />
       )}
@@ -223,7 +236,7 @@ function CollectionNode({
   const { t } = useTranslation("connections");
   const openCollection = useTabs((s) => s.openCollection);
   const Icon = kindIcon[collection.kind];
-  const [dialog, setDialog] = useState<"backup" | "rename" | "drop" | null>(null);
+  const [dialog, setDialog] = useState<"backup" | "copy" | "rename" | "drop" | null>(null);
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const isView = collection.kind === "view";
   const writable = !connection.readOnly && !isSystem(collection);
@@ -254,10 +267,16 @@ function CollectionNode({
                 </DropdownMenuItem>
               )}
               {!isView && (
-                <DropdownMenuItem onSelect={() => setDialog("backup")}>
-                  <HardDriveDownload />
-                  {t("menu.backup", { ns: "backup" })}
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onSelect={() => setDialog("copy")}>
+                    <Copy />
+                    {t("copy.menuCollection", { ns: "transfer" })}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setDialog("backup")}>
+                    <HardDriveDownload />
+                    {t("menu.backup", { ns: "backup" })}
+                  </DropdownMenuItem>
+                </>
               )}
               {writable && (
                 <>
@@ -277,6 +296,14 @@ function CollectionNode({
           connectionId={connection.id}
           profileName={profileName}
           scope={{ kind: "collection", database, collection: collection.name }}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "copy" && (
+        <CopyDialogFor
+          connection={connection}
+          database={database}
+          collection={collection.name}
           onClose={() => setDialog(null)}
         />
       )}
@@ -306,6 +333,34 @@ function CollectionNode({
 
 /** Databases MongoDB manages itself; core refuses to drop them too. */
 const SYSTEM_DATABASES = new Set(["admin", "local", "config"]);
+
+/** The copy dialog with this app's connections as targets; refreshes the target's tree. */
+function CopyDialogFor({
+  connection,
+  database,
+  collection,
+  onClose,
+}: {
+  connection: ConnectionInfo;
+  database: string;
+  collection?: string;
+  onClose: () => void;
+}) {
+  const targets = useCopyTargets();
+  const queryClient = useQueryClient();
+  return (
+    <CopyDialog
+      sourceConnectionId={connection.id}
+      database={database}
+      collection={collection}
+      targets={targets}
+      onCopied={(target) =>
+        void queryClient.invalidateQueries({ queryKey: connectionKeys.connection(target) })
+      }
+      onClose={onClose}
+    />
+  );
+}
 
 function isSystem(collection: CollectionInfo) {
   return collection.name.startsWith("system.");
