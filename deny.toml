@@ -11,6 +11,11 @@ yanked = "deny"
 ignore = [
   { id = "RUSTSEC-2024-0436", reason = "paste: pulled in by specta/tauri" },
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error: pulled in by the Linux GTK stack used by Tauri" },
+  # Unmaintained notices, not vulnerabilities: merged into zbus 6, which secret-service
+  # (keyring's Linux backend) has not adopted yet. Drop once keyring moves to zbus 6.
+  { id = "RUSTSEC-2026-0370", reason = "zvariant: via keyring -> secret-service -> zbus 5" },
+  { id = "RUSTSEC-2026-0371", reason = "zbus_names: via keyring -> secret-service -> zbus 5" },
+  { id = "RUSTSEC-2026-0372", reason = "zvariant_derive: via keyring -> secret-service -> zbus 5" },
 ]
 
 [licenses]
