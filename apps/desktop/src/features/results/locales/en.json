@@ -43,7 +43,8 @@
     "inlineHint": "Enter saves, Tab moves to the next field, Escape cancels. mongosh syntax keeps types: \"text\", 42, Double(4), ISODate(\"2024-01-01\")",
     "exclude": "Exclude this {{field}}",
     "greater": "{{field}} greater than this",
-    "less": "{{field}} less than this"
+    "less": "{{field}} less than this",
+    "openLink": "Open link"
   },
   "view": {
     "label": "Results view",

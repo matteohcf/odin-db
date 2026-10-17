@@ -16,6 +16,8 @@ export const commands = {
 	 *  that ends while the user works elsewhere should not go unnoticed.
 	 */
 	notifyIfUnfocused: (title: string, body: string) => __TAURI_INVOKE<void>("notify_if_unfocused", { title, body }),
+	/**  Opens a link found in a document in the default browser or mail app. */
+	openLink: (url: string) => typedError<null, IpcError>(__TAURI_INVOKE("open_link", { url })),
 	listProfiles: () => typedError<ConnectionProfile[], IpcError>(__TAURI_INVOKE("list_profiles")),
 	createProfile: (input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("create_profile", { input })),
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),

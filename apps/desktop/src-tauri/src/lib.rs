@@ -23,6 +23,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::app::app_info,
             commands::app::confirm_quit,
             commands::app::notify_if_unfocused,
+            commands::app::open_link,
             commands::profiles::list_profiles,
             commands::profiles::create_profile,
             commands::profiles::update_profile,

@@ -1,4 +1,4 @@
-import type { JsonValue } from "@odin-db/bindings";
+import { commands, type JsonValue } from "@odin-db/bindings";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -32,6 +32,7 @@ import {
   ChevronRight,
   Columns3,
   Copy,
+  ExternalLink,
   Filter,
   FilterX,
   GitCompareArrows,
@@ -45,6 +46,8 @@ import { toast } from "sonner";
 import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
 import { compactEJson, type JsonObject } from "@/lib/ejson-display";
+import { call, errorMessage } from "@/lib/ipc";
+import { linkOf } from "@/lib/links";
 import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns";
@@ -511,9 +514,17 @@ export function ResultsGrid({
                       const header = headers[slot.index];
                       if (!header) return null;
                       return (
+                        // biome-ignore lint/a11y/useKeyWithClickEvents: Cmd-click is a pointer shortcut; the cell menu opens links from the keyboard.
                         <td
                           key={header.id}
                           onContextMenu={() => setMenuColumn(header.id)}
+                          onClick={(event) => {
+                            // Cmd/Ctrl-click follows a link, like in an editor.
+                            if ((event.metaKey || event.ctrlKey) && linkOf(row[header.id])) {
+                              event.stopPropagation();
+                              openLink(row[header.id]);
+                            }
+                          }}
                           onDoubleClick={(event) => {
                             if (!inlineEditable(row, header.id)) return;
                             // Edits the value here instead of opening the document.
@@ -597,6 +608,12 @@ export function ResultsGrid({
             <>
               {menuColumn !== null && (
                 <>
+                  {linkOf(selected[menuColumn]) && (
+                    <ContextMenuItem onSelect={() => openLink(selected[menuColumn])}>
+                      <ExternalLink />
+                      {t("cell.openLink")}
+                    </ContextMenuItem>
+                  )}
                   <ContextMenuItem
                     disabled={selected[menuColumn] === undefined}
                     onSelect={() => {
@@ -741,4 +758,9 @@ function ColumnsMenu({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+function openLink(value: JsonValue | undefined) {
+  const link = linkOf(value);
+  if (link) void call(commands.openLink(link)).catch((error) => toast.error(errorMessage(error)));
 }

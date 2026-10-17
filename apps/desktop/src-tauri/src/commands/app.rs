@@ -58,3 +58,14 @@ pub fn notify_if_unfocused(app: tauri::AppHandle, title: String, body: String) {
     // Best effort: notifications may be turned off for the app.
     let _ = app.notification().builder().title(title).body(body).show();
 }
+
+/// Opens a link found in a document in the default browser or mail app.
+#[tauri::command]
+#[specta::specta]
+pub fn open_link(url: String) -> Result<(), crate::ipc::IpcError> {
+    let link = odin_core::links::checked_link(&url)?;
+    tauri_plugin_opener::open_url(link, None::<&str>).map_err(|error| {
+        odin_core::error::CoreError::Internal(format!("cannot open the link: {error}"))
+    })?;
+    Ok(())
+}

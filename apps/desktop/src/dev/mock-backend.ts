@@ -96,6 +96,7 @@ function order(i: number): Doc {
       qty: { $numberInt: "1" },
     })),
     placedAt: { $date: { $numberLong: String(1_700_000_000_000 + i * 86_400_000) } },
+    tracking: `https://track.example.com/${10_000 + i}`,
   };
 }
 
@@ -836,6 +837,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       sent.push({ title: args.title, body: args.body });
       Object.assign(window, { odinNotifications: sent });
     }
+    return null;
+  },
+  open_link: (args) => {
+    const url = String(args.url).trim();
+    if (!/^(https?:\/\/|mailto:)\S+$/i.test(url)) {
+      fail("validation", "only http, https and mailto links can be opened");
+    }
+    Object.assign(window, { odinOpenedLink: url });
     return null;
   },
   confirm_quit: () => {

@@ -43,7 +43,8 @@
     "inlineHint": "Invio salva, Tab passa al campo successivo, Esc annulla. La sintassi mongosh mantiene i tipi: \"testo\", 42, Double(4), ISODate(\"2024-01-01\")",
     "exclude": "Escludi questo valore di {{field}}",
     "greater": "{{field}} maggiore di questo",
-    "less": "{{field}} minore di questo"
+    "less": "{{field}} minore di questo",
+    "openLink": "Apri link"
   },
   "view": {
     "label": "Vista dei risultati",
