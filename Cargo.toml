@@ -16,6 +16,7 @@ odin-core = { path = "crates/core" }
 bson = { version = "3.1.0", features = ["serde", "serde_json-1"] }
 csv = "1.4.0"
 flate2 = "1.1.10"
+jiff = "0.2.38"
 keyring = "4.2.0"
 portable-pty = "0.9.0"
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls"] }
@@ -42,6 +43,7 @@ tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 tauri = "2.12.4"
 tauri-build = "2.7.3"
 tauri-plugin-dialog = "2.8.3"
+tauri-plugin-opener = "2.7.2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

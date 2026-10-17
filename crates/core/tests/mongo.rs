@@ -1242,3 +1242,78 @@ async fn reports_collection_storage_stats() {
     assert!(stats.size > 0.0 && stats.average_document_size > 0.0);
     assert!((stats.indexes - 1.0).abs() < f64::EPSILON, "the _id index");
 }
+
+/// The scheduler's cycle with the real tools: record, dump, finish, keep the newest.
+#[tokio::test]
+#[ignore = "requires Docker and MongoDB Database Tools"]
+async fn scheduled_backups_are_recorded_and_pruned() {
+    use odin_core::backup::history;
+    use odin_core::backup::schedule::{self, Frequency, ScheduleInput, Timing};
+
+    let dir = std::env::var_os("ODIN_TOOLS_DIR").map(std::path::PathBuf::from);
+    let tools = locate_tools(dir.as_deref()).expect("database tools");
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    fx.seed(&handle, &namespace("events"), 50).await;
+    let profile = fx.profile(false);
+    let folder = temp_path("scheduled");
+    std::fs::create_dir_all(&folder).expect("folder");
+    let scope = BackupScope::Database {
+        database: "odin_test".into(),
+    };
+    let created = schedule::create_schedule(
+        &fx.storage,
+        ScheduleInput {
+            profile_id: profile.id,
+            scope: scope.clone(),
+            timing: Timing {
+                frequency: Frequency::Hourly,
+                minute: 0,
+                weekday: None,
+            },
+            keep: 2,
+            enabled: true,
+        },
+        &folder,
+    )
+    .expect("schedule");
+
+    for _ in 0..3 {
+        let archive = history::archive_path(&folder, &profile.name, &scope, &jiff::Zoned::now());
+        let run = history::start_run(&fx.storage, profile.id, Some(created.id), &scope, &archive)
+            .expect("start");
+        let (events, mut drain) = tokio::sync::mpsc::channel(256);
+        tokio::spawn(async move { while drain.recv().await.is_some() {} });
+        let outcome = backup(
+            &tools,
+            ToolConnection {
+                uri: &fx.uri,
+                password: None,
+                read_only: false,
+            },
+            &BackupRequest {
+                scope: scope.clone(),
+                gzip: true,
+            },
+            &archive,
+            events,
+            CancellationToken::new(),
+        )
+        .await;
+        history::finish_run(&fx.storage, run, &outcome).expect("finish");
+        history::prune(&fx.storage, created.id, 2).expect("prune");
+        // Archive names have one-second resolution.
+        tokio::time::sleep(std::time::Duration::from_millis(1100)).await;
+    }
+
+    let runs = history::list_runs(&fx.storage).expect("runs");
+    assert_eq!(runs.len(), 2, "only the newest two are kept");
+    assert!(runs.iter().all(|run| run.archive_exists && run.bytes > 0.0));
+    assert!(
+        runs.iter()
+            .all(|run| (run.documents - 50.0).abs() < f64::EPSILON)
+    );
+    let files = std::fs::read_dir(&folder).expect("folder").count();
+    assert_eq!(files, 2, "pruned archives are deleted from disk");
+    std::fs::remove_dir_all(folder).expect("cleanup");
+}

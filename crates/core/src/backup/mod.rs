@@ -4,6 +4,9 @@
 //! temporary `--config` file readable only by the current user, deleted when the
 //! process ends.
 
+pub mod history;
+pub mod schedule;
+
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -70,7 +73,7 @@ pub async fn tools_version(tools: &DatabaseTools) -> Option<String> {
         .map(str::to_owned)
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum BackupScope {

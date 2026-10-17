@@ -16,6 +16,7 @@ specta = ["dep:specta"]
 bson.workspace = true
 csv.workspace = true
 flate2.workspace = true
+jiff.workspace = true
 keyring.workspace = true
 mongodb.workspace = true
 portable-pty.workspace = true
