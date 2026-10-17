@@ -51,6 +51,14 @@ export const commands = {
 	name: string,
 } | null, IpcError>(__TAURI_INVOKE("choose_restore_source", { source })),
 	restoreDatabase: (connectionId: ConnectionId, token: string, request: RestoreRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("restore_database", { connectionId, token, request, channel })),
+	mongoshStatus: () => typedError<MongoshStatus, IpcError>(__TAURI_INVOKE("mongosh_status")),
+	/**  Starts mongosh for the connection's profile; output streams over `channel`. */
+	openShell: (connectionId: ConnectionId, cols: number, rows: number, channel: Channel<ShellEvent>) => typedError<string, IpcError>(__TAURI_INVOKE("open_shell", { connectionId, cols, rows, channel })),
+	shellWrite: (id: string, data: string) => typedError<null, IpcError>(__TAURI_INVOKE("shell_write", { id, data })),
+	shellResize: (id: string, cols: number, rows: number) => typedError<null, IpcError>(__TAURI_INVOKE("shell_resize", { id, cols, rows })),
+	/**  The UI rendered `bytes` of output (ADR-0030 credit-based flow control). */
+	shellAck: (id: string, bytes: number) => typedError<null, IpcError>(__TAURI_INVOKE("shell_ack", { id, bytes })),
+	closeShell: (id: string) => __TAURI_INVOKE<void>("close_shell", { id }),
 	/**  Returns `false` if the operation already finished. */
 	cancelOperation: (id: OperationId) => __TAURI_INVOKE<boolean>("cancel_operation", { id }),
 	streamSampleDocuments: (options: DocumentStreamOptions, channel: Channel<StreamEvent<EJsonDocument[]>>) => __TAURI_INVOKE<OperationId>("stream_sample_documents", { options, channel }),
@@ -253,6 +261,11 @@ export type JsonMode = "canonical" | "relaxed";
  */
 export type JsonValue = null | boolean | number | null | string | JsonValue[] | { [key in string]: JsonValue };
 
+export type MongoshStatus = {
+	available: boolean,
+	version: string | null,
+};
+
 export type Namespace = {
 	database: string,
 	collection: string,
@@ -311,6 +324,10 @@ export type Secret = string;
 export type ServerInfo = {
 	serverVersion: string,
 };
+
+export type ShellEvent = 
+/**  Terminal output. `bytes` is what the UI acknowledges once rendered (ADR-0030). */
+{ kind: "output"; data: string; bytes: number | null } | { kind: "exited"; code: number | null };
 
 /**  Every long operation emits data events followed by exactly one terminal event. */
 export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" } | { event: "cancelled" } | { event: "failed"; data: IpcError };

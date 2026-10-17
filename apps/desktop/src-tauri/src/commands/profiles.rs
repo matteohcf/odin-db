@@ -49,6 +49,7 @@ pub async fn delete_profile(
 ) -> Result<(), IpcError> {
     if let Some(handle) = state.connections.find_by_profile(id).await {
         state.cursors.close_for_connection(handle.info.id);
+        state.close_shells_for(handle.info.id);
         state.connections.disconnect(handle.info.id).await?;
     }
     Ok(blocking(&state, move |s| {

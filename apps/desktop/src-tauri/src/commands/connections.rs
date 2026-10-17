@@ -30,6 +30,7 @@ pub async fn disconnect(
     connection_id: ConnectionId,
 ) -> Result<(), IpcError> {
     state.cursors.close_for_connection(connection_id);
+    state.close_shells_for(connection_id);
     Ok(state.connections.disconnect(connection_id).await?)
 }
 

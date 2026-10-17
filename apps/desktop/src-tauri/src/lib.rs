@@ -46,6 +46,12 @@ fn specta_builder() -> Builder<tauri::Wry> {
         commands::backup::backup_database,
         commands::backup::choose_restore_source,
         commands::backup::restore_database,
+        commands::shell::mongosh_status,
+        commands::shell::open_shell,
+        commands::shell::shell_write,
+        commands::shell::shell_resize,
+        commands::shell::shell_ack,
+        commands::shell::close_shell,
         commands::operations::cancel_operation,
         commands::perf_lab::stream_sample_documents,
         commands::perf_lab::stream_terminal_output,
@@ -79,6 +85,7 @@ pub fn run() {
                 connections: ConnectionManager::default(),
                 cursors: CursorRegistry::default(),
                 picked_files: std::sync::Mutex::default(),
+                shells: std::sync::Mutex::default(),
             }));
 
             // Webviews throttle animation frames in occluded windows, which would

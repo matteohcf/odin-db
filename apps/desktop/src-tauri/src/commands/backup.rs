@@ -10,14 +10,13 @@ use odin_core::backup::{
 };
 use odin_core::connection::ConnectionId;
 use odin_core::operations::{OperationId, OperationRegistry};
-use odin_core::profiles;
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::ipc::{IpcError, StreamEvent, spawn_streaming_operation};
-use crate::state::{AppState, blocking};
+use crate::state::{AppState, Credentials, profile_credentials};
 
 /// Tool output, then exactly one `finished` with the totals.
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -76,7 +75,7 @@ pub async fn backup_database(
     channel: Channel<StreamEvent<BackupEvent>>,
 ) -> Result<Option<OperationId>, IpcError> {
     let tools = require_tools()?;
-    let credentials = credentials(&state, connection_id).await?;
+    let credentials = profile_credentials(&state, connection_id).await?;
     let stem = match &request.scope {
         BackupScope::Deployment => "mongodb".to_owned(),
         BackupScope::Database { database } => database.clone(),
@@ -110,7 +109,7 @@ pub async fn backup_database(
         channel,
         move |tx, cancel| async move {
             let output = forward_output(tx.clone());
-            let connection = credentials.connection();
+            let connection = tool_connection(&credentials);
             let summary =
                 backup::backup(&tools, connection, &request, &path, output, cancel).await?;
             let _ = tx.send(BackupEvent::Finished(summary)).await;
@@ -167,7 +166,7 @@ pub async fn restore_database(
     channel: Channel<StreamEvent<BackupEvent>>,
 ) -> Result<OperationId, IpcError> {
     let tools = require_tools()?;
-    let credentials = credentials(&state, connection_id).await?;
+    let credentials = profile_credentials(&state, connection_id).await?;
     if credentials.read_only {
         return Err(CoreError::ReadOnly.into());
     }
@@ -184,48 +183,13 @@ pub async fn restore_database(
         channel,
         move |tx, cancel| async move {
             let output = forward_output(tx.clone());
-            let connection = credentials.connection();
+            let connection = tool_connection(&credentials);
             let summary =
                 backup::restore(&tools, connection, &request, &path, output, cancel).await?;
             let _ = tx.send(BackupEvent::Finished(summary)).await;
             Ok(())
         },
     ))
-}
-
-/// What the tools need to connect as the profile: the sanitized URI and its password.
-struct Credentials {
-    uri: String,
-    password: Option<odin_core::secrets::Secret>,
-    read_only: bool,
-}
-
-impl Credentials {
-    fn connection(&self) -> ToolConnection<'_> {
-        ToolConnection {
-            uri: &self.uri,
-            password: self.password.as_ref(),
-            read_only: self.read_only,
-        }
-    }
-}
-
-async fn credentials(
-    state: &State<'_, Arc<AppState>>,
-    connection_id: ConnectionId,
-) -> Result<Credentials, CoreError> {
-    let handle = state.connections.get(connection_id).await?;
-    let profile_id = handle.info.profile_id;
-    let read_only = handle.info.read_only;
-    blocking(state, move |s| {
-        let profile = profiles::get(&s.storage, s.secrets.as_ref(), profile_id)?;
-        Ok(Credentials {
-            uri: profile.connection_string,
-            password: s.secrets.password(profile_id)?,
-            read_only,
-        })
-    })
-    .await
 }
 
 fn forward_output(
@@ -240,4 +204,12 @@ fn forward_output(
         }
     });
     output_tx
+}
+
+fn tool_connection(credentials: &Credentials) -> ToolConnection<'_> {
+    ToolConnection {
+        uri: &credentials.uri,
+        password: credentials.password.as_ref(),
+        read_only: credentials.read_only,
+    }
 }
