@@ -6,16 +6,26 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@odin-db/ui/components/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@odin-db/ui/components/dropdown-menu";
 import { cn } from "@odin-db/ui/lib/utils";
 import {
   columnResizingFeature,
   columnSizingFeature,
+  columnVisibilityFeature,
   createColumnHelper,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Copy, Filter, PencilLine } from "lucide-react";
+import { ArrowDown, ArrowUp, Columns3, Copy, Filter, PencilLine } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -31,7 +41,11 @@ const INDEX_WIDTH = 56;
 /** Start fetching the next page this many rows before the end. */
 const PREFETCH_ROWS = 40;
 
-const features = tableFeatures({ columnSizingFeature, columnResizingFeature });
+const features = tableFeatures({
+  columnSizingFeature,
+  columnResizingFeature,
+  columnVisibilityFeature,
+});
 const helper = createColumnHelper<typeof features, JsonObject>();
 
 /** Row commands. Omitting `onDuplicate`/`onDelete` makes the results view-only. */
@@ -185,9 +199,14 @@ export function ResultsGrid({
               <tr className="flex h-8 border-b bg-sidebar text-muted-foreground text-xs">
                 <th
                   aria-label="#"
-                  className="sticky left-0 z-20 shrink-0 border-r bg-sidebar"
+                  className="sticky left-0 z-20 flex shrink-0 items-center justify-center border-r bg-sidebar"
                   style={{ width: INDEX_WIDTH }}
-                />
+                >
+                  <ColumnsMenu
+                    columns={table.getAllLeafColumns()}
+                    onShowAll={() => table.toggleAllColumnsVisible(true)}
+                  />
+                </th>
                 {headers.map((header) => {
                   const meta = header.column.columnDef.meta;
                   const sorted =
@@ -336,5 +355,64 @@ export function ResultsGrid({
         </ContextMenuContent>
       )}
     </ContextMenu>
+  );
+}
+
+interface ToggleableColumn {
+  id: string;
+  getIsVisible: () => boolean;
+  toggleVisibility: (value?: boolean) => void;
+}
+
+/** Shows or hides columns; at least one stays visible. */
+function ColumnsMenu({
+  columns,
+  onShowAll,
+}: {
+  columns: readonly ToggleableColumn[];
+  onShowAll: () => void;
+}) {
+  const { t } = useTranslation("results");
+  const visible = columns.filter((column) => column.getIsVisible()).length;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("columns.choose")}
+          title={t("columns.choose")}
+          className={cn(
+            "flex size-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground",
+            visible < columns.length && "text-primary",
+          )}
+        >
+          <Columns3 className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-96 w-56 overflow-y-auto">
+        <DropdownMenuLabel className="text-muted-foreground text-xs">
+          {t("columns.label", { visible, total: columns.length })}
+        </DropdownMenuLabel>
+        {columns.map((column) => (
+          <DropdownMenuCheckboxItem
+            key={column.id}
+            checked={column.getIsVisible()}
+            disabled={column.getIsVisible() && visible === 1}
+            // Stay open: several columns are usually toggled at once.
+            onSelect={(event) => event.preventDefault()}
+            onCheckedChange={(checked) => column.toggleVisibility(checked)}
+            className="font-mono text-xs"
+          >
+            <span className="truncate">{column.id}</span>
+          </DropdownMenuCheckboxItem>
+        ))}
+        {visible < columns.length && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onShowAll}>{t("columns.showAll")}</DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
