@@ -25,6 +25,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::profiles::list_profiles,
             commands::profiles::create_profile,
             commands::profiles::update_profile,
+            commands::profiles::duplicate_profile,
             commands::profiles::delete_profile,
             commands::profiles::test_connection,
             commands::connections::connect,

@@ -40,6 +40,20 @@ pub async fn update_profile(
     .await?)
 }
 
+/// A copy of the profile under `name` (localized by the UI), password included.
+#[tauri::command]
+#[specta::specta]
+pub async fn duplicate_profile(
+    state: State<'_, Arc<AppState>>,
+    id: ProfileId,
+    name: String,
+) -> Result<ConnectionProfile, IpcError> {
+    Ok(blocking(&state, move |s| {
+        profiles::duplicate(&s.storage, s.secrets.as_ref(), id, &name)
+    })
+    .await?)
+}
+
 /// Closes the profile's connection, if open, before deleting it and its password.
 #[tauri::command]
 #[specta::specta]

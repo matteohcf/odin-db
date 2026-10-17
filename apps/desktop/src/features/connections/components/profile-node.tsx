@@ -4,9 +4,11 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  CopyPlus,
   DatabaseZap,
   HardDriveDownload,
   HardDriveUpload,
+  Link,
   Lock,
   Pencil,
   Plug,
@@ -23,7 +25,7 @@ import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
 import { connectionKeys } from "../api/keys";
-import { useConnect, useDisconnect } from "../api/mutations";
+import { useConnect, useDisconnect, useDuplicateProfile } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
 import { useExpanded, useTreeFilter } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
@@ -46,6 +48,7 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   );
   const connect = useConnect();
   const disconnect = useDisconnect();
+  const duplicate = useDuplicateProfile();
   const [expanded, setExpanded] = useExpanded(profile.id);
   // A filter searches every open connection, whether expanded or not.
   const filtering = useTreeFilter() !== "";
@@ -170,6 +173,29 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
             <DropdownMenuItem onSelect={onEdit}>
               <Pencil />
               {t("profile.edit")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() =>
+                duplicate.mutate(
+                  { id: profile.id, name: t("profile.copyName", { name: profile.name }) },
+                  {
+                    onSuccess: (copy) =>
+                      toast.success(t("profile.duplicated", { name: copy.name })),
+                  },
+                )
+              }
+            >
+              <CopyPlus />
+              {t("profile.duplicate")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                void navigator.clipboard.writeText(profile.connectionString);
+                toast.success(t("profile.uriCopied"));
+              }}
+            >
+              <Link />
+              {t("profile.copyUri")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={onDelete}>

@@ -1,7 +1,9 @@
 import type { CollectionInfo, ConnectionInfo, DatabaseInfo } from "@odin-db/bindings";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
+import i18n from "i18next";
 import {
+  ClipboardCopy,
   Clock,
   Copy,
   Database,
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { CopyDialog, DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
@@ -110,6 +113,10 @@ function DatabaseNode({
                 <DropdownMenuSeparator />
               </>
             )}
+            <DropdownMenuItem onSelect={() => copyName(database.name)}>
+              <ClipboardCopy />
+              {t("tree.copyName")}
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
               <HardDriveDownload />
               {t("menu.backup", { ns: "backup" })}
@@ -303,6 +310,10 @@ function CollectionNode({
               {favorite ? <StarOff /> : <Star />}
               {favorite ? t("favorites.remove") : t("favorites.add")}
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => copyName(collection.name)}>
+              <ClipboardCopy />
+              {t("tree.copyName")}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             {writable && !isView && (
               <DropdownMenuItem onSelect={() => setDialog("rename")}>
@@ -376,6 +387,11 @@ function CollectionNode({
 
 /** Databases MongoDB manages itself; core refuses to drop them too. */
 const SYSTEM_DATABASES = new Set(["admin", "local", "config"]);
+
+function copyName(name: string) {
+  void navigator.clipboard.writeText(name);
+  toast.success(i18n.t("tree.nameCopied", { ns: "connections", name }));
+}
 
 /** The copy dialog with this app's connections as targets; refreshes the target's tree. */
 function CopyDialogFor({

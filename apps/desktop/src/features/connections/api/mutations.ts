@@ -21,6 +21,16 @@ export function useSaveProfile() {
   });
 }
 
+export function useDuplicateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: ProfileId; name: string }) =>
+      call(commands.duplicateProfile(id, name)),
+    meta: { handlesErrors: true },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.profiles }),
+  });
+}
+
 export function useDeleteProfile() {
   const queryClient = useQueryClient();
   const closeForProfile = useTabs((s) => s.closeForProfile);

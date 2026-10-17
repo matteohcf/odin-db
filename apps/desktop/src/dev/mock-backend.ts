@@ -710,6 +710,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     });
     return { ...profile };
   },
+  duplicate_profile: (args) => {
+    const source =
+      profiles.find((p) => p.id === id("id", args)) ??
+      fail("notFound", "connection profile not found");
+    const copy = { ...source, id: crypto.randomUUID(), name: String(args.name) };
+    profiles.push(copy);
+    return { ...copy };
+  },
   delete_profile: (args) => {
     const index = profiles.findIndex((p) => p.id === id("id", args));
     if (index >= 0) profiles.splice(index, 1);

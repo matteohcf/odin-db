@@ -26,7 +26,12 @@
     "openShell": "Apri shell",
     "refresh": "Aggiorna",
     "createDatabase": "Crea database…",
-    "backups": "Backup e pianificazioni"
+    "backups": "Backup e pianificazioni",
+    "duplicate": "Duplica",
+    "copyName": "{{name}} (copia)",
+    "duplicated": "Creata {{name}}.",
+    "copyUri": "Copia la stringa di connessione",
+    "uriCopied": "Stringa di connessione copiata, senza password."
   },
   "tree": {
     "loading": "Caricamento…",
@@ -35,7 +40,9 @@
     "failed": "Impossibile caricare: {{message}}",
     "view": "Vista",
     "timeseries": "Time series",
-    "actions": "Azioni per {{name}}"
+    "actions": "Azioni per {{name}}",
+    "copyName": "Copia il nome",
+    "nameCopied": "Copiato {{name}}."
   },
   "dialog": {
     "createTitle": "Nuova connessione",

@@ -14,6 +14,8 @@ export const commands = {
 	listProfiles: () => typedError<ConnectionProfile[], IpcError>(__TAURI_INVOKE("list_profiles")),
 	createProfile: (input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("create_profile", { input })),
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
+	/**  A copy of the profile under `name` (localized by the UI), password included. */
+	duplicateProfile: (id: ProfileId, name: string) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("duplicate_profile", { id, name })),
 	/**  Closes the profile's connection, if open, before deleting it and its password. */
 	deleteProfile: (id: ProfileId) => typedError<null, IpcError>(__TAURI_INVOKE("delete_profile", { id })),
 	/**  Tests unsaved settings. Without a new password, the saved one of `profile_id` is used. */

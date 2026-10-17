@@ -26,7 +26,12 @@
     "openShell": "Open shell",
     "refresh": "Refresh",
     "createDatabase": "Create database…",
-    "backups": "Backups and schedules"
+    "backups": "Backups and schedules",
+    "duplicate": "Duplicate",
+    "copyName": "{{name}} (copy)",
+    "duplicated": "Created {{name}}.",
+    "copyUri": "Copy connection string",
+    "uriCopied": "Connection string copied, without the password."
   },
   "tree": {
     "loading": "Loading…",
@@ -35,7 +40,9 @@
     "failed": "Couldn't load: {{message}}",
     "view": "View",
     "timeseries": "Time series",
-    "actions": "Actions for {{name}}"
+    "actions": "Actions for {{name}}",
+    "copyName": "Copy name",
+    "nameCopied": "Copied {{name}}."
   },
   "dialog": {
     "createTitle": "New connection",
