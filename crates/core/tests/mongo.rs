@@ -18,6 +18,7 @@ use odin_core::query::{
     AggregateRequest, CursorRegistry, FindRequest, Namespace, count_documents, preview_aggregation,
 };
 use odin_core::secrets::{MemoryStore, Secret};
+use odin_core::shell::{HIGH_WATERMARK, ShellEvent, ShellOptions, ShellSession, locate_mongosh};
 use odin_core::storage::Storage;
 use odin_core::transfer::{
     CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
@@ -753,4 +754,171 @@ async fn backs_up_and_restores_a_database_with_the_tools() {
     .await;
     assert!(matches!(refused, Err(CoreError::ReadOnly)));
     let _ = std::fs::remove_file(archive);
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn byte_count(bytes: f64) -> usize {
+    bytes as usize
+}
+
+/// Needs mongosh: on `PATH`, or `ODIN_MONGOSH` (CI downloads it).
+fn mongosh() -> std::path::PathBuf {
+    let configured = std::env::var_os("ODIN_MONGOSH").map(std::path::PathBuf::from);
+    locate_mongosh(configured.as_deref()).expect("mongosh: set ODIN_MONGOSH or add it to PATH")
+}
+
+async fn shell_output_until(
+    events: &mut tokio::sync::mpsc::Receiver<ShellEvent>,
+    session: &ShellSession,
+    needle: &str,
+) -> String {
+    let mut seen = String::new();
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(30);
+    while !seen.contains(needle) {
+        let event = tokio::time::timeout_at(deadline, events.recv())
+            .await
+            .unwrap_or_else(|_| panic!("timed out waiting for {needle:?}; got {seen:?}"))
+            .unwrap_or_else(|| panic!("shell closed before {needle:?}; got {seen:?}"));
+        match event {
+            ShellEvent::Output { data, bytes } => {
+                session.acknowledge(byte_count(bytes));
+                seen.push_str(&data);
+            }
+            ShellEvent::Exited { code } => {
+                panic!("shell exited ({code:?}) before {needle:?}; got {seen:?}")
+            }
+        }
+    }
+    seen
+}
+
+#[tokio::test]
+#[ignore = "requires Docker and mongosh"]
+async fn shell_runs_commands_and_exits() {
+    let fx = Fixture::start().await;
+    let (events, mut received) = tokio::sync::mpsc::channel(64);
+    let shell = mongosh();
+    let session = ShellSession::open(
+        ShellOptions {
+            mongosh: &shell,
+            uri: &fx.uri,
+            password: None,
+            cols: 120,
+            rows: 40,
+        },
+        events,
+    )
+    .expect("open shell");
+
+    session
+        .write("db.runCommand({ ping: 1 }).ok + 41\r")
+        .expect("write");
+    shell_output_until(&mut received, &session, "42").await;
+
+    session.write("exit\r").expect("write");
+    loop {
+        match tokio::time::timeout(std::time::Duration::from_secs(20), received.recv()).await {
+            Ok(Some(ShellEvent::Exited { .. })) => break,
+            Ok(Some(ShellEvent::Output { bytes, .. })) => session.acknowledge(byte_count(bytes)),
+            other => panic!("expected exit, got {other:?}"),
+        }
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires Docker and mongosh"]
+async fn shell_output_floods_are_throttled_until_acknowledged() {
+    let fx = Fixture::start().await;
+    let (events, mut received) = tokio::sync::mpsc::channel(4096);
+    let shell = mongosh();
+    let session = ShellSession::open(
+        ShellOptions {
+            mongosh: &shell,
+            uri: &fx.uri,
+            password: None,
+            cols: 200,
+            rows: 50,
+        },
+        events,
+    )
+    .expect("open shell");
+    shell_output_until(&mut received, &session, ">").await;
+
+    // About 4 MB of output, far above the high watermark.
+    session
+        .write("for (let i = 0; i < 40000; i++) print('x'.repeat(100))\r")
+        .expect("write");
+    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+
+    let mut unacknowledged = 0_usize;
+    while let Ok(event) = received.try_recv() {
+        if let ShellEvent::Output { bytes, .. } = event {
+            unacknowledged += byte_count(bytes);
+        }
+    }
+    assert!(
+        unacknowledged <= HIGH_WATERMARK + 16 * 1024,
+        "reader kept going without credit: {unacknowledged} bytes"
+    );
+    assert!(
+        unacknowledged >= HIGH_WATERMARK / 2,
+        "flood should reach the watermark: {unacknowledged}"
+    );
+
+    // Acknowledging lets the rest through.
+    session.acknowledge(unacknowledged);
+    session.write("print('done-' + 'marker')\r").expect("write");
+    shell_output_until(&mut received, &session, "done-marker").await;
+    session.close();
+}
+
+#[tokio::test]
+#[ignore = "requires Docker and mongosh"]
+async fn shell_answers_the_password_prompt_through_the_pty() {
+    let container = Mongo::default()
+        .with_tag(std::env::var("MONGO_VERSION").unwrap_or_else(|_| "8.0".into()))
+        .with_env_var("MONGO_INITDB_ROOT_USERNAME", "root")
+        .with_env_var("MONGO_INITDB_ROOT_PASSWORD", "s3cr3t-pw")
+        .start()
+        .await
+        .expect("mongo container starts");
+    let port = container.get_host_port_ipv4(27017).await.expect("port");
+    let uri = format!("mongodb://root@127.0.0.1:{port}/?authSource=admin&directConnection=true");
+
+    // The image restarts mongod after creating the user: wait until auth works.
+    let mut ready = false;
+    for _ in 0..60 {
+        if test_connection(&uri, Some(Secret::new("s3cr3t-pw")))
+            .await
+            .is_ok()
+        {
+            ready = true;
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
+    assert!(ready, "authenticated server never became ready");
+
+    let (events, mut received) = tokio::sync::mpsc::channel(64);
+    let shell = mongosh();
+    let session = ShellSession::open(
+        ShellOptions {
+            mongosh: &shell,
+            uri: &uri,
+            password: Some(Secret::new("s3cr3t-pw")),
+            cols: 120,
+            rows: 40,
+        },
+        events,
+    )
+    .expect("open shell");
+    session
+        .write("db.runCommand({ connectionStatus: 1 }).authInfo.authenticatedUsers[0].user\r")
+        .expect("write");
+    let output = shell_output_until(&mut received, &session, "root").await;
+    assert!(
+        !output.contains("s3cr3t-pw"),
+        "the password must never be echoed"
+    );
+    session.close();
 }
