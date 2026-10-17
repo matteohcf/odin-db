@@ -20,6 +20,7 @@ import {
 import { Label } from "@odin-db/ui/components/label";
 import { RadioGroup, RadioGroupItem } from "@odin-db/ui/components/radio-group";
 import { cn } from "@odin-db/ui/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBytes } from "@/lib/format";
@@ -51,6 +52,25 @@ export function ExportDialog({
   const [jsonMode, setJsonMode] = useState<JsonMode>("canonical");
   const [fields, setFields] = useState<ReadonlySet<string>>(() => new Set(columns));
   const transfer = useTransfer<TransferSummary>(t("export.title"));
+  // What a find export will write, so an empty or huge export is no surprise.
+  const counted = useQuery({
+    queryKey: ["export-count", connectionId, namespace, source],
+    queryFn: () =>
+      source.kind === "find"
+        ? call(commands.countDocuments(connectionId, namespace, source.request.filter))
+        : null,
+    enabled: source.kind === "find",
+  });
+  const exportCount =
+    source.kind === "find" && typeof counted.data === "number"
+      ? Math.max(
+          0,
+          Math.min(
+            counted.data - Number(source.request.skip ?? 0),
+            source.request.limit ? Number(source.request.limit) : Number.POSITIVE_INFINITY,
+          ),
+        )
+      : undefined;
   const { state } = transfer;
   const busy = state.status === "running";
   const done =
@@ -80,6 +100,16 @@ export function ExportDialog({
         <DialogHeader>
           <DialogTitle>{t("export.title")}</DialogTitle>
           <DialogDescription>{t("export.description")}</DialogDescription>
+          {exportCount !== undefined && (
+            <p
+              className={cn(
+                "text-xs",
+                exportCount === 0 ? "text-warning" : "text-muted-foreground",
+              )}
+            >
+              {exportCount === 0 ? t("export.nothing") : t("export.count", { count: exportCount })}
+            </p>
+          )}
         </DialogHeader>
 
         {state.status === "idle" ? (

@@ -27,7 +27,10 @@
     "progress": "{{documents, number}} documenti · {{size}}",
     "done": "Esportati {{count, number}} documenti ({{size}}).",
     "cancelled": "Esportazione annullata. Nessun file è stato scritto.",
-    "failed": "Esportazione non riuscita: {{message}}"
+    "failed": "Esportazione non riuscita: {{message}}",
+    "count_one": "Verrà esportato {{count, number}} documento.",
+    "count_other": "Verranno esportati {{count, number}} documenti.",
+    "nothing": "Nessun documento corrisponde alla query: il file sarebbe vuoto."
   },
   "import": {
     "title": "Importa documenti",

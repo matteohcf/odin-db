@@ -27,7 +27,10 @@
     "progress": "{{documents, number}} documents · {{size}}",
     "done": "Exported {{count, number}} documents ({{size}}).",
     "cancelled": "Export cancelled. No file was written.",
-    "failed": "Export failed: {{message}}"
+    "failed": "Export failed: {{message}}",
+    "count_one": "{{count, number}} document will be exported.",
+    "count_other": "{{count, number}} documents will be exported.",
+    "nothing": "No document matches the query: the file would be empty."
   },
   "import": {
     "title": "Import documents",
