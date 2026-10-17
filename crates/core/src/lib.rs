@@ -19,5 +19,6 @@ pub mod shell;
 pub mod storage;
 pub mod synthetic;
 pub mod transfer;
+pub mod validation;
 
 pub use error::{CoreError, ErrorKind};

@@ -2027,3 +2027,60 @@ async fn hides_and_unhides_an_index() {
         Err(CoreError::ReadOnly)
     ));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn reads_and_changes_validation_rules() {
+    use odin_core::validation::{
+        ValidationAction, ValidationLevel, ValidationRules, get_rules, set_rules,
+    };
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("validated");
+    fx.seed(&handle, &ns, 1).await;
+    let none = get_rules(&handle, &ns).await.expect("rules");
+    assert_eq!(none.validator, EJsonDocument::from(doc! {}));
+    assert_eq!(
+        (none.level, none.action),
+        (ValidationLevel::Strict, ValidationAction::Error)
+    );
+
+    let schema = doc! { "$jsonSchema": { "required": ["email"], "properties": { "email": { "bsonType": "string" } } } };
+    set_rules(
+        &handle,
+        &ns,
+        ValidationRules {
+            validator: EJsonDocument::from(schema.clone()),
+            level: ValidationLevel::Moderate,
+            action: ValidationAction::Error,
+        },
+    )
+    .await
+    .expect("set");
+    let rules = get_rules(&handle, &ns).await.expect("rules");
+    assert_eq!(rules.validator, EJsonDocument::from(schema));
+    assert_eq!(rules.level, ValidationLevel::Moderate);
+    let collection = handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("validated");
+    assert!(
+        collection
+            .insert_one(doc! { "name": "no email" })
+            .await
+            .is_err()
+    );
+    assert!(
+        collection
+            .insert_one(doc! { "email": "a@b.c" })
+            .await
+            .is_ok()
+    );
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        set_rules(&read_only, &ns, rules).await,
+        Err(CoreError::ReadOnly)
+    ));
+}
