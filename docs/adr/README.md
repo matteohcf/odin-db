@@ -39,3 +39,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0033](0033-database-tools-from-source.md) | Database Tools built from source | Accepted |
 | [0034](0034-backup-history-and-schedules.md) | Backup history and schedules | Accepted |
 | [0035](0035-settings-and-languages.md) | Settings and languages | Accepted |
+| [0036](0036-ssh-tunnels.md) | SSH tunnels | Accepted |

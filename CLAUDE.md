@@ -69,6 +69,7 @@ docs/adr/                Architecture Decision Records
 - **Backups are recorded and schedulable** (ADR-0034): every mongodump goes through `src-tauri/src/backups.rs::run_backup`, which records it in the history before anything can fail; the scheduler lives there too.
 - **User preferences** live in one typed, persisted store, `useSettings` (`src/lib/settings.ts`). A new setting is a field with a default there, a row on the settings page, and a reader where it applies (read with `getState()` at use time when nothing needs to re-render). Window-wide effects (zoom, language, editor font) are applied by `useApplySettings` (ADR-0035).
 - **Every long operation is registered** in `OperationRegistry`, scheduled backups included: quitting while any runs asks first (`src-tauri/src/quit.rs`, `QuitRequested`), then cancels them. Open tabs except shells are restored on launch (`restorableTabs`).
+- **SSH tunnels** (ADR-0036): `ssh::open_tunnel` with host keys pinned per profile; `connection::route` rewrites the URI to the tunnel. Tools get `ConnectionHandle::uri`, never the profile's string. A host key error carries its fingerprint in `IpcError.detail`.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions
