@@ -15,7 +15,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Copy, Filter } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Filter, PencilLine } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -41,6 +41,8 @@ export interface RowActions {
   onCopy: (row: JsonObject) => void;
   onDuplicate?: ((row: JsonObject) => void) | undefined;
   onDelete?: ((row: JsonObject) => void) | undefined;
+  /** Edits one top-level field. Omitted for read-only results. */
+  onEditField?: ((row: JsonObject, field: string) => void) | undefined;
 }
 
 /** Query shortcuts from the grid. Omitted where results do not come from a query bar. */
@@ -183,7 +185,7 @@ export function ResultsGrid({
               <tr className="flex h-8 border-b bg-sidebar text-muted-foreground text-xs">
                 <th
                   aria-label="#"
-                  className="sticky left-0 shrink-0 border-r bg-sidebar"
+                  className="sticky left-0 z-20 shrink-0 border-r bg-sidebar"
                   style={{ width: INDEX_WIDTH }}
                 />
                 {headers.map((header) => {
@@ -270,7 +272,7 @@ export function ResultsGrid({
                     <th
                       scope="row"
                       className={cn(
-                        "sticky left-0 flex shrink-0 items-center justify-end border-r pr-2.5 font-mono font-normal text-[11px] text-muted-foreground tabular-nums",
+                        "sticky left-0 z-10 flex shrink-0 items-center justify-end border-r pr-2.5 font-mono font-normal text-[11px] text-muted-foreground tabular-nums",
                         // Opaque so cells scrolling underneath stay hidden.
                         isSelected
                           ? "bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"
@@ -313,6 +315,12 @@ export function ResultsGrid({
                 <Copy />
                 <span className="truncate">{t("cell.copy", { field: menuColumn })}</span>
               </ContextMenuItem>
+              {actions.onEditField && menuColumn !== "_id" && !menuColumn.includes(".") && (
+                <ContextMenuItem onSelect={() => actions.onEditField?.(selected, menuColumn)}>
+                  <PencilLine />
+                  <span className="truncate">{t("cell.edit", { field: menuColumn })}</span>
+                </ContextMenuItem>
+              )}
               {columnActions && (
                 <ContextMenuItem
                   onSelect={() => columnActions.onFilterBy(menuColumn, selected[menuColumn])}

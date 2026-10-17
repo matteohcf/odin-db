@@ -102,6 +102,21 @@ pub async fn replace_document(
     Ok(documents::replace(&handle, &namespace, id, document).await?)
 }
 
+/// Sets (or, with `value: null`, removes) one top-level field of a document.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_document_field(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    id: EJsonValue,
+    field: String,
+    value: Option<EJsonValue>,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(documents::set_field(&handle, &namespace, id, &field, value).await?)
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_document(

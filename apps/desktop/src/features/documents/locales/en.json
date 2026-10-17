@@ -67,5 +67,16 @@
     "stages": "Stages",
     "raw": "Raw explain output",
     "failed": "Couldn't explain the query: {{message}}"
+  },
+  "field": {
+    "title": "Edit {{field}}",
+    "description": "Only this field changes; the rest of the document is left as it is. Write the value in mongosh syntax.",
+    "current": "Current type: {{type}}",
+    "missing": "This document has no {{field}} yet; saving adds it.",
+    "value": "Value",
+    "save": "Save",
+    "remove": "Remove field",
+    "saved": "{{field}} updated",
+    "removed": "{{field}} removed"
   }
 }

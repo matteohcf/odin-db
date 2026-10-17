@@ -3,6 +3,7 @@ import type {
   EJsonDocument,
   EJsonValue,
   FieldSummary,
+  JsonValue,
   Namespace,
   QueryPlan,
 } from "@odin-db/bindings";
@@ -37,6 +38,7 @@ import {
   useExplainFind,
   useInsertDocument,
   useReplaceDocument,
+  useSetDocumentField,
 } from "../api/mutations";
 import { addFilterCondition, singleFieldSort, sortText } from "../lib/query-edits";
 import {
@@ -48,6 +50,7 @@ import {
 } from "../lib/query-form";
 import { historyKey, useQueryHistory } from "../store/query-history-store";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
+import { EditFieldDialog } from "./edit-field-dialog";
 import { ExplainDialog } from "./explain-dialog";
 import { QueryBar } from "./query-bar";
 
@@ -96,6 +99,8 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const remove = useDeleteDocument();
   const count = useCountDocuments();
   const explainFind = useExplainFind();
+  const setField = useSetDocumentField();
+  const [fieldEdit, setFieldEdit] = useState<{ row: JsonObject; field: string } | null>(null);
   const [plan, setPlan] = useState<QueryPlan | null>(null);
   const target = { connectionId: connection.id, namespace };
 
@@ -183,6 +188,17 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         },
       },
     );
+  }
+
+  async function saveField(value: JsonValue | null) {
+    if (!fieldEdit) return;
+    const id = fieldEdit.row._id;
+    if (id === undefined) return;
+    // Errors are shown inside the dialog, which re-throws them from here.
+    await setField.mutateAsync({ ...target, id, field: fieldEdit.field, value });
+    toast.success(t(value === null ? "field.removed" : "field.saved", { field: fieldEdit.field }));
+    setFieldEdit(null);
+    refresh(true);
   }
 
   const hasFilter = form.filter.trim() !== "";
@@ -292,6 +308,7 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
               }
             : undefined,
           onDelete: editable ? setToDelete : undefined,
+          onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
         }}
       />
 
@@ -349,6 +366,15 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         onConfirm={confirmDelete}
         onClose={() => setToDelete(undefined)}
       />
+      {fieldEdit && (
+        <EditFieldDialog
+          field={fieldEdit.field}
+          value={fieldEdit.row[fieldEdit.field]}
+          pending={setField.isPending}
+          onSave={saveField}
+          onClose={() => setFieldEdit(null)}
+        />
+      )}
       {plan && (
         <ExplainDialog
           collection={namespace.collection}

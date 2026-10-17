@@ -29,7 +29,8 @@
   },
   "cell": {
     "copy": "Copy {{field}} value",
-    "filter": "Filter by this {{field}}"
+    "filter": "Filter by this {{field}}",
+    "edit": "Edit {{field}} value…"
   },
   "view": {
     "label": "Results view",

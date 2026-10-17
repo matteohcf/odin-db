@@ -56,3 +56,17 @@ export function useExplainFind() {
     meta: { handlesErrors: true },
   });
 }
+
+export function useSetDocumentField() {
+  return useMutation({
+    mutationFn: ({
+      connectionId,
+      namespace,
+      id,
+      field,
+      value,
+    }: Target & { id: EJsonValue; field: string; value: EJsonValue | null }) =>
+      call(commands.setDocumentField(connectionId, namespace, id, field, value)),
+    meta: { handlesErrors: true },
+  });
+}

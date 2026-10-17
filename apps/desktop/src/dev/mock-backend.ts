@@ -1059,6 +1059,23 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     coll.docs.unshift(document);
     return document._id;
   },
+  set_document_field: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const field = args.field as string;
+    if (field === "_id" || field.includes(".") || field.startsWith("$"))
+      fail(
+        "validation",
+        `invalid input: ${field} cannot be edited on its own; edit the whole document instead`,
+      );
+    const doc =
+      coll.docs.find((d) => JSON.stringify(d._id) === JSON.stringify(args.id)) ??
+      fail("notFound", "document not found");
+    if (args.value === null) delete doc[field];
+    else doc[field] = args.value as JsonValue;
+    return null;
+  },
   replace_document: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);

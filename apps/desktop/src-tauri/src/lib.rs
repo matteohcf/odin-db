@@ -40,6 +40,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
         commands::documents::insert_document,
         commands::documents::replace_document,
         commands::documents::delete_document,
+        commands::documents::set_document_field,
         commands::documents::aggregate_documents,
         commands::documents::preview_aggregation,
         commands::indexes::list_indexes,
