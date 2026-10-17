@@ -40,7 +40,7 @@ docs/adr/                Architecture Decision Records
 - Features import other features only through their `index.ts`, and dependencies point one way:
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
   - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `indexes` stands alone;
-  - `collection` (the collection tab) composes `documents`, `aggregation` and `indexes` with `connections`;
+  - `collection` (the collection tab) composes `documents`, `aggregation`, `schema` and `indexes` with `connections`;
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `connections` may use `workspace` to open tabs and `backup` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.

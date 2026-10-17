@@ -23,6 +23,7 @@ describe("fieldPathsOf", () => {
     });
     expect(byPath["items.sku"]?.types).toEqual(["string"]);
     expect(byPath.age?.types).toEqual(["int"]);
+    expect(fieldPathsOf([{ tags: ["a", "b"] }, { tags: ["a"] }])[0]?.values).toEqual(["a", "b"]);
     // Wrappers are values, never paths.
     expect(fields.some((field) => field.path.includes("$"))).toBe(false);
   });

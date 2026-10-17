@@ -48,8 +48,11 @@ export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
     const visit = (value: JsonValue, path: string, depth: number) => {
       const type = typeOf(value);
       seen.set(path, (seen.get(path) ?? new Set()).add(type));
-      if (typeof value === "string" && value.length <= MAX_VALUE_LENGTH) {
-        strings.set(path, (strings.get(path) ?? new Set()).add(value));
+      // Strings inside an array count for the array's path: `{ tags: "x" }` matches them.
+      for (const item of Array.isArray(value) ? value : [value]) {
+        if (typeof item === "string" && item.length <= MAX_VALUE_LENGTH) {
+          strings.set(path, (strings.get(path) ?? new Set()).add(item));
+        }
       }
       if (depth + 1 >= MAX_DEPTH) return;
       const children = Array.isArray(value) ? value : type === "object" ? [value] : [];

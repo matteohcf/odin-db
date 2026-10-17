@@ -3,7 +3,8 @@
     "label": "Collection views",
     "documents": "Documents",
     "aggregation": "Aggregation",
-    "indexes": "Indexes"
+    "indexes": "Indexes",
+    "schema": "Schema"
   },
   "header": {
     "readOnly": "Read-only",

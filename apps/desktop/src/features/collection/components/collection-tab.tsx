@@ -2,7 +2,7 @@ import type { ConnectionInfo } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
-import { Braces, Eye, ListTree, Lock, Unplug, Workflow } from "lucide-react";
+import { Braces, ChartBarBig, Eye, ListTree, Lock, Unplug, Workflow } from "lucide-react";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
@@ -17,10 +17,18 @@ const AggregationView = lazy(() =>
 const IndexesView = lazy(() =>
   import("@/features/indexes").then((module) => ({ default: module.IndexesView })),
 );
+const SchemaView = lazy(() =>
+  import("@/features/schema").then((module) => ({ default: module.SchemaView })),
+);
 
-const VIEWS = ["documents", "aggregation", "indexes"] as const;
+const VIEWS = ["documents", "aggregation", "schema", "indexes"] as const;
 type View = (typeof VIEWS)[number];
-const viewIcon = { documents: Braces, aggregation: Workflow, indexes: ListTree } as const;
+const viewIcon = {
+  documents: Braces,
+  aggregation: Workflow,
+  schema: ChartBarBig,
+  indexes: ListTree,
+} as const;
 
 /** A collection tab: binds it to its profile's live connection and hosts its views. */
 export function CollectionTab({ tab }: { tab: CollectionTabModel }) {
@@ -146,6 +154,8 @@ function CollectionWorkspace({
             <Suspense fallback={null}>
               {value === "aggregation" ? (
                 <AggregationView connection={connection} namespace={namespace} />
+              ) : value === "schema" ? (
+                <SchemaView connection={connection} namespace={namespace} />
               ) : (
                 <IndexesView
                   connection={connection}
