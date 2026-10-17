@@ -11,9 +11,12 @@ requires a new ADR that supersedes it — never silently diverge.
 
 ```
 apps/desktop/            React UI (Vite)
-  src/app/               app shell, providers, layout, tab workspace
-  src/features/<name>/   one folder per feature: api/ components/ hooks/ store/
-  src/lib/               IPC client wrappers, EJSON helpers, generic utils
+  src/app/               composition root: providers, layout, wires features together
+  src/features/<name>/   one folder per feature: api/ components/ hooks/ lib/ store/ locales/
+    index.ts             the feature's public API (the only importable surface)
+  src/components/        app-level shared components (EJSON cell, code editor, theme menu)
+  src/lib/               framework-free helpers: IPC, EJSON display, shell syntax, formatting
+  src/dev/               dev-only code (mock backend), never shipped
   src-tauri/             Tauri host: thin commands only
     src/commands/<domain>.rs
     capabilities/        Tauri permission sets (minimal)
@@ -33,7 +36,8 @@ docs/adr/                Architecture Decision Records
 - `packages/ui` never imports from `apps/*` or `packages/bindings`.
 - The UI talks to the backend only through `packages/bindings`. Never call `invoke()` with string command names.
 - `packages/bindings` is generated. Never edit it by hand. Regenerate with `pnpm bindings`.
-- Features never import from another feature's internals. Shared code moves to `src/lib` or `packages/ui`.
+- Features import other features only through their `index.ts`. Dependencies point one way: `connections` and `documents` may use `workspace`; `workspace` knows no feature (the app passes render props). Only `src/app` wires features together.
+- Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
 ## Core concepts
 
@@ -44,6 +48,9 @@ docs/adr/                Architecture Decision Records
 - **BSON over IPC is canonical Extended JSON v2** (ADR-0007). Never relaxed EJSON, never plain JS numbers for BSON numeric types. Type changes on round-trip are data corruption.
 - **One `mongodb::Client` per connected profile**, owned by `ConnectionManager` in core (ADR-0008). The UI only holds a `ConnectionId`.
 - **Results paginate via server-side cursors** held in core, fetched in batches on scroll (ADR-0009). Never emulate with hidden skip/limit.
+- **Result paging is pull-based** (ADR-0025): `find_documents` → `fetch_more_documents` → `close_cursor`, driven by `createResultsController`. Never stream query results over a channel.
+- **The grid renders cells from data** (ADR-0026); TanStack Table owns columns only.
+- **Editable text is mongosh syntax** (`toShellSyntax` / `parseShellDocument`); display text is `describeEJson` / `compactEJson`. Never round-trip edits through the display format.
 - **Frontend state** (ADR-0010): TanStack Query for backend request/response data, Zustand for UI-only state. Streaming results live in per-tab stores, flushed once per animation frame. Never copy backend data into Zustand.
 - **Read-only mode and all safety checks are enforced in Rust**, never only in the UI (ADR-0017).
 
@@ -69,7 +76,8 @@ docs/adr/                Architecture Decision Records
 ## Testing
 
 - Core: unit tests next to code. Integration tests in `crates/core/tests/` against real MongoDB via `testcontainers` (6.0, 7.0, 8.0). Run with `cargo nextest`.
-- UI: Vitest + Testing Library, IPC mocked with `@tauri-apps/api/mocks`.
+- UI logic: Vitest. Keep logic in framework-free modules (`lib/`, controllers, stores) so it is testable without React.
+- UI review: `pnpm --filter @odin-db/desktop dev:web` in a browser uses the in-memory mock backend (ADR-0027). Check light and dark themes. Update `src/dev/mock-backend.ts` whenever a command changes.
 - E2E smoke: `tauri-driver` on Linux and Windows.
 - A bug fix includes a test that fails without the fix.
 - See ADR-0020.
@@ -79,10 +87,11 @@ docs/adr/                Architecture Decision Records
 ```
 pnpm install          install JS deps
 pnpm dev              run the desktop app in dev mode
+pnpm --filter @odin-db/desktop dev:web   UI only, in a browser, with the mock backend
 pnpm bindings         regenerate packages/bindings from Rust
 pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, clippy, cargo test
 pnpm format           apply Biome fixes and formatting
-pnpm test:integration core integration tests (requires Docker; none yet)
+pnpm test:integration core integration tests against real MongoDB (requires Docker)
 pnpm build            production build of the desktop app
 ```
 

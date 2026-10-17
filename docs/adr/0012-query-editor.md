@@ -1,6 +1,7 @@
 # 0012. Query editor syntax and aggregation builder
 
 - Status: Accepted
+- Note (2026-10-17): `ejson-shell-parser` was renamed `@mongodb-js/shell-bson-parser`; the decision is unchanged.
 - Date: 2026-10-17
 
 ## Context

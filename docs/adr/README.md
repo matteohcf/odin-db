@@ -12,7 +12,7 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0006](0006-ipc-contract.md) | IPC contract: commands, channels, events | Accepted |
 | [0007](0007-bson-representation.md) | BSON over IPC: canonical Extended JSON | Accepted |
 | [0008](0008-connection-management.md) | Connection management | Accepted |
-| [0009](0009-result-pagination.md) | Result pagination via server-side cursors | Accepted |
+| [0009](0009-result-pagination.md) | Result pagination via server-side cursors | Accepted, transport superseded by 0025 |
 | [0010](0010-frontend-state.md) | Frontend state and feature structure | Accepted |
 | [0011](0011-ui-stack.md) | UI component stack | Accepted |
 | [0012](0012-query-editor.md) | Query editor syntax and aggregation builder | Accepted |
@@ -28,3 +28,6 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0022](0022-ci-release-updates.md) | CI, releases, updates, code signing | Accepted |
 | [0023](0023-logging-no-telemetry.md) | Logging, diagnostics, no telemetry | Accepted |
 | [0024](0024-ux-baseline-i18n.md) | UX baseline and i18n | Accepted |
+| [0025](0025-pull-based-result-paging.md) | Pull-based result paging | Accepted |
+| [0026](0026-result-grid-rendering.md) | Result grid rendering | Accepted |
+| [0027](0027-ui-development-harness.md) | UI development harness | Accepted |

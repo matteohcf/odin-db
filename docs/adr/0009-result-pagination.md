@@ -1,6 +1,6 @@
 # 0009. Result pagination via server-side cursors
 
-- Status: Accepted
+- Status: Accepted; transport superseded by ADR-0025
 - Date: 2026-10-17
 
 ## Context

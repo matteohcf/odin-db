@@ -2,7 +2,7 @@
 
 Open source desktop client for MongoDB. A free alternative to Studio 3T, built with Tauri 2 (Rust) and React.
 
-> **Status: Milestone 0.** The repository contains the architecture, tooling, CI and a platform performance spike. It is not usable as a database client yet.
+> **Status: early development.** Connections, database browsing, queries and document editing work. Indexes, aggregation, import/export, backup and the shell are next. Not ready for production data yet.
 
 ## Planned for v1
 
