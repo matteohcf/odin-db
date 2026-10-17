@@ -32,6 +32,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTabs } from "@/features/workspace";
+import { useShortcut } from "@/hooks/use-shortcut";
 import { useShortcutsDialog } from "@/hooks/use-shortcuts-dialog";
 import { useConnect } from "../api/mutations";
 import { collectionsQuery, databasesQuery, useConnections, useProfiles } from "../api/queries";
@@ -64,16 +65,7 @@ export function CommandPalette({
   // Controlled, so the best match is selected after every keystroke.
   const [selected, setSelected] = useState("");
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        onOpenChange(!open);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onOpenChange]);
+  useShortcut("palette", () => onOpenChange(!open));
 
   useEffect(() => {
     if (!open) setSearch("");

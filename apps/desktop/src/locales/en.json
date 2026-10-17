@@ -139,7 +139,9 @@
       "move": "Select the previous or next document",
       "jump": "First or last document",
       "open": "Open the selected document",
-      "delete": "Delete the selected document"
+      "delete": "Delete the selected document",
+      "nextTab": "Next tab",
+      "previousTab": "Previous tab"
     }
   }
 }

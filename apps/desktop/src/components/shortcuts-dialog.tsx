@@ -6,9 +6,10 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useShortcut } from "@/hooks/use-shortcut";
 import { useShortcutsDialog } from "@/hooks/use-shortcuts-dialog";
+import { label, SHORTCUTS } from "@/lib/shortcuts";
 
 const isMac = navigator.userAgent.includes("Mac");
 const mod = isMac ? "⌘" : "Ctrl";
@@ -17,9 +18,11 @@ const GROUPS = [
   {
     id: "general",
     shortcuts: [
-      ["palette", [`${mod} K`]],
-      ["shortcuts", [`${mod} /`]],
-      ["closeTab", [`${mod} W`]],
+      ["palette", [label(SHORTCUTS.palette)]],
+      ["shortcuts", [label(SHORTCUTS.shortcuts)]],
+      ["closeTab", [label(SHORTCUTS.closeTab)]],
+      ["nextTab", [label(SHORTCUTS.nextTab)]],
+      ["previousTab", [label(SHORTCUTS.previousTab)]],
     ],
   },
   {
@@ -48,16 +51,7 @@ export function ShortcutsDialog() {
   const open = useShortcutsDialog((s) => s.open);
   const setOpen = useShortcutsDialog((s) => s.setOpen);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "/") {
-        event.preventDefault();
-        setOpen(!useShortcutsDialog.getState().open);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setOpen]);
+  useShortcut("shortcuts", () => setOpen(!open));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -7,8 +7,9 @@ import {
 } from "@odin-db/ui/components/context-menu";
 import { cn } from "@odin-db/ui/lib/utils";
 import { X } from "lucide-react";
-import { type ReactNode, useEffect } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useShortcut } from "@/hooks/use-shortcut";
 import { useTabs, type WorkspaceTab } from "../store/tabs-store";
 
 export interface TabLabelContext {
@@ -37,16 +38,14 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
   const closeToTheRight = useTabs((s) => s.closeToTheRight);
   const closeAll = useTabs((s) => s.closeAll);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "w" && activeTabId) {
-        event.preventDefault();
-        close(activeTabId);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTabId, close]);
+  const cycle = (delta: 1 | -1) => {
+    const index = tabs.findIndex((tab) => tab.id === activeTabId);
+    const next = tabs[(index + delta + tabs.length) % tabs.length];
+    if (next) activate(next.id);
+  };
+  useShortcut("closeTab", () => activeTabId && close(activeTabId), activeTabId !== null);
+  useShortcut("nextTab", () => cycle(1), tabs.length > 1);
+  useShortcut("previousTab", () => cycle(-1), tabs.length > 1);
 
   if (tabs.length === 0) return <>{emptyState}</>;
   const context: TabLabelContext = {
