@@ -1,13 +1,15 @@
-import type { ConnectionInfo } from "@odin-db/bindings";
+import type { ConnectionInfo, ProfileColor } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
+import { cn } from "@odin-db/ui/lib/utils";
 import { Braces, ChartBarBig, Eye, ListTree, Lock, Unplug, Workflow } from "lucide-react";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
 import type { CollectionTab as CollectionTabModel } from "@/features/workspace";
+import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
 import { CollectionStats } from "./collection-stats";
 
 // Secondary views load on first visit to keep startup light.
@@ -38,7 +40,14 @@ export function CollectionTab({ tab }: { tab: CollectionTabModel }) {
   const connect = useConnect();
 
   if (connection && profile) {
-    return <CollectionWorkspace tab={tab} profileName={profile.name} connection={connection} />;
+    return (
+      <CollectionWorkspace
+        tab={tab}
+        profileName={profile.name}
+        color={profile.color}
+        connection={connection}
+      />
+    );
   }
 
   return (
@@ -60,10 +69,12 @@ export function CollectionTab({ tab }: { tab: CollectionTabModel }) {
 function CollectionWorkspace({
   tab,
   profileName,
+  color,
   connection,
 }: {
   tab: CollectionTabModel;
   profileName: string;
+  color: ProfileColor | null;
   connection: ConnectionInfo;
 }) {
   const { t } = useTranslation("collection");
@@ -90,7 +101,13 @@ function CollectionWorkspace({
 
   return (
     <Tabs value={view} onValueChange={select} className="flex h-full min-w-0 flex-col gap-0">
-      <header className="flex h-11 shrink-0 items-center gap-3 border-b px-3">
+      <header
+        className={cn(
+          "flex h-11 shrink-0 items-center gap-3 border-b px-3",
+          // The connection's color frames every collection it shows, like Compass.
+          color && ["border-t-2", PROFILE_COLOR_CLASS[color].border],
+        )}
+      >
         <nav
           className="flex min-w-0 items-baseline gap-1.5 text-[13px]"
           aria-label={`${tab.database}.${tab.collection}`}

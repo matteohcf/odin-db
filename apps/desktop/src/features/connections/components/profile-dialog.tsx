@@ -1,4 +1,4 @@
-import type { ConnectionProfile, ProfileInput } from "@odin-db/bindings";
+import type { ConnectionProfile, ProfileColor, ProfileInput } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import {
   Dialog,
@@ -12,10 +12,13 @@ import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { Switch } from "@odin-db/ui/components/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
-import { CircleAlert, CircleCheck, Loader2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
+import { cn } from "@odin-db/ui/lib/utils";
+import { Ban, CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorMessage } from "@/lib/ipc";
+import { PROFILE_COLOR_CLASS, PROFILE_COLORS } from "@/lib/profile-colors";
 import { useConnect, useSaveProfile, useTestConnection } from "../api/mutations";
 import { useExplorer } from "../store/explorer-store";
 import { ConnectionFormFields } from "./connection-form-fields";
@@ -32,6 +35,7 @@ interface FormState {
   connectionString: string;
   password: string;
   readOnly: boolean;
+  color: ProfileColor | null;
 }
 
 function initialState(profile: ConnectionProfile | undefined): FormState {
@@ -40,6 +44,7 @@ function initialState(profile: ConnectionProfile | undefined): FormState {
     connectionString: profile?.connectionString ?? "mongodb://localhost:27017",
     password: "",
     readOnly: profile?.readOnly ?? false,
+    color: profile?.color ?? null,
   };
 }
 
@@ -50,6 +55,7 @@ function toInput(form: FormState): ProfileInput {
     // Empty means "no new password": the saved one is kept.
     password: form.password === "" ? null : form.password,
     readOnly: form.readOnly,
+    color: form.color,
   };
 }
 
@@ -179,6 +185,40 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
           autoComplete="new-password"
         />
       </Field>
+
+      <div className="flex flex-col gap-1.5">
+        <Label id={`${id}-color`}>{t("dialog.color")}</Label>
+        <ToggleGroup
+          type="single"
+          aria-labelledby={`${id}-color`}
+          value={form.color ?? "none"}
+          onValueChange={(value) =>
+            value && update("color", value === "none" ? null : (value as ProfileColor))
+          }
+          className="justify-start gap-1.5"
+        >
+          <ToggleGroupItem
+            value="none"
+            aria-label={t("dialog.colors.none")}
+            title={t("dialog.colors.none")}
+            className="size-7 min-w-7 rounded-full border p-0 data-[state=on]:ring-2 data-[state=on]:ring-ring"
+          >
+            <Ban className="size-3.5 text-muted-foreground" />
+          </ToggleGroupItem>
+          {PROFILE_COLORS.map((color) => (
+            <ToggleGroupItem
+              key={color}
+              value={color}
+              aria-label={t(`dialog.colors.${color}`)}
+              title={t(`dialog.colors.${color}`)}
+              className="size-7 min-w-7 rounded-full p-0 data-[state=on]:ring-2 data-[state=on]:ring-ring data-[state=on]:ring-offset-2 data-[state=on]:ring-offset-background"
+            >
+              <span className={cn("size-5 rounded-full", PROFILE_COLOR_CLASS[color].bg)} />
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <p className="text-muted-foreground text-xs">{t("dialog.colorHint")}</p>
+      </div>
 
       <div className="flex items-start justify-between gap-4 rounded-md border p-3">
         <div className="flex flex-col gap-1">

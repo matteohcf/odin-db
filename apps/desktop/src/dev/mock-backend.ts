@@ -137,6 +137,7 @@ const profiles: ConnectionProfile[] = [
     connectionString: "mongodb://localhost:27017",
     readOnly: false,
     hasPassword: false,
+    color: "green",
   },
   {
     id: "0192f000-0000-7000-8000-000000000002",
@@ -144,6 +145,7 @@ const profiles: ConnectionProfile[] = [
     connectionString: "mongodb+srv://reader@cluster0.example.net/?retryWrites=true",
     readOnly: true,
     hasPassword: true,
+    color: "red",
   },
 ];
 
@@ -676,7 +678,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     Object.assign(window, { odinMockQuit: true });
     return null;
   },
-  list_profiles: () => [...profiles].sort((a, b) => a.name.localeCompare(b.name)),
+  // Copies, like real IPC: React Query must see a changed profile as a new object.
+  list_profiles: () =>
+    profiles.map((profile) => ({ ...profile })).sort((a, b) => a.name.localeCompare(b.name)),
   create_profile: (args) => {
     const input = args.input as ProfileInput;
     validate(input);
@@ -686,6 +690,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       connectionString: input.connectionString.trim().replace(/\/\/([^:@/]+):[^@/]*@/, "//$1@"),
       readOnly: input.readOnly,
       hasPassword: input.password !== null || /\/\/[^:@/]+:[^@/]*@/.test(input.connectionString),
+      color: input.color ?? null,
     };
     profiles.push(profile);
     return profile;
@@ -701,8 +706,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       connectionString: input.connectionString.trim(),
       readOnly: input.readOnly,
       hasPassword: profile.hasPassword || input.password !== null,
+      color: input.color ?? null,
     });
-    return profile;
+    return { ...profile };
   },
   delete_profile: (args) => {
     const index = profiles.findIndex((p) => p.id === id("id", args));

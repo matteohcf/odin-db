@@ -1,4 +1,5 @@
 import { Clock, Eye, Lock, Table2 } from "lucide-react";
+import { ProfileColorMark } from "@/components/profile-color-mark";
 import { useConnectionOf, useProfile } from "@/features/connections";
 import type { CollectionTab, TabLabelContext } from "@/features/workspace";
 
@@ -21,6 +22,7 @@ export function CollectionTabLabel({
       className="flex min-w-0 items-center gap-1.5"
       title={`${owner} / ${tab.database}.${tab.collection}`}
     >
+      <ProfileColorMark color={profile?.color} />
       <Icon className="size-3.5 shrink-0 text-muted-foreground" />
       {/* The collection name is the tab's identity: it shrinks last. */}
       <span className="max-w-40 shrink-0 truncate">{tab.collection}</span>

@@ -53,7 +53,21 @@
     "saveAndConnect": "Save and connect",
     "saving": "Saving…",
     "nameRequired": "Give this connection a name.",
-    "connectionStringRequired": "Enter a connection string, for example mongodb://localhost:27017."
+    "connectionStringRequired": "Enter a connection string, for example mongodb://localhost:27017.",
+    "color": "Color",
+    "colorHint": "Shown in the sidebar, on tabs and above every collection, so you always know where you are.",
+    "colors": {
+      "none": "No color",
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "teal": "Teal",
+      "blue": "Blue",
+      "purple": "Purple",
+      "pink": "Pink",
+      "gray": "Gray"
+    }
   },
   "delete": {
     "title": "Delete {{name}}?",

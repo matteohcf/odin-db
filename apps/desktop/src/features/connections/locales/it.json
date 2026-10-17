@@ -53,7 +53,21 @@
     "saveAndConnect": "Salva e connetti",
     "saving": "Salvataggio…",
     "nameRequired": "Assegna un nome a questa connessione.",
-    "connectionStringRequired": "Inserisci una stringa di connessione, ad esempio mongodb://localhost:27017."
+    "connectionStringRequired": "Inserisci una stringa di connessione, ad esempio mongodb://localhost:27017.",
+    "color": "Colore",
+    "colorHint": "Mostrato nella barra laterale, sulle schede e sopra ogni collezione, così sai sempre dove sei.",
+    "colors": {
+      "none": "Nessun colore",
+      "red": "Rosso",
+      "orange": "Arancione",
+      "yellow": "Giallo",
+      "green": "Verde",
+      "teal": "Verde acqua",
+      "blue": "Blu",
+      "purple": "Viola",
+      "pink": "Rosa",
+      "gray": "Grigio"
+    }
   },
   "delete": {
     "title": "Eliminare {{name}}?",

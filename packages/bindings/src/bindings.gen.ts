@@ -253,6 +253,7 @@ export type ConnectionProfile = {
 	connectionString: string,
 	readOnly: boolean,
 	hasPassword: boolean,
+	color: ProfileColor | null,
 };
 
 export type CopyRequest = {
@@ -527,6 +528,9 @@ export type PickedFolder = {
 	path: string,
 };
 
+/**  A label color, like Compass's, so production never looks like development. */
+export type ProfileColor = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink" | "gray";
+
 export type ProfileId = string;
 
 export type ProfileInput = {
@@ -539,6 +543,7 @@ export type ProfileInput = {
 	 */
 	password: Secret | null,
 	readOnly: boolean,
+	color?: ProfileColor | null,
 };
 
 export type QueryPlan = {

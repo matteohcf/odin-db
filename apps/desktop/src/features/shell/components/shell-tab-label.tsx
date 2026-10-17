@@ -1,5 +1,6 @@
 import { SquareTerminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ProfileColorMark } from "@/components/profile-color-mark";
 import { useProfile } from "@/features/connections";
 import type { ShellTab } from "@/features/workspace";
 
@@ -8,6 +9,7 @@ export function ShellTabLabel({ tab }: { tab: ShellTab }) {
   const profile = useProfile(tab.profileId);
   return (
     <span className="flex min-w-0 items-center gap-1.5" title={profile?.name}>
+      <ProfileColorMark color={profile?.color} />
       <SquareTerminal className="size-3.5 shrink-0 text-muted-foreground" />
       <span className="shrink-0">{t("tab.title")}</span>
       <span className="min-w-0 truncate text-muted-foreground text-xs">{profile?.name}</span>

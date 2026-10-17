@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ProfileColorMark } from "@/components/profile-color-mark";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
@@ -102,7 +103,12 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
             />
           </span>
         }
-        label={<span className="font-medium">{profile.name}</span>}
+        label={
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate font-medium">{profile.name}</span>
+            <ProfileColorMark color={profile.color} />
+          </span>
+        }
         trailing={
           profile.readOnly ? (
             <Lock className="size-3" aria-label={t("profile.readOnly")} />
