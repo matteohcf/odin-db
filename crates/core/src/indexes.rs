@@ -125,6 +125,31 @@ pub async fn drop(
     Ok(())
 }
 
+/// Hides an index from the query planner, or shows it again. A hidden index
+/// is still maintained, so unhiding it is instant: the safe way to try a drop.
+pub async fn set_hidden(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    name: &str,
+    hidden: bool,
+) -> Result<(), CoreError> {
+    handle.ensure_writable()?;
+    if name == ID_INDEX {
+        return Err(CoreError::Validation(
+            "the _id index cannot be hidden".into(),
+        ));
+    }
+    handle
+        .client
+        .database(&namespace.database)
+        .run_command(doc! {
+            "collMod": &namespace.collection,
+            "index": { "name": name, "hidden": hidden },
+        })
+        .await?;
+    Ok(())
+}
+
 fn to_info(
     spec: &Document,
     sizes: &HashMap<String, f64>,

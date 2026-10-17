@@ -1977,3 +1977,53 @@ async fn monitors_the_server_and_kills_a_running_operation() {
         .expect("task");
     assert!(outcome.is_err(), "the killed find fails");
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn hides_and_unhides_an_index() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("hidable");
+    fx.seed(&handle, &ns, 3).await;
+    let name = indexes::create(
+        &handle,
+        &ns,
+        CreateIndexRequest {
+            keys: EJsonDocument::from(doc! { "n": 1 }),
+            name: None,
+            unique: false,
+            sparse: false,
+            hidden: false,
+            expire_after_seconds: None,
+            partial_filter: None,
+        },
+    )
+    .await
+    .expect("index");
+    let hidden = |handle: Arc<ConnectionHandle>, ns: Namespace, name: String| async move {
+        indexes::list(&handle, &ns)
+            .await
+            .expect("list")
+            .into_iter()
+            .find(|index| index.name == name)
+            .expect("listed")
+            .hidden
+    };
+    indexes::set_hidden(&handle, &ns, &name, true)
+        .await
+        .expect("hide");
+    assert!(hidden(Arc::clone(&handle), ns.clone(), name.clone()).await);
+    indexes::set_hidden(&handle, &ns, &name, false)
+        .await
+        .expect("unhide");
+    assert!(!hidden(Arc::clone(&handle), ns.clone(), name.clone()).await);
+    assert!(matches!(
+        indexes::set_hidden(&handle, &ns, "_id_", true).await,
+        Err(CoreError::Validation(_))
+    ));
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        indexes::set_hidden(&read_only, &ns, &name, true).await,
+        Err(CoreError::ReadOnly)
+    ));
+}
