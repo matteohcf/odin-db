@@ -1,5 +1,15 @@
 import type { CompletionSource } from "@codemirror/autocomplete";
 import type { EJsonDocument } from "@odin-db/bindings";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@odin-db/ui/components/alert-dialog";
 import { Button } from "@odin-db/ui/components/button";
 import {
   Dialog,
@@ -9,12 +19,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
-import { CircleAlert } from "lucide-react";
-import { useState } from "react";
+import { cn } from "@odin-db/ui/lib/utils";
+import { CircleAlert, CircleCheck, Copy, WandSparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { CodeEditor } from "@/components/code-editor";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/ipc";
-import { parseShellDocument } from "@/lib/shell-syntax";
+import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
 
 export type EditorMode = "edit" | "view" | "insert";
 
@@ -33,14 +46,49 @@ interface DocumentEditorDialogProps {
 const isMac = navigator.userAgent.includes("Mac");
 
 export function DocumentEditorDialog(props: DocumentEditorDialogProps) {
+  // Unsaved edits are confirmed before the dialog closes, whatever closed it.
+  const [dirty, setDirty] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const { t } = useTranslation("results");
+  const close = () => {
+    if (dirty) setConfirming(true);
+    else props.onClose();
+  };
   return (
-    <Dialog open={props.open} onOpenChange={(next) => !next && props.onClose()}>
-      <DialogContent className="flex h-[min(80vh,760px)] flex-col gap-4 sm:max-w-3xl">
-        <DocumentEditor {...props} />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={props.open} onOpenChange={(next) => !next && close()}>
+        <DialogContent className="flex h-[min(80vh,760px)] flex-col gap-4 sm:max-w-3xl">
+          {props.open && <DocumentEditor {...props} onClose={close} onDirtyChange={setDirty} />}
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("editor.discardTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("editor.discardBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("editor.keepEditing")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => {
+                setDirty(false);
+                props.onClose();
+              }}
+            >
+              {t("editor.discard")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
+
+type Validation =
+  | { status: "pending" }
+  | { status: "valid" }
+  | { status: "invalid"; message: string };
 
 function DocumentEditor({
   mode,
@@ -48,13 +96,34 @@ function DocumentEditor({
   initialText,
   onSave,
   onClose,
+  onDirtyChange,
   completions,
-}: DocumentEditorDialogProps) {
+}: DocumentEditorDialogProps & { onDirtyChange: (dirty: boolean) => void }) {
   const { t } = useTranslation("results");
   const [text, setText] = useState(initialText);
+  // Remounts the editor when its content is replaced, e.g. by Format.
+  const [editor, setEditor] = useState({ key: 0, text: initialText });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [validation, setValidation] = useState<Validation>({ status: "valid" });
   const readOnly = mode === "view";
+  const settled = useDebouncedValue(text, 300);
+
+  useEffect(() => {
+    onDirtyChange(!readOnly && text !== initialText);
+  }, [text, initialText, readOnly, onDirtyChange]);
+
+  useEffect(() => {
+    if (readOnly) return;
+    let current = true;
+    parseShellDocument(settled).then(
+      () => current && setValidation({ status: "valid" }),
+      (cause) => current && setValidation({ status: "invalid", message: errorMessage(cause) }),
+    );
+    return () => {
+      current = false;
+    };
+  }, [settled, readOnly]);
 
   async function save() {
     if (readOnly || saving) return;
@@ -62,10 +131,21 @@ function DocumentEditor({
     setError(null);
     try {
       await onSave(await parseShellDocument(text));
+      onDirtyChange(false);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function format() {
+    try {
+      const formatted = toShellSyntax(await parseShellDocument(text));
+      setText(formatted);
+      setEditor((current) => ({ key: current.key + 1, text: formatted }));
+    } catch (cause) {
+      setError(errorMessage(cause));
     }
   }
 
@@ -85,8 +165,52 @@ function DocumentEditor({
             : t("editor.description", { namespace, shortcut: isMac ? "⌘↵" : "Ctrl+Enter" })}
         </DialogDescription>
       </DialogHeader>
+      <div className="-mb-2 flex items-center gap-1">
+        {!readOnly && (
+          <Button variant="ghost" size="sm" className="h-7" onClick={() => void format()}>
+            <WandSparkles />
+            {t("editor.format")}
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7"
+          onClick={() => {
+            void navigator.clipboard.writeText(text);
+            toast.success(t("row.copied"));
+          }}
+        >
+          <Copy />
+          {t("editor.copy")}
+        </Button>
+        {!readOnly && (
+          <span
+            role="status"
+            className={cn(
+              "ml-auto flex min-w-0 items-center gap-1 text-xs",
+              validation.status === "invalid" ? "text-destructive" : "text-muted-foreground",
+            )}
+          >
+            {validation.status === "invalid" ? (
+              <>
+                <CircleAlert className="size-3.5 shrink-0" />
+                <span className="truncate" title={validation.message}>
+                  {validation.message}
+                </span>
+              </>
+            ) : (
+              <>
+                <CircleCheck className="size-3.5 shrink-0 text-success" />
+                {t("editor.valid")}
+              </>
+            )}
+          </span>
+        )}
+      </div>
       <CodeEditor
-        initialValue={initialText}
+        key={editor.key}
+        initialValue={editor.text}
         onChange={setText}
         onSubmit={save}
         readOnly={readOnly}

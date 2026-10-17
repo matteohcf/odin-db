@@ -69,4 +69,8 @@ describe("shell syntax", () => {
       ShellSyntaxError,
     );
   });
+
+  it("reports syntax errors at the user's line", async () => {
+    await expect(parseShellDocument("{\n  a: 1,,\n}")).rejects.toThrow(/\(2:\d+\)/);
+  });
 });

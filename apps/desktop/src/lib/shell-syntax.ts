@@ -27,7 +27,15 @@ export async function parseShellDocument(text: string): Promise<EJsonDocument> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     // The parser echoes the whole input after the position; the editor already shows it.
-    throw new ShellSyntaxError(message.replace(/\s+in \([\s\S]*\)$/, ""));
+    // It also parses `(\n<input>\n)`, so its line numbers are one past the user's.
+    throw new ShellSyntaxError(
+      message
+        .replace(/\s+in \([\s\S]*\)$/, "")
+        .replace(
+          /\((\d+):(\d+)\)/,
+          (_, line: string, column: string) => `(${Math.max(1, Number(line) - 1)}:${column})`,
+        ),
+    );
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new ShellSyntaxError("Expected a document like { field: value }");

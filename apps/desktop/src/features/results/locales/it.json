@@ -25,7 +25,14 @@
     "label": "Documento",
     "save": "Salva",
     "insert": "Inserisci",
-    "saving": "Salvataggio…"
+    "saving": "Salvataggio…",
+    "format": "Formatta",
+    "copy": "Copia",
+    "valid": "Documento valido",
+    "discardTitle": "Scartare le modifiche?",
+    "discardBody": "Il documento ha modifiche non salvate.",
+    "keepEditing": "Continua a modificare",
+    "discard": "Scarta"
   },
   "cell": {
     "copy": "Copia valore di {{field}}",

@@ -25,7 +25,14 @@
     "label": "Document",
     "save": "Save",
     "insert": "Insert",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "format": "Format",
+    "copy": "Copy",
+    "valid": "Valid document",
+    "discardTitle": "Discard your changes?",
+    "discardBody": "The document has edits that are not saved.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard"
   },
   "cell": {
     "copy": "Copy {{field}} value",
