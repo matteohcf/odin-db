@@ -3,7 +3,7 @@
 Open source desktop client for MongoDB (free alternative to Studio 3T).
 Tauri 2 (Rust) + React + TypeScript. Windows, macOS, Linux.
 
-**Status: Milestone 0** (platform spike, see `docs/milestone-0.md`). Every structural decision is recorded in `docs/adr/`.
+**Status: pre-release.** V1 features are built; release packaging is next (platform spike results in `docs/milestone-0.md`). Every structural decision is recorded in `docs/adr/`.
 Read the relevant ADR before touching an area. A change that contradicts an ADR
 requires a new ADR that supersedes it — never silently diverge.
 
@@ -41,6 +41,7 @@ docs/adr/                Architecture Decision Records
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
   - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `indexes` stands alone;
   - `collection` (the collection tab) composes `documents`, `aggregation` and `indexes` with `connections`;
+  - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `connections` may use `workspace` to open tabs and `backup` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
@@ -60,6 +61,7 @@ docs/adr/                Architecture Decision Records
 - **Read-only mode and all safety checks are enforced in Rust**, never only in the UI (ADR-0017).
 - **File dialogs open from Rust** (`tauri-plugin-dialog`); the webview never sends a file path. Imports use an opaque token returned by `choose_import_file`.
 - **Transfers write atomically**: exports go to `<file>.partial` and are renamed when complete.
+- **The shell is mongosh in a PTY** (ADR-0030), with credit-based flow control: the UI acknowledges output after xterm.js renders it, and sends input one write at a time. Read-only cannot be enforced inside mongosh, so the tab warns instead.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions
