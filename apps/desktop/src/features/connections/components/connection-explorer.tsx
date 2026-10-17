@@ -11,6 +11,7 @@ import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { ProfileDialog } from "./profile-dialog";
 import { ProfileNode } from "./profile-node";
+import { TryLocalhostButton } from "./try-localhost-button";
 
 const isMac = navigator.userAgent.includes("Mac");
 
@@ -87,10 +88,13 @@ export function ConnectionExplorer() {
                 {t("explorer.emptyBody")}
               </p>
             </div>
-            <Button size="sm" onClick={() => setDialog({ type: "create" })}>
-              <Plus />
-              {t("explorer.new")}
-            </Button>
+            <div className="flex flex-col items-stretch gap-2 self-stretch">
+              <Button size="sm" onClick={() => setDialog({ type: "create" })}>
+                <Plus />
+                {t("explorer.new")}
+              </Button>
+              <TryLocalhostButton />
+            </div>
           </div>
         ) : (
           <ul className="flex flex-col gap-px">

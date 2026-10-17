@@ -1112,6 +1112,8 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
 };
 
 export function installMockBackend() {
+  // `localStorage["odin-mock-empty"] = "1"` shows the first-run state.
+  if (localStorage.getItem("odin-mock-empty") === "1") profiles.splice(0);
   mockIPC(
     async (command, payload) => {
       const handler =
