@@ -1,5 +1,6 @@
 import { Label } from "@odin-db/ui/components/label";
 import type { ReactNode } from "react";
+import { useSettingsSearch } from "../hooks/use-settings-search";
 
 interface SettingRowProps {
   /** Id of the control, so the label focuses it. */
@@ -11,8 +12,11 @@ interface SettingRowProps {
 
 /** One setting: what it is on the left, its control on the right. */
 export function SettingRow({ id, label, description, children }: SettingRowProps) {
+  const search = useSettingsSearch();
+  const text = `${label} ${typeof description === "string" ? description : ""}`.toLowerCase();
+  if (search && !text.includes(search)) return null;
   return (
-    <div className="flex items-center justify-between gap-6 px-4 py-3">
+    <div data-setting-row className="flex items-center justify-between gap-6 px-4 py-3">
       <div className="flex min-w-0 flex-col gap-0.5">
         {id ? (
           <Label htmlFor={id} className="font-medium text-sm">

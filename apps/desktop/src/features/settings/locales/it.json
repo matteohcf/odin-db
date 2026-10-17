@@ -118,5 +118,7 @@
     "confirmTitle": "Ripristinare tutte le impostazioni?",
     "confirmDescription": "Ogni impostazione torna al valore predefinito. Connessioni, query salvate e backup vengono mantenuti.",
     "done": "Impostazioni ripristinate."
-  }
+  },
+  "search": "Cerca nelle impostazioni",
+  "noMatch": "Nessuna impostazione corrisponde a “{{search}}”."
 }

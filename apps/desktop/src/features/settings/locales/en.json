@@ -118,5 +118,7 @@
     "confirmTitle": "Reset all settings?",
     "confirmDescription": "Every setting goes back to its default value. Your connections, saved queries and backups are kept.",
     "done": "Settings reset."
-  }
+  },
+  "search": "Search settings",
+  "noMatch": "No setting matches “{{search}}”."
 }
