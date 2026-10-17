@@ -8,7 +8,7 @@ import {
 } from "@odin-db/ui/components/context-menu";
 import { cn } from "@odin-db/ui/lib/utils";
 import { Copy, Pin, PinOff, X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { memo, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
@@ -44,6 +44,15 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
   const move = useTabs((s) => s.move);
   const reopenClosed = useTabs((s) => s.reopenClosed);
   const [dragging, setDragging] = useState<string | null>(null);
+  const tabList = useRef<HTMLDivElement>(null);
+
+  // A tab opened from the sidebar or the palette may sit past the edge of a long tab bar.
+  useEffect(() => {
+    if (!activeTabId) return;
+    tabList.current
+      ?.querySelector(`[data-tab-id="${CSS.escape(activeTabId)}"]`)
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeTabId]);
 
   const cycle = (delta: 1 | -1) => {
     const index = tabs.findIndex((tab) => tab.id === activeTabId);
@@ -84,6 +93,11 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
       <div
         role="tablist"
         aria-label={t("tabs.label")}
+        ref={tabList}
+        // The bar has no visible scrollbar; a mouse wheel scrolls it sideways.
+        onWheel={(event) => {
+          if (event.deltaX === 0) event.currentTarget.scrollLeft += event.deltaY;
+        }}
         className="flex h-9 shrink-0 items-end gap-px overflow-x-auto border-b bg-sidebar px-1.5 [scrollbar-width:none]"
       >
         {tabs.map((tab, index) => {
@@ -207,11 +221,26 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
       </div>
       <div className="relative min-h-0 flex-1">
         {tabs.map((tab) => (
-          <div key={tab.id} role="tabpanel" hidden={tab.id !== activeTabId} className="h-full">
-            {renderTab(tab)}
-          </div>
+          <TabPanel key={tab.id} tab={tab} active={tab.id === activeTabId} renderTab={renderTab} />
         ))}
       </div>
     </div>
   );
 }
+
+// Switching tabs re-renders only the two panels whose visibility changes.
+const TabPanel = memo(function TabPanel({
+  tab,
+  active,
+  renderTab,
+}: {
+  tab: WorkspaceTab;
+  active: boolean;
+  renderTab: (tab: WorkspaceTab) => ReactNode;
+}) {
+  return (
+    <div role="tabpanel" hidden={!active} className="h-full">
+      {renderTab(tab)}
+    </div>
+  );
+});
