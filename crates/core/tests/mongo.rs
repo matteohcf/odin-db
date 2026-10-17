@@ -35,7 +35,7 @@ use testcontainers_modules::testcontainers::{ContainerAsync, ImageExt};
 use tokio_util::sync::CancellationToken;
 
 struct Fixture {
-    _container: ContainerAsync<Mongo>,
+    container: ContainerAsync<Mongo>,
     uri: String,
     manager: ConnectionManager,
     storage: Storage,
@@ -55,7 +55,7 @@ impl Fixture {
             .await
             .expect("mapped port");
         Self {
-            _container: container,
+            container,
             uri: format!("mongodb://127.0.0.1:{port}/?directConnection=true"),
             manager: ConnectionManager::default(),
             storage: Storage::open_in_memory().expect("storage"),
@@ -1181,4 +1181,51 @@ async fn sets_and_unsets_single_fields_keeping_types() {
         documents::set_field(&read_only, &ns, id(), "keep", None).await,
         Err(CoreError::ReadOnly)
     ));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn reports_a_server_that_stops_answering() {
+    let fx = Fixture::start().await;
+    let mut changes = fx.manager.health_changes();
+    // Fast heartbeats keep the test short; the app uses the driver's default.
+    let profile = profiles::create(
+        &fx.storage,
+        &fx.secrets,
+        ProfileInput {
+            name: "heartbeat".into(),
+            connection_string: format!("{}&heartbeatFrequencyMS=500", fx.uri),
+            password: None,
+            read_only: false,
+        },
+    )
+    .expect("profile");
+    let info = fx.manager.connect(&profile, None).await.expect("connects");
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_secs(2), changes.recv())
+            .await
+            .is_err(),
+        "a healthy connection reports nothing"
+    );
+
+    fx.container.stop().await.expect("stops");
+    let change = tokio::time::timeout(std::time::Duration::from_secs(30), changes.recv())
+        .await
+        .expect("noticed within 30 s")
+        .expect("event");
+    assert_eq!(
+        change,
+        odin_core::connection::HealthChange {
+            connection_id: info.id,
+            reachable: false
+        }
+    );
+
+    fx.manager.disconnect(info.id).await.expect("disconnects");
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_secs(2), changes.recv())
+            .await
+            .is_err(),
+        "closing a connection is not reported as a health change"
+    );
 }
