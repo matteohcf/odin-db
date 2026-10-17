@@ -1,0 +1,29 @@
+{
+  "views": {
+    "label": "Viste della collezione",
+    "documents": "Documenti",
+    "aggregation": "Aggregazione",
+    "indexes": "Indici",
+    "schema": "Schema"
+  },
+  "header": {
+    "readOnly": "Sola lettura",
+    "readOnlyHint": "Questa connessione è di sola lettura. I dati possono essere visualizzati ma non modificati.",
+    "view": "Vista",
+    "viewHint": "Le viste sono di sola lettura. Modifica invece i documenti nella collezione di origine."
+  },
+  "disconnected": {
+    "title": "{{name}} è disconnesso",
+    "body": "Riconnettiti per lavorare con {{namespace}}.",
+    "connect": "Connetti"
+  },
+  "stats": {
+    "summary": "{{documents}} documenti · {{size}}",
+    "documents": "Documenti",
+    "size": "Dimensione dati",
+    "averageSize": "Documento medio",
+    "storageSize": "Dimensione su disco",
+    "indexes": "Indici",
+    "indexSize": "Dimensione indici"
+  }
+}

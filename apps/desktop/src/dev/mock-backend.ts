@@ -1031,6 +1031,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       }),
     );
   },
+  "plugin:app|version": () => "0.1.0",
   database_tools_status: () =>
     toolsInstalled()
       ? { available: true, version: "100.19.1" }

@@ -1,0 +1,32 @@
+{
+  "tab": {
+    "title": "Shell"
+  },
+  "status": {
+    "starting": "Avvio di mongosh…",
+    "exited": "mongosh è terminato",
+    "exitedWithCode": "mongosh è terminato con codice {{code}}",
+    "restart": "Riavvia shell",
+    "failed": "Impossibile avviare mongosh: {{message}}"
+  },
+  "readOnly": "{{name}} è di sola lettura in odin-db, ma la shell viene eseguita con i permessi del tuo utente del database. Usa un utente del database di sola lettura per evitare modifiche.",
+  "missing": {
+    "title": "mongosh non è installato",
+    "body": "La shell usa mongosh di MongoDB. odin-db può scaricarlo per te, oppure puoi installarlo manualmente e aggiungerlo al PATH.",
+    "manual": "Pagina di download: {{url}}",
+    "download": "Scarica mongosh {{version}}",
+    "downloading": "Download di mongosh {{version}}…",
+    "progress": "{{received}} di {{total}}",
+    "progressUnknown": "{{received}}",
+    "verifying": "Verifica e installazione…",
+    "cancel": "Annulla",
+    "failed": "Download non riuscito: {{message}}",
+    "retry": "Riprova",
+    "verified": "Verificato con il checksum pubblicato da MongoDB."
+  },
+  "disconnected": {
+    "title": "{{name}} è disconnesso",
+    "body": "Riconnettiti per avviare una shell.",
+    "connect": "Connetti"
+  }
+}

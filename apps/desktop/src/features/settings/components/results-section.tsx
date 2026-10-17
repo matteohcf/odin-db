@@ -1,0 +1,68 @@
+import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
+import { List, Table2 } from "lucide-react";
+import { useId } from "react";
+import { useTranslation } from "react-i18next";
+import { useResultsView } from "@/features/results";
+import { useSettings } from "@/lib/settings";
+import { OptionSelect } from "./option-select";
+import { SettingRow } from "./setting-row";
+import { SettingsSection } from "./settings-section";
+
+export function ResultsSection() {
+  const { t } = useTranslation("settings");
+  const id = useId();
+  const view = useResultsView((s) => s.view);
+  const setView = useResultsView((s) => s.setView);
+  const batchSize = useSettings((s) => s.resultsBatchSize);
+  const maxRows = useSettings((s) => s.resultsMaxRows);
+  const update = useSettings((s) => s.update);
+  return (
+    <SettingsSection title={t("results.title")} description={t("results.description")}>
+      <SettingRow label={t("results.view")} description={t("results.viewHint")}>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={view}
+          onValueChange={(value) => value && setView(value as typeof view)}
+          aria-label={t("results.view")}
+        >
+          <ToggleGroupItem value="table" className="gap-1.5 px-3">
+            <Table2 className="size-3.5" />
+            {t("results.table")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="list" className="gap-1.5 px-3">
+            <List className="size-3.5" />
+            {t("results.list")}
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </SettingRow>
+      <SettingRow
+        id={`${id}-batch`}
+        label={t("results.batchSize")}
+        description={t("results.batchSizeHint")}
+      >
+        <OptionSelect
+          id={`${id}-batch`}
+          value={batchSize}
+          options={[50, 100, 250, 500, 1_000] as const}
+          onChange={(value) => update({ resultsBatchSize: value })}
+          format={(value) => t("results.documents", { count: value })}
+        />
+      </SettingRow>
+      <SettingRow
+        id={`${id}-max`}
+        label={t("results.maxRows")}
+        description={t("results.maxRowsHint")}
+      >
+        <OptionSelect
+          id={`${id}-max`}
+          value={maxRows}
+          options={[5_000, 10_000, 20_000, 50_000, 100_000] as const}
+          onChange={(value) => update({ resultsMaxRows: value })}
+          format={(value) => t("results.documents", { count: value })}
+        />
+      </SettingRow>
+    </SettingsSection>
+  );
+}

@@ -126,7 +126,8 @@
     "groups": {
       "general": "General",
       "query": "Query editors",
-      "results": "Results"
+      "results": "Results",
+      "view": "View"
     },
     "actions": {
       "palette": "Command palette",
@@ -141,7 +142,11 @@
       "open": "Open the selected document",
       "delete": "Delete the selected document",
       "nextTab": "Next tab",
-      "previousTab": "Previous tab"
+      "previousTab": "Previous tab",
+      "settings": "Open settings",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "resetZoom": "Actual size"
     }
   }
 }

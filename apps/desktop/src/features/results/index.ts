@@ -3,3 +3,4 @@ export { DocumentEditorDialog, type EditorMode } from "./components/document-edi
 export { ResultsPanel } from "./components/results-panel";
 export { ResultsStatusBar } from "./components/results-status-bar";
 export { useResultsController, useResultsState } from "./hooks/use-results";
+export { useResultsView } from "./store/results-view-store";

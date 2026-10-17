@@ -25,7 +25,13 @@ interface BackupsTab {
   id: "backups";
 }
 
-export type WorkspaceTab = CollectionTab | ShellTab | BackupsTab;
+/** App settings; at most one is open. */
+interface SettingsTab {
+  kind: "settings";
+  id: "settings";
+}
+
+export type WorkspaceTab = CollectionTab | ShellTab | BackupsTab | SettingsTab;
 
 interface TabsState {
   tabs: WorkspaceTab[];
@@ -33,6 +39,7 @@ interface TabsState {
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
   openShell: (profileId: ProfileId) => void;
   openBackups: () => void;
+  openSettings: () => void;
   activate: (id: string) => void;
   close: (id: string) => void;
   closeOthers: (id: string) => void;
@@ -72,6 +79,12 @@ export const useTabs = create<TabsState>()((set) => ({
       state.tabs.some((tab) => tab.id === "backups")
         ? { activeTabId: "backups" }
         : { tabs: [...state.tabs, { kind: "backups", id: "backups" }], activeTabId: "backups" },
+    ),
+  openSettings: () =>
+    set((state) =>
+      state.tabs.some((tab) => tab.id === "settings")
+        ? { activeTabId: "settings" }
+        : { tabs: [...state.tabs, { kind: "settings", id: "settings" }], activeTabId: "settings" },
     ),
   activate: (id) => set({ activeTabId: id }),
   close: (id) =>

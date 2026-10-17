@@ -91,7 +91,7 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                           ? tab.collection
                           : tab.kind === "shell"
                             ? t("tabs.shell")
-                            : t("tabs.backups"),
+                            : t(`tabs.${tab.kind}`),
                     })}
                     onClick={() => close(tab.id)}
                     className={cn(

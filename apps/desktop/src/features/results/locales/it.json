@@ -1,0 +1,47 @@
+{
+  "loading": "Esecuzione…",
+  "failed": "La query non è riuscita",
+  "row": {
+    "edit": "Modifica documento",
+    "view": "Visualizza documento",
+    "duplicate": "Duplica",
+    "copy": "Copia come sintassi shell",
+    "copied": "Copiato negli appunti",
+    "delete": "Elimina documento"
+  },
+  "status": {
+    "loaded_one": "{{count, number}} documento",
+    "loaded_other": "{{count, number}} documenti",
+    "more": "Scorri per vederne altri",
+    "truncated": "Mostrati i primi {{count}}. Restringi la query per vedere il resto.",
+    "duration": "{{ms}} ms"
+  },
+  "editor": {
+    "editTitle": "Modifica documento",
+    "viewTitle": "Visualizza documento",
+    "insertTitle": "Inserisci documento",
+    "description": "Documento in {{namespace}}, scritto in sintassi mongosh. Premi {{shortcut}} per salvare.",
+    "viewDescription": "Risultato da {{namespace}}, in sintassi mongosh.",
+    "label": "Documento",
+    "save": "Salva",
+    "insert": "Inserisci",
+    "saving": "Salvataggio…"
+  },
+  "cell": {
+    "copy": "Copia valore di {{field}}",
+    "filter": "Filtra per questo valore di {{field}}",
+    "edit": "Modifica valore di {{field}}…"
+  },
+  "view": {
+    "label": "Vista dei risultati",
+    "table": "Tabella",
+    "list": "Elenco",
+    "expandAll": "Espandi tutti i campi",
+    "collapseAll": "Comprimi i campi"
+  },
+  "columns": {
+    "choose": "Scegli colonne",
+    "label": "{{visible}} di {{total}} colonne",
+    "showAll": "Mostra tutte le colonne"
+  }
+}

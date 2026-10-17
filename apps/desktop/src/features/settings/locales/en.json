@@ -1,0 +1,94 @@
+{
+  "title": "Settings",
+  "open": "Settings",
+  "pages": {
+    "general": "General",
+    "appearance": "Appearance",
+    "editor": "Editors and shell",
+    "results": "Results",
+    "data": "Data and tools",
+    "keyboard": "Keyboard",
+    "about": "About"
+  },
+  "general": {
+    "title": "General",
+    "language": "Language",
+    "languageHint": "The language of the interface.",
+    "systemLanguage": "System ({{language}})"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "themeHint": "System follows your operating system's light or dark mode.",
+    "zoom": "Zoom",
+    "zoomHint": "Scales the whole interface. {{zoomOut}} zooms out, {{reset}} restores the actual size."
+  },
+  "editor": {
+    "title": "Editors",
+    "description": "Documents, pipelines and other multi-line editors.",
+    "fontSize": "Font size",
+    "fontSizeHint": "Query bar fields keep their compact size."
+  },
+  "shell": {
+    "title": "Shell",
+    "description": "The mongosh terminal. Changes apply to open shells too.",
+    "fontSize": "Font size",
+    "scrollback": "Scrollback",
+    "scrollbackHint": "Lines kept above the visible output.",
+    "lines_one": "{{count, number}} line",
+    "lines_other": "{{count, number}} lines"
+  },
+  "results": {
+    "title": "Results",
+    "description": "How query and aggregation results are loaded and shown.",
+    "view": "Default view",
+    "viewHint": "Each tab can still switch view.",
+    "table": "Table",
+    "list": "List",
+    "batchSize": "Documents per page",
+    "batchSizeHint": "Fetched from the server each time you scroll to the end. Larger pages mean fewer round trips.",
+    "maxRows": "Documents kept in memory",
+    "maxRowsHint": "Beyond this, a result stops loading and shows that it was truncated.",
+    "documents_one": "{{count, number}} document",
+    "documents_other": "{{count, number}} documents"
+  },
+  "data": {
+    "title": "Query history",
+    "description": "Recent queries are kept on this computer only.",
+    "historySize": "Recent queries per collection",
+    "historySizeHint": "Saved queries are never trimmed.",
+    "queries_one": "{{count, number}} query",
+    "queries_other": "{{count, number}} queries",
+    "clearHistory": "Clear recent queries",
+    "clearHistoryHint": "Forgets the recent queries of every collection. Saved queries stay.",
+    "clear": "Clear",
+    "historyCleared": "Recent queries cleared."
+  },
+  "tools": {
+    "title": "Bundled tools",
+    "description": "Programs odin-db runs for you.",
+    "databaseTools": "MongoDB Database Tools",
+    "databaseToolsHint": "mongodump and mongorestore, used for backups and restores.",
+    "available": "Available",
+    "missing": "Not found"
+  },
+  "keyboard": {
+    "title": "Keyboard shortcuts",
+    "description": "Work faster without leaving the keyboard."
+  },
+  "about": {
+    "title": "About",
+    "tagline": "An open source desktop client for MongoDB.",
+    "license": "License",
+    "source": "Source code"
+  },
+  "reset": {
+    "title": "Reset",
+    "label": "Reset all settings",
+    "hint": "Restores every setting on these pages to its default. Connections, history and backups are not affected.",
+    "button": "Reset settings",
+    "confirmTitle": "Reset all settings?",
+    "confirmDescription": "Every setting goes back to its default value. Your connections, saved queries and backups are kept.",
+    "done": "Settings reset."
+  }
+}

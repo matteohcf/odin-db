@@ -1,0 +1,94 @@
+{
+  "title": "Impostazioni",
+  "open": "Impostazioni",
+  "pages": {
+    "general": "Generale",
+    "appearance": "Aspetto",
+    "editor": "Editor e shell",
+    "results": "Risultati",
+    "data": "Dati e strumenti",
+    "keyboard": "Tastiera",
+    "about": "Informazioni"
+  },
+  "general": {
+    "title": "Generale",
+    "language": "Lingua",
+    "languageHint": "La lingua dell'interfaccia.",
+    "systemLanguage": "Sistema ({{language}})"
+  },
+  "appearance": {
+    "title": "Aspetto",
+    "theme": "Tema",
+    "themeHint": "Sistema segue la modalità chiara o scura del sistema operativo.",
+    "zoom": "Zoom",
+    "zoomHint": "Ridimensiona tutta l'interfaccia. {{zoomOut}} riduce, {{reset}} ripristina le dimensioni reali."
+  },
+  "editor": {
+    "title": "Editor",
+    "description": "Documenti, pipeline e gli altri editor su più righe.",
+    "fontSize": "Dimensione carattere",
+    "fontSizeHint": "I campi della barra delle query mantengono la loro dimensione compatta."
+  },
+  "shell": {
+    "title": "Shell",
+    "description": "Il terminale mongosh. Le modifiche valgono anche per le shell aperte.",
+    "fontSize": "Dimensione carattere",
+    "scrollback": "Cronologia del terminale",
+    "scrollbackHint": "Righe conservate sopra l'output visibile.",
+    "lines_one": "{{count, number}} riga",
+    "lines_other": "{{count, number}} righe"
+  },
+  "results": {
+    "title": "Risultati",
+    "description": "Come vengono caricati e mostrati i risultati di query e aggregazioni.",
+    "view": "Vista predefinita",
+    "viewHint": "Ogni scheda può comunque cambiare vista.",
+    "table": "Tabella",
+    "list": "Elenco",
+    "batchSize": "Documenti per pagina",
+    "batchSizeHint": "Caricati dal server ogni volta che scorri fino in fondo. Pagine più grandi significano meno richieste.",
+    "maxRows": "Documenti tenuti in memoria",
+    "maxRowsHint": "Oltre questo limite il risultato smette di caricarsi e indica che è stato troncato.",
+    "documents_one": "{{count, number}} documento",
+    "documents_other": "{{count, number}} documenti"
+  },
+  "data": {
+    "title": "Cronologia query",
+    "description": "Le query recenti restano solo su questo computer.",
+    "historySize": "Query recenti per collezione",
+    "historySizeHint": "Le query salvate non vengono mai eliminate.",
+    "queries_one": "{{count, number}} query",
+    "queries_other": "{{count, number}} query",
+    "clearHistory": "Cancella le query recenti",
+    "clearHistoryHint": "Dimentica le query recenti di tutte le collezioni. Le query salvate restano.",
+    "clear": "Cancella",
+    "historyCleared": "Query recenti cancellate."
+  },
+  "tools": {
+    "title": "Strumenti inclusi",
+    "description": "Programmi che odin-db esegue per te.",
+    "databaseTools": "MongoDB Database Tools",
+    "databaseToolsHint": "mongodump e mongorestore, usati per backup e ripristini.",
+    "available": "Disponibili",
+    "missing": "Non trovati"
+  },
+  "keyboard": {
+    "title": "Scorciatoie da tastiera",
+    "description": "Lavora più velocemente senza staccare le mani dalla tastiera."
+  },
+  "about": {
+    "title": "Informazioni",
+    "tagline": "Un client desktop open source per MongoDB.",
+    "license": "Licenza",
+    "source": "Codice sorgente"
+  },
+  "reset": {
+    "title": "Ripristino",
+    "label": "Ripristina tutte le impostazioni",
+    "hint": "Riporta ai valori predefiniti ogni impostazione di queste pagine. Connessioni, cronologia e backup non vengono toccati.",
+    "button": "Ripristina impostazioni",
+    "confirmTitle": "Ripristinare tutte le impostazioni?",
+    "confirmDescription": "Ogni impostazione torna al valore predefinito. Connessioni, query salvate e backup vengono mantenuti.",
+    "done": "Impostazioni ripristinate."
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "insert": "Inserisci documento",
+  "copied": "Copiato negli appunti",
+  "query": {
+    "filter": "Filtro",
+    "sort": "Ordinamento",
+    "projection": "Proiezione",
+    "skip": "Skip",
+    "limit": "Limit",
+    "run": "Esegui",
+    "runShortcut": "Esegui query",
+    "options": "Ordinamento e proiezione",
+    "filterPlaceholder": "{ status: \"active\", age: { $gt: 30 } }",
+    "sortPlaceholder": "{ createdAt: -1 }",
+    "projectionPlaceholder": "{ name: 1, email: 1 }",
+    "numberPlaceholder": "0",
+    "invalidNumber": "Usa un numero intero pari o superiore a 0.",
+    "reset": "Reimposta",
+    "resetHint": "Cancella la query e mostra tutti i documenti",
+    "suggest": "Mostra suggerimenti"
+  },
+  "results": {
+    "label": "Documenti in {{collection}}",
+    "empty": "Nessun documento corrisponde a questo filtro.",
+    "emptyCollection": "Questa collezione è vuota.",
+    "emptyView": "Questa vista non restituisce documenti."
+  },
+  "count": {
+    "action": "Conta corrispondenze",
+    "pending": "Conteggio…",
+    "result_one": "{{count, number}} corrispondenza in totale",
+    "result_other": "{{count, number}} corrispondenze in totale"
+  },
+  "editor": {
+    "saved": "Documento salvato",
+    "inserted": "Documento inserito"
+  },
+  "delete": {
+    "title": "Eliminare questo documento?",
+    "body": "Il documento con _id {{id}} viene rimosso definitivamente da {{collection}}.",
+    "confirm": "Elimina documento",
+    "deleted": "Documento eliminato"
+  },
+  "history": {
+    "open": "Query salvate e recenti",
+    "title": "Query recenti",
+    "empty": "Le query eseguite su questa collezione compaiono qui.",
+    "clear": "Cancella",
+    "matchAll": "Tutti i documenti",
+    "search": "Cerca query",
+    "noMatch": "Nessuna query corrisponde.",
+    "saved": "Salvate",
+    "recent": "Recenti",
+    "save": "Salva query",
+    "unsave": "Rimuovi dai salvati"
+  },
+  "explain": {
+    "open": "Explain della query",
+    "title": "Piano di esecuzione",
+    "description": "Come MongoDB ha eseguito questa query su {{collection}}. La query è stata eseguita sul server per misurarla; nulla è stato modificato.",
+    "usedIndex_one": "Indice usato: {{indexes}}",
+    "usedIndex_other": "Indici usati: {{indexes}}",
+    "collectionScan": "Letti tutti i documenti della collezione",
+    "noIndex": "Nessun indice necessario",
+    "collectionScanHint": "Un indice sui campi filtrati o ordinati permetterebbe a MongoDB di saltare i documenti che non possono corrispondere.",
+    "returned": "Restituiti",
+    "documentsExamined": "Documenti esaminati",
+    "keysExamined": "Chiavi di indice esaminate",
+    "time": "Tempo del server",
+    "milliseconds": "{{value}} ms",
+    "stages": "Stage",
+    "raw": "Output explain grezzo",
+    "failed": "Impossibile eseguire l'explain della query: {{message}}",
+    "createIndex": "Crea indice"
+  },
+  "field": {
+    "title": "Modifica {{field}}",
+    "description": "Cambia solo questo campo; il resto del documento resta invariato. Scrivi il valore in sintassi mongosh.",
+    "current": "Tipo attuale: {{type}}",
+    "missing": "Questo documento non ha ancora {{field}}; il salvataggio lo aggiunge.",
+    "value": "Valore",
+    "save": "Salva",
+    "remove": "Rimuovi campo",
+    "saved": "{{field}} aggiornato",
+    "removed": "{{field}} rimosso"
+  }
+}

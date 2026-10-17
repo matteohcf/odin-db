@@ -10,6 +10,7 @@ import { CircleAlert, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { call, errorMessage } from "@/lib/ipc";
+import { useSettings } from "@/lib/settings";
 
 type SessionState =
   | { status: "starting" }
@@ -46,6 +47,9 @@ export function TerminalView({ connectionId }: { connectionId: ConnectionId }) {
   const { theme } = useTheme();
   const host = useRef<HTMLDivElement>(null);
   const terminal = useRef<Terminal | null>(null);
+  const fitAddon = useRef<FitAddon | null>(null);
+  const fontSize = useSettings((s) => s.shellFontSize);
+  const scrollback = useSettings((s) => s.shellScrollback);
   const [state, setState] = useState<SessionState>({ status: "starting" });
   const [generation, setGeneration] = useState(0);
 
@@ -54,14 +58,15 @@ export function TerminalView({ connectionId }: { connectionId: ConnectionId }) {
     if (!host.current) return;
     const term = new Terminal({
       fontFamily: "monospace",
-      fontSize: 13,
+      fontSize: useSettings.getState().shellFontSize,
       lineHeight: 1.2,
       cursorBlink: true,
-      scrollback: 10_000,
+      scrollback: useSettings.getState().shellScrollback,
       theme: terminalTheme(),
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
+    fitAddon.current = fit;
     term.open(host.current);
     try {
       const webgl = new WebglAddon();
@@ -81,7 +86,7 @@ export function TerminalView({ connectionId }: { connectionId: ConnectionId }) {
     // xterm.js draws on a canvas, which cannot resolve CSS variables, and measures glyphs
     // once: switch to the design font only after it has loaded.
     const fontFamily = getComputedStyle(host.current).fontFamily;
-    document.fonts.load(`13px ${fontFamily}`).then(() => {
+    document.fonts.load(`${term.options.fontSize ?? 13}px ${fontFamily}`).then(() => {
       if (disposed) return;
       term.options.fontFamily = fontFamily;
       fit.fit();
@@ -160,6 +165,13 @@ export function TerminalView({ connectionId }: { connectionId: ConnectionId }) {
   useEffect(() => {
     if (terminal.current) terminal.current.options.theme = terminalTheme();
   }, [theme]);
+
+  useEffect(() => {
+    if (!terminal.current) return;
+    terminal.current.options.fontSize = fontSize;
+    terminal.current.options.scrollback = scrollback;
+    fitAddon.current?.fit();
+  }, [fontSize, scrollback]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

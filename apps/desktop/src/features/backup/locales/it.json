@@ -1,0 +1,79 @@
+{
+  "scope": {
+    "deployment": "tutti i database su {{name}}",
+    "database": "database {{database}}",
+    "collection": "collezione {{database}}.{{collection}}"
+  },
+  "backup": {
+    "title": "Backup di {{target}}",
+    "description": "Crea un archivio mongodump che odin-db o mongorestore possono ripristinare.",
+    "gzip": "Comprimi l'archivio",
+    "gzipHint": "File più piccoli; il ripristino rileva automaticamente la compressione.",
+    "submit": "Scegli file ed esegui il backup",
+    "running": "Backup in corso…",
+    "done": "Backup di {{collections, number}} collezioni completato ({{documents, number}} documenti).",
+    "cancelled": "Backup annullato. L'archivio parziale è stato eliminato.",
+    "failed": "Backup non riuscito: {{message}}",
+    "oplog": "Snapshot point-in-time (oplog)",
+    "oplogHint": "Solo replica set: cattura le scritture effettuate durante il backup, per un ripristino coerente.",
+    "collections": "Collezioni di cui fare il backup ({{selected}} di {{total}})",
+    "filter": "Solo documenti corrispondenti a",
+    "filterPlaceholder": "{ status: \"active\" }  (tutti i documenti se vuoto)",
+    "filterHint": "Un filtro in sintassi mongosh, come quello della barra delle query."
+  },
+  "restore": {
+    "title": "Ripristina in {{name}}",
+    "description": "Ripristina un archivio mongodump o una cartella di dump. I documenti esistenti con lo stesso _id vengono mantenuti, a meno che le collezioni non vengano eliminate prima.",
+    "source": "Origine",
+    "archive": "File di archivio",
+    "archiveHint": "Un file .archive o .archive.gz creato con mongodump --archive.",
+    "directory": "Cartella di dump",
+    "directoryHint": "Una cartella creata con mongodump --out.",
+    "choose": "Scegli…",
+    "chosen": "Selezionato: {{name}}",
+    "database": "Solo questo database",
+    "databasePlaceholder": "Tutti i database nell'origine",
+    "renameTo": "Ripristina come database",
+    "renamePlaceholder": "{{database}} (mantieni il nome)",
+    "drop": "Elimina le collezioni prima del ripristino",
+    "dropHint": "Sostituisce i dati esistenti in ogni collezione ripristinata. L'operazione non può essere annullata.",
+    "confirmLabel": "Digita {{target}} per confermare",
+    "submit": "Ripristina",
+    "running": "Ripristino in corso…",
+    "done": "Ripristinati {{documents, number}} documenti in {{collections, number}} collezioni.",
+    "failures": "{{count, number}} documenti non ripristinati.",
+    "cancelled": "Ripristino annullato. Le collezioni ripristinate prima dell'annullamento mantengono i loro dati.",
+    "failed": "Ripristino non riuscito: {{message}}",
+    "readOnly": "Questa connessione è di sola lettura, quindi non è possibile ripristinarvi dati.",
+    "renameNeedsOne": "Seleziona un solo database per rinominarlo",
+    "oplogReplay": "Riesegui l'oplog",
+    "oplogReplayHint": "Per backup dell'intero server creati con uno snapshot point-in-time."
+  },
+  "tools": {
+    "checking": "Ricerca di MongoDB Database Tools…",
+    "missingTitle": "MongoDB Database Tools non trovati",
+    "missingBody": "I backup usano mongodump e mongorestore. Installa MongoDB Database Tools e assicurati che siano nel PATH, poi riapri questa finestra.",
+    "download": "Pagina di download: {{url}}",
+    "version": "Uso di MongoDB Database Tools {{version}}"
+  },
+  "log": {
+    "label": "Output dello strumento"
+  },
+  "menu": {
+    "backup": "Backup…",
+    "backupAll": "Backup di tutti i database…",
+    "restore": "Ripristina…"
+  },
+  "actions": {
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "stop": "Interrompi"
+  },
+  "contents": {
+    "reading": "Lettura del backup…",
+    "failed": "Impossibile leggere il contenuto del backup ({{message}}). Verrà ripristinato tutto.",
+    "empty": "Il backup non contiene collezioni.",
+    "summary_one": "{{count}} collezione in {{databases}} database · {{selected}} selezionate",
+    "summary_other": "{{count}} collezioni in {{databases}} database · {{selected}} selezionate"
+  }
+}

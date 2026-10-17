@@ -5,6 +5,12 @@ export const SHORTCUTS = {
   closeTab: { key: "w", mod: true },
   nextTab: { key: "Tab", ctrl: true },
   previousTab: { key: "Tab", ctrl: true, shift: true },
+  settings: { key: ",", mod: true },
+  zoomIn: { key: "=", mod: true },
+  // Layouts with a dedicated "+" key (Italian, German…) send it without Shift.
+  zoomInPlus: { key: "+", mod: true },
+  zoomOut: { key: "-", mod: true },
+  resetZoom: { key: "0", mod: true },
 } as const satisfies Record<string, Shortcut>;
 
 export type ShortcutId = keyof typeof SHORTCUTS;

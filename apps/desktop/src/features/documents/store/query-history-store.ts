@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useSettings } from "@/lib/settings";
 import type { QueryForm } from "../lib/query-form";
-
-const MAX_ENTRIES = 50;
 
 interface HistoryEntry {
   form: QueryForm;
@@ -16,6 +15,8 @@ interface QueryHistoryState {
   saved: Record<string, HistoryEntry[]>;
   record: (key: string, form: QueryForm) => void;
   clear: (key: string) => void;
+  /** Forgets the recent queries of every collection; saved ones stay. */
+  clearAll: () => void;
   /** Saves the query, or removes it if it is already saved. */
   toggleSaved: (key: string, form: QueryForm) => void;
 }
@@ -40,7 +41,10 @@ export const useQueryHistory = create<QueryHistoryState>()(
           const previous = (state.entries[key] ?? []).filter(
             (entry) => !sameForm(entry.form, form),
           );
-          const entries = [{ form, ranAt: Date.now() }, ...previous].slice(0, MAX_ENTRIES);
+          const entries = [{ form, ranAt: Date.now() }, ...previous].slice(
+            0,
+            useSettings.getState().queryHistorySize,
+          );
           return { entries: { ...state.entries, [key]: entries } };
         });
       },
@@ -49,6 +53,7 @@ export const useQueryHistory = create<QueryHistoryState>()(
           const { [key]: _, ...rest } = state.entries;
           return { entries: rest };
         }),
+      clearAll: () => set({ entries: {} }),
       toggleSaved: (key, form) =>
         set((state) => {
           const current = state.saved[key] ?? [];

@@ -1,0 +1,86 @@
+{
+  "toolbar": {
+    "addStage": "Aggiungi stage",
+    "copy": "Copia pipeline",
+    "copied": "Pipeline copiata in sintassi mongosh",
+    "run": "Esegui",
+    "runHint": "Esegui l'intera pipeline"
+  },
+  "stage": {
+    "label": "Stage {{number}}",
+    "operator": "Operatore dello stage",
+    "searchOperator": "Cerca stage…",
+    "noOperator": "Nessuno stage corrisponde.",
+    "enabled": "Includi questo stage",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "remove": "Rimuovi stage",
+    "addAfter": "Aggiungi stage dopo",
+    "editor": "Corpo dello stage {{number}}",
+    "disabled": "Ignorato. Attivalo per includerlo nella pipeline."
+  },
+  "preview": {
+    "title_one": "{{count}} documento",
+    "title_other": "{{count}} documenti",
+    "sampleNote": "Primi {{limit}} risultati, da un campione di {{sample}} documenti",
+    "loading": "Aggiornamento anteprima…",
+    "empty": "Nessun documento in questo stage.",
+    "writeStage": "Nessuna anteprima: questo stage scrive nel database. Esegui la pipeline per applicarlo.",
+    "fixStage": "Correggi la sintassi dello stage {{number}} per vedere l'anteprima di questo.",
+    "failed": "Anteprima non riuscita: {{message}}"
+  },
+  "results": {
+    "title": "Risultati della pipeline",
+    "close": "Chiudi risultati",
+    "label": "Risultati della pipeline per {{collection}}",
+    "empty": "La pipeline non ha restituito documenti.",
+    "idle": "Esegui la pipeline per vederne i risultati."
+  },
+  "write": {
+    "title": "Eseguire una pipeline che scrive dati?",
+    "body": "Questa pipeline termina con {{operator}} e scriverà i risultati in un'altra collezione, sostituendo o unendo i documenti presenti.",
+    "confirm": "Esegui e scrivi",
+    "readOnly": "Questa connessione è di sola lettura, quindi le pipeline con $out o $merge non possono essere eseguite."
+  },
+  "operators": {
+    "$match": "Filtra i documenti",
+    "$project": "Includi, escludi o rimodella i campi",
+    "$addFields": "Aggiungi campi calcolati",
+    "$set": "Imposta campi (alias di $addFields)",
+    "$unset": "Rimuovi campi",
+    "$group": "Raggruppa documenti e accumula valori",
+    "$sort": "Ordina i documenti",
+    "$limit": "Mantieni i primi N documenti",
+    "$skip": "Salta i primi N documenti",
+    "$unwind": "Un documento per elemento dell'array",
+    "$lookup": "Unisci documenti di un'altra collezione",
+    "$count": "Conta i documenti",
+    "$sortByCount": "Raggruppa per valore e conta, in ordine",
+    "$facet": "Esegui più pipeline sullo stesso input",
+    "$bucket": "Raggruppa i valori in intervalli dati",
+    "$bucketAuto": "Raggruppa i valori in intervalli di pari dimensione",
+    "$sample": "Scegli documenti casuali",
+    "$replaceRoot": "Promuovi un documento annidato al livello superiore",
+    "$replaceWith": "Sostituisci ogni documento con un'espressione",
+    "$unionWith": "Accoda documenti di un'altra collezione",
+    "$densify": "Riempi i vuoti in una sequenza",
+    "$fill": "Riempi i valori mancanti",
+    "$setWindowFields": "Calcola valori su una finestra di documenti",
+    "$graphLookup": "Ricerca ricorsiva tra documenti",
+    "$geoNear": "Ordina per distanza da un punto (deve essere il primo)",
+    "$redact": "Limita il contenuto in base a una condizione",
+    "$out": "Scrivi i risultati in una collezione (la sostituisce)",
+    "$merge": "Unisci i risultati in una collezione"
+  },
+  "saved": {
+    "open": "Salvate",
+    "name": "Nome della pipeline",
+    "namePlaceholder": "Dai un nome a questa pipeline",
+    "save": "Salva",
+    "replace": "Sostituisci",
+    "done": "{{name}} salvata",
+    "loaded": "{{name}} caricata",
+    "empty": "Le pipeline che salvi per questa collezione compaiono qui.",
+    "delete": "Elimina {{name}}"
+  }
+}

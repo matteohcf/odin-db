@@ -1,0 +1,110 @@
+{
+  "title": "Backup",
+  "subtitle": "Tutti i backup creati da odin-db, compresi quelli pianificati che esegue mentre è aperto.",
+  "schedules": "Pianificazioni",
+  "history": "Cronologia",
+  "noSchedules": "Nessun backup pianificato",
+  "noSchedulesBody": "Esegui il backup di un server, di un database o di una collezione ogni ora, giorno o settimana, conservando solo le copie più recenti.",
+  "noBackups": "Ancora nessun backup",
+  "noBackupsBody": "I backup creati dall'albero delle connessioni o da una pianificazione compaiono qui, pronti per il ripristino.",
+  "filterConnection": "Filtra per connessione",
+  "allConnections": "Tutte le connessioni",
+  "deletedConnection": "Connessione eliminata",
+  "scope": {
+    "deployment": "Intero server",
+    "database": "Database {{database}}",
+    "collection": "Collezione {{namespace}}",
+    "deploymentShort": "Intero server",
+    "databaseShort": "Database",
+    "collectionShort": "Collezione"
+  },
+  "frequency": {
+    "hourly": "Ogni ora",
+    "daily": "Ogni giorno",
+    "weekly": "Ogni settimana"
+  },
+  "timing": {
+    "hourly": "Ogni ora al minuto :{{minute}}",
+    "daily": "Ogni giorno alle {{time}}",
+    "weekly": "Ogni {{day}} alle {{time}}"
+  },
+  "card": {
+    "when": "Esecuzione",
+    "next": "Prossimo",
+    "paused": "In pausa",
+    "keeps": "Conserva",
+    "keepsValue_one": "L'ultimo backup",
+    "keepsValue_other": "Gli ultimi {{count}} backup",
+    "folder": "Cartella"
+  },
+  "schedule": {
+    "new": "Nuova pianificazione",
+    "createTitle": "Nuova pianificazione di backup",
+    "editTitle": "Modifica pianificazione di backup",
+    "description": "odin-db la esegue in background mentre l'app è aperta e recupera le esecuzioni perse al successivo avvio.",
+    "connection": "Connessione",
+    "what": "Di cosa fare il backup",
+    "database": "Database",
+    "collection": "Collezione",
+    "when": "Quando",
+    "weekday": "Giorno della settimana",
+    "at": "alle",
+    "atMinute": "al minuto",
+    "minute": "Minuto dell'ora",
+    "time": "Ora",
+    "folder": "Salva i backup in",
+    "noFolder": "Nessuna cartella scelta",
+    "chooseFolder": "Scegli…",
+    "keep": "Backup da conservare",
+    "keepHint": "I backup più vecchi di questa pianificazione vengono eliminati quando ne viene completato uno nuovo.",
+    "enabled": "Attiva",
+    "pause": "Metti in pausa questa pianificazione",
+    "resume": "Riprendi questa pianificazione",
+    "create": "Crea pianificazione",
+    "save": "Salva",
+    "created": "Pianificazione creata",
+    "updated": "Pianificazione salvata",
+    "scopeRequired": "Inserisci il database (e la collezione) di cui fare il backup.",
+    "folderRequired": "Scegli dove salvare i backup.",
+    "runNow": "Esegui ora",
+    "started": "Backup avviato; seguilo nella cronologia.",
+    "edit": "Modifica",
+    "delete": "Elimina pianificazione",
+    "deleteTitle": "Eliminare questa pianificazione?",
+    "deleteBody": "Non verranno più eseguiti backup. Quelli già creati restano dove sono."
+  },
+  "columns": {
+    "when": "Avviato",
+    "what": "Backup",
+    "status": "Stato",
+    "size": "Dimensione",
+    "documents": "Documenti",
+    "duration": "Durata"
+  },
+  "trigger": {
+    "manual": "Manuale",
+    "scheduled": "Pianificato"
+  },
+  "status": {
+    "running": "In esecuzione",
+    "completed": "Completato",
+    "fileMissing": "File spostato o eliminato",
+    "cancelled": "Annullato",
+    "failed": "Non riuscito"
+  },
+  "run": {
+    "actions": "Azioni del backup",
+    "restore": "Ripristina…",
+    "reveal": "Mostra nella cartella",
+    "delete": "Elimina",
+    "deleteTitle": "Eliminare questo backup?",
+    "deleteBody": "Scompare dalla cronologia.",
+    "deleteArchive": "Elimina anche il file di archivio"
+  },
+  "restore": {
+    "title": "Ripristina in…",
+    "choose": "Scegli la connessione in cui ripristinare questo backup. Potrai comunque scegliere cosa ripristinare e come.",
+    "noConnection": "Connettiti prima a un server che non sia di sola lettura.",
+    "original": "Origine del backup"
+  }
+}

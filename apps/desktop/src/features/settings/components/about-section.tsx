@@ -1,0 +1,75 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@odin-db/ui/components/alert-dialog";
+import { Button } from "@odin-db/ui/components/button";
+import { useTheme } from "@odin-db/ui/components/theme-provider";
+import { useQuery } from "@tanstack/react-query";
+import { getVersion } from "@tauri-apps/api/app";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useSettings } from "@/lib/settings";
+import { SettingRow } from "./setting-row";
+import { SettingsSection } from "./settings-section";
+
+const REPOSITORY = "https://github.com/matteohcf/odin-db";
+
+export function AboutSection() {
+  const { t } = useTranslation("settings");
+  const reset = useSettings((s) => s.reset);
+  const { setTheme } = useTheme();
+  const version = useQuery({ queryKey: ["app-version"], queryFn: getVersion, staleTime: Infinity });
+  return (
+    <>
+      <SettingsSection title={t("about.title")}>
+        <SettingRow label="odin-db" description={t("about.tagline")}>
+          <span className="font-mono text-muted-foreground text-sm selectable">
+            {version.data ? `v${version.data}` : "—"}
+          </span>
+        </SettingRow>
+        <SettingRow label={t("about.license")}>
+          <span className="text-muted-foreground text-sm">MIT OR Apache-2.0</span>
+        </SettingRow>
+        <SettingRow label={t("about.source")}>
+          <span className="font-mono text-muted-foreground text-xs selectable">{REPOSITORY}</span>
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection title={t("reset.title")}>
+        <SettingRow label={t("reset.label")} description={t("reset.hint")}>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                {t("reset.button")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("reset.confirmTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("reset.confirmDescription")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("actions.cancel", { ns: "common" })}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    reset();
+                    setTheme("system");
+                    toast.success(t("reset.done"));
+                  }}
+                >
+                  {t("reset.button")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </SettingRow>
+      </SettingsSection>
+    </>
+  );
+}

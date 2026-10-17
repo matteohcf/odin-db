@@ -1,0 +1,43 @@
+{
+  "tabs": {
+    "grid": "Griglia",
+    "editor": "Editor",
+    "terminal": "Terminale"
+  },
+  "environment": "{{os}} · {{arch}} · WebView {{webview}} · Tauri {{tauri}}",
+  "actions": {
+    "load": "Carica {{count}} documenti",
+    "cancel": "Annulla",
+    "scrollSteady": "Benchmark scorrimento costante",
+    "scrollJump": "Benchmark scorrimento a salti",
+    "loadEditor": "Carica JSON da ~{{size}} MB",
+    "streamTerminal": "Invia {{size}} MB in streaming",
+    "copyReport": "Copia report",
+    "clear": "Cancella"
+  },
+  "status": {
+    "idle": "Inattivo",
+    "loading": "Caricamento…",
+    "running": "In esecuzione…",
+    "rows": "{{count}} righe",
+    "failed": "Non riuscito: {{message}}",
+    "cancelled": "Annullato"
+  },
+  "results": {
+    "title": "Risultati",
+    "empty": "Esegui un benchmark per vedere i risultati.",
+    "budget": "budget {{value}}",
+    "renderer": "Renderer: {{renderer}}",
+    "heap": "Heap JS: {{value}} MB",
+    "heapUnavailable": "Heap JS: non esposto da questa webview, misuralo con gli strumenti del sistema operativo"
+  },
+  "metrics": {
+    "gridLoad": "Caricamento griglia",
+    "gridScrollSteady": "Scorrimento costante griglia",
+    "gridScrollJump": "Scorrimento a salti griglia",
+    "editorLoad": "Caricamento editor",
+    "editorScroll": "Scorrimento editor",
+    "terminalThroughput": "Throughput terminale",
+    "terminalFrames": "Frame del terminale durante il flood"
+  }
+}

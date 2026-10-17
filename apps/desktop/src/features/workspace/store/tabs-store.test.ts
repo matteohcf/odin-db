@@ -97,4 +97,12 @@ describe("tabs store", () => {
     useTabs.getState().closeForProfile("p1");
     expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["backups"]);
   });
+
+  it("keeps a single settings tab", () => {
+    useTabs.getState().openSettings();
+    useTabs.getState().openBackups();
+    useTabs.getState().openSettings();
+    expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["settings", "backups"]);
+    expect(useTabs.getState().activeTabId).toBe("settings");
+  });
 });

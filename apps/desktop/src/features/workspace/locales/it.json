@@ -1,0 +1,15 @@
+{
+  "tabs": {
+    "close": "Chiudi {{name}}",
+    "label": "Collezioni aperte",
+    "shell": "Shell",
+    "menu": {
+      "close": "Chiudi",
+      "closeOthers": "Chiudi altre schede",
+      "closeToTheRight": "Chiudi schede a destra",
+      "closeAll": "Chiudi tutte le schede"
+    },
+    "backups": "Backup",
+    "settings": "Impostazioni"
+  }
+}

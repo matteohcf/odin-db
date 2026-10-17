@@ -14,7 +14,7 @@ import { reopensCompletion } from "@/lib/query-completion";
 const theme = EditorView.theme({
   "&": {
     height: "100%",
-    fontSize: "12.5px",
+    fontSize: "var(--editor-font-size, 12.5px)",
     backgroundColor: "var(--background)",
     color: "var(--foreground)",
   },

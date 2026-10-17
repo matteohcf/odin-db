@@ -1,0 +1,57 @@
+{
+  "toolbar": {
+    "create": "Crea indice",
+    "refresh": "Aggiorna"
+  },
+  "table": {
+    "label": "Indici di {{collection}}",
+    "name": "Nome",
+    "keys": "Chiavi",
+    "properties": "Proprietà",
+    "size": "Dimensione",
+    "usage": "Utilizzo",
+    "usageSince": "{{count, number}} dal {{date}}",
+    "actions": "Azioni",
+    "drop": "Elimina {{name}}",
+    "loading": "Caricamento indici…",
+    "failed": "Impossibile caricare gli indici: {{message}}"
+  },
+  "badge": {
+    "unique": "Univoco",
+    "sparse": "Sparse",
+    "hidden": "Nascosto",
+    "ttl": "TTL {{seconds}}s",
+    "partial": "Parziale",
+    "partialHint": "Solo documenti corrispondenti a {{filter}}",
+    "default": "Predefinito"
+  },
+  "create": {
+    "title": "Crea indice",
+    "description": "La creazione di un indice su una collezione di grandi dimensioni può richiedere tempo e aumenta il carico sul server.",
+    "keys": "Chiavi",
+    "keysHint": "1 per crescente, -1 per decrescente, oppure \"text\", \"2dsphere\", \"hashed\".",
+    "name": "Nome",
+    "namePlaceholder": "Generato dalle chiavi",
+    "unique": "Univoco",
+    "uniqueHint": "Rifiuta i documenti con un valore duplicato.",
+    "sparse": "Sparse",
+    "sparseHint": "Ignora i documenti senza i campi indicizzati.",
+    "hidden": "Nascosto",
+    "hiddenHint": "Crealo senza che le query possano ancora usarlo.",
+    "ttl": "Scadenza dei documenti dopo (secondi)",
+    "ttlHint": "Indice TTL: i documenti vengono eliminati quando la data nel campo chiave è più vecchia di questo valore.",
+    "partial": "Filtro parziale",
+    "partialHint": "Indicizza solo i documenti corrispondenti a questo filtro.",
+    "submit": "Crea indice",
+    "creating": "Creazione…",
+    "created": "Indice {{name}} creato",
+    "keysRequired": "Inserisci almeno una chiave, ad esempio { email: 1 }."
+  },
+  "drop": {
+    "title": "Eliminare l'indice {{name}}?",
+    "body": "Le query che lo usano diventeranno più lente. Ricrearlo in seguito richiede tempo sulle collezioni di grandi dimensioni.",
+    "confirm": "Elimina indice",
+    "dropped": "Indice {{name}} eliminato"
+  },
+  "readOnly": "Sola lettura: gli indici possono essere visualizzati ma non modificati."
+}

@@ -1,0 +1,147 @@
+{
+  "explorer": {
+    "title": "Connessioni",
+    "new": "Nuova connessione",
+    "label": "Connessioni e database",
+    "emptyTitle": "Ancora nessuna connessione",
+    "emptyBody": "Aggiungi un server MongoDB con la sua stringa di connessione. Le password sono salvate nel portachiavi di sistema.",
+    "loadFailed": "Impossibile caricare le connessioni: {{message}}",
+    "localhost": "Connetti a localhost:27017",
+    "localhostMissing": "Nessun server MongoDB ha risposto su localhost:27017."
+  },
+  "profile": {
+    "connect": "Connetti",
+    "disconnect": "Disconnetti",
+    "edit": "Modifica…",
+    "delete": "Elimina…",
+    "actions": "Azioni per {{name}}",
+    "readOnly": "Sola lettura",
+    "connecting": "Connessione…",
+    "connected": "Connesso a MongoDB {{version}}",
+    "connectFailed": "Impossibile connettersi a {{name}}",
+    "openShell": "Apri shell",
+    "refresh": "Aggiorna",
+    "createDatabase": "Crea database…",
+    "backups": "Backup e pianificazioni"
+  },
+  "tree": {
+    "loading": "Caricamento…",
+    "noDatabases": "Nessun database",
+    "noCollections": "Nessuna collezione",
+    "failed": "Impossibile caricare: {{message}}",
+    "view": "Vista",
+    "timeseries": "Time series",
+    "actions": "Azioni per {{name}}"
+  },
+  "dialog": {
+    "createTitle": "Nuova connessione",
+    "editTitle": "Modifica connessione",
+    "description": "Incolla la stringa di connessione del tuo provider, oppure compila il modulo.",
+    "name": "Nome",
+    "namePlaceholder": "Sviluppo locale",
+    "connectionString": "Stringa di connessione",
+    "connectionStringHint": "Se contiene una password, odin-db la sposta nel portachiavi.",
+    "password": "Password",
+    "passwordPlaceholder": "Facoltativa",
+    "passwordSaved": "Salvata nel portachiavi. Lascia vuoto per mantenerla.",
+    "readOnly": "Connessione di sola lettura",
+    "readOnlyHint": "Blocca qualsiasi modifica ai dati da odin-db. Consigliato per la produzione.",
+    "test": "Prova connessione",
+    "testing": "Prova in corso…",
+    "testOk": "Connesso a MongoDB {{version}}",
+    "save": "Salva",
+    "saveAndConnect": "Salva e connetti",
+    "saving": "Salvataggio…",
+    "nameRequired": "Assegna un nome a questa connessione.",
+    "connectionStringRequired": "Inserisci una stringa di connessione, ad esempio mongodb://localhost:27017."
+  },
+  "delete": {
+    "title": "Eliminare {{name}}?",
+    "body": "La connessione e la sua password salvata vengono rimosse da questo computer. I tuoi dati sul server non vengono toccati.",
+    "confirm": "Elimina connessione"
+  },
+  "catalog": {
+    "createCollection": "Crea collezione…",
+    "renameCollection": "Rinomina…",
+    "dropCollection": "Elimina collezione…",
+    "dropView": "Elimina vista…",
+    "dropDatabase": "Elimina database…",
+    "create": {
+      "databaseTitle": "Crea database",
+      "databaseDescription": "MongoDB crea un database insieme alla sua prima collezione.",
+      "collectionTitle": "Crea collezione",
+      "collectionDescription": "Una nuova collezione vuota in {{database}}.",
+      "database": "Nome del database",
+      "collection": "Nome della collezione",
+      "submit": "Crea",
+      "created": "{{namespace}} creato"
+    },
+    "rename": {
+      "title": "Rinomina {{name}}",
+      "description": "Documenti, indici e opzioni vengono mantenuti. Le applicazioni che usano il vecchio nome non lo troveranno più.",
+      "name": "Nuovo nome",
+      "submit": "Rinomina",
+      "renamed": "Rinominato in {{name}}"
+    },
+    "drop": {
+      "collectionTitle": "Eliminare {{name}}?",
+      "collectionBody": "La collezione {{namespace}} viene eliminata definitivamente insieme a tutti i suoi documenti e indici.",
+      "viewTitle": "Eliminare la vista {{name}}?",
+      "viewBody": "La vista {{namespace}} viene eliminata. Le collezioni da cui legge non vengono toccate.",
+      "databaseTitle": "Eliminare {{name}}?",
+      "databaseBody": "Il database {{name}} viene eliminato definitivamente insieme a tutte le sue collezioni, documenti e indici.",
+      "confirmLabel": "Digita {{name}} per confermare",
+      "submit": "Elimina",
+      "dropped": "{{name}} eliminato"
+    }
+  },
+  "palette": {
+    "title": "Riquadro comandi",
+    "description": "Cerca collezioni, schede e azioni.",
+    "placeholder": "Cerca collezioni, schede e azioni…",
+    "empty": "Nessun risultato.",
+    "collections": "Collezioni",
+    "tabs": "Schede aperte",
+    "actions": "Azioni",
+    "shellTab": "Shell · {{name}}",
+    "connect": "Connetti a {{name}}",
+    "openShell": "Apri shell su {{name}}",
+    "newConnection": "Nuova connessione…",
+    "theme": {
+      "light": "Usa tema chiaro",
+      "dark": "Usa tema scuro",
+      "system": "Usa tema di sistema"
+    },
+    "hint": "Cerca",
+    "shortcuts": "Scorciatoie da tastiera",
+    "backupsTab": "Backup",
+    "backups": "Backup e pianificazioni"
+  },
+  "health": {
+    "lost": "{{name}} ha smesso di rispondere. odin-db continua a riprovare in background.",
+    "restored": "{{name}} è di nuovo raggiungibile",
+    "unreachable": "Server non raggiungibile, nuovo tentativo…"
+  },
+  "form": {
+    "tabString": "Stringa di connessione",
+    "tabForm": "Modulo",
+    "unsupported": "Questa stringa di connessione non può essere mostrata come modulo. Modificala nella scheda Stringa di connessione.",
+    "srv": "Elenco seed DNS (mongodb+srv)",
+    "srvHint": "Per Atlas e altri cluster pubblicati tramite DNS.",
+    "srvHost": "Host del cluster",
+    "hosts": "Host",
+    "username": "Nome utente",
+    "authSource": "Database di autenticazione",
+    "authMechanism": "Metodo di autenticazione",
+    "readPreference": "Read preference",
+    "replicaSet": "Replica set",
+    "database": "Database predefinito",
+    "automatic": "Automatico",
+    "optional": "Facoltativo",
+    "tls": "Usa TLS",
+    "allowInvalid": "Consenti certificati non validi",
+    "allowInvalidWarning": "Chiunque sulla rete potrebbe intercettare questa connessione. Usare solo per test in locale.",
+    "directConnection": "Connessione diretta",
+    "directConnectionHint": "Connettiti solo a questo host, senza rilevare il resto di un replica set."
+  }
+}
