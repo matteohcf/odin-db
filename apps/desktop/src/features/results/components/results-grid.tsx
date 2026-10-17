@@ -15,7 +15,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Copy, CopyPlus, Eye, Filter, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Filter } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { TypeIcon } from "@/components/type-icon";
 import type { JsonObject } from "@/lib/ejson-display";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnWidth, dominantKind } from "../lib/columns";
+import { RowMenuItems } from "./row-menu-items";
 
 const ROW_HEIGHT = 30;
 const INDEX_WIDTH = 56;
@@ -82,7 +83,7 @@ export function ResultsGrid({
   columnActions,
 }: ResultsGridProps) {
   const { t } = useTranslation("results");
-  const { onOpen, openMode, onCopy, onDuplicate, onDelete } = actions;
+  const { onOpen, onDelete } = actions;
   const gridId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
   // The column under the pointer when the context menu opened, for cell actions.
@@ -323,29 +324,7 @@ export function ResultsGrid({
               <ContextMenuSeparator />
             </>
           )}
-          <ContextMenuItem onSelect={() => onOpen(selected)}>
-            {openMode === "view" ? <Eye /> : <Pencil />}
-            {openMode === "view" ? t("row.view") : t("row.edit")}
-          </ContextMenuItem>
-          {onDuplicate && (
-            <ContextMenuItem onSelect={() => onDuplicate(selected)}>
-              <CopyPlus />
-              {t("row.duplicate")}
-            </ContextMenuItem>
-          )}
-          <ContextMenuItem onSelect={() => onCopy(selected)}>
-            <Copy />
-            {t("row.copy")}
-          </ContextMenuItem>
-          {onDelete && (
-            <>
-              <ContextMenuSeparator />
-              <ContextMenuItem variant="destructive" onSelect={() => onDelete(selected)}>
-                <Trash2 />
-                {t("row.delete")}
-              </ContextMenuItem>
-            </>
-          )}
+          <RowMenuItems row={selected} actions={actions} />
         </ContextMenuContent>
       )}
     </ContextMenu>

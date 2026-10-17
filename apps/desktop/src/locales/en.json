@@ -3,7 +3,8 @@
     "fields_one": "{ {{count}} field }",
     "fields_other": "{ {{count}} fields }",
     "items_one": "[ {{count}} element ]",
-    "items_other": "[ {{count}} elements ]"
+    "items_other": "[ {{count}} elements ]",
+    "showAll": "Show all {{count}}"
   },
   "types": {
     "null": "Null",

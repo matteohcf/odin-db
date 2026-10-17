@@ -4,7 +4,9 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsState } from "../hooks/use-results";
 import type { ResultsController } from "../lib/results-controller";
+import { useResultsView } from "../store/results-view-store";
 import { type ColumnActions, ResultsGrid, type RowActions } from "./results-grid";
+import { ResultsList } from "./results-list";
 
 interface ResultsPanelProps {
   controller: ResultsController;
@@ -37,6 +39,7 @@ export function ResultsPanel({
   const error = useResultsState(controller, (s) => s.error);
   const hasMore = useResultsState(controller, (s) => s.hasMore);
   const loadMore = useCallback(() => void controller.loadMore(), [controller]);
+  const view = useResultsView((s) => s.view);
 
   if (status === "idle") return <div className="flex-1">{idle}</div>;
   if (status === "error") {
@@ -63,6 +66,19 @@ export function ResultsPanel({
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
         {empty}
       </div>
+    );
+  }
+  if (view === "list") {
+    return (
+      <ResultsList
+        label={label}
+        rows={rows}
+        hasMore={hasMore}
+        selectedIndex={selectedIndex}
+        onSelect={onSelect}
+        onLoadMore={loadMore}
+        actions={actions}
+      />
     );
   }
   return (

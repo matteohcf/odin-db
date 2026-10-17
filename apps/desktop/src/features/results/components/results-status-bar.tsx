@@ -1,9 +1,11 @@
-import { CircleAlert, Loader2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
+import { CircleAlert, List, Loader2, Table2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { formatCount } from "@/lib/format";
 import { useResultsState } from "../hooks/use-results";
 import type { ResultsController } from "../lib/results-controller";
+import { type ResultsView, useResultsView } from "../store/results-view-store";
 
 /** Loaded count, paging state and timing; `actions` adds view-specific controls on the right. */
 export function ResultsStatusBar({
@@ -21,6 +23,8 @@ export function ResultsStatusBar({
   const loadingMore = useResultsState(controller, (s) => s.loadingMore);
   const truncated = useResultsState(controller, (s) => s.truncated);
   const durationMs = useResultsState(controller, (s) => s.durationMs);
+  const view = useResultsView((s) => s.view);
+  const setView = useResultsView((s) => s.setView);
 
   return (
     <footer className="flex h-8 shrink-0 items-center gap-3 border-t bg-sidebar px-3 text-muted-foreground text-xs">
@@ -46,6 +50,31 @@ export function ResultsStatusBar({
             {t("status.duration", { ms: Math.round(durationMs) })}
           </span>
         )}
+        <ToggleGroup
+          type="single"
+          size="sm"
+          value={view}
+          onValueChange={(value) => value && setView(value as ResultsView)}
+          aria-label={t("view.label")}
+          className="h-6"
+        >
+          <ToggleGroupItem
+            value="table"
+            aria-label={t("view.table")}
+            title={t("view.table")}
+            className="h-6 px-1.5"
+          >
+            <Table2 className="size-3.5" />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="list"
+            aria-label={t("view.list")}
+            title={t("view.list")}
+            className="h-6 px-1.5"
+          >
+            <List className="size-3.5" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </span>
     </footer>
   );

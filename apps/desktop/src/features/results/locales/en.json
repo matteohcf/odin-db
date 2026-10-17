@@ -30,5 +30,12 @@
   "cell": {
     "copy": "Copy {{field}} value",
     "filter": "Filter by this {{field}}"
+  },
+  "view": {
+    "label": "Results view",
+    "table": "Table",
+    "list": "List",
+    "expandAll": "Expand all fields",
+    "collapseAll": "Collapse fields"
   }
 }
