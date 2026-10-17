@@ -1,7 +1,7 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
 import { cn } from "@odin-db/ui/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   CalendarClock,
@@ -29,7 +29,7 @@ import { useTabs } from "@/features/workspace";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect, useDuplicateProfile } from "../api/mutations";
-import { useConnectionOf } from "../api/queries";
+import { databasesQuery, useConnectionOf } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
@@ -55,6 +55,11 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
   const disconnect = useDisconnect();
   const duplicate = useDuplicateProfile();
   const [expanded, setExpanded] = useExpanded(profile.id);
+  // The same query as the tree, so it is shared once the connection is expanded.
+  const databaseCount = useQuery({
+    ...databasesQuery(connection?.id ?? ""),
+    enabled: connection !== undefined,
+  }).data?.length;
   const [toolDialog, setToolDialog] = useState<"backup" | "restore" | "createDatabase" | null>(
     null,
   );
@@ -123,8 +128,20 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
           </span>
         }
         trailing={
-          profile.readOnly ? (
-            <Lock className="size-3" aria-label={t("profile.readOnly")} />
+          databaseCount !== undefined || profile.readOnly ? (
+            <span className="flex items-center gap-1.5">
+              {databaseCount !== undefined && (
+                // The row is named after the connection alone; the count is a hint.
+                <span
+                  aria-hidden
+                  className="tabular-nums"
+                  title={t("tree.databases", { count: databaseCount })}
+                >
+                  {databaseCount}
+                </span>
+              )}
+              {profile.readOnly && <Lock className="size-3" aria-label={t("profile.readOnly")} />}
+            </span>
           ) : undefined
         }
         actions={

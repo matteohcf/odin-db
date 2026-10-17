@@ -56,7 +56,9 @@
     "copyName": "Copia il nome",
     "nameCopied": "Copiato {{name}}.",
     "count_one": "Circa {{count, number}} documento",
-    "count_other": "Circa {{count, number}} documenti"
+    "count_other": "Circa {{count, number}} documenti",
+    "databases_one": "{{count, number}} database",
+    "databases_other": "{{count, number}} database"
   },
   "dialog": {
     "createTitle": "Nuova connessione",

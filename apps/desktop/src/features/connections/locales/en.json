@@ -56,7 +56,9 @@
     "copyName": "Copy name",
     "nameCopied": "Copied {{name}}.",
     "count_one": "About {{count, number}} document",
-    "count_other": "About {{count, number}} documents"
+    "count_other": "About {{count, number}} documents",
+    "databases_one": "{{count, number}} database",
+    "databases_other": "{{count, number}} databases"
   },
   "dialog": {
     "createTitle": "New connection",
