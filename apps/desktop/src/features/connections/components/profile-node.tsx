@@ -3,11 +3,13 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/
 import { cn } from "@odin-db/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  DatabaseZap,
   HardDriveDownload,
   HardDriveUpload,
   Lock,
   Pencil,
   Plug,
+  RefreshCw,
   SquareTerminal,
   Trash2,
   Unplug,
@@ -22,6 +24,7 @@ import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
+import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DatabaseList } from "./database-list";
 import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
@@ -38,7 +41,9 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   const connect = useConnect();
   const disconnect = useDisconnect();
   const [expanded, setExpanded] = useExpanded(profile.id);
-  const [toolDialog, setToolDialog] = useState<"backup" | "restore" | null>(null);
+  const [toolDialog, setToolDialog] = useState<"backup" | "restore" | "createDatabase" | null>(
+    null,
+  );
   const queryClient = useQueryClient();
   const openShell = useTabs((s) => s.openShell);
 
@@ -105,6 +110,22 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
             )}
             {connection && (
               <>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    void queryClient.invalidateQueries({
+                      queryKey: connectionKeys.connection(connection.id),
+                    })
+                  }
+                >
+                  <RefreshCw />
+                  {t("profile.refresh")}
+                </DropdownMenuItem>
+                {!connection.readOnly && (
+                  <DropdownMenuItem onSelect={() => setToolDialog("createDatabase")}>
+                    <DatabaseZap />
+                    {t("profile.createDatabase")}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onSelect={() => openShell(profile.id)}>
                   <SquareTerminal />
                   {t("profile.openShell")}
@@ -134,6 +155,9 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
         }
       />
       {connection && expanded && <DatabaseList connection={connection} />}
+      {connection && toolDialog === "createDatabase" && (
+        <CreateCollectionDialog connection={connection} onClose={() => setToolDialog(null)} />
+      )}
       {connection && toolDialog === "backup" && (
         <BackupDialog
           connectionId={connection.id}

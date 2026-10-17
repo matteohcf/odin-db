@@ -199,11 +199,20 @@ function sortDocs(docs: Doc[], sort: Doc): Doc[] {
   });
 }
 
-function collectionOf(connectionId: string, database: string, collection: string) {
+/** Like MongoDB, reads of a missing collection see it empty; only writes create it. */
+function collectionOf(
+  connectionId: string,
+  database: string,
+  collection: string,
+  { create = false } = {},
+) {
   const { connection, databases } = serverOf(connectionId);
+  const existing = databases[database]?.[collection];
+  if (existing || !create)
+    return { connection, coll: existing ?? { kind: "collection" as const, docs: [] } };
   databases[database] ??= {};
   const db = databases[database];
-  db[collection] ??= { kind: "collection", docs: [] };
+  db[collection] = { kind: "collection", docs: [] };
   return { connection, coll: db[collection] };
 }
 
@@ -630,6 +639,53 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     Object.entries(serverOf(id("connectionId", args)).databases[id("database", args)] ?? {})
       .map(([name, coll]): CollectionInfo => ({ name, kind: coll.kind }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+  create_collection: (args) => {
+    const { connection, databases } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const ns = args.namespace as { database: string; collection: string };
+    if (!ns.database || /[/\\. "$*<>:|?]/.test(ns.database))
+      fail("validation", "invalid input: database names cannot contain spaces");
+    if (!ns.collection || ns.collection.startsWith("system."))
+      fail("validation", "invalid input: enter a collection name");
+    if (databases[ns.database]?.[ns.collection])
+      fail("validation", `invalid input: ${ns.collection} already exists in ${ns.database}`);
+    databases[ns.database] ??= {};
+    (databases[ns.database] as Record<string, unknown>)[ns.collection] = {
+      kind: "collection",
+      docs: [],
+    };
+    return null;
+  },
+  rename_collection: (args) => {
+    const { connection, databases } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const ns = args.namespace as { database: string; collection: string };
+    const newName = args.newName as string;
+    const db = databases[ns.database] ?? fail("notFound", "database not found");
+    if (db[newName]) fail("database", `target namespace exists: ${ns.database}.${newName}`);
+    db[newName] = db[ns.collection] ?? fail("notFound", "collection not found");
+    delete db[ns.collection];
+    return null;
+  },
+  drop_collection: (args) => {
+    const { connection, databases } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const ns = args.namespace as { database: string; collection: string };
+    delete databases[ns.database]?.[ns.collection];
+    return null;
+  },
+  drop_database: (args) => {
+    const { connection, databases } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const database = id("database", args);
+    if (["admin", "local", "config"].includes(database))
+      fail(
+        "validation",
+        `invalid input: ${database} is a system database and cannot be dropped here`,
+      );
+    delete databases[database];
+    return null;
+  },
   aggregate_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const request = args.request as { pipeline: Doc[]; batchSize: number };
@@ -677,7 +733,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       expireAfterSeconds: number | null;
       partialFilter: Doc | null;
     };
-    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const { connection, coll } = collectionOf(
+      id("connectionId", args),
+      ns.database,
+      ns.collection,
+      {
+        create: true,
+      },
+    );
     ensureWritable(connection);
     const name =
       request.name ??
@@ -740,7 +803,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   },
   import_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
-    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const { connection, coll } = collectionOf(
+      id("connectionId", args),
+      ns.database,
+      ns.collection,
+      {
+        create: true,
+      },
+    );
     ensureWritable(connection);
     const file = importFiles.get(id("token", args)) ?? fail("notFound", "import file not found");
     importFiles.delete(id("token", args));
@@ -944,7 +1014,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   },
   insert_document: (args) => {
     const ns = args.namespace as { database: string; collection: string };
-    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const { connection, coll } = collectionOf(
+      id("connectionId", args),
+      ns.database,
+      ns.collection,
+      {
+        create: true,
+      },
+    );
     ensureWritable(connection);
     const document = { ...(args.document as Doc) };
     if (document._id === undefined) document._id = oid();

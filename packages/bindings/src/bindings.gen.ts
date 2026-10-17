@@ -21,6 +21,10 @@ export const commands = {
 	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
 	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
 	countDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("count_documents", { connectionId, namespace, filter })),
+	createCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("create_collection", { connectionId, namespace })),
+	renameCollection: (connectionId: ConnectionId, namespace: Namespace, newName: string) => typedError<null, IpcError>(__TAURI_INVOKE("rename_collection", { connectionId, namespace, newName })),
+	dropCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("drop_collection", { connectionId, namespace })),
+	dropDatabase: (connectionId: ConnectionId, database: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_database", { connectionId, database })),
 	/**  Field paths of a sample of the collection, for query autocompletion. */
 	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size })),
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),

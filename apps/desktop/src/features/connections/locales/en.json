@@ -17,7 +17,9 @@
     "connecting": "Connecting…",
     "connected": "Connected to MongoDB {{version}}",
     "connectFailed": "Couldn't connect to {{name}}",
-    "openShell": "Open shell"
+    "openShell": "Open shell",
+    "refresh": "Refresh",
+    "createDatabase": "Create database…"
   },
   "tree": {
     "loading": "Loading…",
@@ -54,5 +56,40 @@
     "title": "Delete {{name}}?",
     "body": "The connection and its saved password are removed from this computer. Your data on the server is not affected.",
     "confirm": "Delete connection"
+  },
+  "catalog": {
+    "createCollection": "Create collection…",
+    "renameCollection": "Rename…",
+    "dropCollection": "Drop collection…",
+    "dropView": "Drop view…",
+    "dropDatabase": "Drop database…",
+    "create": {
+      "databaseTitle": "Create database",
+      "databaseDescription": "MongoDB creates a database together with its first collection.",
+      "collectionTitle": "Create collection",
+      "collectionDescription": "A new empty collection in {{database}}.",
+      "database": "Database name",
+      "collection": "Collection name",
+      "submit": "Create",
+      "created": "Created {{namespace}}"
+    },
+    "rename": {
+      "title": "Rename {{name}}",
+      "description": "Documents, indexes and options are kept. Applications using the old name stop finding it.",
+      "name": "New name",
+      "submit": "Rename",
+      "renamed": "Renamed to {{name}}"
+    },
+    "drop": {
+      "collectionTitle": "Drop {{name}}?",
+      "collectionBody": "The collection {{namespace}} is permanently deleted with all its documents and indexes.",
+      "viewTitle": "Drop the view {{name}}?",
+      "viewBody": "The view {{namespace}} is deleted. The collections it reads from are not affected.",
+      "databaseTitle": "Drop {{name}}?",
+      "databaseBody": "The database {{name}} is permanently deleted with all its collections, documents and indexes.",
+      "confirmLabel": "Type {{name}} to confirm",
+      "submit": "Drop",
+      "dropped": "Dropped {{name}}"
+    }
   }
 }

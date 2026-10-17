@@ -1,7 +1,17 @@
 import type { CollectionInfo, ConnectionInfo, DatabaseInfo } from "@odin-db/bindings";
-import { DropdownMenuItem } from "@odin-db/ui/components/dropdown-menu";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, Database, Eye, HardDriveDownload, HardDriveUpload, Table2 } from "lucide-react";
+import {
+  Clock,
+  Database,
+  Eye,
+  HardDriveDownload,
+  HardDriveUpload,
+  PencilLine,
+  Plus,
+  Table2,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
@@ -10,7 +20,10 @@ import { formatBytes } from "@/lib/format";
 import { connectionKeys } from "../api/keys";
 import { useCollections, useDatabases, useProfile } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
+import { CreateCollectionDialog } from "./create-collection-dialog";
+import { DropDialog } from "./drop-dialog";
 import { NodeMenu } from "./node-menu";
+import { RenameCollectionDialog } from "./rename-collection-dialog";
 import { TreeMessage, TreeRow } from "./tree-row";
 
 export function DatabaseList({ connection }: { connection: ConnectionInfo }) {
@@ -44,9 +57,12 @@ function DatabaseNode({
   const { t } = useTranslation("connections");
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
   const collections = useCollections(connection.id, database.name, expanded);
-  const [toolDialog, setToolDialog] = useState<"backup" | "restore" | null>(null);
+  const [toolDialog, setToolDialog] = useState<
+    "backup" | "restore" | "createCollection" | "drop" | null
+  >(null);
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const queryClient = useQueryClient();
+  const writable = !connection.readOnly;
 
   return (
     <>
@@ -60,19 +76,53 @@ function DatabaseNode({
         trailing={database.empty ? undefined : formatBytes(database.sizeOnDisk ?? 0)}
         actions={
           <NodeMenu label={t("tree.actions", { name: database.name })}>
+            {writable && (
+              <>
+                <DropdownMenuItem onSelect={() => setToolDialog("createCollection")}>
+                  <Plus />
+                  {t("catalog.createCollection")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
               <HardDriveDownload />
               {t("menu.backup", { ns: "backup" })}
             </DropdownMenuItem>
-            {!connection.readOnly && (
-              <DropdownMenuItem onSelect={() => setToolDialog("restore")}>
-                <HardDriveUpload />
-                {t("menu.restore", { ns: "backup" })}
-              </DropdownMenuItem>
+            {writable && (
+              <>
+                <DropdownMenuItem onSelect={() => setToolDialog("restore")}>
+                  <HardDriveUpload />
+                  {t("menu.restore", { ns: "backup" })}
+                </DropdownMenuItem>
+                {!SYSTEM_DATABASES.has(database.name) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onSelect={() => setToolDialog("drop")}>
+                      <Trash2 />
+                      {t("catalog.dropDatabase")}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </>
             )}
           </NodeMenu>
         }
       />
+      {toolDialog === "createCollection" && (
+        <CreateCollectionDialog
+          connection={connection}
+          database={database.name}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
+      {toolDialog === "drop" && (
+        <DropDialog
+          connection={connection}
+          target={{ kind: "database", database: database.name }}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
       {toolDialog === "backup" && (
         <BackupDialog
           connectionId={connection.id}
@@ -133,8 +183,10 @@ function CollectionNode({
   const { t } = useTranslation("connections");
   const openCollection = useTabs((s) => s.openCollection);
   const Icon = kindIcon[collection.kind];
-  const [backingUp, setBackingUp] = useState(false);
+  const [dialog, setDialog] = useState<"backup" | "rename" | "drop" | null>(null);
   const profileName = useProfile(connection.profileId)?.name ?? "";
+  const isView = collection.kind === "view";
+  const writable = !connection.readOnly && !isSystem(collection);
 
   return (
     <>
@@ -153,27 +205,67 @@ function CollectionNode({
         muted={isSystem(collection)}
         trailing={collection.kind === "collection" ? undefined : t(`tree.${collection.kind}`)}
         actions={
-          collection.kind === "view" ? undefined : (
+          isView && !writable ? undefined : (
             <NodeMenu label={t("tree.actions", { name: collection.name })}>
-              <DropdownMenuItem onSelect={() => setBackingUp(true)}>
-                <HardDriveDownload />
-                {t("menu.backup", { ns: "backup" })}
-              </DropdownMenuItem>
+              {writable && !isView && (
+                <DropdownMenuItem onSelect={() => setDialog("rename")}>
+                  <PencilLine />
+                  {t("catalog.renameCollection")}
+                </DropdownMenuItem>
+              )}
+              {!isView && (
+                <DropdownMenuItem onSelect={() => setDialog("backup")}>
+                  <HardDriveDownload />
+                  {t("menu.backup", { ns: "backup" })}
+                </DropdownMenuItem>
+              )}
+              {writable && (
+                <>
+                  {!isView && <DropdownMenuSeparator />}
+                  <DropdownMenuItem variant="destructive" onSelect={() => setDialog("drop")}>
+                    <Trash2 />
+                    {isView ? t("catalog.dropView") : t("catalog.dropCollection")}
+                  </DropdownMenuItem>
+                </>
+              )}
             </NodeMenu>
           )
         }
       />
-      {backingUp && (
+      {dialog === "backup" && (
         <BackupDialog
           connectionId={connection.id}
           profileName={profileName}
           scope={{ kind: "collection", database, collection: collection.name }}
-          onClose={() => setBackingUp(false)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "rename" && (
+        <RenameCollectionDialog
+          connection={connection}
+          database={database}
+          collection={collection.name}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "drop" && (
+        <DropDialog
+          connection={connection}
+          target={{
+            kind: "collection",
+            database,
+            collection: collection.name,
+            collectionKind: collection.kind,
+          }}
+          onClose={() => setDialog(null)}
         />
       )}
     </>
   );
 }
+
+/** Databases MongoDB manages itself; core refuses to drop them too. */
+const SYSTEM_DATABASES = new Set(["admin", "local", "config"]);
 
 function isSystem(collection: CollectionInfo) {
   return collection.name.startsWith("system.");

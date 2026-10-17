@@ -3,6 +3,7 @@
 
 pub mod app;
 pub mod backup;
+pub mod catalog;
 pub mod connections;
 pub mod documents;
 pub mod indexes;

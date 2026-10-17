@@ -29,6 +29,10 @@ interface TabsState {
   activate: (id: string) => void;
   close: (id: string) => void;
   closeForProfile: (profileId: ProfileId) => void;
+  /** Closes the tabs of a dropped collection, or of every collection of a dropped database. */
+  closeCollections: (profileId: ProfileId, database: string, collection?: string) => void;
+  /** Keeps open tabs pointing at a renamed collection. */
+  renameCollection: (profileId: ProfileId, database: string, from: string, to: string) => void;
 }
 
 /** Remaining tab to focus after `closedIds` disappear: the neighbour of the active one. */
@@ -44,7 +48,7 @@ export const useTabs = create<TabsState>()((set) => ({
   openCollection: (target) =>
     set((state) => {
       // One tab per collection: opening it again focuses the existing tab.
-      const id = `${target.profileId}/${target.database}/${target.collection}`;
+      const id = collectionTabId(target.profileId, target.database, target.collection);
       if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
       return { tabs: [...state.tabs, { kind: "collection", id, ...target }], activeTabId: id };
     }),
@@ -64,4 +68,34 @@ export const useTabs = create<TabsState>()((set) => ({
       const tabs = state.tabs.filter((tab) => tab.profileId !== profileId);
       return { tabs, activeTabId: nextActive(state, tabs) };
     }),
+  closeCollections: (profileId, database, collection) =>
+    set((state) => {
+      const tabs = state.tabs.filter(
+        (tab) =>
+          !(
+            tab.kind === "collection" &&
+            tab.profileId === profileId &&
+            tab.database === database &&
+            (collection === undefined || tab.collection === collection)
+          ),
+      );
+      return { tabs, activeTabId: nextActive(state, tabs) };
+    }),
+  renameCollection: (profileId, database, from, to) =>
+    set((state) => {
+      const oldId = collectionTabId(profileId, database, from);
+      const newId = collectionTabId(profileId, database, to);
+      return {
+        tabs: state.tabs.map((tab) =>
+          tab.id === oldId && tab.kind === "collection"
+            ? { ...tab, id: newId, collection: to }
+            : tab,
+        ),
+        activeTabId: state.activeTabId === oldId ? newId : state.activeTabId,
+      };
+    }),
 }));
+
+function collectionTabId(profileId: ProfileId, database: string, collection: string) {
+  return `${profileId}/${database}/${collection}`;
+}

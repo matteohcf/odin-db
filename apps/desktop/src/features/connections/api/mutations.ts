@@ -1,4 +1,10 @@
-import { type ConnectionId, commands, type ProfileId, type ProfileInput } from "@odin-db/bindings";
+import {
+  type ConnectionId,
+  commands,
+  type Namespace,
+  type ProfileId,
+  type ProfileInput,
+} from "@odin-db/bindings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTabs } from "@/features/workspace";
 import { call } from "@/lib/ipc";
@@ -52,4 +58,41 @@ export function useDisconnect() {
       void queryClient.invalidateQueries({ queryKey: connectionKeys.connections, exact: true });
     },
   });
+}
+
+/** Catalog changes refresh everything cached for the connection: tree, fields, indexes. */
+function useCatalogMutation<T>(connectionId: ConnectionId, run: (input: T) => Promise<unknown>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    meta: { handlesErrors: true },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: connectionKeys.connection(connectionId) }),
+  });
+}
+
+export function useCreateCollection(connectionId: ConnectionId) {
+  return useCatalogMutation(connectionId, (namespace: Namespace) =>
+    call(commands.createCollection(connectionId, namespace)),
+  );
+}
+
+export function useRenameCollection(connectionId: ConnectionId) {
+  return useCatalogMutation(
+    connectionId,
+    ({ namespace, newName }: { namespace: Namespace; newName: string }) =>
+      call(commands.renameCollection(connectionId, namespace, newName)),
+  );
+}
+
+export function useDropCollection(connectionId: ConnectionId) {
+  return useCatalogMutation(connectionId, (namespace: Namespace) =>
+    call(commands.dropCollection(connectionId, namespace)),
+  );
+}
+
+export function useDropDatabase(connectionId: ConnectionId) {
+  return useCatalogMutation(connectionId, (database: string) =>
+    call(commands.dropDatabase(connectionId, database)),
+  );
 }
