@@ -40,6 +40,38 @@ pub async fn replace(
     Ok(())
 }
 
+/// Sets one top-level field of the document whose `_id` is `id`, leaving the
+/// rest untouched (`$set`). `None` removes the field (`$unset`).
+pub async fn set_field(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    id: EJsonValue,
+    field: &str,
+    value: Option<EJsonValue>,
+) -> Result<(), CoreError> {
+    handle.ensure_writable()?;
+    // `$set: { "a.b": … }` would write into a nested path, not this field.
+    if field.is_empty() || field == "_id" || field.contains('.') || field.starts_with('$') {
+        return Err(CoreError::Validation(format!(
+            "{field} cannot be edited on its own; edit the whole document instead"
+        )));
+    }
+    let id = Bson::try_from(id)?;
+    let update = if let Some(value) = value {
+        doc! { "$set": { field: Bson::try_from(value)? } }
+    } else {
+        doc! { "$unset": { field: "" } }
+    };
+    let result = namespace
+        .collection(handle)?
+        .update_one(doc! { "_id": id }, update)
+        .await?;
+    if result.matched_count == 0 {
+        return Err(CoreError::NotFound("document"));
+    }
+    Ok(())
+}
+
 pub async fn delete(
     handle: &ConnectionHandle,
     namespace: &Namespace,

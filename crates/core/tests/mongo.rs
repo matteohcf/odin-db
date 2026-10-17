@@ -1122,3 +1122,63 @@ async fn explains_collection_and_index_scans() {
     assert!(indexed.stages.contains(&"IXSCAN".to_owned()));
     assert!((indexed.documents_examined - 10.0).abs() < f64::EPSILON);
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn sets_and_unsets_single_fields_keeping_types() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("fields");
+    let collection = handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection);
+    collection
+        .insert_one(doc! { "_id": 1, "name": "a", "count": 1_i64, "keep": true })
+        .await
+        .expect("seeded");
+    let id = || EJsonValue::from(Bson::Int32(1));
+
+    documents::set_field(
+        &handle,
+        &ns,
+        id(),
+        "count",
+        Some(EJsonValue::from(Bson::Int64(7))),
+    )
+    .await
+    .expect("sets");
+    documents::set_field(&handle, &ns, id(), "name", None)
+        .await
+        .expect("unsets");
+    let stored = collection
+        .find_one(doc! { "_id": 1 })
+        .await
+        .expect("finds")
+        .expect("exists");
+    assert_eq!(
+        stored,
+        doc! { "_id": 1, "count": 7_i64, "keep": true },
+        "type kept, other fields untouched"
+    );
+
+    assert!(
+        documents::set_field(&handle, &ns, id(), "a.b", None)
+            .await
+            .is_err()
+    );
+    assert!(
+        documents::set_field(&handle, &ns, id(), "_id", None)
+            .await
+            .is_err()
+    );
+    assert!(matches!(
+        documents::set_field(&handle, &ns, EJsonValue::from(Bson::Int32(99)), "x", None).await,
+        Err(CoreError::NotFound(_))
+    ));
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        documents::set_field(&read_only, &ns, id(), "keep", None).await,
+        Err(CoreError::ReadOnly)
+    ));
+}
