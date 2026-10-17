@@ -1,0 +1,33 @@
+{
+  "name": "@odin-db/ui",
+  "private": true,
+  "type": "module",
+  "description": "Shared shadcn/ui components. No application logic.",
+  "exports": {
+    "./globals.css": "./src/styles/globals.css",
+    "./lib/*": "./src/lib/*.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "class-variance-authority": "catalog:",
+    "cn": "catalog:",
+    "radix-ui": "catalog:",
+    "tw-animate-css": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

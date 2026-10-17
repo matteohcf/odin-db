@@ -1,0 +1,30 @@
+# Architecture Decision Records
+
+Format: `template.md`. Accepted ADRs are immutable; supersede them with a new ADR.
+
+| # | Title | Status |
+|---|---|---|
+| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
+| [0002](0002-license.md) | License: MIT OR Apache-2.0 | Accepted |
+| [0003](0003-desktop-runtime-tauri.md) | Desktop runtime: Tauri 2 | Accepted |
+| [0004](0004-monorepo-layout.md) | Monorepo layout and boundaries | Accepted |
+| [0005](0005-generated-bindings.md) | Rust as source of truth, generated TS bindings | Accepted |
+| [0006](0006-ipc-contract.md) | IPC contract: commands, channels, events | Accepted |
+| [0007](0007-bson-representation.md) | BSON over IPC: canonical Extended JSON | Accepted |
+| [0008](0008-connection-management.md) | Connection management | Accepted |
+| [0009](0009-result-pagination.md) | Result pagination via server-side cursors | Accepted |
+| [0010](0010-frontend-state.md) | Frontend state and feature structure | Accepted |
+| [0011](0011-ui-stack.md) | UI component stack | Accepted |
+| [0012](0012-query-editor.md) | Query editor syntax and aggregation builder | Accepted |
+| [0013](0013-integrated-shell.md) | Integrated shell: hybrid model | Accepted |
+| [0014](0014-mongosh-distribution.md) | mongosh distribution: detect or download | Accepted |
+| [0015](0015-database-tools-sidecars.md) | mongodump/mongorestore as sidecars | Accepted |
+| [0016](0016-local-persistence.md) | Local persistence: SQLite and OS keyring | Accepted |
+| [0017](0017-security-model.md) | Security model | Accepted |
+| [0018](0018-authentication-scope.md) | Authentication mechanisms scope | Accepted |
+| [0019](0019-import-export.md) | Import/export streaming | Accepted |
+| [0020](0020-testing-strategy.md) | Testing strategy | Accepted |
+| [0021](0021-code-quality-tooling.md) | Code quality tooling and conventions | Accepted |
+| [0022](0022-ci-release-updates.md) | CI, releases, updates, code signing | Accepted |
+| [0023](0023-logging-no-telemetry.md) | Logging, diagnostics, no telemetry | Accepted |
+| [0024](0024-ux-baseline-i18n.md) | UX baseline and i18n | Accepted |

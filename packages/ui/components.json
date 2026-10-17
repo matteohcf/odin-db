@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@odin-db/ui/components",
+    "ui": "@odin-db/ui/components",
+    "utils": "@odin-db/ui/lib/utils",
+    "lib": "@odin-db/ui/lib",
+    "hooks": "@odin-db/ui/hooks"
+  }
+}

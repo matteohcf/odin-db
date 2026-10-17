@@ -1,0 +1,26 @@
+[package]
+name = "odin-core"
+description = "MongoDB domain logic for odin-db. Independent of Tauri."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+# Derives specta::Type on IPC-facing types; enabled by the desktop host only.
+specta = ["dep:specta"]
+
+[dependencies]
+bson.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+specta = { workspace = true, optional = true }
+thiserror.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

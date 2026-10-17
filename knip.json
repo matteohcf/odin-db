@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {},
+    "apps/desktop": {
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["tailwindcss"]
+    },
+    "packages/ui": {
+      "entry": ["src/components/*.tsx", "src/lib/*.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/bindings": {}
+  }
+}

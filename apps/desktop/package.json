@@ -1,0 +1,43 @@
+{
+  "name": "@odin-db/desktop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "tauri": "tauri",
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@codemirror/lang-json": "catalog:",
+    "@codemirror/view": "catalog:",
+    "@fontsource-variable/inter": "catalog:",
+    "@odin-db/bindings": "workspace:*",
+    "@odin-db/ui": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-table": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
+    "@tauri-apps/api": "catalog:",
+    "@xterm/addon-fit": "catalog:",
+    "@xterm/addon-webgl": "catalog:",
+    "@xterm/xterm": "catalog:",
+    "codemirror": "catalog:",
+    "i18next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@tauri-apps/cli": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

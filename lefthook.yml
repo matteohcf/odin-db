@@ -1,0 +1,14 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      glob: "*.{js,ts,tsx,json,jsonc,css}"
+      run: pnpm biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    - name: rustfmt
+      glob: "*.rs"
+      run: cargo fmt --all --check
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm commitlint --edit {1}
