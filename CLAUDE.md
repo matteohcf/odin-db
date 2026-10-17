@@ -43,6 +43,7 @@ docs/adr/                Architecture Decision Records
   - `collection` (the collection tab) composes `documents`, `aggregation`, `schema` and `indexes` with `connections`;
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
+  - `settings` (the settings tab) reads `results` and `documents` stores; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `connections` may use `workspace` to open tabs, and `backup` and `transfer` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
@@ -65,6 +66,7 @@ docs/adr/                Architecture Decision Records
 - **Transfers write atomically**: exports go to `<file>.partial` and are renamed when complete.
 - **The shell is mongosh in a PTY** (ADR-0030), with credit-based flow control: the UI acknowledges output after xterm.js renders it, and sends input one write at a time. Read-only cannot be enforced inside mongosh, so the tab warns instead.
 - **Backups are recorded and schedulable** (ADR-0034): every mongodump goes through `src-tauri/src/backups.rs::run_backup`, which records it in the history before anything can fail; the scheduler lives there too.
+- **User preferences** live in one typed, persisted store, `useSettings` (`src/lib/settings.ts`). A new setting is a field with a default there, a row on the settings page, and a reader where it applies (read with `getState()` at use time when nothing needs to re-render). Window-wide effects (zoom, language, editor font) are applied by `useApplySettings` (ADR-0035).
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions
@@ -82,7 +84,7 @@ docs/adr/                Architecture Decision Records
 - `strict` + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`.
 - No `any`. No non-null `!` without a comment explaining why it cannot be null.
 - Components: function components, named exports, one component per file. File names `kebab-case.tsx`.
-- Every user-visible string goes through i18next (ADR-0024). English is the source language.
+- Every user-visible string goes through i18next (ADR-0024). English is the source language; every `en.json` key also needs its Italian `it.json` translation in the same change (ADR-0035, enforced by a test).
 - Never put `TooltipTrigger asChild` (or any Radix trigger with `asChild`) directly on another stateful Radix component (Switch, Checkbox…): the trigger's `data-state` overwrites theirs. Wrap them in a `span`.
 - UI primitives come from `packages/ui` (shadcn). Do not hand-roll a button, dialog, menu, etc. Add components with the shadcn CLI from `packages/ui` (`pnpm dlx shadcn@latest add <name>`) and follow the official docs; class merging uses the official `cn` package, re-exported from `@odin-db/ui/lib/utils`.
 - Biome for lint and format. knip must report no unused exports or dependencies.
