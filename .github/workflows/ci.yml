@@ -61,6 +61,15 @@ jobs:
       - name: Install Rust toolchain from rust-toolchain.toml
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install MongoDB Database Tools (pinned, hash-verified)
+        env:
+          TOOLS_URL: https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.19.1.tgz
+          TOOLS_SHA256: f34b84a67ab96b4ff52571ec5d15e2148d96cb140b1ea9ef8c29ac33c48e3480
+        run: |
+          curl -fsSL "$TOOLS_URL" -o tools.tgz
+          echo "$TOOLS_SHA256  tools.tgz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/tools" && tar -xzf tools.tgz -C "$RUNNER_TEMP/tools" --strip-components=1
+          echo "ODIN_TOOLS_DIR=$RUNNER_TEMP/tools/bin" >> "$GITHUB_ENV"
       - name: Core tests against a real MongoDB (testcontainers)
         run: cargo test -p odin-core --test mongo -- --ignored
         env:
