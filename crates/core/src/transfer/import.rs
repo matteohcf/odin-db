@@ -221,19 +221,15 @@ pub async fn import_documents(
 
         if (batch.len() >= INSERT_BATCH || (finished && !batch.is_empty())) && !summary.stopped {
             let batch = std::mem::take(&mut batch);
-            if options.mode == ImportMode::Insert {
-                insert_batch(&collection, batch, options.stop_on_error, &mut summary).await?;
-            } else {
-                upsert_batch(
-                    handle,
-                    namespace,
-                    batch,
-                    options.mode,
-                    options.stop_on_error,
-                    &mut summary,
-                )
-                .await?;
-            }
+            write_batch(
+                handle,
+                namespace,
+                batch,
+                options.mode,
+                options.stop_on_error,
+                &mut summary,
+            )
+            .await?;
         }
         reporter.report(records, total_bytes.min(records * 200));
         if finished || summary.stopped {
@@ -247,6 +243,22 @@ pub async fn import_documents(
     }
     reporter.finish(records, total_bytes);
     Ok(summary)
+}
+
+/// Writes numbered documents in `mode`; failures land in `summary`, keyed by number.
+pub(super) async fn write_batch(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    batch: Vec<(u64, Document)>,
+    mode: ImportMode,
+    ordered: bool,
+    summary: &mut ImportSummary,
+) -> Result<(), CoreError> {
+    if mode == ImportMode::Insert {
+        insert_batch(&namespace.collection(handle)?, batch, ordered, summary).await
+    } else {
+        upsert_batch(handle, namespace, batch, mode, ordered, summary).await
+    }
 }
 
 async fn insert_batch(

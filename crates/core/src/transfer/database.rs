@@ -53,7 +53,7 @@ pub struct DatabaseTransferSummary {
 }
 
 impl DatabaseTransferSummary {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             collections: 0.0,
             documents: 0.0,
@@ -207,7 +207,7 @@ pub async fn import_database(
 }
 
 /// Relays one collection's progress as database progress, lossily like all progress.
-fn forward(
+pub(super) fn forward(
     progress: &mpsc::Sender<DatabaseProgress>,
     collection: &str,
     index: usize,

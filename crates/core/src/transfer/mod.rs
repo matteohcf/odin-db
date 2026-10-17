@@ -1,5 +1,6 @@
 //! Import and export, streaming end to end (ADR-0019).
 
+mod copy;
 mod csv_values;
 mod database;
 mod export;
@@ -10,6 +11,7 @@ use std::time::{Duration, Instant};
 use serde::Serialize;
 use tokio::sync::mpsc;
 
+pub use copy::{CopyRequest, copy};
 pub use csv_values::CsvType;
 pub use database::{
     DatabaseExportRequest, DatabaseProgress, DatabaseTransferSummary, database_files,
