@@ -48,5 +48,12 @@
   },
   "column": {
     "sortHint": "Sort by {{field}}. Shift-click to add it to the current sort."
+  },
+  "rows": {
+    "copy_one": "Copy {{count}} document",
+    "copy_other": "Copy {{count}} documents",
+    "delete_one": "Delete {{count}} document…",
+    "delete_other": "Delete {{count}} documents…",
+    "copied_other": "Copied {{count}} documents as a shell array."
   }
 }

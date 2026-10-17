@@ -383,6 +383,18 @@ export function DocumentsView({
             : undefined,
           onDelete: editable ? setToDelete : undefined,
           onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
+          onCopyMany: (rows) => {
+            void navigator.clipboard.writeText(toShellSyntax(rows));
+            toast.success(t("rows.copied", { ns: "results", count: rows.length }));
+          },
+          // Deleting by `_id` reuses the bulk dialog, which shows the count first.
+          onDeleteMany: editable
+            ? (rows) =>
+                setBulk({
+                  mode: "delete",
+                  filter: { _id: { $in: rows.map((row) => row._id ?? null) } },
+                })
+            : undefined,
         }}
       />
 

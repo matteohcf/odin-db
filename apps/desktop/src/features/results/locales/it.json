@@ -48,5 +48,12 @@
   },
   "column": {
     "sortHint": "Ordina per {{field}}. Maiusc-clic per aggiungerlo all'ordinamento attuale."
+  },
+  "rows": {
+    "copy_one": "Copia {{count}} documento",
+    "copy_other": "Copia {{count}} documenti",
+    "delete_one": "Elimina {{count}} documento…",
+    "delete_other": "Elimina {{count}} documenti…",
+    "copied_other": "Copiati {{count}} documenti come array per la shell."
   }
 }

@@ -25,7 +25,16 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Columns3, Copy, Filter, ListChecks, PencilLine } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Columns3,
+  Copy,
+  Filter,
+  ListChecks,
+  PencilLine,
+  Trash2,
+} from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -34,6 +43,7 @@ import { TypeIcon } from "@/components/type-icon";
 import type { JsonObject } from "@/lib/ejson-display";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnWidth, dominantKind } from "../lib/columns";
+import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { RowMenuItems } from "./row-menu-items";
 
 const ROW_HEIGHT = 30;
@@ -57,6 +67,9 @@ export interface RowActions {
   onDelete?: ((row: JsonObject) => void) | undefined;
   /** Edits one top-level field. Omitted for read-only results. */
   onEditField?: ((row: JsonObject, field: string) => void) | undefined;
+  /** Several selected documents at once (Shift/Cmd-click in the table). */
+  onCopyMany?: ((rows: JsonObject[]) => void) | undefined;
+  onDeleteMany?: ((rows: JsonObject[]) => void) | undefined;
 }
 
 /** Query shortcuts from the grid. Omitted where results do not come from a query bar. */
@@ -107,6 +120,25 @@ export function ResultsGrid({
   const scrollRef = useRef<HTMLDivElement>(null);
   // The column under the pointer when the context menu opened, for cell actions.
   const [menuColumn, setMenuColumn] = useState<string | null>(null);
+  // Rows marked with Shift/Cmd-click; the selected row is the active one among them.
+  const [marked, setMarked] = useState<ReadonlySet<number>>(() => new Set());
+  const anchor = useRef<number | null>(null);
+  const firstRow = rows[0];
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new first row means a new result set.
+  useEffect(() => {
+    setMarked(new Set());
+    anchor.current = null;
+  }, [firstRow]);
+  const markedRows = [...marked]
+    .sort((a, b) => a - b)
+    .flatMap((index) => (rows[index] ? [rows[index]] : []));
+  const multiple = markedRows.length > 1;
+
+  function pick(index: number, mode: SelectMode) {
+    setMarked((current) => nextMarked(current, anchor.current, index, mode));
+    if (mode !== "range" || anchor.current === null) anchor.current = index;
+    onSelect(index);
+  }
 
   // Column types are sampled when a result set first arrives, not on every page.
   const hasRows = rows.length > 0;
@@ -150,9 +182,9 @@ export function ResultsGrid({
     if (hasMore && lastVisible >= rows.length - PREFETCH_ROWS) onLoadMore();
   }, [hasMore, lastVisible, rows.length, onLoadMore]);
 
-  function move(index: number) {
+  function move(index: number, extend = false) {
     const next = Math.max(0, Math.min(rows.length - 1, index));
-    onSelect(next);
+    pick(next, extend ? "range" : "replace");
     virtualizer.scrollToIndex(next, { align: "auto" });
   }
 
@@ -162,16 +194,24 @@ export function ResultsGrid({
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
     const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / ROW_HEIGHT) - 1;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
+      event.preventDefault();
+      setMarked(new Set(rows.keys()));
+      return;
+    }
     const handlers: Record<string, () => void> = {
-      ArrowDown: () => move(current + 1),
-      ArrowUp: () => move(current - 1),
+      ArrowDown: () => move(current + 1, event.shiftKey),
+      ArrowUp: () => move(current - 1, event.shiftKey),
+      Escape: () => selectedIndex !== null && pick(selectedIndex, "replace"),
       PageDown: () => move(current + page),
       PageUp: () => move(current - page),
       Home: () => move(0),
       End: () => move(rows.length - 1),
       Enter: () => selected && onOpen(selected),
-      Delete: () => selected && onDelete?.(selected),
-      Backspace: () => selected && onDelete?.(selected),
+      Delete: () =>
+        multiple ? actions.onDeleteMany?.(markedRows) : selected && onDelete?.(selected),
+      Backspace: () =>
+        multiple ? actions.onDeleteMany?.(markedRows) : selected && onDelete?.(selected),
     };
     const handler = handlers[event.key];
     if (handler) {
@@ -190,6 +230,7 @@ export function ResultsGrid({
             tabIndex={0}
             aria-label={label}
             aria-rowcount={rows.length + 1}
+            aria-multiselectable
             aria-activedescendant={selected ? `${gridId}-row-${selectedIndex}` : undefined}
             onKeyDown={onKeyDown}
             className={cn(
@@ -274,16 +315,31 @@ export function ResultsGrid({
               {items.map((item) => {
                 const row = rows[item.index];
                 if (!row) return null;
-                const isSelected = item.index === selectedIndex;
+                // The marked rows when there are any; the active row otherwise.
+                const isSelected =
+                  marked.size > 0 ? marked.has(item.index) : item.index === selectedIndex;
                 return (
                   <tr
                     key={item.index}
                     id={`${gridId}-row-${item.index}`}
                     aria-rowindex={item.index + 2}
                     aria-selected={isSelected}
-                    onMouseDown={() => onSelect(item.index)}
+                    onMouseDown={(event) => {
+                      // The menu opens only over a selected row, so a right press selects
+                      // first, keeping a multiple selection it lands inside.
+                      if (event.button === 2) {
+                        if (!marked.has(item.index)) pick(item.index, "replace");
+                        return;
+                      }
+                      if (event.button !== 0) return;
+                      // Shift-click selects rows, not the text between them.
+                      if (event.shiftKey) event.preventDefault();
+                      pick(item.index, modeOf(event));
+                    }}
                     onContextMenu={(event) => {
-                      onSelect(item.index);
+                      // Keep a multiple selection when right-clicking inside it.
+                      if (!marked.has(item.index)) pick(item.index, "replace");
+                      else onSelect(item.index);
                       // Cells set their column first; the row number has none.
                       if (!(event.target as HTMLElement).closest("td")) setMenuColumn(null);
                     }}
@@ -326,44 +382,71 @@ export function ResultsGrid({
       </ContextMenuTrigger>
       {selected && (
         <ContextMenuContent className="w-60">
-          {menuColumn !== null && (
+          {multiple ? (
             <>
               <ContextMenuItem
-                disabled={selected[menuColumn] === undefined}
                 onSelect={() => {
-                  const value = selected[menuColumn];
-                  if (value === undefined) return;
-                  void navigator.clipboard.writeText(toShellSyntax(value));
-                  toast.success(t("row.copied"));
+                  if (actions.onCopyMany) actions.onCopyMany(markedRows);
                 }}
               >
                 <Copy />
-                <span className="truncate">{t("cell.copy", { field: menuColumn })}</span>
+                {t("rows.copy", { count: markedRows.length })}
               </ContextMenuItem>
-              {actions.onEditField && menuColumn !== "_id" && !menuColumn.includes(".") && (
-                <ContextMenuItem onSelect={() => actions.onEditField?.(selected, menuColumn)}>
-                  <PencilLine />
-                  <span className="truncate">{t("cell.edit", { field: menuColumn })}</span>
-                </ContextMenuItem>
+              {actions.onDeleteMany && (
+                <>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    variant="destructive"
+                    onSelect={() => actions.onDeleteMany?.(markedRows)}
+                  >
+                    <Trash2 />
+                    {t("rows.delete", { count: markedRows.length })}
+                  </ContextMenuItem>
+                </>
               )}
-              {columnActions && (
-                <ContextMenuItem
-                  onSelect={() => columnActions.onFilterBy(menuColumn, selected[menuColumn])}
-                >
-                  <Filter />
-                  <span className="truncate">{t("cell.filter", { field: menuColumn })}</span>
-                </ContextMenuItem>
+            </>
+          ) : (
+            <>
+              {menuColumn !== null && (
+                <>
+                  <ContextMenuItem
+                    disabled={selected[menuColumn] === undefined}
+                    onSelect={() => {
+                      const value = selected[menuColumn];
+                      if (value === undefined) return;
+                      void navigator.clipboard.writeText(toShellSyntax(value));
+                      toast.success(t("row.copied"));
+                    }}
+                  >
+                    <Copy />
+                    <span className="truncate">{t("cell.copy", { field: menuColumn })}</span>
+                  </ContextMenuItem>
+                  {actions.onEditField && menuColumn !== "_id" && !menuColumn.includes(".") && (
+                    <ContextMenuItem onSelect={() => actions.onEditField?.(selected, menuColumn)}>
+                      <PencilLine />
+                      <span className="truncate">{t("cell.edit", { field: menuColumn })}</span>
+                    </ContextMenuItem>
+                  )}
+                  {columnActions && (
+                    <ContextMenuItem
+                      onSelect={() => columnActions.onFilterBy(menuColumn, selected[menuColumn])}
+                    >
+                      <Filter />
+                      <span className="truncate">{t("cell.filter", { field: menuColumn })}</span>
+                    </ContextMenuItem>
+                  )}
+                  {columnActions?.onDistinct && (
+                    <ContextMenuItem onSelect={() => columnActions.onDistinct?.(menuColumn)}>
+                      <ListChecks />
+                      <span className="truncate">{t("cell.distinct", { field: menuColumn })}</span>
+                    </ContextMenuItem>
+                  )}
+                  <ContextMenuSeparator />
+                </>
               )}
-              {columnActions?.onDistinct && (
-                <ContextMenuItem onSelect={() => columnActions.onDistinct?.(menuColumn)}>
-                  <ListChecks />
-                  <span className="truncate">{t("cell.distinct", { field: menuColumn })}</span>
-                </ContextMenuItem>
-              )}
-              <ContextMenuSeparator />
+              <RowMenuItems row={selected} actions={actions} />
             </>
           )}
-          <RowMenuItems row={selected} actions={actions} />
         </ContextMenuContent>
       )}
     </ContextMenu>
