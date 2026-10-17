@@ -19,6 +19,8 @@ pub struct AppState {
     pub picked_files: Mutex<HashMap<uuid::Uuid, PathBuf>>,
     /// Open mongosh sessions and the connection each belongs to.
     pub shells: Mutex<HashMap<uuid::Uuid, (ConnectionId, Arc<ShellSession>)>>,
+    /// Where tools downloaded by the app (mongosh) are installed.
+    pub tools_dir: PathBuf,
 }
 
 impl AppState {

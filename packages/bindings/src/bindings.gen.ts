@@ -54,6 +54,8 @@ export const commands = {
 } | null, IpcError>(__TAURI_INVOKE("choose_restore_source", { source })),
 	restoreDatabase: (connectionId: ConnectionId, token: string, request: RestoreRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("restore_database", { connectionId, token, request, channel })),
 	mongoshStatus: () => typedError<MongoshStatus, IpcError>(__TAURI_INVOKE("mongosh_status")),
+	/**  Downloads and installs the pinned mongosh into the app's data directory (ADR-0014). */
+	downloadMongosh: (channel: Channel<StreamEvent<DownloadProgress>>) => __TAURI_INVOKE<OperationId>("download_mongosh", { channel }),
 	/**  Starts mongosh for the connection's profile; output streams over `channel`. */
 	openShell: (connectionId: ConnectionId, cols: number, rows: number, channel: Channel<ShellEvent>) => typedError<string, IpcError>(__TAURI_INVOKE("open_shell", { connectionId, cols, rows, channel })),
 	shellWrite: (id: string, data: string) => typedError<null, IpcError>(__TAURI_INVOKE("shell_write", { id, data })),
@@ -166,6 +168,12 @@ export type DocumentStreamOptions = {
 	batchSize: number,
 };
 
+export type DownloadProgress = {
+	received: number | null,
+	/**  `None` when the server does not announce the size. */
+	total: number | null,
+};
+
 /**
  *  A BSON document encoded as canonical Extended JSON v2 (ADR-0007).
  * 
@@ -178,7 +186,9 @@ export type EJsonDocument = JsonValue;
 export type EJsonValue = JsonValue;
 
 /**  Stable error classification exposed to the UI, which switches on it exhaustively. */
-export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | "internal";
+export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | 
+/**  A download failed verification: damaged in transit, or altered. */
+"integrity" | "internal";
 
 export type ExportFormat = "jsonArray" | "ndjson" | "csv";
 
@@ -278,6 +288,8 @@ export type JsonValue = null | boolean | number | null | string | JsonValue[] | 
 export type MongoshStatus = {
 	available: boolean,
 	version: string | null,
+	/**  The version `download_mongosh` installs, when this platform has one. */
+	downloadVersion: string | null,
 };
 
 export type Namespace = {

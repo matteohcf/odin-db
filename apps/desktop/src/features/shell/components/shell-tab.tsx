@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
 import type { ShellTab as ShellTabModel } from "@/features/workspace";
 import { useMongoshStatus } from "../api/use-mongosh-status";
+import { MongoshDownload } from "./mongosh-download";
 import { TerminalView } from "./terminal-view";
 
 const DOWNLOAD_URL = "https://www.mongodb.com/try/download/shell";
@@ -25,15 +26,18 @@ export function ShellTab({ tab }: { tab: ShellTabModel }) {
   }
   if (!mongosh.data?.available) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
         <SquareTerminal className="size-6 text-muted-foreground" />
         <div className="flex max-w-md flex-col gap-1.5">
           <p className="font-medium">{t("missing.title")}</p>
           <p className="text-muted-foreground text-xs leading-relaxed">{t("missing.body")}</p>
-          <p className="font-mono text-xs selectable">
-            {t("missing.download", { url: DOWNLOAD_URL })}
-          </p>
         </div>
+        {mongosh.data?.downloadVersion && (
+          <MongoshDownload version={mongosh.data.downloadVersion} />
+        )}
+        <p className="font-mono text-[11px] text-muted-foreground selectable">
+          {t("missing.manual", { url: DOWNLOAD_URL })}
+        </p>
       </div>
     );
   }

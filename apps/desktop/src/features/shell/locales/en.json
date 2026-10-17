@@ -11,9 +11,18 @@
   },
   "readOnly": "{{name}} is read-only in odin-db, but the shell runs with your database user's permissions. Use a read-only database user to prevent changes.",
   "missing": {
-    "title": "mongosh not found",
-    "body": "The shell runs MongoDB's own mongosh. Install it and make sure it is on your PATH, then open the shell again.",
-    "download": "Download page: {{url}}"
+    "title": "mongosh is not installed",
+    "body": "The shell runs MongoDB's own mongosh. odin-db can download it for you, or you can install it yourself and add it to your PATH.",
+    "manual": "Download page: {{url}}",
+    "download": "Download mongosh {{version}}",
+    "downloading": "Downloading mongosh {{version}}…",
+    "progress": "{{received}} of {{total}}",
+    "progressUnknown": "{{received}}",
+    "verifying": "Verifying and installing…",
+    "cancel": "Cancel",
+    "failed": "Download failed: {{message}}",
+    "retry": "Try again",
+    "verified": "Verified against MongoDB's published checksum."
   },
   "disconnected": {
     "title": "{{name}} is disconnected",

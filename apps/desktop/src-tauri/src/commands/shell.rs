@@ -4,13 +4,14 @@ use std::sync::{Arc, PoisonError};
 
 use odin_core::CoreError;
 use odin_core::connection::ConnectionId;
-use odin_core::shell::{self, ShellEvent, ShellOptions, ShellSession};
+use odin_core::operations::{OperationId, OperationRegistry};
+use odin_core::shell::{self, DownloadProgress, ShellEvent, ShellOptions, ShellSession};
 use serde::Serialize;
 use tauri::State;
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
-use crate::ipc::IpcError;
+use crate::ipc::{IpcError, StreamEvent, spawn_streaming_operation};
 use crate::state::{AppState, profile_credentials};
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -18,15 +19,23 @@ use crate::state::{AppState, profile_credentials};
 pub struct MongoshStatus {
     pub available: bool,
     pub version: Option<String>,
+    /// The version `download_mongosh` installs, when this platform has one.
+    pub download_version: Option<String>,
+}
+
+fn locate(state: &AppState) -> Option<std::path::PathBuf> {
+    shell::locate_mongosh(None, Some(&state.tools_dir))
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn mongosh_status() -> Result<MongoshStatus, IpcError> {
-    let Some(path) = shell::locate_mongosh(None) else {
+pub async fn mongosh_status(state: State<'_, Arc<AppState>>) -> Result<MongoshStatus, IpcError> {
+    let download_version = shell::mongosh_downloadable().then(|| shell::MONGOSH_VERSION.to_owned());
+    let Some(path) = locate(&state) else {
         return Ok(MongoshStatus {
             available: false,
             version: None,
+            download_version,
         });
     };
     let version = tokio::process::Command::new(path)
@@ -39,6 +48,23 @@ pub async fn mongosh_status() -> Result<MongoshStatus, IpcError> {
     Ok(MongoshStatus {
         available: true,
         version,
+        download_version,
+    })
+}
+
+/// Downloads and installs the pinned mongosh into the app's data directory (ADR-0014).
+#[tauri::command]
+#[specta::specta]
+pub fn download_mongosh(
+    state: State<'_, Arc<AppState>>,
+    registry: State<'_, Arc<OperationRegistry>>,
+    channel: Channel<StreamEvent<DownloadProgress>>,
+) -> OperationId {
+    let dir = state.tools_dir.clone();
+    spawn_streaming_operation(&registry, channel, move |events, cancel| async move {
+        shell::download_mongosh(&dir, events, cancel)
+            .await
+            .map(drop)
     })
 }
 
@@ -52,7 +78,7 @@ pub async fn open_shell(
     rows: u16,
     channel: Channel<ShellEvent>,
 ) -> Result<String, IpcError> {
-    let mongosh = shell::locate_mongosh(None).ok_or(CoreError::NotFound("mongosh"))?;
+    let mongosh = locate(&state).ok_or(CoreError::NotFound("mongosh"))?;
     let credentials = profile_credentials(&state, connection_id).await?;
 
     let (tx, mut rx) = mpsc::channel::<ShellEvent>(64);

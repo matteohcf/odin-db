@@ -793,8 +793,46 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   },
   mongosh_status: () =>
     localStorage.getItem("odin-mock-no-mongosh") === "1"
-      ? { available: false, version: null }
-      : { available: true, version: "2.13.0" },
+      ? { available: false, version: null, downloadVersion: "2.13.0" }
+      : { available: true, version: "2.13.0", downloadVersion: "2.13.0" },
+  download_mongosh: (args) => {
+    const send = channelSender(args.channel);
+    const operationId = crypto.randomUUID();
+    const operation = { cancelled: false };
+    operations.set(operationId, operation);
+    const total = 72_400_000;
+    let received = 0;
+    const tick = () => {
+      if (operation.cancelled) {
+        send({ event: "cancelled" });
+        operations.delete(operationId);
+        return;
+      }
+      received = Math.min(total, received + total / 12);
+      send({ event: "data", data: { received, total } });
+      if (received < total) {
+        setTimeout(tick, 200);
+        return;
+      }
+      // `odin-mock-download-fails` simulates a checksum mismatch.
+      if (localStorage.getItem("odin-mock-download-fails") === "1") {
+        send({
+          event: "failed",
+          data: {
+            kind: "integrity",
+            message:
+              "the downloaded mongosh does not match its published checksum, so it was not installed; try again",
+          },
+        });
+      } else {
+        localStorage.removeItem("odin-mock-no-mongosh");
+        send({ event: "completed" });
+      }
+      operations.delete(operationId);
+    };
+    setTimeout(tick, 200);
+    return operationId;
+  },
   open_shell: (args) => {
     serverOf(id("connectionId", args));
     const shellId = crypto.randomUUID();
