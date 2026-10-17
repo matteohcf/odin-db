@@ -20,6 +20,7 @@ pub mod ssh;
 pub mod storage;
 pub mod synthetic;
 pub mod transfer;
+pub mod users;
 pub mod validation;
 
 pub use error::{CoreError, ErrorKind};

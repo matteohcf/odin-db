@@ -2325,3 +2325,76 @@ async fn connects_a_profile_through_ssh_after_trusting_the_host_key() {
         "disconnecting closes the tunnel"
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn manages_users_and_their_roles() {
+    use odin_core::users::{
+        RoleRef, change_password, create_user, drop_user, list_roles, list_users, set_roles,
+    };
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let role = |role: &str, db: &str| RoleRef {
+        role: role.into(),
+        db: db.into(),
+    };
+    create_user(
+        &handle,
+        "shop",
+        "reporter",
+        &Secret::new("first-pw"),
+        &[role("read", "shop")],
+    )
+    .await
+    .expect("created");
+    let users = list_users(&handle).await.expect("users");
+    let reporter = users.iter().find(|u| u.user == "reporter").expect("listed");
+    assert_eq!(
+        (reporter.db.as_str(), reporter.roles.clone()),
+        ("shop", vec![role("read", "shop")])
+    );
+    assert_ne!(reporter.mechanisms, Vec::<String>::new());
+
+    set_roles(
+        &handle,
+        "shop",
+        "reporter",
+        &[role("readWrite", "shop"), role("read", "analytics")],
+    )
+    .await
+    .expect("roles");
+    let reporter = list_users(&handle)
+        .await
+        .expect("users")
+        .into_iter()
+        .find(|u| u.user == "reporter")
+        .expect("listed");
+    assert_eq!(reporter.roles.len(), 2);
+    change_password(&handle, "shop", "reporter", &Secret::new("second-pw"))
+        .await
+        .expect("password");
+    assert!(matches!(
+        change_password(&handle, "shop", "reporter", &Secret::new("")).await,
+        Err(CoreError::Validation(_))
+    ));
+
+    let roles = list_roles(&handle, "shop").await.expect("roles");
+    assert!(roles.iter().any(|r| r.role == "readWrite" && r.built_in));
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        drop_user(&read_only, "shop", "reporter").await,
+        Err(CoreError::ReadOnly)
+    ));
+    drop_user(&handle, "shop", "reporter")
+        .await
+        .expect("dropped");
+    assert!(
+        !list_users(&handle)
+            .await
+            .expect("users")
+            .iter()
+            .any(|u| u.user == "reporter")
+    );
+}
