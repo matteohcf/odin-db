@@ -20,6 +20,8 @@
     "settings": "Settings",
     "unpinNamed": "Unpin {{name}}",
     "server": "Server status",
-    "users": "Users"
+    "users": "Users",
+    "all_one": "{{count}} open tab",
+    "all_other": "All {{count}} open tabs"
   }
 }

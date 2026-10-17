@@ -20,6 +20,8 @@
     "settings": "Impostazioni",
     "unpinNamed": "Sblocca {{name}}",
     "server": "Stato del server",
-    "users": "Utenti"
+    "users": "Utenti",
+    "all_one": "{{count}} scheda aperta",
+    "all_other": "Tutte le {{count}} schede aperte"
   }
 }

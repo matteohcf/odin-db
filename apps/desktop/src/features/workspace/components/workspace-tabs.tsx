@@ -6,8 +6,14 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@odin-db/ui/components/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@odin-db/ui/components/dropdown-menu";
 import { cn } from "@odin-db/ui/lib/utils";
-import { Copy, CopyPlus, Pin, PinOff, X } from "lucide-react";
+import { ChevronDown, Copy, CopyPlus, Pin, PinOff, X } from "lucide-react";
 import { memo, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShortcut } from "@/hooks/use-shortcut";
@@ -46,6 +52,19 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
   const duplicate = useTabs((s) => s.duplicate);
   const [dragging, setDragging] = useState<string | null>(null);
   const tabList = useRef<HTMLDivElement>(null);
+  // Past the edge of the bar, tabs are listed in a menu at its end.
+  const [overflowing, setOverflowing] = useState(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: new tabs need observing too.
+  useEffect(() => {
+    const bar = tabList.current;
+    if (!bar) return;
+    const update = () => setOverflowing(bar.scrollWidth > bar.clientWidth + 1);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(bar);
+    for (const child of bar.children) observer.observe(child);
+    return () => observer.disconnect();
+  }, [tabs]);
 
   // A tab opened from the sidebar or the palette may sit past the edge of a long tab bar.
   useEffect(() => {
@@ -91,140 +110,171 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
 
   return (
     <div className="flex h-full min-w-0 flex-col">
-      <div
-        role="tablist"
-        aria-label={t("tabs.label")}
-        ref={tabList}
-        // The bar has no visible scrollbar; a mouse wheel scrolls it sideways.
-        onWheel={(event) => {
-          if (event.deltaX === 0) event.currentTarget.scrollLeft += event.deltaY;
-        }}
-        className="flex h-9 shrink-0 items-end gap-px overflow-x-auto border-b bg-sidebar px-1.5 [scrollbar-width:none]"
-      >
-        {tabs.map((tab, index) => {
-          const active = tab.id === activeTabId;
-          const isPinned = pinned.includes(tab.id);
-          const name =
-            tab.kind === "collection"
-              ? tab.collection
-              : tab.kind === "shell"
-                ? t("tabs.shell")
-                : t(`tabs.${tab.kind}`);
-          return (
-            <ContextMenu key={tab.id}>
-              <ContextMenuTrigger asChild>
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: dragging is a pointer shortcut; the tab menu moves tabs from the keyboard. */}
-                <div
-                  data-tab-id={tab.id}
-                  draggable
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", tab.id);
-                    setDragging(tab.id);
-                  }}
-                  onDragEnd={() => setDragging(null)}
-                  onDragOver={(event) => dragging && event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    if (dragging && dragging !== tab.id) move(dragging, index);
-                    setDragging(null);
-                  }}
-                  className={cn(
-                    "group relative flex h-8 max-w-64 shrink-0 items-center rounded-t-md border border-b-0 text-[13px]",
-                    dragging === tab.id && "opacity-50",
-                    active
-                      ? "border-border bg-background text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-background"
-                      : "border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-                  )}
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => activate(tab.id)}
-                    onAuxClick={(event) => event.button === 1 && !isPinned && close(tab.id)}
-                    className="flex h-full min-w-0 items-center gap-1.5 pr-1 pl-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      <div className="flex h-9 shrink-0 items-end border-b bg-sidebar">
+        <div
+          role="tablist"
+          aria-label={t("tabs.label")}
+          ref={tabList}
+          // The bar has no visible scrollbar; a mouse wheel scrolls it sideways.
+          onWheel={(event) => {
+            if (event.deltaX === 0) event.currentTarget.scrollLeft += event.deltaY;
+          }}
+          className="flex h-9 min-w-0 flex-1 items-end gap-px overflow-x-auto px-1.5 [scrollbar-width:none]"
+        >
+          {tabs.map((tab, index) => {
+            const active = tab.id === activeTabId;
+            const isPinned = pinned.includes(tab.id);
+            const name =
+              tab.kind === "collection"
+                ? tab.collection
+                : tab.kind === "shell"
+                  ? t("tabs.shell")
+                  : t(`tabs.${tab.kind}`);
+            return (
+              <ContextMenu key={tab.id}>
+                <ContextMenuTrigger asChild>
+                  {/* biome-ignore lint/a11y/noStaticElementInteractions: dragging is a pointer shortcut; the tab menu moves tabs from the keyboard. */}
+                  <div
+                    data-tab-id={tab.id}
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", tab.id);
+                      setDragging(tab.id);
+                    }}
+                    onDragEnd={() => setDragging(null)}
+                    onDragOver={(event) => dragging && event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (dragging && dragging !== tab.id) move(dragging, index);
+                      setDragging(null);
+                    }}
+                    className={cn(
+                      "group relative flex h-8 max-w-64 shrink-0 items-center rounded-t-md border border-b-0 text-[13px]",
+                      dragging === tab.id && "opacity-50",
+                      active
+                        ? "border-border bg-background text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-background"
+                        : "border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                    )}
                   >
-                    {renderLabel(tab, context)}
-                  </button>
-                  {isPinned ? (
                     <button
                       type="button"
-                      aria-label={t("tabs.unpinNamed", { name })}
-                      title={t("tabs.menu.unpin")}
-                      onClick={() => togglePin(tab.id)}
-                      className="mr-1 rounded-sm p-0.5 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => activate(tab.id)}
+                      onAuxClick={(event) => event.button === 1 && !isPinned && close(tab.id)}
+                      className="flex h-full min-w-0 items-center gap-1.5 pr-1 pl-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <Pin className="size-3.5" />
+                      {renderLabel(tab, context)}
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      aria-label={t("tabs.close", { name })}
-                      onClick={() => close(tab.id)}
-                      className={cn(
-                        "mr-1 rounded-sm p-0.5 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
-                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                      )}
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  )}
-                </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent className="w-52">
-                <ContextMenuItem onSelect={() => togglePin(tab.id)}>
-                  {isPinned ? <PinOff /> : <Pin />}
-                  {isPinned ? t("tabs.menu.unpin") : t("tabs.menu.pin")}
-                </ContextMenuItem>
-                {tab.kind === "collection" && (
-                  <ContextMenuItem onSelect={() => duplicate(tab.id)}>
-                    <CopyPlus />
-                    {t("tabs.menu.duplicate")}
+                    {isPinned ? (
+                      <button
+                        type="button"
+                        aria-label={t("tabs.unpinNamed", { name })}
+                        title={t("tabs.menu.unpin")}
+                        onClick={() => togglePin(tab.id)}
+                        className="mr-1 rounded-sm p-0.5 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <Pin className="size-3.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label={t("tabs.close", { name })}
+                        onClick={() => close(tab.id)}
+                        className={cn(
+                          "mr-1 rounded-sm p-0.5 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
+                          active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                        )}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="w-52">
+                  <ContextMenuItem onSelect={() => togglePin(tab.id)}>
+                    {isPinned ? <PinOff /> : <Pin />}
+                    {isPinned ? t("tabs.menu.unpin") : t("tabs.menu.pin")}
                   </ContextMenuItem>
-                )}
-                {tab.kind === "collection" && (
+                  {tab.kind === "collection" && (
+                    <ContextMenuItem onSelect={() => duplicate(tab.id)}>
+                      <CopyPlus />
+                      {t("tabs.menu.duplicate")}
+                    </ContextMenuItem>
+                  )}
+                  {tab.kind === "collection" && (
+                    <ContextMenuItem
+                      onSelect={() =>
+                        void navigator.clipboard.writeText(`${tab.database}.${tab.collection}`)
+                      }
+                    >
+                      <Copy />
+                      {t("tabs.menu.copyNamespace")}
+                    </ContextMenuItem>
+                  )}
+                  <ContextMenuItem disabled={index === 0} onSelect={() => move(tab.id, index - 1)}>
+                    {t("tabs.menu.moveLeft")}
+                  </ContextMenuItem>
                   <ContextMenuItem
-                    onSelect={() =>
-                      void navigator.clipboard.writeText(`${tab.database}.${tab.collection}`)
-                    }
+                    disabled={index === tabs.length - 1}
+                    onSelect={() => move(tab.id, index + 1)}
                   >
-                    <Copy />
-                    {t("tabs.menu.copyNamespace")}
+                    {t("tabs.menu.moveRight")}
                   </ContextMenuItem>
-                )}
-                <ContextMenuItem disabled={index === 0} onSelect={() => move(tab.id, index - 1)}>
-                  {t("tabs.menu.moveLeft")}
-                </ContextMenuItem>
-                <ContextMenuItem
-                  disabled={index === tabs.length - 1}
-                  onSelect={() => move(tab.id, index + 1)}
+                  <ContextMenuSeparator />
+                  <ContextMenuItem onSelect={() => close(tab.id)}>
+                    {t("tabs.menu.close")}
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    disabled={tabs.length === 1}
+                    onSelect={() => closeOthers(tab.id)}
+                  >
+                    {t("tabs.menu.closeOthers")}
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    disabled={index === tabs.length - 1}
+                    onSelect={() => closeToTheRight(tab.id)}
+                  >
+                    {t("tabs.menu.closeToTheRight")}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem onSelect={closeAll}>{t("tabs.menu.closeAll")}</ContextMenuItem>
+                  <ContextMenuItem onSelect={reopenClosed}>
+                    {t("tabs.menu.reopen")}
+                    <ContextMenuShortcut>{label(SHORTCUTS.reopenTab)}</ContextMenuShortcut>
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+            );
+          })}
+        </div>
+        {overflowing && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("tabs.all", { count: tabs.length })}
+                title={t("tabs.all", { count: tabs.length })}
+                className="mx-1 mb-1 flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-muted-foreground text-xs tabular-nums outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {tabs.length}
+                <ChevronDown className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-96 w-72 overflow-y-auto">
+              {tabs.map((tab) => (
+                <DropdownMenuItem
+                  key={tab.id}
+                  onSelect={() => activate(tab.id)}
+                  className={cn("gap-1.5", tab.id === activeTabId && "bg-accent/60 font-medium")}
                 >
-                  {t("tabs.menu.moveRight")}
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem onSelect={() => close(tab.id)}>
-                  {t("tabs.menu.close")}
-                </ContextMenuItem>
-                <ContextMenuItem disabled={tabs.length === 1} onSelect={() => closeOthers(tab.id)}>
-                  {t("tabs.menu.closeOthers")}
-                </ContextMenuItem>
-                <ContextMenuItem
-                  disabled={index === tabs.length - 1}
-                  onSelect={() => closeToTheRight(tab.id)}
-                >
-                  {t("tabs.menu.closeToTheRight")}
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem onSelect={closeAll}>{t("tabs.menu.closeAll")}</ContextMenuItem>
-                <ContextMenuItem onSelect={reopenClosed}>
-                  {t("tabs.menu.reopen")}
-                  <ContextMenuShortcut>{label(SHORTCUTS.reopenTab)}</ContextMenuShortcut>
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          );
-        })}
+                  {renderLabel(tab, context)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       <div className="relative min-h-0 flex-1">
         {tabs.map((tab) => (
