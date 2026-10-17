@@ -1,3 +1,4 @@
+import type { QueryKind } from "@/lib/query-completion";
 /** Stage operators offered by the builder, with a starting body for each. */
 export const STAGE_OPERATORS = [
   { operator: "$match", template: "{\n  \n}" },
@@ -73,4 +74,12 @@ const FIRST_STAGE_ONLY = new Set([
 
 export function mustBeFirst(operator: string): boolean {
   return FIRST_STAGE_ONLY.has(operator);
+}
+
+/** Which suggestions a stage body gets: query syntax for these three, expressions otherwise. */
+export function queryKindOf(operator: string): QueryKind {
+  if (operator === "$match") return "filter";
+  if (operator === "$sort") return "sort";
+  if (operator === "$project") return "projection";
+  return "expression";
 }

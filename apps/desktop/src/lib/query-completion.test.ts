@@ -72,4 +72,16 @@ describe("queryCompletionSource", () => {
     expect(labels(complete("{ a: { $type: |", "filter", true))).toContain('"objectId"');
     expect(labels(complete("{ a: { $exists: |", "filter", true))).toEqual(["true", "false"]);
   });
+
+  it("offers field references inside strings of aggregation expressions", () => {
+    expect(labels(complete('{ total: { $sum: "$it|', "expression"))).toContain("$items.sku");
+    expect(labels(complete('"$ad|', "expression"))).toContain("$address.city");
+    expect(complete('{ name: "$a|', "filter")).toBeNull();
+  });
+
+  it("offers accumulators and expression operators inside new fields", () => {
+    const nested = labels(complete("{ _id: 1, total: { $|", "expression"));
+    expect(nested).toEqual(expect.arrayContaining(["$sum", "$concat", "$cond"]));
+    expect(labels(complete("{ |", "expression"))).toContain("name");
+  });
 });

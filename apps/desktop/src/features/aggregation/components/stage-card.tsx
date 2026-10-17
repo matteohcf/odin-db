@@ -7,15 +7,17 @@ import { ArrowDown, ArrowUp, CircleAlert, Loader2, Plus, Trash2 } from "lucide-r
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code-editor";
+import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { describeEJson } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
+import { useStageInputFields } from "../api/use-stage-input-fields";
 import {
   PREVIEW_LIMIT,
   PREVIEW_SAMPLE,
   StageSyntaxError,
   useStagePreview,
 } from "../api/use-stage-preview";
-import { isWriteOperator } from "../lib/operators";
+import { isWriteOperator, queryKindOf } from "../lib/operators";
 import type { Stage } from "../lib/pipeline";
 import { OperatorPicker } from "./operator-picker";
 
@@ -49,6 +51,8 @@ export function StageCard({
 }: StageCardProps) {
   const { t } = useTranslation("aggregation");
   const stage = stages[index];
+  const fields = useStageInputFields(connectionId, namespace, stages, index);
+  const completionsFor = useQueryCompletions(fields);
   if (!stage) return null;
   const number = index + 1;
 
@@ -133,6 +137,7 @@ export function StageCard({
           onChange={onBodyChange}
           onSubmit={onRun}
           ariaLabel={t("stage.editor", { number })}
+          completions={completionsFor(queryKindOf(stage.operator))}
           className="h-44 rounded-bl-lg"
         />
         <StagePreview

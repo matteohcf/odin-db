@@ -44,9 +44,15 @@ describe("queryContext", () => {
     expect(at("{ a: { $gt: 1 }, |")).toMatchObject({ kind: "key", path: [] });
   });
 
-  it("completes quoted keys but not string values", () => {
+  it("completes quoted keys and string values", () => {
     expect(at('{ "addr|')).toMatchObject({ kind: "key", prefix: "addr", from: 3, quoted: true });
-    expect(at('{ name: "Ro|')).toBeNull();
+    expect(at('{ total: { $sum: "$pr|')).toMatchObject({
+      kind: "value",
+      key: "$sum",
+      prefix: "$pr",
+      from: 18,
+      quoted: true,
+    });
   });
 
   it("ignores brackets and commas inside strings", () => {

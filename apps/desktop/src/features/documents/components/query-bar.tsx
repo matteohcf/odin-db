@@ -3,12 +3,11 @@ import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronDown, Play } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
-import { type QueryKind, queryCompletionSource } from "@/lib/query-completion";
+import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
-import locale from "../locales/en.json";
 import { QueryFieldFrame } from "./query-field-frame";
 import { QueryHistoryMenu } from "./query-history-menu";
 
@@ -28,8 +27,6 @@ interface QueryBarProps {
 }
 
 const isMac = navigator.userAgent.includes("Mac");
-type HelpKey = keyof typeof locale.query.help;
-
 const hasOptionsIn = (form: QueryForm) =>
   form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
 
@@ -50,23 +47,7 @@ export function QueryBar({
   const [expanded, setExpanded] = useState(hasOptions);
   const showOptions = expanded || errors.sort || errors.projection || errors.skip || errors.limit;
 
-  // Completion sources live as long as their editors; they read the latest sample.
-  const fieldsRef = useRef(fields);
-  fieldsRef.current = fields;
-  const completions = useMemo(() => {
-    const describe = (label: string) => {
-      const key = label.replace(/^\$/, "");
-      return key in locale.query.help ? t(`query.help.${key as HelpKey}`) : undefined;
-    };
-    const labels = {
-      fields: t("query.sections.fields"),
-      operators: t("query.sections.operators"),
-      values: t("query.sections.values"),
-    };
-    const source = (kind: QueryKind) =>
-      queryCompletionSource({ kind, fields: () => fieldsRef.current, describe, labels });
-    return { filter: source("filter"), sort: source("sort"), projection: source("projection") };
-  }, [t]);
+  const completionsFor = useQueryCompletions(fields);
 
   const onNumberKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter") {
@@ -89,7 +70,7 @@ export function QueryBar({
             value={form.filter}
             onChange={(value) => onChange("filter", value)}
             onSubmit={onRun}
-            completions={completions.filter}
+            completions={completionsFor("filter")}
             placeholder={t("query.filterPlaceholder")}
             ariaLabel={t("query.filter")}
             invalid={Boolean(errors.filter)}
@@ -152,7 +133,7 @@ export function QueryBar({
               value={form.sort}
               onChange={(value) => onChange("sort", value)}
               onSubmit={onRun}
-              completions={completions.sort}
+              completions={completionsFor("sort")}
               placeholder={t("query.sortPlaceholder")}
               ariaLabel={t("query.sort")}
               invalid={Boolean(errors.sort)}
@@ -167,7 +148,7 @@ export function QueryBar({
               value={form.projection}
               onChange={(value) => onChange("projection", value)}
               onSubmit={onRun}
-              completions={completions.projection}
+              completions={completionsFor("projection")}
               placeholder={t("query.projectionPlaceholder")}
               ariaLabel={t("query.projection")}
               invalid={Boolean(errors.projection)}

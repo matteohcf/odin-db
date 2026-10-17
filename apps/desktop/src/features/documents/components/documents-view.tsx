@@ -26,6 +26,7 @@ import {
   useResultsState,
 } from "@/features/results";
 import { ExportDialog, ImportDialog } from "@/features/transfer";
+import { useSampleFields } from "@/hooks/use-sample-fields";
 import type { JsonObject } from "@/lib/ejson-display";
 import { call } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
@@ -35,7 +36,6 @@ import {
   useInsertDocument,
   useReplaceDocument,
 } from "../api/mutations";
-import { useSampleFields } from "../api/use-sample-fields";
 import {
   emptyQueryForm,
   type FindQuery,

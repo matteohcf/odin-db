@@ -17,6 +17,8 @@ export type QueryContext =
       path: string[];
       prefix: string;
       from: number;
+      /** Inside a string, e.g. a `"$field"` reference. */
+      quoted: boolean;
     };
 
 interface Frame {
@@ -98,10 +100,12 @@ export function queryContext(text: string, pos: number): QueryContext | null {
   const path = stack.map((f) => f.parentKey).filter((key): key is string => key !== null);
 
   if (quote) {
-    // Completing inside a string only makes sense for a quoted key.
-    if (frame.type !== "object" || !frame.expectingKey) return null;
     const prefix = before.slice(stringStart + 1);
-    return { kind: "key", path, prefix, from: stringStart + 1, quoted: true };
+    const from = stringStart + 1;
+    if (frame.type === "object" && frame.expectingKey) {
+      return { kind: "key", path, prefix, from, quoted: true };
+    }
+    return { kind: "value", key: keyOf(frame), path, prefix, from, quoted: true };
   }
 
   const prefix = /[\w$.]*$/.exec(before)?.[0] ?? "";
@@ -109,7 +113,7 @@ export function queryContext(text: string, pos: number): QueryContext | null {
   if (frame.type === "object" && frame.expectingKey) {
     return { kind: "key", path, prefix, from, quoted: false };
   }
-  return { kind: "value", key: keyOf(frame), path, prefix, from };
+  return { kind: "value", key: keyOf(frame), path, prefix, from, quoted: false };
 }
 
 function objectFrame(parentKey: string | null): Frame {

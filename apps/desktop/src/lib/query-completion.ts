@@ -11,7 +11,8 @@ import type { EditorView } from "@codemirror/view";
 import type { FieldSummary } from "@odin-db/bindings";
 import { queryContext } from "./query-context";
 
-export type QueryKind = "filter" | "sort" | "projection";
+/** `expression` is the body of aggregation stages other than $match, $sort and $project. */
+export type QueryKind = "filter" | "sort" | "projection" | "expression";
 
 interface Snippet {
   label: string;
@@ -58,6 +59,54 @@ const PROJECTION_OPERATORS: Snippet[] = [
   { label: "$slice", template: "$slice: #{}" },
   { label: "$elemMatch", template: "$elemMatch: { #{} }" },
   { label: "$meta", template: '$meta: "#{textScore}"' },
+];
+
+/** Accumulators and expression operators, for aggregation stage bodies. */
+const EXPRESSION_OPERATORS: Snippet[] = [
+  { label: "$sum", template: "$sum: #{1}" },
+  { label: "$avg", template: '$avg: "$#{}"' },
+  { label: "$min", template: '$min: "$#{}"' },
+  { label: "$max", template: '$max: "$#{}"' },
+  { label: "$first", template: '$first: "$#{}"' },
+  { label: "$last", template: '$last: "$#{}"' },
+  { label: "$push", template: '$push: "$#{}"' },
+  { label: "$addToSet", template: '$addToSet: "$#{}"' },
+  { label: "$count", template: "$count: {}" },
+  { label: "$concat", template: '$concat: ["$#{}", #{" "}]' },
+  { label: "$cond", template: "$cond: { if: #{}, then: #{}, else: #{} }" },
+  { label: "$ifNull", template: '$ifNull: ["$#{}", #{null}]' },
+  { label: "$switch", template: "$switch: { branches: [{ case: #{}, then: #{} }], default: #{} }" },
+  { label: "$eq", template: '$eq: ["$#{}", #{}]' },
+  { label: "$ne", template: '$ne: ["$#{}", #{}]' },
+  { label: "$gt", template: '$gt: ["$#{}", #{}]' },
+  { label: "$gte", template: '$gte: ["$#{}", #{}]' },
+  { label: "$lt", template: '$lt: ["$#{}", #{}]' },
+  { label: "$lte", template: '$lte: ["$#{}", #{}]' },
+  { label: "$and", template: "$and: [#{}]" },
+  { label: "$or", template: "$or: [#{}]" },
+  { label: "$not", template: "$not: [#{}]" },
+  { label: "$in", template: '$in: ["$#{}", [#{}]]' },
+  { label: "$add", template: '$add: ["$#{}", #{}]' },
+  { label: "$subtract", template: '$subtract: ["$#{}", #{}]' },
+  { label: "$multiply", template: '$multiply: ["$#{}", #{}]' },
+  { label: "$divide", template: '$divide: ["$#{}", #{}]' },
+  { label: "$round", template: '$round: ["$#{}", #{2}]' },
+  { label: "$size", template: '$size: "$#{}"' },
+  { label: "$arrayElemAt", template: '$arrayElemAt: ["$#{}", #{0}]' },
+  { label: "$filter", template: '$filter: { input: "$#{}", as: "#{item}", cond: #{} }' },
+  { label: "$map", template: '$map: { input: "$#{}", as: "#{item}", in: #{} }' },
+  { label: "$toUpper", template: '$toUpper: "$#{}"' },
+  { label: "$toLower", template: '$toLower: "$#{}"' },
+  { label: "$split", template: '$split: ["$#{}", #{","}]' },
+  { label: "$toString", template: '$toString: "$#{}"' },
+  { label: "$toInt", template: '$toInt: "$#{}"' },
+  { label: "$toDate", template: '$toDate: "$#{}"' },
+  { label: "$dateToString", template: '$dateToString: { format: "#{%Y-%m-%d}", date: "$#{}" }' },
+  { label: "$dateTrunc", template: '$dateTrunc: { date: "$#{}", unit: "#{day}" }' },
+  { label: "$year", template: '$year: "$#{}"' },
+  { label: "$month", template: '$month: "$#{}"' },
+  { label: "$mergeObjects", template: '$mergeObjects: ["$#{}", #{}]' },
+  { label: "$literal", template: "$literal: #{}" },
 ];
 
 /** mongosh constructors understood by the shell syntax parser. */
@@ -140,10 +189,23 @@ export function queryCompletionSource(input: QueryCompletionOptions): Completion
       values: { name: labels.values, rank: 2 },
     },
   };
+  const { kind } = input;
   return (context: CompletionContext): CompletionResult | null => {
     const doc = context.state.doc.toString();
     const at = queryContext(doc, context.pos);
     if (!at) return null;
+    // `"$field"` references, wherever an aggregation expression is allowed.
+    if (
+      at.quoted &&
+      at.prefix.startsWith("$") &&
+      (kind === "expression" || kind === "projection")
+    ) {
+      const references = fieldReferences(options);
+      return references.length > 0
+        ? { from: at.from, options: references, validFor: /^\$[\w.]*$/ }
+        : null;
+    }
+    if (at.kind === "value" && at.quoted) return null;
     // Typing opens the list only once a word starts or a key is due; Ctrl-Space always does.
     if (!context.explicit && at.prefix === "" && at.kind === "value") return null;
 
@@ -168,7 +230,10 @@ function keyCompletions(
 
   if (kind !== "filter") {
     if (enclosing === undefined) return fieldCompletions(options, "", quoted, hasColon);
-    return kind === "projection" ? snippets(PROJECTION_OPERATORS, options, sections.operators) : [];
+    if (quoted) return [];
+    if (kind === "projection") return snippets(PROJECTION_OPERATORS, options, sections.operators);
+    if (kind === "expression") return snippets(EXPRESSION_OPERATORS, options, sections.operators);
+    return [];
   }
 
   // Top level, or a branch of $and/$or/$nor: fields and logical operators.
@@ -250,6 +315,16 @@ function applyKey(
   };
 }
 
+function fieldReferences(options: Resolved): Completion[] {
+  return options.fields().map((field, rank) => ({
+    label: `$${field.path}`,
+    detail: field.types.join(" | "),
+    type: "property",
+    section: options.sections.fields,
+    boost: -Math.min(rank, 99),
+  }));
+}
+
 function valueCompletions(options: Resolved, key: string | null): Completion[] {
   const { kind, sections } = options;
   const choice = (label: string, meaning: string, boost: number): Completion => ({
@@ -280,15 +355,27 @@ function valueCompletions(options: Resolved, key: string | null): Completion[] {
   return [...constructors, ...literals(["true", "false", "null"], sections.values)];
 }
 
+const awaitingReference = new WeakSet<Completion>();
+
+/**
+ * For the editors' `activateOnCompletion`: after a snippet that leaves the cursor
+ * in a `"$…"` reference, the field list opens right away.
+ */
+export const opensFieldReferences = (completion: Completion) => awaitingReference.has(completion);
+
 function snippets(list: Snippet[], options: Resolved, section: CompletionSection) {
-  return list.map(({ label, template }) =>
-    snippetCompletion(template, {
+  // Catalogs are ordered by how common each entry is.
+  return list.map(({ label, template }, rank) => {
+    const completion = snippetCompletion(template, {
       label,
+      boost: -Math.min(rank, 99),
       type: label.startsWith("$") ? "keyword" : "function",
       section,
       ...detail(options.describe(label)),
-    }),
-  );
+    });
+    if (template.includes('"$#{}')) awaitingReference.add(completion);
+    return completion;
+  });
 }
 
 const detail = (text: string | undefined) => (text ? { detail: text } : {});

@@ -1,3 +1,4 @@
+import { autocompletion, type CompletionSource } from "@codemirror/autocomplete";
 import { javascript } from "@codemirror/lang-javascript";
 import { syntaxHighlighting } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
@@ -5,7 +6,9 @@ import { EditorView, keymap } from "@codemirror/view";
 import { cn } from "@odin-db/ui/lib/utils";
 import { basicSetup } from "codemirror";
 import { useEffect, useRef } from "react";
+import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
+import { opensFieldReferences } from "@/lib/query-completion";
 
 // Colors come from the design tokens, so the editor follows light/dark automatically.
 const theme = EditorView.theme({
@@ -42,6 +45,8 @@ export interface CodeEditorProps {
   onSubmit?: () => void;
   readOnly?: boolean;
   autoFocus?: boolean;
+  /** Replaces the JavaScript suggestions, e.g. with MongoDB-aware ones. */
+  completions?: CompletionSource;
   className?: string;
   ariaLabel: string;
 }
@@ -59,16 +64,17 @@ export default function CodeEditorView({
   autoFocus = false,
   className,
   ariaLabel,
+  completions,
 }: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   // Latest callbacks without recreating the editor on every render.
   const callbacks = useRef({ onChange, onSubmit });
   callbacks.current = { onChange, onSubmit };
-  const initial = useRef({ initialValue, readOnly, autoFocus, ariaLabel });
+  const initial = useRef({ initialValue, readOnly, autoFocus, ariaLabel, completions });
 
   useEffect(() => {
     if (!hostRef.current) return;
-    const { initialValue, readOnly, autoFocus, ariaLabel } = initial.current;
+    const { initialValue, readOnly, autoFocus, ariaLabel, completions } = initial.current;
     const view = new EditorView({
       parent: hostRef.current,
       state: EditorState.create({
@@ -85,6 +91,14 @@ export default function CodeEditorView({
           ]),
           basicSetup,
           javascript(),
+          completions
+            ? autocompletion({
+                override: [completions],
+                icons: false,
+                activateOnCompletion: opensFieldReferences,
+              })
+            : [],
+          completionTheme,
           syntaxHighlighting(highlight),
           theme,
           EditorState.readOnly.of(readOnly),
