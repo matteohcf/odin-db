@@ -16,7 +16,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
-import { Code2, Download, FilePen, MoreHorizontal, Plus, Trash2, Upload } from "lucide-react";
+import {
+  Code2,
+  DatabaseZap,
+  Download,
+  FilePen,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -60,6 +69,7 @@ import { DistinctValuesDialog } from "./distinct-values-dialog";
 import { EditFieldDialog } from "./edit-field-dialog";
 import { ExplainDialog } from "./explain-dialog";
 import { QueryBar } from "./query-bar";
+import { SqlDialog } from "./sql-dialog";
 
 type EditorState =
   | { open: false }
@@ -96,6 +106,7 @@ export function DocumentsView({
   const columns = useResultsState(results, (s) => s.columns);
   const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
   const [codeQuery, setCodeQuery] = useState<FindQuery | null>(null);
+  const [sqlOpen, setSqlOpen] = useState(false);
   const [distinct, setDistinct] = useState<{ field: string; filter: EJsonDocument } | null>(null);
   const [bulk, setBulk] = useState<{
     mode: "update" | "delete";
@@ -343,6 +354,10 @@ export function DocumentsView({
                     <DropdownMenuSeparator />
                   </>
                 )}
+                <DropdownMenuItem onSelect={() => setSqlOpen(true)}>
+                  <DatabaseZap />
+                  {t("sql.menu")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => void showCode()}>
                   <Code2 />
                   {t("queryCode.menu", { ns: "common" })}
@@ -460,6 +475,13 @@ export function DocumentsView({
           onSave={saveDocument}
           completions={completionsFor("document")}
           onClose={() => setEditor({ open: false })}
+        />
+      )}
+      {sqlOpen && (
+        <SqlDialog
+          collection={namespace.collection}
+          onUse={(next) => void runForm(next)}
+          onClose={() => setSqlOpen(false)}
         />
       )}
       {distinct && (

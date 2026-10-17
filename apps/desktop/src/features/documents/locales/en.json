@@ -156,5 +156,17 @@
       "exists": "exists",
       "missing": "is missing"
     }
+  },
+  "sql": {
+    "menu": "Query with SQL…",
+    "title": "Query with SQL",
+    "description": "Write a SELECT; it is translated into a MongoDB query as you type. WHERE, ORDER BY, LIMIT/OFFSET, GROUP BY with COUNT, SUM, AVG, MIN and MAX are supported.",
+    "input": "SQL query",
+    "result": "MongoDB query",
+    "otherCollection": "The query names {{other}}; it runs on {{collection}}, the collection of this tab.",
+    "aggregate": "GROUP BY and aggregates translate into an aggregation pipeline: copy it into the Aggregation tab or a shell.",
+    "use": "Use in the query bar",
+    "copyPipeline": "Copy pipeline",
+    "copied": "Pipeline copied."
   }
 }

@@ -156,5 +156,17 @@
       "exists": "esiste",
       "missing": "è assente"
     }
+  },
+  "sql": {
+    "menu": "Query con SQL…",
+    "title": "Query con SQL",
+    "description": "Scrivi una SELECT: viene tradotta in una query MongoDB mentre scrivi. Sono supportati WHERE, ORDER BY, LIMIT/OFFSET, GROUP BY con COUNT, SUM, AVG, MIN e MAX.",
+    "input": "Query SQL",
+    "result": "Query MongoDB",
+    "otherCollection": "La query indica {{other}}; viene eseguita su {{collection}}, la collezione di questa scheda.",
+    "aggregate": "GROUP BY e le funzioni di aggregazione diventano una pipeline: copiala nella scheda Aggregazione o in una shell.",
+    "use": "Usa nella barra delle query",
+    "copyPipeline": "Copia la pipeline",
+    "copied": "Pipeline copiata."
   }
 }
