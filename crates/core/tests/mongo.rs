@@ -1927,3 +1927,53 @@ async fn counts_distinct_values_including_array_elements() {
         Err(CoreError::Validation(_))
     ));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn monitors_the_server_and_kills_a_running_operation() {
+    use odin_core::monitor::{current_ops, kill_op, server_status};
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let status = server_status(&handle).await.expect("status");
+    assert!(!status.version.is_empty() && status.process.contains("mongod"));
+    assert!(status.connections_current >= 1.0 && status.uptime_seconds >= 0.0);
+    assert!(status.opcounters.command > 0.0 && status.sampled_at > 0.0);
+
+    fx.seed(&handle, &namespace("slow"), 1).await;
+    let slow = {
+        let handle = Arc::clone(&handle);
+        tokio::spawn(async move {
+            handle
+                .client
+                .database("odin_test")
+                .collection::<Document>("slow")
+                .find_one(doc! { "$where": "sleep(20000) || true" })
+                .await
+        })
+    };
+    let mut found = None;
+    for _ in 0..50 {
+        let ops = current_ops(&handle).await.expect("current ops");
+        found = ops.into_iter().find(|op| op.ns == "odin_test.slow");
+        if found.is_some() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    let op = found.expect("the slow find is listed");
+    assert_eq!(op.op, "query");
+    assert!(op.command.is_some());
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        kill_op(&read_only, op.opid.clone()).await,
+        Err(CoreError::ReadOnly)
+    ));
+    kill_op(&handle, op.opid).await.expect("killed");
+    let outcome = tokio::time::timeout(std::time::Duration::from_secs(10), slow)
+        .await
+        .expect("the find stops well before its 20 s sleep")
+        .expect("task");
+    assert!(outcome.is_err(), "the killed find fails");
+}

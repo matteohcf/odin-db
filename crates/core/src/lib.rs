@@ -9,6 +9,7 @@ pub mod ejson;
 pub mod error;
 pub mod explain;
 pub mod indexes;
+pub mod monitor;
 pub mod operations;
 pub mod profiles;
 pub mod query;
