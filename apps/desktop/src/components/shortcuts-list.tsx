@@ -14,6 +14,7 @@ const GROUPS = [
       ["settings", [label(SHORTCUTS.settings)]],
       ["filterSidebar", [label(SHORTCUTS.filterSidebar)]],
       ["revealInSidebar", [label(SHORTCUTS.revealInSidebar)]],
+      ["treeKeys", ["↑", "↓", "←", "→"]],
       ["closeTab", [label(SHORTCUTS.closeTab)]],
       ["nextTab", [label(SHORTCUTS.nextTab)]],
       ["previousTab", [label(SHORTCUTS.previousTab)]],

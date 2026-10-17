@@ -186,6 +186,13 @@ export function ConnectionExplorer() {
                 setFilter("");
                 event.currentTarget.blur();
               }
+              // From the filter straight into the (filtered) tree.
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                scroller.current
+                  ?.querySelector<HTMLElement>("li[data-index] button:not([aria-haspopup])")
+                  ?.focus();
+              }
             }}
             placeholder={t("explorer.filter")}
             title={`${t("explorer.filterLabel")} (${label(SHORTCUTS.filterSidebar)})`}

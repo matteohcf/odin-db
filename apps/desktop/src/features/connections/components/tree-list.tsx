@@ -1,6 +1,13 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useTreeRows } from "../hooks/use-tree-rows";
 import { collapsedGroupKey, type TreeItem } from "../lib/tree-rows";
@@ -78,8 +85,50 @@ export function TreeList({
   const { t } = useTranslation("connections");
   const filter = useExplorer((s) => s.filter.trim());
 
+  // Focuses a row's main button, scrolling it into view (and so into the DOM) first.
+  function focusRow(index: number) {
+    const target = Math.max(0, Math.min(rows.length - 1, index));
+    virtualizer.scrollToIndex(target, { align: "auto" });
+    // A row far away renders a frame or two after the scroll.
+    const attempt = (left: number) => {
+      const button = list.current?.querySelector<HTMLElement>(
+        `li[data-index="${target}"] button:not([aria-haspopup])`,
+      );
+      if (button) button.focus();
+      else if (left > 0) requestAnimationFrame(() => attempt(left - 1));
+    };
+    attempt(5);
+  }
+
+  // Arrow keys like a file tree: up/down move, left/right collapse/expand or go to the parent.
+  function onKeyDown(event: KeyboardEvent<HTMLUListElement>) {
+    const item = (event.target as HTMLElement).closest<HTMLElement>("li[data-index]");
+    if (!item || (event.target as HTMLElement).closest("[aria-haspopup]")) return;
+    const index = Number(item.dataset.index);
+    const button = item.querySelector<HTMLElement>("button:not([aria-haspopup])");
+    const expanded = button?.getAttribute("aria-expanded");
+    const handlers: Record<string, () => void> = {
+      ArrowDown: () => focusRow(index + 1),
+      ArrowUp: () => focusRow(index - 1),
+      Home: () => focusRow(0),
+      End: () => focusRow(rows.length - 1),
+      ArrowRight: () => (expanded === "false" ? button?.click() : focusRow(index + 1)),
+      ArrowLeft: () => (expanded === "true" ? button?.click() : focusRow(parentIndex(rows, index))),
+    };
+    const handler = handlers[event.key];
+    if (!handler) return;
+    event.preventDefault();
+    handler();
+  }
+
   return (
-    <ul ref={list} className="relative" style={{ height: virtualizer.getTotalSize() }}>
+    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: the keys move focus between the row buttons inside.
+    <ul
+      ref={list}
+      onKeyDown={onKeyDown}
+      className="relative"
+      style={{ height: virtualizer.getTotalSize() }}
+    >
       {rows.length === 0 && filter && (
         <li>
           <TreeMessage depth={0}>{t("explorer.noMatch", { filter })}</TreeMessage>
@@ -91,6 +140,7 @@ export function TreeList({
         return (
           <li
             key={item.key}
+            data-index={item.index}
             className="absolute inset-x-0 top-0"
             style={{ height: ROW_HEIGHT, transform: `translateY(${item.start - offset}px)` }}
           >
@@ -166,4 +216,31 @@ function Row({
       );
     }
   }
+}
+
+/** How deep a row sits: groups, then connections, databases and collections. */
+function levelOf(row: TreeItem): number {
+  switch (row.kind) {
+    case "group":
+      return 0;
+    case "profile":
+      return row.indent;
+    case "database":
+      return row.indent + 1;
+    case "collection":
+      return row.indent + 2;
+    case "message":
+      return row.depth;
+  }
+}
+
+function parentIndex(rows: readonly TreeItem[], index: number): number {
+  const row = rows[index];
+  if (!row) return index;
+  const level = levelOf(row);
+  for (let i = index - 1; i >= 0; i--) {
+    const candidate = rows[i];
+    if (candidate && levelOf(candidate) < level) return i;
+  }
+  return index;
 }

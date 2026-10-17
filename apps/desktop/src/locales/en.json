@@ -168,6 +168,7 @@
       "lastTab": "Go to the last tab",
       "filterSidebar": "Filter the sidebar",
       "revealInSidebar": "Reveal the collection in the sidebar",
+      "treeKeys": "Move through the sidebar tree",
       "rerun": "Run the query or pipeline again",
       "inlineEdit": "Edit a value in place",
       "preview": "Preview the selected document",
