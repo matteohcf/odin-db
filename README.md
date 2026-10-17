@@ -11,7 +11,7 @@ Open source desktop client for MongoDB. A free alternative to Studio 3T, built w
 - **Results**: a fast virtualized table (resize, hide and sort columns, edit or filter by a single value) or a list of expandable document trees; documents edited in mongosh syntax that keeps every BSON type.
 - **Aggregation builder**: stages with live previews and suggestions based on the previous stage's output; saved pipelines.
 - **Collections**: schema analysis, storage stats, indexes, and creating, renaming and dropping databases and collections.
-- **Data movement**: JSON and CSV import and export, backup and restore with the bundled mongodump and mongorestore.
+- **Data movement**: JSON and CSV import (insert, replace or merge by `_id`) and export of collections and whole databases; backup and restore with the bundled mongodump and mongorestore, selective restores, scheduled backups with retention and history.
 - **Shell**: the real mongosh in a tab, downloaded and verified on request.
 - **Everywhere**: command palette (⌘K / Ctrl+K), keyboard shortcuts (⌘/ / Ctrl+/), light and dark themes, Windows, macOS and Linux.
 

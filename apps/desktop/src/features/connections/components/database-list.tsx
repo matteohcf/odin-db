@@ -5,6 +5,8 @@ import {
   Clock,
   Database,
   Eye,
+  FileDown,
+  FileUp,
   HardDriveDownload,
   HardDriveUpload,
   PencilLine,
@@ -15,6 +17,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
+import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
 import { formatBytes } from "@/lib/format";
 import { connectionKeys } from "../api/keys";
@@ -56,10 +59,14 @@ function DatabaseNode({
 }) {
   const { t } = useTranslation("connections");
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
-  const collections = useCollections(connection.id, database.name, expanded);
   const [toolDialog, setToolDialog] = useState<
-    "backup" | "restore" | "createCollection" | "drop" | null
+    "backup" | "restore" | "export" | "import" | "createCollection" | "drop" | null
   >(null);
+  const collections = useCollections(
+    connection.id,
+    database.name,
+    expanded || toolDialog === "export",
+  );
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const queryClient = useQueryClient();
   const writable = !connection.readOnly;
@@ -90,10 +97,21 @@ function DatabaseNode({
               {t("menu.backup", { ns: "backup" })}
             </DropdownMenuItem>
             {writable && (
+              <DropdownMenuItem onSelect={() => setToolDialog("restore")}>
+                <HardDriveUpload />
+                {t("menu.restore", { ns: "backup" })}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setToolDialog("export")}>
+              <FileDown />
+              {t("database.menuExport", { ns: "transfer" })}
+            </DropdownMenuItem>
+            {writable && (
               <>
-                <DropdownMenuItem onSelect={() => setToolDialog("restore")}>
-                  <HardDriveUpload />
-                  {t("menu.restore", { ns: "backup" })}
+                <DropdownMenuItem onSelect={() => setToolDialog("import")}>
+                  <FileUp />
+                  {t("database.menuImport", { ns: "transfer" })}
                 </DropdownMenuItem>
                 {!SYSTEM_DATABASES.has(database.name) && (
                   <>
@@ -128,6 +146,28 @@ function DatabaseNode({
           connectionId={connection.id}
           profileName={profileName}
           scope={{ kind: "database", database: database.name }}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
+      {toolDialog === "export" && (
+        <DatabaseExportDialog
+          connectionId={connection.id}
+          database={database.name}
+          collections={collections.data
+            ?.filter((collection) => collection.kind !== "view" && !isSystem(collection))
+            .map((collection) => collection.name)}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
+      {toolDialog === "import" && (
+        <DatabaseImportDialog
+          connectionId={connection.id}
+          database={database.name}
+          onImported={() =>
+            void queryClient.invalidateQueries({
+              queryKey: connectionKeys.connection(connection.id),
+            })
+          }
           onClose={() => setToolDialog(null)}
         />
       )}

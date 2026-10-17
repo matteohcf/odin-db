@@ -53,6 +53,20 @@ export const commands = {
 	preview: FilePreview,
 } | null, IpcError>(__TAURI_INVOKE("choose_import_file")),
 	importDocuments: (connectionId: ConnectionId, namespace: Namespace, token: string, options: ImportOptions, channel: Channel<StreamEvent<TransferEvent<ImportSummary>>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_documents", { connectionId, namespace, token, options, channel })),
+	/**
+	 *  Asks for a folder, then exports every collection of `database` into it.
+	 *  `None` if the user cancels.
+	 */
+	exportDatabase: (connectionId: ConnectionId, database: string, request: DatabaseExportRequest, channel: Channel<StreamEvent<DatabaseTransferEvent>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_database", { connectionId, database, request, channel })),
+	/**  Asks for a folder of JSON files to import as collections. `None` if the user cancels. */
+	chooseImportFolder: () => typedError<{
+	/**  Opaque handle for `import_database`; the path stays in the backend. */
+	token: string,
+	path: string,
+	/**  The collections the folder's JSON files would become. */
+	collections: string[],
+} | null, IpcError>(__TAURI_INVOKE("choose_import_folder")),
+	importDatabase: (connectionId: ConnectionId, database: string, token: string, options: ImportOptions, channel: Channel<StreamEvent<DatabaseTransferEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_database", { connectionId, database, token, options, channel })),
 	databaseToolsStatus: () => typedError<ToolsStatus, IpcError>(__TAURI_INVOKE("database_tools_status")),
 	/**  Asks where to save the archive, then runs mongodump. `None` if the user cancels. */
 	backupDatabase: (connectionId: ConnectionId, request: BackupRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("backup_database", { connectionId, request, channel })),
@@ -254,11 +268,44 @@ export type CsvType = "skip" | "string" | "int32" | "int64" | "double" | "decima
 
 export type CursorId = string;
 
+export type DatabaseExportRequest = {
+	/**  JSON array or NDJSON; CSV does not fit a whole database. */
+	format: ExportFormat,
+	jsonMode: JsonMode,
+	/**  Collections to export; empty means all of them (views excluded). */
+	collections: string[],
+};
+
 export type DatabaseInfo = {
 	name: string,
 	/**  Bytes. `f64` because TypeScript numbers cannot hold every `u64`. */
 	sizeOnDisk: number | null,
 	empty: boolean,
+};
+
+/**  Progress across collections: which one is being moved, and how far it is. */
+export type DatabaseProgress = {
+	collection: string,
+	/**  1-based position of `collection` among `total`. */
+	index: number | null,
+	total: number | null,
+	documents: number | null,
+};
+
+/**
+ *  Core reports bare progress; the channel carries it wrapped in `TransferEvent`.
+ *  Progress across a database's collections, then exactly one `finished`.
+ */
+export type DatabaseTransferEvent = { kind: "progress"; value: DatabaseProgress } | { kind: "finished"; value: DatabaseTransferSummary };
+
+export type DatabaseTransferSummary = {
+	collections: number | null,
+	documents: number | null,
+	/**  Import only: documents replaced or merged, and records that failed. */
+	updated: number | null,
+	failed: number | null,
+	/**  Import only: the first errors, prefixed with their file. */
+	errors: string[],
 };
 
 export type DocumentPage = {
@@ -351,18 +398,40 @@ export type ImportFile = {
 	preview: FilePreview,
 };
 
+export type ImportFolder = {
+	/**  Opaque handle for `import_database`; the path stays in the backend. */
+	token: string,
+	path: string,
+	/**  The collections the folder's JSON files would become. */
+	collections: string[],
+};
+
 export type ImportFormat = 
 /**  A JSON array, NDJSON, or concatenated documents, in canonical or relaxed Extended JSON. */
 { kind: "json" } | { kind: "csv"; columns: CsvColumn[] };
+
+/**  What happens to documents whose `_id` already exists in the collection. */
+export type ImportMode = 
+/**  Insert every document; duplicates of an existing `_id` fail. */
+"insert" | 
+/**  Replace the existing document with the file's version. */
+"upsert" | 
+/**  Keep the existing document and set the file's fields on it. */
+"merge";
 
 export type ImportOptions = {
 	format: ImportFormat,
 	/**  Stop at the first failing document instead of skipping it. */
 	stopOnError: boolean,
+	mode?: ImportMode,
+	/**  Empty the collection before importing. Destructive: confirmed in the UI. */
+	dropFirst?: boolean,
 };
 
 export type ImportSummary = {
 	inserted: number | null,
+	/**  Existing documents replaced or merged (upsert and merge modes). */
+	updated: number | null,
 	failed: number | null,
 	/**  The first errors, enough to fix the file. */
 	errors: RecordError[],

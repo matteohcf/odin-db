@@ -454,7 +454,16 @@ function channelSender(channel: unknown) {
 const operations = new Map<string, { cancelled: boolean }>();
 
 /** Simulates a long transfer: progress ticks, then a summary, then the terminal event. */
-function simulateTransfer(channel: unknown, total: number, summary: unknown, bytesPerDoc: number) {
+function simulateTransfer(
+  channel: unknown,
+  total: number,
+  summary: unknown,
+  bytesPerDoc: number,
+  progressOf: (done: number) => unknown = (done) => ({
+    documents: done,
+    bytes: done * bytesPerDoc,
+  }),
+) {
   const send = channelSender(channel);
   const operationId = crypto.randomUUID();
   const operation = { cancelled: false };
@@ -469,7 +478,7 @@ function simulateTransfer(channel: unknown, total: number, summary: unknown, byt
     done = Math.min(total, done + Math.ceil(total / 8));
     send({
       event: "data",
-      data: { kind: "progress", value: { documents: done, bytes: done * bytesPerDoc } },
+      data: { kind: "progress", value: progressOf(done) },
     });
     if (done < total) {
       setTimeout(tick, 250);
@@ -484,6 +493,7 @@ function simulateTransfer(channel: unknown, total: number, summary: unknown, byt
 }
 
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
+const importFolders = new Set<string>();
 
 /** Streams tool output lines, then totals, like mongodump/mongorestore runs. */
 function simulateTool(channel: unknown, lines: string[], summary: unknown) {
@@ -931,7 +941,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     importFiles.delete(id("token", args));
     const options = args.options as {
       format: { kind: string; columns?: { header: string; field: string; kind: string }[] };
+      dropFirst?: boolean;
     };
+    if (options.dropFirst) coll.docs = [];
     const errors: { record: number; message: string }[] = [];
     let inserted = 0;
     file.rows.forEach((row, index) => {
@@ -961,6 +973,62 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       file.rows.length,
       { inserted, failed: errors.length, errors, stopped: false },
       80,
+    );
+  },
+  export_database: (args) => {
+    const { databases } = serverOf(id("connectionId", args));
+    const database = args.database as string;
+    const request = args.request as { collections: string[] };
+    const names = Object.entries(databases[database] ?? {})
+      .filter(([name, coll]) => coll.kind !== "view" && !name.startsWith("system."))
+      .map(([name]) => name)
+      .filter((name) => request.collections.length === 0 || request.collections.includes(name));
+    const documents = names.reduce(
+      (sum, name) => sum + (databases[database]?.[name]?.docs.length ?? 0),
+      0,
+    );
+    return simulateTransfer(
+      args.channel,
+      names.length,
+      { collections: names.length, documents, updated: 0, failed: 0, errors: [] },
+      0,
+      (done) => ({
+        collection: names[Math.max(0, done - 1)] ?? "",
+        index: done,
+        total: names.length,
+        documents: Math.round(documents / Math.max(1, names.length)),
+      }),
+    );
+  },
+  choose_import_folder: () => {
+    const token = crypto.randomUUID();
+    importFolders.add(token);
+    return { token, path: "/Users/ada/Exports/shop", collections: ["coupons", "suppliers"] };
+  },
+  import_database: (args) => {
+    const connectionId = id("connectionId", args);
+    const database = args.database as string;
+    const { connection } = serverOf(connectionId);
+    ensureWritable(connection);
+    if (!importFolders.delete(id("token", args))) fail("notFound", "import folder not found");
+    const options = args.options as { dropFirst?: boolean };
+    const names = ["coupons", "suppliers"];
+    for (const name of names) {
+      const { coll } = collectionOf(connectionId, database, name, { create: true });
+      if (options.dropFirst) coll.docs = [];
+      for (let i = 0; i < 25; i += 1) coll.docs.push({ _id: oid(), name: `${name} ${i}` });
+    }
+    return simulateTransfer(
+      args.channel,
+      names.length,
+      { collections: names.length, documents: 50, updated: 0, failed: 0, errors: [] },
+      0,
+      (done) => ({
+        collection: names[Math.max(0, done - 1)] ?? "",
+        index: done,
+        total: names.length,
+        documents: 25,
+      }),
     );
   },
   database_tools_status: () =>

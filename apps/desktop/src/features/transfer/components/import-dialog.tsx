@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 import { describeEJson } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
+import { DEFAULT_IMPORT_MODE, ImportModeFields, importModeReady } from "./import-mode-fields";
 import { TransferStatus } from "./transfer-status";
 
 interface ImportDialogProps {
@@ -67,6 +68,7 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
   const [file, setFile] = useState<ChosenFile | null>(null);
   const [columns, setColumns] = useState<CsvColumn[]>([]);
   const [stopOnError, setStopOnError] = useState(false);
+  const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
   const [chooseError, setChooseError] = useState<string | null>(null);
   const transfer = useTransfer<ImportSummary>();
   const { state } = transfer;
@@ -107,7 +109,7 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
           connectionId,
           namespace,
           file.token,
-          { format, stopOnError },
+          { format, stopOnError, mode: mode.mode, dropFirst: mode.dropFirst },
           channel,
         ),
       ),
@@ -122,7 +124,7 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
 
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[calc(100vh-3rem)] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("import.title")}</DialogTitle>
           <DialogDescription>
@@ -250,6 +252,13 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
               </div>
             )}
 
+            <ImportModeFields
+              value={mode}
+              onChange={setMode}
+              scope="collection"
+              target={namespace.collection}
+            />
+
             <div className="flex items-start gap-2.5">
               <Checkbox
                 id={`${id}-stop`}
@@ -290,7 +299,10 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
                 {file && (
                   <Button
                     onClick={() => void submit()}
-                    disabled={file.preview.kind === "json" && file.preview.documents.length === 0}
+                    disabled={
+                      (file.preview.kind === "json" && file.preview.documents.length === 0) ||
+                      !importModeReady(mode, namespace.collection)
+                    }
                   >
                     {t("import.submit")}
                   </Button>
@@ -308,10 +320,12 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
   const { t } = useTranslation("transfer");
   const failed = summary.failed ?? 0;
   const inserted = summary.inserted ?? 0;
+  const updated = summary.updated ?? 0;
   return (
     <>
       <p className={failed === 0 ? "text-success" : undefined}>
         {t("import.done", { count: inserted })}
+        {updated > 0 && ` ${t("import.updated", { count: updated })}`}
       </p>
       {failed > 0 && (
         <div className="flex flex-col gap-1.5">

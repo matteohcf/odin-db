@@ -3,24 +3,24 @@ import { CircleAlert, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TransferState } from "../hooks/use-transfer";
 
-interface TransferStatusProps<S> {
-  state: TransferState<S>;
+interface TransferStatusProps<S, P> {
+  state: TransferState<S, P>;
   runningTitle: string;
-  running: (progress: TransferProgress | null) => string;
+  running: (progress: P | null) => string;
   finished: (summary: S) => ReactNode;
   cancelledText: string;
   failedText: (message: string) => string;
 }
 
 /** Progress and outcome of a transfer; shared by import and export dialogs. */
-export function TransferStatus<S>({
+export function TransferStatus<S, P = TransferProgress>({
   state,
   runningTitle,
   running,
   finished,
   cancelledText,
   failedText,
-}: TransferStatusProps<S>) {
+}: TransferStatusProps<S, P>) {
   switch (state.status) {
     case "idle":
       return null;

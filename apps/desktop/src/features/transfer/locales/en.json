@@ -31,7 +31,7 @@
   },
   "import": {
     "title": "Import documents",
-    "description": "Adds documents from a JSON, NDJSON or CSV file to {{namespace}}. Existing documents are not changed.",
+    "description": "Imports documents from a JSON, NDJSON or CSV file into {{namespace}}.",
     "choose": "Choose file…",
     "chooseAnother": "Choose another file",
     "jsonPreview_one": "First document of {{name}}",
@@ -54,7 +54,9 @@
     "stopped": "Stopped at the first failure.",
     "record": "#{{record}}",
     "cancelled": "Import cancelled. Documents inserted before cancelling stay in the collection.",
-    "failed": "Import failed: {{message}}"
+    "failed": "Import failed: {{message}}",
+    "updated_one": "Updated {{count, number}} existing document.",
+    "updated_other": "Updated {{count, number}} existing documents."
   },
   "csvTypes": {
     "skip": "Skip column",
@@ -72,5 +74,57 @@
     "cancel": "Cancel",
     "close": "Close",
     "stop": "Stop"
+  },
+  "mode": {
+    "title": "Existing documents",
+    "insert": "Insert only",
+    "insertHint": "Documents whose _id already exists fail and are listed at the end.",
+    "upsert": "Replace by _id",
+    "upsertHint": "An existing document is replaced by the file's version; new ones are inserted.",
+    "merge": "Merge by _id",
+    "mergeHint": "The file's fields are set on the existing document; other fields are kept.",
+    "dropFirst": {
+      "collection": "Empty the collection first",
+      "collectionHint": "Deletes every document before importing. Indexes are kept.",
+      "database": "Empty each collection first",
+      "databaseHint": "Deletes every document of the collections being imported. Other collections are not touched.",
+      "confirm": "Type {{name}} to confirm"
+    }
+  },
+  "database": {
+    "menuExport": "Export database…",
+    "menuImport": "Import into database…",
+    "export": {
+      "title": "Export database",
+      "description": "Writes each collection of {{database}} to its own file, in a folder named after the database.",
+      "collections": "Collections",
+      "loading": "Loading collections…",
+      "none": "This database has no collections to export.",
+      "all": "Select all",
+      "noneSelected": "Select none",
+      "submit": "Choose folder and export",
+      "running": "Exporting…",
+      "progress": "{{collection}} ({{index}} of {{total}}) · {{documents, number}} documents",
+      "done": "Exported {{collections, number}} collections, {{documents, number}} documents.",
+      "cancelled": "Export cancelled. Files already written stay in the folder.",
+      "failed": "Export failed: {{message}}"
+    },
+    "import": {
+      "title": "Import into database",
+      "description": "Imports a folder of JSON or NDJSON files into {{database}}: each file becomes the collection named after it.",
+      "choose": "Choose folder…",
+      "chooseAnother": "Choose another folder",
+      "empty": "{{path}} contains no .json, .ndjson or .jsonl files.",
+      "files_one": "{{count}} collection from {{path}}",
+      "files_other": "{{count}} collections from {{path}}",
+      "submit": "Import",
+      "running": "Importing…",
+      "progress": "{{collection}} ({{index}} of {{total}}) · {{documents, number}} documents read",
+      "done": "Imported {{collections, number}} collections: {{documents, number}} documents inserted, {{updated, number}} updated.",
+      "failedCount_one": "{{count, number}} document failed:",
+      "failedCount_other": "{{count, number}} documents failed:",
+      "cancelled": "Import cancelled. Documents imported before cancelling stay in the database.",
+      "failed": "Import failed: {{message}}"
+    }
   }
 }

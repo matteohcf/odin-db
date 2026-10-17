@@ -9,8 +9,8 @@ use odin_core::connection::ConnectionId;
 use odin_core::operations::{OperationId, OperationRegistry};
 use odin_core::query::Namespace;
 use odin_core::transfer::{
-    self, ExportFormat, ExportRequest, FilePreview, ImportOptions, ImportSummary, TransferProgress,
-    TransferSummary,
+    self, DatabaseExportRequest, DatabaseProgress, DatabaseTransferSummary, ExportFormat,
+    ExportRequest, FilePreview, ImportOptions, ImportSummary, TransferProgress, TransferSummary,
 };
 use serde::Serialize;
 use tauri::ipc::Channel;
@@ -156,6 +156,133 @@ pub async fn import_documents(
 }
 
 /// Core reports bare progress; the channel carries it wrapped in `TransferEvent`.
+/// Progress across a database's collections, then exactly one `finished`.
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
+pub enum DatabaseTransferEvent {
+    Progress(DatabaseProgress),
+    Finished(DatabaseTransferSummary),
+}
+
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportFolder {
+    /// Opaque handle for `import_database`; the path stays in the backend.
+    pub token: String,
+    pub path: String,
+    /// The collections the folder's JSON files would become.
+    pub collections: Vec<String>,
+}
+
+/// Asks for a folder, then exports every collection of `database` into it.
+/// `None` if the user cancels.
+#[tauri::command]
+#[specta::specta]
+pub async fn export_database(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    registry: State<'_, Arc<OperationRegistry>>,
+    connection_id: ConnectionId,
+    database: String,
+    request: DatabaseExportRequest,
+    channel: Channel<StreamEvent<DatabaseTransferEvent>>,
+) -> Result<Option<OperationId>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    let dialog = app.dialog().file();
+    let Some(folder) = blocking_dialog(move || dialog.blocking_pick_folder()).await? else {
+        return Ok(None);
+    };
+    let folder = folder
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?
+        .join(&database);
+    Ok(Some(spawn_streaming_operation(
+        &registry,
+        channel,
+        move |tx, cancel| async move {
+            let progress = forward_database_progress(tx.clone());
+            let summary =
+                transfer::export_database(&handle, &database, &folder, request, progress, cancel)
+                    .await?;
+            let _ = tx.send(DatabaseTransferEvent::Finished(summary)).await;
+            Ok(())
+        },
+    )))
+}
+
+/// Asks for a folder of JSON files to import as collections. `None` if the user cancels.
+#[tauri::command]
+#[specta::specta]
+pub async fn choose_import_folder(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<ImportFolder>, IpcError> {
+    let dialog = app.dialog().file();
+    let Some(folder) = blocking_dialog(move || dialog.blocking_pick_folder()).await? else {
+        return Ok(None);
+    };
+    let folder = folder
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?;
+    let collections = transfer::database_files(&folder)?
+        .into_iter()
+        .map(|(collection, _)| collection)
+        .collect();
+    Ok(Some(ImportFolder {
+        path: folder.display().to_string(),
+        token: super::backup::remember_path(&state, folder),
+        collections,
+    }))
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn import_database(
+    state: State<'_, Arc<AppState>>,
+    registry: State<'_, Arc<OperationRegistry>>,
+    connection_id: ConnectionId,
+    database: String,
+    token: String,
+    options: ImportOptions,
+    channel: Channel<StreamEvent<DatabaseTransferEvent>>,
+) -> Result<OperationId, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    handle.ensure_writable()?;
+    let token = uuid::Uuid::parse_str(&token).map_err(|_| CoreError::NotFound("import folder"))?;
+    let folder = state
+        .picked_files
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&token)
+        .cloned()
+        .ok_or(CoreError::NotFound("import folder"))?;
+    let files = transfer::database_files(&folder)?;
+    Ok(spawn_streaming_operation(
+        &registry,
+        channel,
+        move |tx, cancel| async move {
+            let progress = forward_database_progress(tx.clone());
+            let summary =
+                transfer::import_database(&handle, &database, files, options, progress, cancel)
+                    .await?;
+            let _ = tx.send(DatabaseTransferEvent::Finished(summary)).await;
+            Ok(())
+        },
+    ))
+}
+
+fn forward_database_progress(
+    tx: mpsc::Sender<DatabaseTransferEvent>,
+) -> mpsc::Sender<DatabaseProgress> {
+    let (progress_tx, mut progress_rx) = mpsc::channel(16);
+    tauri::async_runtime::spawn(async move {
+        while let Some(progress) = progress_rx.recv().await {
+            let _ = tx.try_send(DatabaseTransferEvent::Progress(progress));
+        }
+    });
+    progress_tx
+}
+
 fn forward_progress<S: Send + 'static>(
     tx: mpsc::Sender<TransferEvent<S>>,
 ) -> mpsc::Sender<TransferProgress> {

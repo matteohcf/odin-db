@@ -1,24 +1,26 @@
-import type { TransferEvent, TransferProgress } from "@odin-db/bindings";
+import type { TransferProgress } from "@odin-db/bindings";
 import { useCallback, useState } from "react";
 import { useOperation } from "@/hooks/use-operation";
 
-export type TransferState<S> =
+export type TransferState<S, P = TransferProgress> =
   | { status: "idle" }
-  | { status: "running"; progress: TransferProgress | null }
+  | { status: "running"; progress: P | null }
   | { status: "finished"; summary: S }
   | { status: "cancelled" }
   | { status: "failed"; error: string };
 
-type Begin<S> = Parameters<ReturnType<typeof useOperation<TransferEvent<S>>>["start"]>[0];
+type Event<S, P> = { kind: "progress"; value: P } | { kind: "finished"; value: S };
+
+type Begin<S, P> = Parameters<ReturnType<typeof useOperation<Event<S, P>>>["start"]>[0];
 
 /** A transfer: progress events, then a summary. */
-export function useTransfer<S>() {
-  const operation = useOperation<TransferEvent<S>>();
-  const [progress, setProgress] = useState<TransferProgress | null>(null);
+export function useTransfer<S, P = TransferProgress>() {
+  const operation = useOperation<Event<S, P>>();
+  const [progress, setProgress] = useState<P | null>(null);
   const [summary, setSummary] = useState<S | null>(null);
 
   const start = useCallback(
-    (begin: Begin<S>) => {
+    (begin: Begin<S, P>) => {
       setProgress(null);
       setSummary(null);
       return operation.start(begin, (event) => {
@@ -30,7 +32,7 @@ export function useTransfer<S>() {
   );
 
   const { state: op } = operation;
-  const state: TransferState<S> =
+  const state: TransferState<S, P> =
     op.status === "running"
       ? { status: "running", progress }
       : op.status === "completed" && summary !== null
