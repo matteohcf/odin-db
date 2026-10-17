@@ -153,7 +153,11 @@
     "hint": "Search",
     "shortcuts": "Keyboard shortcuts",
     "backupsTab": "Backups",
-    "backups": "Backups and schedules"
+    "backups": "Backups and schedules",
+    "serverTab": "Server status · {{name}}",
+    "usersTab": "Users · {{name}}",
+    "settingsTab": "Settings",
+    "settings": "Open settings"
   },
   "health": {
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",

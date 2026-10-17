@@ -153,7 +153,11 @@
     "hint": "Cerca",
     "shortcuts": "Scorciatoie da tastiera",
     "backupsTab": "Backup",
-    "backups": "Backup e pianificazioni"
+    "backups": "Backup e pianificazioni",
+    "serverTab": "Stato del server · {{name}}",
+    "usersTab": "Utenti · {{name}}",
+    "settingsTab": "Impostazioni",
+    "settings": "Apri le impostazioni"
   },
   "health": {
     "lost": "{{name}} ha smesso di rispondere. odin-db continua a riprovare in background.",

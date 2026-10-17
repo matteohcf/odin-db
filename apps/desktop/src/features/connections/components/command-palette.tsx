@@ -18,6 +18,7 @@ import {
 import { useTheme } from "@odin-db/ui/components/theme-provider";
 import { useQueries } from "@tanstack/react-query";
 import {
+  Activity,
   Clock,
   Eye,
   HardDriveDownload,
@@ -26,9 +27,11 @@ import {
   Moon,
   Plug,
   Plus,
+  Settings,
   SquareTerminal,
   Sun,
   Table2,
+  UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,7 +43,15 @@ import { collectionsQuery, databasesQuery, useConnections, useProfiles } from ".
 import { rankMatches } from "../lib/palette-search";
 
 const MAX_COLLECTIONS = 50;
-const MAX_DATABASES = 200;
+const tabIcon = {
+  collection: Table2,
+  shell: SquareTerminal,
+  server: Activity,
+  users: UsersRound,
+  backups: HardDriveDownload,
+  settings: Settings,
+} as const;
+const MAX_DATABASES = 1000;
 const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 
 interface CollectionEntry {
@@ -128,6 +139,7 @@ function PaletteResults({
   const openCollection = useTabs((s) => s.openCollection);
   const openShell = useTabs((s) => s.openShell);
   const openBackups = useTabs((s) => s.openBackups);
+  const openSettings = useTabs((s) => s.openSettings);
   const connect = useConnect();
   const { setTheme } = useTheme();
   const openShortcuts = useShortcutsDialog((s) => s.setOpen);
@@ -179,9 +191,9 @@ function PaletteResults({
     label:
       tab.kind === "collection"
         ? `${tab.collection} · ${tab.database}`
-        : tab.kind === "shell"
-          ? t("palette.shellTab", { name: nameOf(tab.profileId) })
-          : t("palette.backupsTab"),
+        : tab.kind === "backups" || tab.kind === "settings"
+          ? t(`palette.${tab.kind}Tab`)
+          : t(`palette.${tab.kind}Tab`, { name: nameOf(tab.profileId) }),
     kind: tab.kind,
   }));
   const matchedTabs = rankMatches(tabEntries, query, (tab) => tab.label, 8);
@@ -204,6 +216,7 @@ function PaletteResults({
     })),
     { id: "new", label: t("palette.newConnection"), icon: Plus, run: onNewConnection },
     { id: "backups", label: t("palette.backups"), icon: HardDriveDownload, run: openBackups },
+    { id: "settings", label: t("palette.settings"), icon: Settings, run: openSettings },
     {
       id: "shortcuts",
       label: t("palette.shortcuts"),
@@ -270,20 +283,19 @@ function PaletteResults({
       )}
       {matchedTabs.length > 0 && (
         <CommandGroup heading={t("palette.tabs")}>
-          {matchedTabs.map((tab) => (
-            <CommandItem
-              key={tab.id}
-              value={`tab:${tab.id}`}
-              onSelect={() => run(() => activate(tab.id))}
-            >
-              {tab.kind === "shell" ? (
-                <SquareTerminal className="text-muted-foreground" />
-              ) : (
-                <Table2 className="text-muted-foreground" />
-              )}
-              <span className="truncate">{tab.label}</span>
-            </CommandItem>
-          ))}
+          {matchedTabs.map((tab) => {
+            const Icon = tabIcon[tab.kind];
+            return (
+              <CommandItem
+                key={tab.id}
+                value={`tab:${tab.id}`}
+                onSelect={() => run(() => activate(tab.id))}
+              >
+                <Icon className="text-muted-foreground" />
+                <span className="truncate">{tab.label}</span>
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
       )}
       {matchedActions.length > 0 && (
