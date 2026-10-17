@@ -102,6 +102,17 @@ describe("tabs store", () => {
     expect(useTabs.getState().activeTabId).toBe("p1/shop/people");
   });
 
+  it("opens another tab on request, the first open just focusing one", () => {
+    const { openCollection } = useTabs.getState();
+    openCollection(target("users"), true);
+    openCollection(target("users"), true);
+    openCollection(target("users"));
+    const { tabs, activeTabId } = useTabs.getState();
+    expect(tabs).toHaveLength(2);
+    expect(tabs[0]?.id).toBe("p1/shop/users");
+    expect(activeTabId).toBe("p1/shop/users");
+  });
+
   it("closes other tabs, tabs to the right, or all", () => {
     const { openCollection } = useTabs.getState();
     for (const name of ["a", "b", "c", "d"]) openCollection(target(name));

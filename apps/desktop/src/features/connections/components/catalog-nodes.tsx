@@ -228,6 +228,16 @@ export function CollectionNode({
     );
   });
   const Icon = kindIcon[collection.kind];
+  const open = (newTab: boolean) =>
+    openCollection(
+      {
+        profileId: connection.profileId,
+        database,
+        collection: collection.name,
+        collectionKind: collection.kind,
+      },
+      newTab,
+    );
   const [dialog, setDialog] = useState<"backup" | "copy" | "rename" | "drop" | null>(null);
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const isView = collection.kind === "view";
@@ -237,14 +247,9 @@ export function CollectionNode({
     <>
       <TreeRow
         depth={2 + indent}
-        onActivate={() =>
-          openCollection({
-            profileId: connection.profileId,
-            database,
-            collection: collection.name,
-            collectionKind: collection.kind,
-          })
-        }
+        // Cmd/Ctrl-click or middle click opens another tab, like a browser link.
+        onActivate={(event) => open(event.metaKey || event.ctrlKey)}
+        onAuxActivate={() => open(true)}
         icon={<Icon className="size-3.5" />}
         label={<HighlightMatch text={collection.name} query={filter} />}
         muted={isSystem(collection)}

@@ -1,6 +1,6 @@
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronRight, Loader2 } from "lucide-react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 interface TreeRowProps {
   depth: number;
@@ -14,7 +14,9 @@ interface TreeRowProps {
   muted?: boolean;
   /** The row of what the active tab shows. */
   active?: boolean;
-  onActivate: () => void;
+  onActivate: (event: MouseEvent) => void;
+  /** Middle click; leaves default to nothing. */
+  onAuxActivate?: (() => void) | undefined;
   title?: string;
 }
 
@@ -30,6 +32,7 @@ export function TreeRow({
   muted,
   active,
   onActivate,
+  onAuxActivate,
   title,
 }: TreeRowProps) {
   return (
@@ -43,6 +46,7 @@ export function TreeRow({
       <button
         type="button"
         onClick={onActivate}
+        onAuxClick={(event) => event.button === 1 && onAuxActivate?.()}
         aria-expanded={expanded}
         aria-current={active ? "page" : undefined}
         title={title}

@@ -70,7 +70,8 @@ interface TabsState {
   closed: WorkspaceTab[];
   /** Collections opened lately, newest first, shown on the start screen. */
   recent: RecentCollection[];
-  openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
+  /** Focuses the collection's tab, or opens one; `newTab` always opens another. */
+  openCollection: (target: Omit<CollectionTab, "kind" | "id">, newTab?: boolean) => void;
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
   openUsers: (profileId: ProfileId) => void;
@@ -146,15 +147,17 @@ export const useTabs = create<TabsState>()(
       pinned: [],
       closed: [],
       recent: [],
-      openCollection: (target) =>
+      openCollection: (target, newTab = false) =>
         set((state) => {
           // One tab per collection: opening it again focuses the existing tab.
-          const id = collectionTabId(target.profileId, target.database, target.collection);
+          const base = collectionTabId(target.profileId, target.database, target.collection);
+          const taken = state.tabs.some((tab) => tab.id === base);
+          const id = newTab && taken ? `${base}#${crypto.randomUUID()}` : base;
           const recent = [target, ...state.recent.filter((r) => !sameCollection(r, target))].slice(
             0,
             MAX_RECENT,
           );
-          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id, recent };
+          if (!newTab && taken) return { activeTabId: id, recent };
           return {
             tabs: [...state.tabs, { kind: "collection", id, ...target }],
             activeTabId: id,
