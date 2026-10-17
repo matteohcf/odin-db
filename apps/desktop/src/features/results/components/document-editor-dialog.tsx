@@ -1,3 +1,4 @@
+import type { CompletionSource } from "@codemirror/autocomplete";
 import type { EJsonDocument } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import {
@@ -25,6 +26,8 @@ interface DocumentEditorDialogProps {
   /** Resolves when saved; rejects with the error to show. */
   onSave: (document: EJsonDocument) => Promise<void>;
   onClose: () => void;
+  /** Field-aware suggestions while writing the document. */
+  completions?: CompletionSource | undefined;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
@@ -45,6 +48,7 @@ function DocumentEditor({
   initialText,
   onSave,
   onClose,
+  completions,
 }: DocumentEditorDialogProps) {
   const { t } = useTranslation("results");
   const [text, setText] = useState(initialText);
@@ -88,6 +92,7 @@ function DocumentEditor({
         readOnly={readOnly}
         autoFocus
         ariaLabel={t("editor.label")}
+        {...(completions && !readOnly ? { completions } : {})}
         className="flex-1 rounded-md border"
       />
       {error && (

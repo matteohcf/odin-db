@@ -11,8 +11,11 @@ import type { EditorView } from "@codemirror/view";
 import type { FieldSummary } from "@odin-db/bindings";
 import { queryContext } from "./query-context";
 
-/** `expression` is the body of aggregation stages other than $match, $sort and $project. */
-export type QueryKind = "filter" | "sort" | "projection" | "expression";
+/**
+ * `expression` is the body of aggregation stages other than $match, $sort and
+ * $project; `document` is a whole document being written (insert, edit).
+ */
+export type QueryKind = "filter" | "sort" | "projection" | "expression" | "document";
 
 interface Snippet {
   label: string;
@@ -207,7 +210,7 @@ export function queryCompletionSource(input: QueryCompletionOptions): Completion
     }
     if (at.kind === "value" && at.quoted) {
       // Inside a string: the field's known values, without the quotes already typed.
-      if (kind !== "filter" && kind !== "expression") return null;
+      if (kind === "sort" || kind === "projection") return null;
       const values = knownValues(options, at.key, at.path).map((value, rank) => ({
         label: value,
         type: "text",
@@ -246,6 +249,14 @@ function keyCompletions(
   const enclosing = path.at(-1);
   const hasColon = /^\s*["']?\s*:/.test(after);
 
+  if (kind === "document") {
+    // Keys of a nested document are the sampled sub-fields of its path.
+    if (path.some((part) => part.startsWith("$") || /^\d+$/.test(part))) return [];
+    const prefix = path.length > 0 ? `${path.join(".")}.` : "";
+    return fieldCompletions(options, prefix, quoted, hasColon).filter(
+      (completion) => !completion.label.includes("."),
+    );
+  }
   if (kind !== "filter") {
     if (enclosing === undefined) return fieldCompletions(options, "", quoted, hasColon);
     if (quoted) return [];
@@ -350,13 +361,19 @@ const VALUE_OPERATORS = new Set(["$eq", "$ne", "$in", "$nin", "$all"]);
 
 /** Sampled string values of the field a value belongs to. */
 function knownValues(options: Resolved, key: string | null, path: string[]): string[] {
-  const field =
-    key && !key.startsWith("$")
-      ? key
-      : key && VALUE_OPERATORS.has(key)
-        ? path.findLast((part) => !part.startsWith("$"))
-        : undefined;
+  const field = valueField(options, key, path);
   return field ? (options.fields().find((f) => f.path === field)?.values ?? []) : [];
+}
+
+/** The sampled field a value is written for, if any. */
+function valueField(options: Resolved, key: string | null, path: string[]): string | undefined {
+  if (!key) return undefined;
+  if (options.kind === "document") {
+    // In a document, nesting is the path itself; array positions do not count.
+    return [...path.filter((part) => !/^\d+$/.test(part)), key].join(".");
+  }
+  if (!key.startsWith("$")) return key;
+  return VALUE_OPERATORS.has(key) ? path.findLast((part) => !part.startsWith("$")) : undefined;
 }
 
 function valueCompletions(options: Resolved, key: string | null, path: string[]): Completion[] {
@@ -380,7 +397,7 @@ function valueCompletions(options: Resolved, key: string | null, path: string[])
     }));
   }
 
-  const field = key && !key.startsWith("$") ? key : null;
+  const field = valueField(options, key, path);
   const types = field ? (options.fields().find((f) => f.path === field)?.types ?? []) : [];
   const preferred = new Set(types.map((type) => CONSTRUCTOR_FOR_TYPE[type]).filter(Boolean));
   const constructors = snippets(CONSTRUCTORS, options, sections.values).map((completion) =>

@@ -28,6 +28,7 @@ import {
   useResultsState,
 } from "@/features/results";
 import { ExportDialog, ImportDialog } from "@/features/transfer";
+import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { useSampleFields } from "@/hooks/use-sample-fields";
 import type { JsonObject } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
@@ -87,6 +88,7 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const lastQuery = useRef<FindQuery>(matchAll);
 
   const fields = useSampleFields(connection.id, namespace);
+  const completionsFor = useQueryCompletions(fields.data ?? NO_FIELDS);
   const recordQuery = useQueryHistory((state) => state.record);
   const queryHistoryKey = historyKey(
     connection.profileId,
@@ -339,6 +341,7 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
           namespace={label}
           initialText={editor.text}
           onSave={saveDocument}
+          completions={completionsFor("document")}
           onClose={() => setEditor({ open: false })}
         />
       )}

@@ -93,4 +93,11 @@ describe("queryCompletionSource", () => {
     expect(labels(complete('{ plan: "p|', "filter"))).toContain("pro");
     expect(complete('{ name: "a|', "filter")).toBeNull();
   });
+
+  it("suggests a document's fields and values while writing it", () => {
+    expect(labels(complete("{ |", "document"))).toEqual(["_id", "name", "plan", "items"]);
+    expect(labels(complete("{ address: { |", "document"))).toEqual(["city"]);
+    expect(labels(complete("{ plan: |", "document", true)).slice(0, 1)).toEqual(['"free"']);
+    expect(labels(complete("{ |", "document"))).not.toContain("$or");
+  });
 });
