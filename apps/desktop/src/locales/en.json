@@ -119,5 +119,27 @@
       "mergeObjects": "Combines documents",
       "literal": "Value taken as is, not evaluated"
     }
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "description": "Work faster without leaving the keyboard.",
+    "groups": {
+      "general": "General",
+      "query": "Query editors",
+      "results": "Results"
+    },
+    "actions": {
+      "palette": "Command palette",
+      "shortcuts": "This overview",
+      "closeTab": "Close the tab",
+      "run": "Run the query",
+      "suggest": "Show suggestions",
+      "accept": "Accept a suggestion",
+      "dismiss": "Close suggestions",
+      "move": "Select the previous or next document",
+      "jump": "First or last document",
+      "open": "Open the selected document",
+      "delete": "Delete the selected document"
+    }
   }
 }

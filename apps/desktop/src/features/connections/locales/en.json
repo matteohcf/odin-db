@@ -109,7 +109,8 @@
       "dark": "Use dark theme",
       "system": "Use system theme"
     },
-    "hint": "Search"
+    "hint": "Search",
+    "shortcuts": "Keyboard shortcuts"
   },
   "health": {
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",

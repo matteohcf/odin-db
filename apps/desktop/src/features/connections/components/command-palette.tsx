@@ -17,10 +17,22 @@ import {
 } from "@odin-db/ui/components/dialog";
 import { useTheme } from "@odin-db/ui/components/theme-provider";
 import { useQueries } from "@tanstack/react-query";
-import { Clock, Eye, Monitor, Moon, Plug, Plus, SquareTerminal, Sun, Table2 } from "lucide-react";
+import {
+  Clock,
+  Eye,
+  Keyboard,
+  Monitor,
+  Moon,
+  Plug,
+  Plus,
+  SquareTerminal,
+  Sun,
+  Table2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTabs } from "@/features/workspace";
+import { useShortcutsDialog } from "@/hooks/use-shortcuts-dialog";
 import { useConnect } from "../api/mutations";
 import { collectionsQuery, databasesQuery, useConnections, useProfiles } from "../api/queries";
 import { rankMatches } from "../lib/palette-search";
@@ -113,6 +125,7 @@ function PaletteResults({
   const openShell = useTabs((s) => s.openShell);
   const connect = useConnect();
   const { setTheme } = useTheme();
+  const openShortcuts = useShortcutsDialog((s) => s.setOpen);
   const nameOf = (profileId: ProfileId) =>
     profiles.find((profile) => profile.id === profileId)?.name ?? "";
 
@@ -183,6 +196,12 @@ function PaletteResults({
       run: () => openShell(connection.profileId),
     })),
     { id: "new", label: t("palette.newConnection"), icon: Plus, run: onNewConnection },
+    {
+      id: "shortcuts",
+      label: t("palette.shortcuts"),
+      icon: Keyboard,
+      run: () => openShortcuts(true),
+    },
     { id: "light", label: t("palette.theme.light"), icon: Sun, run: () => setTheme("light") },
     { id: "dark", label: t("palette.theme.dark"), icon: Moon, run: () => setTheme("dark") },
     {

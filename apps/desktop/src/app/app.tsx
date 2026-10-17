@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import { ThemeMenu } from "@/components/theme-menu";
 import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
@@ -36,6 +37,7 @@ export function App() {
       <main className="min-w-0 flex-1">
         <WorkspaceTabs renderTab={renderTab} renderLabel={renderLabel} emptyState={<Welcome />} />
       </main>
+      <ShortcutsDialog />
     </div>
   );
 }
