@@ -304,6 +304,21 @@ async fn read_only_profiles_reject_every_write() {
         documents::delete(&handle, &ns, id).await,
         Err(CoreError::ReadOnly)
     ));
+    let everything = || EJsonDocument::from(doc! {});
+    assert!(matches!(
+        documents::update_many(
+            &handle,
+            &ns,
+            everything(),
+            EJsonDocument::from(doc! { "$set": { "a": 1 } })
+        )
+        .await,
+        Err(CoreError::ReadOnly)
+    ));
+    assert!(matches!(
+        documents::delete_many(&handle, &ns, everything()).await,
+        Err(CoreError::ReadOnly)
+    ));
 }
 
 #[tokio::test]
@@ -1805,4 +1820,55 @@ async fn copies_a_database_with_views_and_guards_the_target() {
         .await,
         Err(CoreError::ReadOnly)
     ));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn updates_and_deletes_by_filter() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("bulk");
+    fx.seed(&handle, &ns, 20).await;
+    let filter = |d: Document| EJsonDocument::from(d);
+
+    let result = documents::update_many(
+        &handle,
+        &ns,
+        filter(doc! { "n": { "$lt": 5 } }),
+        filter(doc! { "$set": { "tier": "low" }, "$inc": { "n": 100 } }),
+    )
+    .await
+    .expect("updated");
+    assert_eq!((result.matched, result.modified), (5.0, 5.0));
+    assert_eq!(
+        count_documents(
+            &handle,
+            &ns,
+            filter(doc! { "tier": "low", "n": { "$gte": 100 } })
+        )
+        .await
+        .expect("count"),
+        5.0
+    );
+
+    // A replacement document is refused: it would need operators.
+    assert!(matches!(
+        documents::update_many(&handle, &ns, filter(doc! {}), filter(doc! { "tier": "x" })).await,
+        Err(CoreError::Validation(_))
+    ));
+    assert!(matches!(
+        documents::update_many(&handle, &ns, filter(doc! {}), filter(doc! {})).await,
+        Err(CoreError::Validation(_))
+    ));
+
+    let deleted = documents::delete_many(&handle, &ns, filter(doc! { "tier": "low" }))
+        .await
+        .expect("deleted");
+    assert_eq!(deleted, 5.0);
+    assert_eq!(
+        count_documents(&handle, &ns, filter(doc! {}))
+            .await
+            .expect("count"),
+        15.0
+    );
 }

@@ -1,6 +1,8 @@
-//! Single-document writes. Every write checks the profile's read-only flag first.
+//! Document writes, one at a time or by filter. Every write checks the profile's
+//! read-only flag first.
 
 use bson::{Bson, Document, doc};
+use serde::Serialize;
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
@@ -87,4 +89,53 @@ pub async fn delete(
         return Err(CoreError::NotFound("document"));
     }
     Ok(())
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateManyResult {
+    pub matched: f64,
+    pub modified: f64,
+}
+
+/// Applies update operators such as `$set` to every document matching `filter`.
+pub async fn update_many(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    filter: EJsonDocument,
+    update: EJsonDocument,
+) -> Result<UpdateManyResult, CoreError> {
+    handle.ensure_writable()?;
+    let update = Document::try_from(update)?;
+    // A plain document would be a replacement, which `updateMany` rejects anyway.
+    if update.is_empty() || !update.keys().all(|key| key.starts_with('$')) {
+        return Err(CoreError::Validation(
+            "an update needs operators such as { $set: { field: value } }".into(),
+        ));
+    }
+    let result = namespace
+        .collection(handle)?
+        .update_many(Document::try_from(filter)?, update)
+        .await?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(UpdateManyResult {
+        matched: result.matched_count as f64,
+        modified: result.modified_count as f64,
+    })
+}
+
+/// Deletes every document matching `filter`; returns how many went.
+pub async fn delete_many(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    filter: EJsonDocument,
+) -> Result<f64, CoreError> {
+    handle.ensure_writable()?;
+    let result = namespace
+        .collection(handle)?
+        .delete_many(Document::try_from(filter)?)
+        .await?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(result.deleted_count as f64)
 }
