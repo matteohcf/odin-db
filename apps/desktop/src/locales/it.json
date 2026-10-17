@@ -160,7 +160,10 @@
       "settings": "Apri le impostazioni",
       "zoomIn": "Ingrandisci",
       "zoomOut": "Riduci",
-      "resetZoom": "Dimensioni reali"
+      "resetZoom": "Dimensioni reali",
+      "reopenTab": "Riapri la scheda chiusa",
+      "goToTab": "Vai alla scheda 1–8",
+      "lastTab": "Vai all'ultima scheda"
     }
   },
   "queryCode": {

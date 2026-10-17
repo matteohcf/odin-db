@@ -15,6 +15,9 @@ const GROUPS = [
       ["closeTab", [label(SHORTCUTS.closeTab)]],
       ["nextTab", [label(SHORTCUTS.nextTab)]],
       ["previousTab", [label(SHORTCUTS.previousTab)]],
+      ["reopenTab", [label(SHORTCUTS.reopenTab)]],
+      ["goToTab", [`${mod} 1…8`]],
+      ["lastTab", [label(SHORTCUTS.lastTab)]],
     ],
   },
   {

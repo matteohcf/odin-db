@@ -35,13 +35,22 @@ interface SettingsTab {
 export type WorkspaceTab = CollectionTab | ShellTab | BackupsTab | SettingsTab;
 
 interface TabsState {
+  /** Display order; pinned tabs always come first. */
   tabs: WorkspaceTab[];
   activeTabId: string | null;
+  pinned: string[];
+  /** Recently closed tabs, newest last, for reopening. Not persisted. */
+  closed: WorkspaceTab[];
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
   openShell: (profileId: ProfileId) => void;
   openBackups: () => void;
   openSettings: () => void;
   activate: (id: string) => void;
+  /** Pinned tabs stay at the left and survive "close others" and "close all". */
+  togglePin: (id: string) => void;
+  /** Moves a tab to `index`, within its group (pinned or not). */
+  move: (id: string, index: number) => void;
+  reopenClosed: () => void;
   close: (id: string) => void;
   closeOthers: (id: string) => void;
   closeToTheRight: (id: string) => void;
@@ -51,6 +60,27 @@ interface TabsState {
   closeCollections: (profileId: ProfileId, database: string, collection?: string) => void;
   /** Keeps open tabs pointing at a renamed collection. */
   renameCollection: (profileId: ProfileId, database: string, from: string, to: string) => void;
+}
+
+const MAX_CLOSED = 20;
+
+/**
+ * Keeps the tabs `keep` accepts. `remember` puts the others on the reopen stack:
+ * true for closes the user asked for, not for tabs whose collection is gone.
+ */
+function keepTabs(
+  state: TabsState,
+  keep: (tab: WorkspaceTab) => boolean,
+  remember: boolean,
+): Partial<TabsState> {
+  const tabs = state.tabs.filter(keep);
+  const gone = state.tabs.filter((tab) => !keep(tab));
+  return {
+    tabs,
+    activeTabId: nextActive(state, tabs),
+    pinned: state.pinned.filter((id) => tabs.some((tab) => tab.id === id)),
+    closed: remember ? [...state.closed, ...gone].slice(-MAX_CLOSED) : state.closed,
+  };
 }
 
 /** Remaining tab to focus after `closedIds` disappear: the neighbour of the active one. */
@@ -64,12 +94,13 @@ function nextActive(state: TabsState, remaining: WorkspaceTab[]): string | null 
  * What survives a restart: every tab but shells, whose sessions end with the app.
  * Collection tabs come back disconnected and offer to reconnect.
  */
-export function restorableTabs(state: Pick<TabsState, "tabs" | "activeTabId">) {
+export function restorableTabs(state: Pick<TabsState, "tabs" | "activeTabId" | "pinned">) {
   const tabs = state.tabs.filter((tab) => tab.kind !== "shell");
   const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
     ? state.activeTabId
     : (tabs.at(-1)?.id ?? null);
-  return { tabs, activeTabId };
+  const pinned = state.pinned.filter((id) => tabs.some((tab) => tab.id === id));
+  return { tabs, activeTabId, pinned };
 }
 
 export const useTabs = create<TabsState>()(
@@ -77,6 +108,8 @@ export const useTabs = create<TabsState>()(
     (set) => ({
       tabs: [],
       activeTabId: null,
+      pinned: [],
+      closed: [],
       openCollection: (target) =>
         set((state) => {
           // One tab per collection: opening it again focuses the existing tab.
@@ -105,30 +138,65 @@ export const useTabs = create<TabsState>()(
               },
         ),
       activate: (id) => set({ activeTabId: id }),
-      close: (id) =>
+      togglePin: (id) =>
         set((state) => {
-          const tabs = state.tabs.filter((tab) => tab.id !== id);
-          return { tabs, activeTabId: nextActive(state, tabs) };
+          if (!state.tabs.some((tab) => tab.id === id)) return {};
+          const pinned = state.pinned.includes(id)
+            ? state.pinned.filter((other) => other !== id)
+            : [...state.pinned, id];
+          // Pinned tabs first, in pin order; then the rest in their current order.
+          const tabs = [
+            ...pinned.flatMap((other) => state.tabs.filter((tab) => tab.id === other)),
+            ...state.tabs.filter((tab) => !pinned.includes(tab.id)),
+          ];
+          return { tabs, pinned };
         }),
+      move: (id, index) =>
+        set((state) => {
+          const from = state.tabs.findIndex((tab) => tab.id === id);
+          if (from < 0) return {};
+          const pinnedCount = state.pinned.length;
+          const [low, high] = state.pinned.includes(id)
+            ? [0, pinnedCount - 1]
+            : [pinnedCount, state.tabs.length - 1];
+          const to = Math.min(Math.max(index, low), high);
+          const tabs = [...state.tabs];
+          const [tab] = tabs.splice(from, 1);
+          if (!tab) return {};
+          tabs.splice(to, 0, tab);
+          const pinned = tabs.filter((t) => state.pinned.includes(t.id)).map((t) => t.id);
+          return { tabs, pinned };
+        }),
+      reopenClosed: () =>
+        set((state) => {
+          const closed = [...state.closed];
+          let tab = closed.pop();
+          // Skip tabs reopened meanwhile by other means.
+          while (tab && state.tabs.some((open) => open.id === tab?.id)) tab = closed.pop();
+          if (!tab) return { closed };
+          return { tabs: [...state.tabs, tab], activeTabId: tab.id, closed };
+        }),
+      close: (id) => set((state) => keepTabs(state, (tab) => tab.id !== id, true)),
       closeOthers: (id) =>
-        set((state) => ({ tabs: state.tabs.filter((tab) => tab.id === id), activeTabId: id })),
+        set((state) => ({
+          ...keepTabs(state, (tab) => tab.id === id || state.pinned.includes(tab.id), true),
+          activeTabId: id,
+        })),
       closeToTheRight: (id) =>
         set((state) => {
           const index = state.tabs.findIndex((tab) => tab.id === id);
-          const tabs = state.tabs.slice(0, index + 1);
-          return { tabs, activeTabId: nextActive(state, tabs) };
+          const kept = new Set(state.tabs.slice(0, index + 1).map((tab) => tab.id));
+          return keepTabs(state, (tab) => kept.has(tab.id) || state.pinned.includes(tab.id), true);
         }),
-      closeAll: () => set({ tabs: [], activeTabId: null }),
+      closeAll: () => set((state) => keepTabs(state, (tab) => state.pinned.includes(tab.id), true)),
       closeForProfile: (profileId) =>
-        set((state) => {
-          const tabs = state.tabs.filter(
-            (tab) => !("profileId" in tab) || tab.profileId !== profileId,
-          );
-          return { tabs, activeTabId: nextActive(state, tabs) };
-        }),
+        set((state) =>
+          keepTabs(state, (tab) => !("profileId" in tab) || tab.profileId !== profileId, false),
+        ),
       closeCollections: (profileId, database, collection) =>
-        set((state) => {
-          const tabs = state.tabs.filter(
+        set((state) =>
+          keepTabs(
+            state,
             (tab) =>
               !(
                 tab.kind === "collection" &&
@@ -136,9 +204,9 @@ export const useTabs = create<TabsState>()(
                 tab.database === database &&
                 (collection === undefined || tab.collection === collection)
               ),
-          );
-          return { tabs, activeTabId: nextActive(state, tabs) };
-        }),
+            false,
+          ),
+        ),
       renameCollection: (profileId, database, from, to) =>
         set((state) => {
           const oldId = collectionTabId(profileId, database, from);
@@ -150,6 +218,7 @@ export const useTabs = create<TabsState>()(
                 : tab,
             ),
             activeTabId: state.activeTabId === oldId ? newId : state.activeTabId,
+            pinned: state.pinned.map((pinnedId) => (pinnedId === oldId ? newId : pinnedId)),
           };
         }),
     }),

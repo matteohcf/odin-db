@@ -6,6 +6,17 @@ export const SHORTCUTS = {
   nextTab: { key: "Tab", ctrl: true },
   previousTab: { key: "Tab", ctrl: true, shift: true },
   settings: { key: ",", mod: true },
+  reopenTab: { key: "t", mod: true, shift: true },
+  goToTab1: { key: "1", mod: true },
+  goToTab2: { key: "2", mod: true },
+  goToTab3: { key: "3", mod: true },
+  goToTab4: { key: "4", mod: true },
+  goToTab5: { key: "5", mod: true },
+  goToTab6: { key: "6", mod: true },
+  goToTab7: { key: "7", mod: true },
+  goToTab8: { key: "8", mod: true },
+  // Like browsers: the last tab, however many are open.
+  lastTab: { key: "9", mod: true },
   zoomIn: { key: "=", mod: true },
   // Layouts with a dedicated "+" key (Italian, German…) send it without Shift.
   zoomInPlus: { key: "+", mod: true },

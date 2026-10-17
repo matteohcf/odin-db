@@ -9,7 +9,7 @@ const target = (collection: string, profileId = "p1") => ({
 });
 
 describe("tabs store", () => {
-  beforeEach(() => useTabs.setState({ tabs: [], activeTabId: null }));
+  beforeEach(() => useTabs.setState({ tabs: [], activeTabId: null, pinned: [], closed: [] }));
 
   it("opens one tab per collection and focuses existing ones", () => {
     const { openCollection } = useTabs.getState();
@@ -116,5 +116,56 @@ describe("tabs store", () => {
     expect(restored.activeTabId).toBe("settings");
     useTabs.getState().activate("p1/shop/a");
     expect(restorableTabs(useTabs.getState()).activeTabId).toBe("p1/shop/a");
+  });
+
+  const ids = () => useTabs.getState().tabs.map((tab) => tab.id);
+
+  it("keeps pinned tabs first and spares them from bulk closes", () => {
+    for (const name of ["a", "b", "c", "d"]) useTabs.getState().openCollection(target(name));
+    useTabs.getState().togglePin("p1/shop/c");
+    expect(ids()).toEqual(["p1/shop/c", "p1/shop/a", "p1/shop/b", "p1/shop/d"]);
+    useTabs.getState().closeOthers("p1/shop/b");
+    expect(ids()).toEqual(["p1/shop/c", "p1/shop/b"]);
+    useTabs.getState().closeAll();
+    expect(ids()).toEqual(["p1/shop/c"]);
+    useTabs.getState().togglePin("p1/shop/c");
+    useTabs.getState().closeAll();
+    expect(ids()).toEqual([]);
+  });
+
+  it("moves tabs only within their group", () => {
+    for (const name of ["a", "b", "c"]) useTabs.getState().openCollection(target(name));
+    useTabs.getState().togglePin("p1/shop/b");
+    useTabs.getState().move("p1/shop/c", 0);
+    expect(ids()).toEqual(["p1/shop/b", "p1/shop/c", "p1/shop/a"]);
+    useTabs.getState().move("p1/shop/b", 5);
+    expect(ids()).toEqual(["p1/shop/b", "p1/shop/c", "p1/shop/a"]);
+  });
+
+  it("reopens closed tabs, newest first", () => {
+    for (const name of ["a", "b", "c"]) useTabs.getState().openCollection(target(name));
+    useTabs.getState().close("p1/shop/b");
+    useTabs.getState().close("p1/shop/c");
+    useTabs.getState().reopenClosed();
+    expect(ids()).toEqual(["p1/shop/a", "p1/shop/c"]);
+    expect(useTabs.getState().activeTabId).toBe("p1/shop/c");
+    useTabs.getState().openCollection(target("b"));
+    // b is open again, so there is nothing left to reopen.
+    useTabs.getState().reopenClosed();
+    expect(ids()).toEqual(["p1/shop/a", "p1/shop/c", "p1/shop/b"]);
+  });
+
+  it("does not offer to reopen tabs of dropped collections", () => {
+    useTabs.getState().openCollection(target("a"));
+    useTabs.getState().closeCollections("p1", "shop", "a");
+    useTabs.getState().reopenClosed();
+    expect(ids()).toEqual([]);
+  });
+
+  it("follows a renamed pinned tab", () => {
+    useTabs.getState().openCollection(target("a"));
+    useTabs.getState().togglePin("p1/shop/a");
+    useTabs.getState().renameCollection("p1", "shop", "a", "z");
+    expect(useTabs.getState().pinned).toEqual(["p1/shop/z"]);
   });
 });

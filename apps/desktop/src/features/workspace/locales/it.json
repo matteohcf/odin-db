@@ -7,9 +7,15 @@
       "close": "Chiudi",
       "closeOthers": "Chiudi altre schede",
       "closeToTheRight": "Chiudi schede a destra",
-      "closeAll": "Chiudi tutte le schede"
+      "closeAll": "Chiudi tutte le schede",
+      "pin": "Fissa la scheda",
+      "unpin": "Sblocca la scheda",
+      "reopen": "Riapri la scheda chiusa",
+      "moveLeft": "Sposta a sinistra",
+      "moveRight": "Sposta a destra"
     },
     "backups": "Backup",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "unpinNamed": "Sblocca {{name}}"
   }
 }

@@ -7,9 +7,15 @@
       "close": "Close",
       "closeOthers": "Close other tabs",
       "closeToTheRight": "Close tabs to the right",
-      "closeAll": "Close all tabs"
+      "closeAll": "Close all tabs",
+      "pin": "Pin tab",
+      "unpin": "Unpin tab",
+      "reopen": "Reopen closed tab",
+      "moveLeft": "Move left",
+      "moveRight": "Move right"
     },
     "backups": "Backups",
-    "settings": "Settings"
+    "settings": "Settings",
+    "unpinNamed": "Unpin {{name}}"
   }
 }

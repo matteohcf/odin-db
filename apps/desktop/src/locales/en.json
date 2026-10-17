@@ -160,7 +160,10 @@
       "settings": "Open settings",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
-      "resetZoom": "Actual size"
+      "resetZoom": "Actual size",
+      "reopenTab": "Reopen the closed tab",
+      "goToTab": "Go to tab 1–8",
+      "lastTab": "Go to the last tab"
     }
   },
   "queryCode": {
