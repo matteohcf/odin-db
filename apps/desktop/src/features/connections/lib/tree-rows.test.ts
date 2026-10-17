@@ -63,6 +63,24 @@ describe("buildTreeRows", () => {
     expect(rows({ expanded: new Set(), filter: "tenant_1" })).toEqual(["p1", "p1/tenant_10"]);
   });
 
+  it("filters connections by name too", () => {
+    const other = { id: "p2", name: "Production" } as ConnectionProfile;
+    const both = {
+      profiles: [profile, other],
+      connectionOf: (p: ConnectionProfile) => (p.id === "p1" ? connection : undefined),
+    };
+    expect(rows({ ...both, filter: "prod" })).toEqual(["p2"]);
+    expect(rows({ ...both, filter: "users" })).toEqual([
+      "p1",
+      "p1/shop",
+      "p1/shop/users",
+      "p1/tenant_2",
+      "p1/tenant_2/users_2",
+      "p1/tenant_2/users_10",
+    ]);
+    expect(rows({ ...both, filter: "nothing" })).toEqual([]);
+  });
+
   it("shows loading, empty and failed states", () => {
     expect(rows({ databases: () => ({ data: undefined, error: null }) })).toEqual([
       "p1",

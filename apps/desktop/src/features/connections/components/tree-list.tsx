@@ -60,8 +60,16 @@ export function TreeList({ profiles, scrollRef, onEdit, onDelete, onExport }: Tr
     revealed();
   }, [revealing, rows, virtualizer, revealed]);
 
+  const { t } = useTranslation("connections");
+  const filter = useExplorer((s) => s.filter.trim());
+
   return (
     <ul ref={list} className="relative" style={{ height: virtualizer.getTotalSize() }}>
+      {rows.length === 0 && filter && (
+        <li>
+          <TreeMessage depth={0}>{t("explorer.noMatch", { filter })}</TreeMessage>
+        </li>
+      )}
       {virtualizer.getVirtualItems().map((item) => {
         const row = rows[item.index];
         if (!row) return null;

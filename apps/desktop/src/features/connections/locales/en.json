@@ -9,7 +9,7 @@
     "localhost": "Connect to localhost:27017",
     "localhostMissing": "No MongoDB server answered on localhost:27017.",
     "collapseAll": "Collapse all",
-    "filter": "Filter collections",
+    "filter": "Filter connections and collections",
     "filterLabel": "Filter databases and collections",
     "clearFilter": "Clear the filter",
     "more": "Connections menu",
@@ -19,7 +19,8 @@
     "imported_other": "Imported {{count}} connections ({{skipped}} already there).",
     "importFailed": "Import failed: {{message}}",
     "exported": "Saved to {{path}}. Passwords are not included.",
-    "exportFailed": "Export failed: {{message}}"
+    "exportFailed": "Export failed: {{message}}",
+    "noMatch": "Nothing matches “{{filter}}”."
   },
   "profile": {
     "connect": "Connect",

@@ -9,7 +9,7 @@
     "localhost": "Connetti a localhost:27017",
     "localhostMissing": "Nessun server MongoDB ha risposto su localhost:27017.",
     "collapseAll": "Comprimi tutto",
-    "filter": "Filtra le collezioni",
+    "filter": "Filtra connessioni e collezioni",
     "filterLabel": "Filtra database e collezioni",
     "clearFilter": "Cancella il filtro",
     "more": "Menu connessioni",
@@ -19,7 +19,8 @@
     "imported_other": "Importate {{count}} connessioni ({{skipped}} già presenti).",
     "importFailed": "Importazione non riuscita: {{message}}",
     "exported": "Salvato in {{path}}. Le password non sono incluse.",
-    "exportFailed": "Esportazione non riuscita: {{message}}"
+    "exportFailed": "Esportazione non riuscita: {{message}}",
+    "noMatch": "Nessun risultato per “{{filter}}”."
   },
   "profile": {
     "connect": "Connetti",
