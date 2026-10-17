@@ -32,7 +32,9 @@
     "discardTitle": "Discard your changes?",
     "discardBody": "The document has edits that are not saved.",
     "keepEditing": "Keep editing",
-    "discard": "Discard"
+    "discard": "Discard",
+    "changed_one": "Valid · changes {{fields}}",
+    "changed_other": "Valid · {{count}} changes: {{fields}}"
   },
   "cell": {
     "copy": "Copy {{field}} value",

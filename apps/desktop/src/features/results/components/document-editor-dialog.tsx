@@ -26,8 +26,10 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/code-editor";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { isJsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
+import { compareDocuments } from "../lib/compare";
 
 export type EditorMode = "edit" | "view" | "insert";
 
@@ -87,7 +89,7 @@ export function DocumentEditorDialog(props: DocumentEditorDialogProps) {
 
 type Validation =
   | { status: "pending" }
-  | { status: "valid" }
+  | { status: "valid"; changed?: readonly string[] }
   | { status: "invalid"; message: string };
 
 function DocumentEditor({
@@ -113,17 +115,31 @@ function DocumentEditor({
     onDirtyChange(!readOnly && text !== initialText);
   }, [text, initialText, readOnly, onDirtyChange]);
 
+  // What an edit changes, so a save never surprises: the original is parsed once.
+  const [original] = useState(() =>
+    mode === "edit" ? parseShellDocument(initialText).catch(() => null) : Promise.resolve(null),
+  );
+
   useEffect(() => {
     if (readOnly) return;
     let current = true;
-    parseShellDocument(settled).then(
-      () => current && setValidation({ status: "valid" }),
+    Promise.all([parseShellDocument(settled), original]).then(
+      ([parsed, before]) => {
+        if (!current) return;
+        const changed =
+          before && isJsonObject(before) && isJsonObject(parsed)
+            ? compareDocuments(before, parsed)
+                .filter((row) => row.status !== "same")
+                .map((row) => row.path)
+            : undefined;
+        setValidation(changed ? { status: "valid", changed } : { status: "valid" });
+      },
       (cause) => current && setValidation({ status: "invalid", message: errorMessage(cause) }),
     );
     return () => {
       current = false;
     };
-  }, [settled, readOnly]);
+  }, [settled, readOnly, original]);
 
   async function save() {
     if (readOnly || saving) return;
@@ -202,7 +218,16 @@ function DocumentEditor({
             ) : (
               <>
                 <CircleCheck className="size-3.5 shrink-0 text-success" />
-                {t("editor.valid")}
+                {validation.status === "valid" && validation.changed?.length ? (
+                  <span className="truncate" title={validation.changed.join("\n")}>
+                    {t("editor.changed", {
+                      count: validation.changed.length,
+                      fields: validation.changed.slice(0, 3).join(", "),
+                    })}
+                  </span>
+                ) : (
+                  t("editor.valid")
+                )}
               </>
             )}
           </span>

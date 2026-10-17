@@ -32,7 +32,9 @@
     "discardTitle": "Scartare le modifiche?",
     "discardBody": "Il documento ha modifiche non salvate.",
     "keepEditing": "Continua a modificare",
-    "discard": "Scarta"
+    "discard": "Scarta",
+    "changed_one": "Valido · modifica {{fields}}",
+    "changed_other": "Valido · {{count}} modifiche: {{fields}}"
   },
   "cell": {
     "copy": "Copia valore di {{field}}",
