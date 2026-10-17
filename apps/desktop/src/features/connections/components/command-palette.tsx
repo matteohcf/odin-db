@@ -61,6 +61,8 @@ export function CommandPalette({
 }) {
   const { t } = useTranslation("connections");
   const [search, setSearch] = useState("");
+  // Controlled, so the best match is selected after every keystroke.
+  const [selected, setSelected] = useState("");
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -88,7 +90,12 @@ export function CommandPalette({
         showCloseButton={false}
       >
         {/* Filtering is ours: catalogs can hold thousands of collections. */}
-        <Command shouldFilter={false} className="[&_[cmdk-group-heading]]:text-muted-foreground">
+        <Command
+          shouldFilter={false}
+          value={selected}
+          onValueChange={setSelected}
+          className="[&_[cmdk-group-heading]]:text-muted-foreground"
+        >
           <CommandInput
             value={search}
             onValueChange={setSearch}
@@ -98,6 +105,7 @@ export function CommandPalette({
             <PaletteResults
               search={search}
               onNewConnection={onNewConnection}
+              onFirstResult={setSelected}
               close={() => onOpenChange(false)}
             />
           )}
@@ -110,10 +118,13 @@ export function CommandPalette({
 function PaletteResults({
   search,
   onNewConnection,
+  onFirstResult,
   close,
 }: {
   search: string;
   onNewConnection: () => void;
+  /** Reports the top result's value whenever it changes. */
+  onFirstResult: (value: string) => void;
   close: () => void;
 }) {
   const { t } = useTranslation("connections");
@@ -213,6 +224,15 @@ function PaletteResults({
   ];
   const matchedActions = rankMatches(actions, query, (action) => action.label, 10);
 
+  const first = matchedCollections[0]
+    ? collectionValue(matchedCollections[0])
+    : matchedTabs[0]
+      ? `tab:${matchedTabs[0].id}`
+      : matchedActions[0]
+        ? `action:${matchedActions[0].id}`
+        : "";
+  useEffect(() => onFirstResult(first), [first, onFirstResult]);
+
   const run = (action: () => void) => {
     close();
     action();
@@ -227,8 +247,8 @@ function PaletteResults({
             const Icon = kindIcon[entry.kind];
             return (
               <CommandItem
-                key={`${entry.connection.id}/${entry.database}/${entry.collection}`}
-                value={`${entry.connection.id}/${entry.database}/${entry.collection}`}
+                key={collectionValue(entry)}
+                value={collectionValue(entry)}
                 onSelect={() =>
                   run(() =>
                     openCollection({
@@ -285,4 +305,8 @@ function PaletteResults({
       )}
     </CommandList>
   );
+}
+
+function collectionValue(entry: CollectionEntry) {
+  return `${entry.connection.id}/${entry.database}/${entry.collection}`;
 }
