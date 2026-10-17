@@ -2,6 +2,7 @@
 
 pub mod backup;
 pub mod browse;
+pub mod catalog;
 pub mod connection;
 pub mod documents;
 pub mod ejson;

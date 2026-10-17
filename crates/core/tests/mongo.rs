@@ -26,7 +26,7 @@ use odin_core::transfer::{
     CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
     JsonMode, TransferProgress, export_documents, import_documents,
 };
-use odin_core::{CoreError, browse, documents, schema};
+use odin_core::{CoreError, browse, catalog, documents, schema};
 use std::str::FromStr;
 use std::sync::Arc;
 use testcontainers_modules::mongo::Mongo;
@@ -1006,4 +1006,73 @@ async fn a_cancelled_download_leaves_nothing_behind() {
         "no partial files"
     );
     std::fs::remove_dir_all(dir).expect("cleanup");
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn creates_renames_and_drops_collections_and_databases() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let names = |db: &'static str| {
+        let handle = handle.clone();
+        async move {
+            browse::list_collections(&handle, db)
+                .await
+                .expect("lists")
+                .into_iter()
+                .map(|c| c.name)
+                .collect::<Vec<_>>()
+        }
+    };
+    let ns = |collection: &str| Namespace {
+        database: "catalog_test".into(),
+        collection: collection.into(),
+    };
+
+    catalog::create_collection(&handle, &ns("orders"))
+        .await
+        .expect("creates");
+    assert_eq!(names("catalog_test").await, ["orders"]);
+    assert!(
+        catalog::create_collection(&handle, &ns("orders"))
+            .await
+            .is_err(),
+        "an existing collection is not silently reused"
+    );
+
+    catalog::create_collection(&handle, &ns("archive"))
+        .await
+        .expect("creates");
+    assert!(
+        catalog::rename_collection(&handle, &ns("orders"), "archive")
+            .await
+            .is_err(),
+        "renaming never overwrites"
+    );
+    catalog::rename_collection(&handle, &ns("orders"), "orders_2026")
+        .await
+        .expect("renames");
+    assert_eq!(names("catalog_test").await, ["archive", "orders_2026"]);
+
+    catalog::drop_collection(&handle, &ns("archive"))
+        .await
+        .expect("drops");
+    assert_eq!(names("catalog_test").await, ["orders_2026"]);
+
+    catalog::drop_database(&handle, "catalog_test")
+        .await
+        .expect("drops");
+    let databases = browse::list_databases(&handle).await.expect("lists");
+    assert!(databases.iter().all(|db| db.name != "catalog_test"));
+    assert!(catalog::drop_database(&handle, "admin").await.is_err());
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        catalog::create_collection(&read_only, &ns("x")).await,
+        Err(CoreError::ReadOnly)
+    ));
+    assert!(matches!(
+        catalog::drop_database(&read_only, "shop").await,
+        Err(CoreError::ReadOnly)
+    ));
 }
