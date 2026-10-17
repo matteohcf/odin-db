@@ -431,6 +431,46 @@ function simulateTransfer(channel: unknown, total: number, summary: unknown, byt
 
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
 
+/** Streams tool output lines, then totals, like mongodump/mongorestore runs. */
+function simulateTool(channel: unknown, lines: string[], summary: unknown) {
+  const send = channelSender(channel);
+  const operationId = crypto.randomUUID();
+  const operation = { cancelled: false };
+  operations.set(operationId, operation);
+  let index = 0;
+  const tick = () => {
+    if (operation.cancelled) {
+      send({ event: "cancelled" });
+      operations.delete(operationId);
+      return;
+    }
+    const line = lines[index];
+    if (line !== undefined) {
+      const done = line.match(/^(?:done dumping|finished restoring) `(.+)` \((\d+)/);
+      send({
+        event: "data",
+        data: {
+          kind: "output",
+          value: done
+            ? { kind: "collection", namespace: done[1], documents: Number(done[2]), failures: 0 }
+            : { kind: "log", line },
+        },
+      });
+      index += 1;
+      setTimeout(tick, 180);
+      return;
+    }
+    send({ event: "data", data: { kind: "finished", value: summary } });
+    send({ event: "completed" });
+    operations.delete(operationId);
+  };
+  setTimeout(tick, 200);
+  return operationId;
+}
+
+/** `localStorage["odin-mock-no-tools"] = "1"` simulates a machine without Database Tools. */
+const toolsInstalled = () => localStorage.getItem("odin-mock-no-tools") !== "1";
+
 const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   app_info: () => ({
     version: "0.0.0",
@@ -665,6 +705,62 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       { inserted, failed: errors.length, errors, stopped: false },
       80,
     );
+  },
+  database_tools_status: () =>
+    toolsInstalled()
+      ? { available: true, version: "100.19.1" }
+      : { available: false, version: null },
+  backup_database: (args) => {
+    if (!toolsInstalled())
+      fail("notFound", "MongoDB Database Tools (mongodump and mongorestore) not found");
+    const { databases } = serverOf(id("connectionId", args));
+    const scope = (
+      args.request as { scope: { kind: string; database?: string; collection?: string } }
+    ).scope;
+    const targets = Object.entries(databases).flatMap(([db, colls]) =>
+      Object.entries(colls)
+        .filter(
+          ([name]) =>
+            !name.startsWith("system.") &&
+            (!scope.database || scope.database === db) &&
+            (!scope.collection || scope.collection === name),
+        )
+        .map(([name, coll]) => ({ ns: `${db}.${name}`, count: coll.docs.length })),
+    );
+    const lines = targets.flatMap((t) => [
+      `writing \`${t.ns}\` to "archive"`,
+      `done dumping \`${t.ns}\` (${t.count} documents)`,
+    ]);
+    const documents = targets.reduce((sum, t) => sum + t.count, 0);
+    return simulateTool(args.channel, lines, {
+      collections: targets.length,
+      documents,
+      failures: 0,
+    });
+  },
+  choose_restore_source: (args) => {
+    const token = crypto.randomUUID();
+    return { token, name: args.source === "directory" ? "dump" : "shop.archive.gz" };
+  },
+  restore_database: (args) => {
+    if (!toolsInstalled())
+      fail("notFound", "MongoDB Database Tools (mongodump and mongorestore) not found");
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const request = args.request as {
+      database: string | null;
+      renameTo: string | null;
+      drop: boolean;
+    };
+    const db = request.renameTo ?? request.database ?? "shop";
+    const lines = [
+      "preparing collections to restore from",
+      ...(request.drop ? [`dropping collection \`${db}.users\` before restoring`] : []),
+      `finished restoring \`${db}.users\` (1240 documents, 0 failures)`,
+      `finished restoring \`${db}.orders\` (350 documents, 0 failures)`,
+      "1590 document(s) restored successfully. 0 document(s) failed to restore.",
+    ];
+    return simulateTool(args.channel, lines, { collections: 2, documents: 1590, failures: 0 });
   },
   find_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };

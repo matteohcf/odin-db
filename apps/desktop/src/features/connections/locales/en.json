@@ -24,7 +24,8 @@
     "noCollections": "No collections",
     "failed": "Couldn't load: {{message}}",
     "view": "View",
-    "timeseries": "Time series"
+    "timeseries": "Time series",
+    "actions": "Actions for {{name}}"
   },
   "dialog": {
     "createTitle": "New connection",

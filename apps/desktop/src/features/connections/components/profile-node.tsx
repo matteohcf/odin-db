@@ -1,21 +1,27 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
-import { Button } from "@odin-db/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@odin-db/ui/components/dropdown-menu";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
 import { cn } from "@odin-db/ui/lib/utils";
-import { Lock, MoreHorizontal, Pencil, Plug, Trash2, Unplug } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  HardDriveDownload,
+  HardDriveUpload,
+  Lock,
+  Pencil,
+  Plug,
+  Trash2,
+  Unplug,
+} from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { errorMessage } from "@/lib/ipc";
+import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
 import { DatabaseList } from "./database-list";
+import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
 
 interface ProfileNodeProps {
@@ -30,6 +36,8 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   const connect = useConnect();
   const disconnect = useDisconnect();
   const [expanded, setExpanded] = useExpanded(profile.id);
+  const [toolDialog, setToolDialog] = useState<"backup" | "restore" | null>(null);
+  const queryClient = useQueryClient();
 
   function open() {
     if (connection) {
@@ -80,43 +88,66 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
           ) : undefined
         }
         actions={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-6"
-                aria-label={t("profile.actions", { name: profile.name })}
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              {connection ? (
-                <DropdownMenuItem onSelect={close}>
-                  <Unplug />
-                  {t("profile.disconnect")}
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onSelect={open}>
-                  <Plug />
-                  {t("profile.connect")}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onSelect={onEdit}>
-                <Pencil />
-                {t("profile.edit")}
+          <NodeMenu label={t("profile.actions", { name: profile.name })}>
+            {connection ? (
+              <DropdownMenuItem onSelect={close}>
+                <Unplug />
+                {t("profile.disconnect")}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-                <Trash2 />
-                {t("profile.delete")}
+            ) : (
+              <DropdownMenuItem onSelect={open}>
+                <Plug />
+                {t("profile.connect")}
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+            {connection && (
+              <>
+                <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
+                  <HardDriveDownload />
+                  {t("menu.backupAll", { ns: "backup" })}
+                </DropdownMenuItem>
+                {!connection.readOnly && (
+                  <DropdownMenuItem onSelect={() => setToolDialog("restore")}>
+                    <HardDriveUpload />
+                    {t("menu.restore", { ns: "backup" })}
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+            <DropdownMenuItem onSelect={onEdit}>
+              <Pencil />
+              {t("profile.edit")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+              <Trash2 />
+              {t("profile.delete")}
+            </DropdownMenuItem>
+          </NodeMenu>
         }
       />
       {connection && expanded && <DatabaseList connection={connection} />}
+      {connection && toolDialog === "backup" && (
+        <BackupDialog
+          connectionId={connection.id}
+          profileName={profile.name}
+          scope={{ kind: "deployment" }}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
+      {connection && toolDialog === "restore" && (
+        <RestoreDialog
+          connectionId={connection.id}
+          profileName={profile.name}
+          readOnly={connection.readOnly}
+          onRestored={() =>
+            void queryClient.invalidateQueries({
+              queryKey: connectionKeys.connection(connection.id),
+            })
+          }
+          onClose={() => setToolDialog(null)}
+        />
+      )}
     </>
   );
 }

@@ -1,0 +1,63 @@
+{
+  "scope": {
+    "deployment": "all databases on {{name}}",
+    "database": "database {{database}}",
+    "collection": "collection {{database}}.{{collection}}"
+  },
+  "backup": {
+    "title": "Back up {{target}}",
+    "description": "Creates a mongodump archive that odin-db or mongorestore can restore.",
+    "gzip": "Compress the archive",
+    "gzipHint": "Smaller files; restore detects compression automatically.",
+    "submit": "Choose file and back up",
+    "running": "Backing up…",
+    "done": "Backed up {{collections, number}} collections ({{documents, number}} documents).",
+    "cancelled": "Backup cancelled. The partial archive was deleted.",
+    "failed": "Backup failed: {{message}}"
+  },
+  "restore": {
+    "title": "Restore into {{name}}",
+    "description": "Restores a mongodump archive or dump folder. Existing documents with the same _id are kept unless collections are dropped first.",
+    "source": "Source",
+    "archive": "Archive file",
+    "archiveHint": "A .archive or .archive.gz file from mongodump --archive.",
+    "directory": "Dump folder",
+    "directoryHint": "A folder from mongodump --out.",
+    "choose": "Choose…",
+    "chosen": "Selected: {{name}}",
+    "database": "Only this database",
+    "databasePlaceholder": "All databases in the source",
+    "renameTo": "Restore as",
+    "renamePlaceholder": "Same name",
+    "drop": "Drop collections before restoring",
+    "dropHint": "Replaces the existing data in every restored collection. This cannot be undone.",
+    "confirmLabel": "Type {{target}} to confirm",
+    "submit": "Restore",
+    "running": "Restoring…",
+    "done": "Restored {{documents, number}} documents into {{collections, number}} collections.",
+    "failures": "{{count, number}} documents failed to restore.",
+    "cancelled": "Restore cancelled. Collections restored before cancelling keep their data.",
+    "failed": "Restore failed: {{message}}",
+    "readOnly": "This connection is read-only, so it cannot be restored into."
+  },
+  "tools": {
+    "checking": "Looking for MongoDB Database Tools…",
+    "missingTitle": "MongoDB Database Tools not found",
+    "missingBody": "Backups use mongodump and mongorestore. Install MongoDB Database Tools and make sure they are on your PATH, then reopen this dialog.",
+    "download": "Download page: {{url}}",
+    "version": "Using MongoDB Database Tools {{version}}"
+  },
+  "log": {
+    "label": "Tool output"
+  },
+  "menu": {
+    "backup": "Back up…",
+    "backupAll": "Back up all databases…",
+    "restore": "Restore…"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "stop": "Stop"
+  }
+}
