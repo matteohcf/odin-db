@@ -16,6 +16,7 @@ import { QuitDialog } from "./quit-dialog";
 import { SettingsButton } from "./settings-button";
 import { SidebarResizer } from "./sidebar-resizer";
 import { usePruneRestoredTabs } from "./use-prune-restored-tabs";
+import { useReconnectRestoredTabs } from "./use-reconnect-restored-tabs";
 import { Welcome } from "./welcome";
 
 // Benchmarks (xterm.js, large fixtures) only load for `--perf-autorun`.
@@ -29,6 +30,7 @@ export function App() {
   useApplySettings();
   const sidebarWidth = useSettings((s) => s.sidebarWidth);
   usePruneRestoredTabs();
+  useReconnectRestoredTabs();
   if (perfAutorun) {
     return (
       <Suspense fallback={null}>

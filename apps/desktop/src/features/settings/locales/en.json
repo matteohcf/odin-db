@@ -14,7 +14,9 @@
     "title": "General",
     "language": "Language",
     "languageHint": "The language of the interface.",
-    "systemLanguage": "System ({{language}})"
+    "systemLanguage": "System ({{language}})",
+    "reconnect": "Reconnect on launch",
+    "reconnectHint": "Tabs from the last session come back connected, ready to query."
   },
   "appearance": {
     "title": "Appearance",

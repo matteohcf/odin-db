@@ -29,6 +29,8 @@ export interface Settings {
   darkStyle: "graphite" | "black";
   /** Height of result rows. */
   rowDensity: RowDensity;
+  /** Reconnect at launch the connections that restored tabs use. */
+  reconnectOnLaunch: boolean;
 }
 
 export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
@@ -51,6 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: "indigo",
   darkStyle: "graphite",
   rowDensity: "normal",
+  reconnectOnLaunch: true,
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

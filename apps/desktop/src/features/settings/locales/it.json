@@ -14,7 +14,9 @@
     "title": "Generale",
     "language": "Lingua",
     "languageHint": "La lingua dell'interfaccia.",
-    "systemLanguage": "Sistema ({{language}})"
+    "systemLanguage": "Sistema ({{language}})",
+    "reconnect": "Riconnetti all'avvio",
+    "reconnectHint": "Le schede dell'ultima sessione tornano già connesse, pronte per le query."
   },
   "appearance": {
     "title": "Aspetto",
