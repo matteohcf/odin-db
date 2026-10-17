@@ -39,3 +39,18 @@ export function formatRelativeTime(timestamp: number, now: number, locale?: stri
   }
   return format.format(0, "second");
 }
+
+/**
+ * A date in local time, laid out like the UTC display so columns line up:
+ * `2024-03-01 14:05:09.120 +01:00`.
+ */
+export function formatLocalDateTime(date: Date): string {
+  const pad = (n: number, width = 2) => String(Math.abs(n)).padStart(width, "0");
+  const offset = -date.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.` +
+    `${pad(date.getMilliseconds(), 3)} ${sign}${pad(Math.trunc(offset / 60))}:${pad(offset % 60)}`
+  );
+}

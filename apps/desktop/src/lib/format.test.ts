@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatCount, formatRelativeTime } from "./format";
+import { formatBytes, formatCount, formatLocalDateTime, formatRelativeTime } from "./format";
 
 describe("format", () => {
   it("formats byte sizes with the largest fitting unit", () => {
@@ -18,5 +18,14 @@ describe("format", () => {
     expect(formatRelativeTime(now - 10_000, now, "en")).toBe("now");
     expect(formatRelativeTime(now - 5 * 60_000, now, "en")).toBe("5 minutes ago");
     expect(formatRelativeTime(now - 26 * 3600_000, now, "en")).toBe("yesterday");
+  });
+
+  it("formats local date-times with their offset", () => {
+    const date = new Date(2024, 2, 1, 14, 5, 9, 120);
+    const offset = -date.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const hours = String(Math.trunc(Math.abs(offset) / 60)).padStart(2, "0");
+    const minutes = String(Math.abs(offset) % 60).padStart(2, "0");
+    expect(formatLocalDateTime(date)).toBe(`2024-03-01 14:05:09.120 ${sign}${hours}:${minutes}`);
   });
 });

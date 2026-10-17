@@ -2,7 +2,8 @@ import type { JsonValue } from "@odin-db/bindings";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { compactEJson, describeEJson, type EJsonKind } from "@/lib/ejson-display";
-import { formatRelativeTime } from "@/lib/format";
+import { formatLocalDateTime, formatRelativeTime } from "@/lib/format";
+import { useSettings } from "@/lib/settings";
 import { momentOf } from "@/lib/value-hints";
 
 export const kindTextClass: Record<EJsonKind, string> = {
@@ -21,6 +22,7 @@ export const kindTextClass: Record<EJsonKind, string> = {
 /** One BSON value in a grid cell: typed color, nested values summarized. */
 export function EJsonCell({ value }: { value: JsonValue | undefined }) {
   const { t, i18n } = useTranslation("common");
+  const dateDisplay = useSettings((s) => s.dateDisplay);
   if (value === undefined) return null;
   const moment = momentOf(value);
   // Dates and ObjectIds also say when, in local time and relative to now.
@@ -31,7 +33,12 @@ export function EJsonCell({ value }: { value: JsonValue | undefined }) {
       })}`
     : "";
 
-  const { kind, text } = compactEJson(value);
+  const compact = compactEJson(value);
+  const { kind } = compact;
+  const text =
+    kind === "date" && moment && dateDisplay === "local"
+      ? formatLocalDateTime(moment.date)
+      : compact.text;
   const label =
     kind === "document" && typeof value === "object" && value !== null
       ? t("value.fields", { count: Object.keys(value).length })

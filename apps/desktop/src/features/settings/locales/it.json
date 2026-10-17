@@ -79,7 +79,10 @@
       "comfortable": "Ampia"
     },
     "confirmDelete": "Chiedi prima di eliminare un documento",
-    "confirmDeleteHint": "Se disattivato, il documento viene eliminato subito e si può ripristinare dalla notifica per qualche secondo."
+    "confirmDeleteHint": "Se disattivato, il documento viene eliminato subito e si può ripristinare dalla notifica per qualche secondo.",
+    "dates": "Date",
+    "datesHint": "Come la tabella mostra le date. Gli editor usano sempre ISODate in UTC, i dati non cambiano.",
+    "localTime": "Ora locale"
   },
   "data": {
     "title": "Cronologia query",

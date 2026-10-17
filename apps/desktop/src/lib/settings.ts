@@ -35,6 +35,8 @@ export interface Settings {
   confirmDelete: boolean;
   /** A monospace font installed on the system; empty for the bundled IBM Plex Mono. */
   monoFont: string;
+  /** How results show dates; editing always uses ISODate in UTC. */
+  dateDisplay: "utc" | "local";
 }
 
 export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
@@ -60,6 +62,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reconnectOnLaunch: true,
   confirmDelete: true,
   monoFont: "",
+  dateDisplay: "utc",
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

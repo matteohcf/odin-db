@@ -18,6 +18,7 @@ export function ResultsSection() {
   const maxRows = useSettings((s) => s.resultsMaxRows);
   const rowDensity = useSettings((s) => s.rowDensity);
   const confirmDelete = useSettings((s) => s.confirmDelete);
+  const dateDisplay = useSettings((s) => s.dateDisplay);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("results.title")} description={t("results.description")}>
@@ -58,6 +59,23 @@ export function ResultsSection() {
               {t(`results.densities.${value}`)}
             </ToggleGroupItem>
           ))}
+        </ToggleGroup>
+      </SettingRow>
+      <SettingRow label={t("results.dates")} description={t("results.datesHint")}>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={dateDisplay}
+          onValueChange={(value) => value && update({ dateDisplay: value as typeof dateDisplay })}
+          aria-label={t("results.dates")}
+        >
+          <ToggleGroupItem value="utc" className="px-3">
+            UTC
+          </ToggleGroupItem>
+          <ToggleGroupItem value="local" className="px-3">
+            {t("results.localTime")}
+          </ToggleGroupItem>
         </ToggleGroup>
       </SettingRow>
       <SettingRow
