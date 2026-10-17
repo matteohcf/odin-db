@@ -401,15 +401,16 @@ export function DocumentsView({
               // A sort the columns cannot show is replaced, not appended to.
               sort: sortText(nextSort(simpleSort(form.sort) ?? [], field, append)),
             }),
-          onFilterBy: (field, value) =>
-            void runForm({
-              ...form,
-              filter: addFilterCondition(
-                form.filter,
-                field,
-                value === undefined ? "{ $exists: false }" : toShellSyntax(value, 0),
-              ),
-            }),
+          onFilterBy: (field, value, how = "eq") => {
+            const literal = value === undefined ? null : toShellSyntax(value, 0);
+            const condition = {
+              eq: literal ?? "{ $exists: false }",
+              ne: literal === null ? "{ $exists: true }" : `{ $ne: ${literal} }`,
+              gt: `{ $gt: ${literal} }`,
+              lt: `{ $lt: ${literal} }`,
+            }[how];
+            void runForm({ ...form, filter: addFilterCondition(form.filter, field, condition) });
+          },
           onDistinct: (field) => void openDistinct(field),
         }}
         label={t("results.label", { collection: namespace.collection })}

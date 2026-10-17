@@ -53,7 +53,9 @@
     "timeseries": "Time series",
     "actions": "Azioni per {{name}}",
     "copyName": "Copia il nome",
-    "nameCopied": "Copiato {{name}}."
+    "nameCopied": "Copiato {{name}}.",
+    "count_one": "Circa {{count, number}} documento",
+    "count_other": "Circa {{count, number}} documenti"
   },
   "dialog": {
     "createTitle": "Nuova connessione",

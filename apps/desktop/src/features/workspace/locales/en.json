@@ -12,7 +12,8 @@
       "unpin": "Unpin tab",
       "reopen": "Reopen closed tab",
       "moveLeft": "Move left",
-      "moveRight": "Move right"
+      "moveRight": "Move right",
+      "copyNamespace": "Copy namespace"
     },
     "backups": "Backups",
     "settings": "Settings",

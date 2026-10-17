@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use odin_core::browse::{self, CollectionInfo, CollectionStats, DatabaseInfo};
+use odin_core::browse::{self, CollectionCount, CollectionInfo, CollectionStats, DatabaseInfo};
 use odin_core::connection::{ConnectionId, ConnectionInfo};
 use odin_core::profiles::{self, ProfileId};
 use odin_core::query::Namespace;
@@ -79,4 +79,15 @@ pub async fn collection_stats(
 ) -> Result<CollectionStats, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(browse::collection_stats(&handle, &namespace).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn collection_counts(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    database: String,
+) -> Result<Vec<CollectionCount>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(browse::collection_counts(&handle, &database).await?)
 }

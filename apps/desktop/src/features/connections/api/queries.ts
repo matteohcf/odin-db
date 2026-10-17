@@ -44,6 +44,23 @@ export function useDatabases(connectionId: ConnectionId) {
   return useQuery(databasesQuery(connectionId));
 }
 
+/** Estimated document counts, shown next to collections; refreshed with the tree. */
+export function useCollectionCounts(
+  connectionId: ConnectionId,
+  database: string,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: connectionKeys.counts(connectionId, database),
+    queryFn: async () => {
+      const counts = await call(commands.collectionCounts(connectionId, database));
+      return new Map(counts.map((entry) => [entry.name, entry.count ?? 0]));
+    },
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
 export function useCollections(connectionId: ConnectionId, database: string, enabled: boolean) {
   return useQuery({ ...collectionsQuery(connectionId, database), enabled });
 }

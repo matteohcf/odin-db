@@ -7,7 +7,7 @@ import {
   ContextMenuTrigger,
 } from "@odin-db/ui/components/context-menu";
 import { cn } from "@odin-db/ui/lib/utils";
-import { Pin, PinOff, X } from "lucide-react";
+import { Copy, Pin, PinOff, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShortcut } from "@/hooks/use-shortcut";
@@ -162,6 +162,16 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                   {isPinned ? <PinOff /> : <Pin />}
                   {isPinned ? t("tabs.menu.unpin") : t("tabs.menu.pin")}
                 </ContextMenuItem>
+                {tab.kind === "collection" && (
+                  <ContextMenuItem
+                    onSelect={() =>
+                      void navigator.clipboard.writeText(`${tab.database}.${tab.collection}`)
+                    }
+                  >
+                    <Copy />
+                    {t("tabs.menu.copyNamespace")}
+                  </ContextMenuItem>
+                )}
                 <ContextMenuItem disabled={index === 0} onSelect={() => move(tab.id, index - 1)}>
                   {t("tabs.menu.moveLeft")}
                 </ContextMenuItem>

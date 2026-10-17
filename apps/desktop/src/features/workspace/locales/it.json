@@ -12,7 +12,8 @@
       "unpin": "Sblocca la scheda",
       "reopen": "Riapri la scheda chiusa",
       "moveLeft": "Sposta a sinistra",
-      "moveRight": "Sposta a destra"
+      "moveRight": "Sposta a destra",
+      "copyNamespace": "Copia il namespace"
     },
     "backups": "Backup",
     "settings": "Impostazioni",

@@ -28,9 +28,12 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ArrowDown,
   ArrowUp,
+  ChevronLeft,
+  ChevronRight,
   Columns3,
   Copy,
   Filter,
+  FilterX,
   ListChecks,
   PencilLine,
   Trash2,
@@ -83,8 +86,15 @@ export interface ColumnActions {
   sort: readonly { field: string; direction: 1 | -1 }[];
   /** A column was clicked; with `append` (Shift) it joins the current sort. */
   onSort: (field: string, append: boolean) => void;
-  /** `undefined` means the document has no such field. */
-  onFilterBy: (field: string, value: JsonValue | undefined) => void;
+  /**
+   * Adds a condition on the cell's value: equal, different, greater or less.
+   * `undefined` means the document has no such field.
+   */
+  onFilterBy: (
+    field: string,
+    value: JsonValue | undefined,
+    how?: "eq" | "ne" | "gt" | "lt",
+  ) => void;
   /** Shows the field's distinct values among the matching documents. */
   onDistinct?: (field: string) => void;
 }
@@ -470,6 +480,42 @@ export function ResultsGrid({
                       <span className="truncate">{t("cell.filter", { field: menuColumn })}</span>
                     </ContextMenuItem>
                   )}
+                  {columnActions && (
+                    <ContextMenuItem
+                      onSelect={() =>
+                        columnActions.onFilterBy(menuColumn, selected[menuColumn], "ne")
+                      }
+                    >
+                      <FilterX />
+                      <span className="truncate">{t("cell.exclude", { field: menuColumn })}</span>
+                    </ContextMenuItem>
+                  )}
+                  {columnActions &&
+                    selected[menuColumn] !== undefined &&
+                    ["number", "date"].includes(
+                      compactEJson(selected[menuColumn] ?? null).kind,
+                    ) && (
+                      <>
+                        <ContextMenuItem
+                          onSelect={() =>
+                            columnActions.onFilterBy(menuColumn, selected[menuColumn], "gt")
+                          }
+                        >
+                          <ChevronRight />
+                          <span className="truncate">
+                            {t("cell.greater", { field: menuColumn })}
+                          </span>
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onSelect={() =>
+                            columnActions.onFilterBy(menuColumn, selected[menuColumn], "lt")
+                          }
+                        >
+                          <ChevronLeft />
+                          <span className="truncate">{t("cell.less", { field: menuColumn })}</span>
+                        </ContextMenuItem>
+                      </>
+                    )}
                   {columnActions?.onDistinct && (
                     <ContextMenuItem onSelect={() => columnActions.onDistinct?.(menuColumn)}>
                       <ListChecks />

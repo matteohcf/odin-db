@@ -893,6 +893,12 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     Object.entries(serverOf(id("connectionId", args)).databases[id("database", args)] ?? {})
       .map(([name, coll]): CollectionInfo => ({ name, kind: coll.kind }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+  collection_counts: (args) => {
+    const { databases } = serverOf(id("connectionId", args));
+    return Object.entries(databases[args.database as string] ?? {})
+      .filter(([, coll]) => coll.kind !== "view")
+      .map(([name, coll]) => ({ name, count: coll.docs.length }));
+  },
   collection_stats: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);

@@ -7,28 +7,6 @@ export function objectIdTime(hex: string): Date | null {
   return new Date(Number.parseInt(hex.slice(0, 8), 16) * 1000);
 }
 
-const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 365 * 24 * 3600],
-  ["month", 30 * 24 * 3600],
-  ["week", 7 * 24 * 3600],
-  ["day", 24 * 3600],
-  ["hour", 3600],
-  ["minute", 60],
-  ["second", 1],
-];
-
-/** "3 days ago", "in 2 hours": the largest unit that fits. */
-export function relativeTime(date: Date, now: Date, locale: string): string {
-  const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
-  const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  for (const [unit, size] of UNITS) {
-    if (Math.abs(seconds) >= size || unit === "second") {
-      return format.format(Math.round(seconds / size), unit);
-    }
-  }
-  return format.format(0, "second");
-}
-
 /** The moment a value stands for, if any: a date, or an ObjectId's creation time. */
 export function momentOf(value: JsonValue): { kind: "date" | "objectId"; date: Date } | null {
   if (!isJsonObject(value)) return null;

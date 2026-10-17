@@ -7,4 +7,6 @@ export const connectionKeys = {
   databases: (connectionId: ConnectionId) => ["connections", connectionId, "databases"] as const,
   collections: (connectionId: ConnectionId, database: string) =>
     ["connections", connectionId, "databases", database, "collections"] as const,
+  counts: (connectionId: ConnectionId, database: string) =>
+    ["connections", connectionId, "databases", database, "counts"] as const,
 };

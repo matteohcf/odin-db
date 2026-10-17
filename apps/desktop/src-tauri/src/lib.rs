@@ -38,6 +38,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::connections::list_databases,
             commands::connections::list_collections,
             commands::connections::collection_stats,
+            commands::connections::collection_counts,
             commands::documents::find_documents,
             commands::documents::fetch_more_documents,
             commands::documents::close_cursor,

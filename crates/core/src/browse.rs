@@ -82,6 +82,44 @@ pub async fn list_collections(
     Ok(collections)
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionCount {
+    pub name: String,
+    pub count: f64,
+}
+
+/// Estimated document counts of a database's collections, from metadata (no
+/// scan), fetched in parallel. Views and collections the user cannot read are left out.
+pub async fn collection_counts(
+    handle: &ConnectionHandle,
+    database: &str,
+) -> Result<Vec<CollectionCount>, CoreError> {
+    let collections = list_collections(handle, database).await?;
+    let db = handle.client.database(database);
+    let mut tasks = tokio::task::JoinSet::new();
+    for info in collections {
+        if matches!(info.kind, CollectionKind::View) {
+            continue;
+        }
+        let collection = db.collection::<bson::Document>(&info.name);
+        tasks.spawn(async move { (info.name, collection.estimated_document_count().await) });
+    }
+    let mut counts = Vec::new();
+    while let Some(joined) = tasks.join_next().await {
+        if let Ok((name, Ok(count))) = joined {
+            #[allow(clippy::cast_precision_loss)]
+            counts.push(CollectionCount {
+                name,
+                count: count as f64,
+            });
+        }
+    }
+    counts.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(counts)
+}
+
 /// Sizes in bytes; `f64` because TypeScript numbers cannot hold every `u64`.
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]

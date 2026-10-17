@@ -2398,3 +2398,29 @@ async fn manages_users_and_their_roles() {
             .any(|u| u.user == "reporter")
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn estimates_every_collection_count_of_a_database() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    fx.seed(&handle, &namespace("small"), 3).await;
+    fx.seed(&handle, &namespace("big"), 250).await;
+    handle
+        .client
+        .database("odin_test")
+        .create_collection("big_view")
+        .view_on("big".to_owned())
+        .pipeline(vec![])
+        .await
+        .expect("view");
+    let counts = browse::collection_counts(&handle, "odin_test")
+        .await
+        .expect("counts");
+    let pairs: Vec<_> = counts.iter().map(|c| (c.name.as_str(), c.count)).collect();
+    // The view is left out; system.views, which defines it, is a real collection.
+    assert_eq!(
+        pairs,
+        [("big", 250.0), ("small", 3.0), ("system.views", 1.0)]
+    );
+}

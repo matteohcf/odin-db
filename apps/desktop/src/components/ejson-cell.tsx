@@ -2,7 +2,8 @@ import type { JsonValue } from "@odin-db/bindings";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { compactEJson, describeEJson, type EJsonKind } from "@/lib/ejson-display";
-import { momentOf, relativeTime } from "@/lib/value-hints";
+import { formatRelativeTime } from "@/lib/format";
+import { momentOf } from "@/lib/value-hints";
 
 export const kindTextClass: Record<EJsonKind, string> = {
   null: "text-type-null italic",
@@ -26,7 +27,7 @@ export function EJsonCell({ value }: { value: JsonValue | undefined }) {
   const when = moment
     ? `\n${t(moment.kind === "objectId" ? "value.created" : "value.localTime", {
         date: moment.date.toLocaleString(i18n.language),
-        relative: relativeTime(moment.date, new Date(), i18n.language),
+        relative: formatRelativeTime(moment.date.getTime(), Date.now(), i18n.language),
       })}`
     : "";
 

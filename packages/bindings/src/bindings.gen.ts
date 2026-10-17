@@ -47,6 +47,7 @@ export const commands = {
 	listDatabases: (connectionId: ConnectionId) => typedError<DatabaseInfo[], IpcError>(__TAURI_INVOKE("list_databases", { connectionId })),
 	listCollections: (connectionId: ConnectionId, database: string) => typedError<CollectionInfo[], IpcError>(__TAURI_INVOKE("list_collections", { connectionId, database })),
 	collectionStats: (connectionId: ConnectionId, namespace: Namespace) => typedError<CollectionStats, IpcError>(__TAURI_INVOKE("collection_stats", { connectionId, namespace })),
+	collectionCounts: (connectionId: ConnectionId, database: string) => typedError<CollectionCount[], IpcError>(__TAURI_INVOKE("collection_counts", { connectionId, database })),
 	findDocuments: (connectionId: ConnectionId, namespace: Namespace, request: FindRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("find_documents", { connectionId, namespace, request })),
 	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
 	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
@@ -249,6 +250,11 @@ export type BackupScope = { kind: "deployment" } | { kind: "database"; database:
 
 /**  The backup history or schedules changed (a backup started or finished). */
 export type BackupsChanged = Record<string, never>;
+
+export type CollectionCount = {
+	name: string,
+	count: number | null,
+};
 
 export type CollectionInfo = {
 	name: string,

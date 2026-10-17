@@ -27,7 +27,7 @@ import { CopyDialog, DatabaseExportDialog, DatabaseImportDialog } from "@/featur
 import { useTabs } from "@/features/workspace";
 import { formatBytes } from "@/lib/format";
 import { connectionKeys } from "../api/keys";
-import { useCollections, useDatabases, useProfile } from "../api/queries";
+import { useCollectionCounts, useCollections, useDatabases, useProfile } from "../api/queries";
 import { useCopyTargets } from "../hooks/use-copy-targets";
 import { useExpanded, useTreeFilter } from "../store/explorer-store";
 import { useFavorites, useIsFavorite } from "../store/favorites-store";
@@ -86,6 +86,7 @@ function DatabaseNode({
       ? collections.data?.filter((collection) => collection.name.toLowerCase().includes(filter))
       : collections.data;
   const open = filter && !nameMatches ? true : expanded;
+  const counts = useCollectionCounts(connection.id, database.name, open);
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const queryClient = useQueryClient();
   const writable = !connection.readOnly;
@@ -236,6 +237,7 @@ function DatabaseNode({
                   connection={connection}
                   database={database.name}
                   collection={collection}
+                  count={counts.data?.get(collection.name)}
                 />
               </li>
             ))}
@@ -251,12 +253,15 @@ function CollectionNode({
   connection,
   database,
   collection,
+  count,
 }: {
   connection: ConnectionInfo;
   database: string;
   collection: CollectionInfo;
+  /** Estimated documents; absent for views and while loading. */
+  count: number | undefined;
 }) {
-  const { t } = useTranslation("connections");
+  const { t, i18n: translation } = useTranslation("connections");
   const favorite = useIsFavorite(connection.profileId, database, collection.name);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const filter = useTreeFilter();
@@ -283,9 +288,15 @@ function CollectionNode({
         label={<HighlightMatch text={collection.name} query={filter} />}
         muted={isSystem(collection)}
         trailing={
-          favorite || collection.kind !== "collection" ? (
+          favorite || collection.kind !== "collection" || count !== undefined ? (
             <span className="flex items-center gap-1.5">
               {collection.kind !== "collection" && t(`tree.${collection.kind}`)}
+              {count !== undefined && collection.kind !== "view" && (
+                // The tree row is named after the collection alone; the count is a hint.
+                <span aria-hidden className="tabular-nums" title={t("tree.count", { count })}>
+                  {compactCount(count, translation.language)}
+                </span>
+              )}
               {favorite && (
                 <Star
                   className="size-3 fill-current text-yellow-500"
@@ -387,6 +398,13 @@ function CollectionNode({
 
 /** Databases MongoDB manages itself; core refuses to drop them too. */
 const SYSTEM_DATABASES = new Set(["admin", "local", "config"]);
+
+/** 1.2K, 3.4M: short enough for the tree; the exact estimate is in the tooltip. */
+function compactCount(count: number, locale: string) {
+  return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(
+    count,
+  );
+}
 
 function copyName(name: string) {
   void navigator.clipboard.writeText(name);

@@ -40,7 +40,10 @@
     "edit": "Modifica valore di {{field}}…",
     "distinct": "Valori distinti di {{field}}…",
     "inline": "Valore",
-    "inlineHint": "Invio o Tab salva, Esc annulla. La sintassi mongosh mantiene i tipi: \"testo\", 42, Double(4), ISODate(\"2024-01-01\")"
+    "inlineHint": "Invio o Tab salva, Esc annulla. La sintassi mongosh mantiene i tipi: \"testo\", 42, Double(4), ISODate(\"2024-01-01\")",
+    "exclude": "Escludi questo valore di {{field}}",
+    "greater": "{{field}} maggiore di questo",
+    "less": "{{field}} minore di questo"
   },
   "view": {
     "label": "Vista dei risultati",
