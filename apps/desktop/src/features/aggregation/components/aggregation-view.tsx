@@ -15,11 +15,12 @@ import {
 } from "@odin-db/ui/components/alert-dialog";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { CircleAlert, Copy, Download, Play, Plus, X } from "lucide-react";
+import { CircleAlert, Code2, Copy, Download, Play, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useStore } from "zustand";
+import { QueryCodeDialog } from "@/components/query-code-dialog";
 import {
   DocumentEditorDialog,
   ResultsPanel,
@@ -60,9 +61,21 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
   const resultColumns = useResultsState(results, (s) => s.columns);
   const resultsReady = useResultsState(results, (s) => s.status === "ready");
   const lastPipeline = useRef<EJsonDocument[]>([]);
+  const [codePipeline, setCodePipeline] = useState<EJsonDocument[] | null>(null);
 
   const writeStage = stages.find((s) => s.enabled && isWriteOperator(s.operator));
   const label = `${namespace.database}.${namespace.collection}`;
+
+  async function showCode() {
+    const built = await buildPipeline(stages);
+    if (!built.ok) {
+      const number = stages.findIndex((s) => s.id === built.stageId) + 1;
+      setRunError(`${t("stage.label", { number })}: ${built.error}`);
+      return;
+    }
+    setRunError(null);
+    setCodePipeline(built.pipeline);
+  }
 
   async function run(confirmed = false) {
     if (writeStage && connection.readOnly) {
@@ -110,6 +123,10 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
         >
           <Copy />
           {t("toolbar.copy")}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => void showCode()}>
+          <Code2 />
+          {t("queryCode.toolbar", { ns: "common" })}
         </Button>
         <SavedPipelinesMenu
           storageKey={pipelineKey(connection.profileId, namespace.database, namespace.collection)}
@@ -222,6 +239,18 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
           />
           <ResultsStatusBar controller={results} />
         </section>
+      )}
+
+      {codePipeline && (
+        <QueryCodeDialog
+          source={{
+            kind: "aggregate",
+            database: namespace.database,
+            collection: namespace.collection,
+            pipeline: codePipeline,
+          }}
+          onClose={() => setCodePipeline(null)}
+        />
       )}
 
       {exporting && (

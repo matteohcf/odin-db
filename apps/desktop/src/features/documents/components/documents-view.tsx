@@ -15,10 +15,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
-import { Download, MoreHorizontal, Plus, Upload } from "lucide-react";
+import { Code2, Download, MoreHorizontal, Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { QueryCodeDialog } from "@/components/query-code-dialog";
 import {
   DocumentEditorDialog,
   type EditorMode,
@@ -87,6 +88,7 @@ export function DocumentsView({
   const results = useResultsController();
   const columns = useResultsState(results, (s) => s.columns);
   const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
+  const [codeQuery, setCodeQuery] = useState<FindQuery | null>(null);
 
   const [form, setForm] = useState<QueryForm>(emptyQueryForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<QueryField, string>>>({});
@@ -159,6 +161,17 @@ export function DocumentsView({
     setFormErrors({});
     recordQuery(queryHistoryKey, toRun);
     await execute(parsed.query);
+  }
+
+  /** Shows the query as written in the bar, or its errors if it does not parse. */
+  async function showCode() {
+    const parsed = await parseQueryForm(form, { invalidNumber: t("query.invalidNumber") });
+    if (!parsed.ok) {
+      setFormErrors(parsed.errors);
+      return;
+    }
+    setFormErrors({});
+    setCodeQuery(parsed.query);
   }
 
   /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
@@ -258,6 +271,10 @@ export function DocumentsView({
                   <Download />
                   {t("menu.export", { ns: "transfer" })}
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void showCode()}>
+                  <Code2 />
+                  {t("queryCode.menu", { ns: "common" })}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -353,6 +370,21 @@ export function DocumentsView({
           onSave={saveDocument}
           completions={completionsFor("document")}
           onClose={() => setEditor({ open: false })}
+        />
+      )}
+      {codeQuery && (
+        <QueryCodeDialog
+          source={{
+            kind: "find",
+            database: namespace.database,
+            collection: namespace.collection,
+            filter: codeQuery.filter,
+            projection: codeQuery.projection,
+            sort: codeQuery.sort,
+            skip: codeQuery.skip,
+            limit: codeQuery.limit,
+          }}
+          onClose={() => setCodeQuery(null)}
         />
       )}
       {transfer === "export" && (

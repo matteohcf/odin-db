@@ -148,5 +148,17 @@
       "zoomOut": "Zoom out",
       "resetZoom": "Actual size"
     }
+  },
+  "queryCode": {
+    "title": "Query code",
+    "findDescription": "The query on {{namespace}} as code for your application, with the exact BSON types.",
+    "aggregateDescription": "The pipeline on {{namespace}} as code for your application, with the exact BSON types.",
+    "language": "Language",
+    "copy": "Copy",
+    "copied": "Copied",
+    "code": "{{language}} code",
+    "hint": "The connection string is read from the MONGODB_URI environment variable.",
+    "menu": "Query code…",
+    "toolbar": "Code"
   }
 }

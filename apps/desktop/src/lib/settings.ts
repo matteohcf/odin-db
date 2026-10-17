@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { CodeLanguage } from "./query-code";
 
 /**
  * User preferences. Flat on purpose: a new setting is one field here plus its
@@ -18,6 +19,8 @@ export interface Settings {
   shellScrollback: number;
   /** Recent queries remembered per collection. */
   queryHistorySize: number;
+  /** Last language picked in the query code dialog. */
+  queryCodeLanguage: CodeLanguage;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -29,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shellFontSize: 13,
   shellScrollback: 10_000,
   queryHistorySize: 50,
+  queryCodeLanguage: "javascript",
 };
 
 export const ZOOM_LEVELS = [80, 90, 100, 110, 125, 150] as const;
