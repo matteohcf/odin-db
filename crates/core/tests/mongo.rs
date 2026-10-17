@@ -6,6 +6,10 @@
 #![allow(clippy::expect_used)]
 
 use bson::{Binary, Bson, DateTime, Decimal128, Document, doc, oid::ObjectId, spec::BinarySubtype};
+use odin_core::backup::{
+    BackupRequest, BackupScope, RestoreRequest, RestoreSource, ToolConnection, backup,
+    locate_tools, restore, tools_version,
+};
 use odin_core::connection::{ConnectionHandle, ConnectionManager, test_connection};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::indexes::{self, CreateIndexRequest};
@@ -659,4 +663,94 @@ async fn failed_exports_leave_no_file_and_read_only_blocks_imports() {
     )
     .await;
     assert!(matches!(result, Err(CoreError::ReadOnly)));
+}
+
+/// Needs mongodump/mongorestore: on `PATH`, or in `ODIN_TOOLS_DIR` (CI downloads them).
+#[tokio::test]
+#[ignore = "requires Docker and MongoDB Database Tools"]
+async fn backs_up_and_restores_a_database_with_the_tools() {
+    let dir = std::env::var_os("ODIN_TOOLS_DIR").map(std::path::PathBuf::from);
+    let tools = locate_tools(dir.as_deref())
+        .expect("database tools: set ODIN_TOOLS_DIR or add them to PATH");
+    assert!(tools_version(&tools).await.is_some());
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    fx.seed(&handle, &namespace("users"), 250).await;
+    let archive = temp_path("shop.archive.gz");
+    let (events, mut received) = tokio::sync::mpsc::channel(256);
+
+    let connection = || ToolConnection {
+        uri: &fx.uri,
+        password: None,
+        read_only: false,
+    };
+    let summary = backup(
+        &tools,
+        connection(),
+        &BackupRequest {
+            scope: BackupScope::Database {
+                database: "odin_test".into(),
+            },
+            gzip: true,
+        },
+        &archive,
+        events.clone(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("backup");
+    assert!(
+        (summary.documents - 250.0).abs() < f64::EPSILON,
+        "{summary:?}"
+    );
+    assert!(archive.exists());
+
+    let restored = restore(
+        &tools,
+        connection(),
+        &RestoreRequest {
+            source: RestoreSource::Archive,
+            drop: false,
+            database: Some("odin_test".into()),
+            rename_to: Some("odin_copy".into()),
+        },
+        &archive,
+        events,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("restore");
+    assert!(
+        (restored.documents - 250.0).abs() < f64::EPSILON,
+        "{restored:?}"
+    );
+    let copy = Namespace {
+        database: "odin_copy".into(),
+        collection: "users".into(),
+    };
+    assert_eq!(read_back(&handle, &copy).await.len(), 250);
+    assert!(received.try_recv().is_ok(), "tool output is streamed");
+
+    let read_only = ToolConnection {
+        uri: &fx.uri,
+        password: None,
+        read_only: true,
+    };
+    let refused = restore(
+        &tools,
+        read_only,
+        &RestoreRequest {
+            source: RestoreSource::Archive,
+            drop: true,
+            database: None,
+            rename_to: None,
+        },
+        &archive,
+        tokio::sync::mpsc::channel(1).0,
+        CancellationToken::new(),
+    )
+    .await;
+    assert!(matches!(refused, Err(CoreError::ReadOnly)));
+    let _ = std::fs::remove_file(archive);
 }
