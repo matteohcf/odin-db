@@ -31,6 +31,8 @@ export interface Settings {
   rowDensity: RowDensity;
   /** Reconnect at launch the connections that restored tabs use. */
   reconnectOnLaunch: boolean;
+  /** Ask before deleting one document; off, an undo toast follows the delete. */
+  confirmDelete: boolean;
 }
 
 export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
@@ -54,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   darkStyle: "graphite",
   rowDensity: "normal",
   reconnectOnLaunch: true,
+  confirmDelete: true,
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

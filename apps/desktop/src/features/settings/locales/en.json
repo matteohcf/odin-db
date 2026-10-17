@@ -75,7 +75,9 @@
       "compact": "Compact",
       "normal": "Normal",
       "comfortable": "Comfortable"
-    }
+    },
+    "confirmDelete": "Ask before deleting a document",
+    "confirmDeleteHint": "When off, a document is deleted at once and can be restored from the notification for a few seconds."
   },
   "data": {
     "title": "Query history",

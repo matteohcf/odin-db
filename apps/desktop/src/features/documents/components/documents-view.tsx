@@ -45,6 +45,7 @@ import { useSampleFields } from "@/hooks/use-sample-fields";
 import { useShortcut } from "@/hooks/use-shortcut";
 import type { JsonObject } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
+import { useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import {
   useCountDocuments,
@@ -281,8 +282,7 @@ export function DocumentsView({
     });
   }
 
-  function confirmDelete() {
-    const row = toDelete;
+  function deleteRow(row: JsonObject | undefined) {
     const id = row?._id;
     if (!row || id === undefined) return;
     remove.mutate(
@@ -470,7 +470,10 @@ export function DocumentsView({
                 openInsert(toShellSyntax(rest));
               }
             : undefined,
-          onDelete: editable ? setToDelete : undefined,
+          // Without confirmation, the undo toast is the safety net.
+          onDelete: editable
+            ? (row) => (useSettings.getState().confirmDelete ? setToDelete(row) : deleteRow(row))
+            : undefined,
           onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
           onPaste: editable ? () => void pasteDocuments() : undefined,
           onSetField: editable
@@ -624,7 +627,7 @@ export function DocumentsView({
         document={toDelete}
         collection={namespace.collection}
         pending={remove.isPending}
-        onConfirm={confirmDelete}
+        onConfirm={() => deleteRow(toDelete)}
         onClose={() => setToDelete(undefined)}
       />
       {fieldEdit && (

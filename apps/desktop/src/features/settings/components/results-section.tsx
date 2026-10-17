@@ -1,3 +1,4 @@
+import { Switch } from "@odin-db/ui/components/switch";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import { Braces, List, Table2 } from "lucide-react";
 import { useId } from "react";
@@ -16,6 +17,7 @@ export function ResultsSection() {
   const batchSize = useSettings((s) => s.resultsBatchSize);
   const maxRows = useSettings((s) => s.resultsMaxRows);
   const rowDensity = useSettings((s) => s.rowDensity);
+  const confirmDelete = useSettings((s) => s.confirmDelete);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("results.title")} description={t("results.description")}>
@@ -57,6 +59,17 @@ export function ResultsSection() {
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+      </SettingRow>
+      <SettingRow
+        id={`${id}-confirm-delete`}
+        label={t("results.confirmDelete")}
+        description={t("results.confirmDeleteHint")}
+      >
+        <Switch
+          id={`${id}-confirm-delete`}
+          checked={confirmDelete}
+          onCheckedChange={(checked) => update({ confirmDelete: checked })}
+        />
       </SettingRow>
       <SettingRow
         id={`${id}-batch`}
