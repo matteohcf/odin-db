@@ -108,5 +108,14 @@
     "updated_other": "Updated {{count, number}} documents ({{matched, number}} matched).",
     "deleted_one": "Deleted {{count, number}} document.",
     "deleted_other": "Deleted {{count, number}} documents."
+  },
+  "distinct": {
+    "title": "Distinct values of {{field}}",
+    "description": "The {{limit}} most common values among the documents the filter matches. Array elements count one by one. Pick a value to filter by it.",
+    "search": "Search values",
+    "loading": "Counting values…",
+    "missing": "null or missing",
+    "filterBy": "Filter by this value",
+    "none": "No values."
   }
 }

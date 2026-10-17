@@ -46,6 +46,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::documents::insert_document,
             commands::documents::replace_document,
             commands::documents::delete_document,
+            commands::documents::distinct_values,
             commands::documents::update_documents,
             commands::documents::delete_documents,
             commands::documents::set_document_field,

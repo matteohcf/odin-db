@@ -1,22 +1,53 @@
 import { describe, expect, it } from "vitest";
-import { addFilterCondition, singleFieldSort, sortText } from "./query-edits";
+import { addFilterCondition, nextSort, simpleSort, sortText } from "./query-edits";
 
-describe("singleFieldSort", () => {
-  it("reads one-field sorts in any quoting", () => {
-    expect(singleFieldSort("{ age: -1 }")).toEqual({ field: "age", direction: -1 });
-    expect(singleFieldSort('{"address.city":1}')).toEqual({ field: "address.city", direction: 1 });
-    expect(singleFieldSort("name: 1")).toEqual({ field: "name", direction: 1 });
+describe("simpleSort", () => {
+  it("reads field sorts in any quoting", () => {
+    expect(simpleSort("{ age: -1 }")).toEqual([{ field: "age", direction: -1 }]);
+    expect(simpleSort('{"address.city":1}')).toEqual([{ field: "address.city", direction: 1 }]);
+    expect(simpleSort("name: 1, 'a b': -1")).toEqual([
+      { field: "name", direction: 1 },
+      { field: "a b", direction: -1 },
+    ]);
+    expect(simpleSort("")).toEqual([]);
   });
 
-  it("ignores compound or unusual sorts", () => {
-    expect(singleFieldSort("{ a: 1, b: -1 }")).toBeNull();
-    expect(singleFieldSort('{ score: { $meta: "textScore" } }')).toBeNull();
-    expect(singleFieldSort("")).toBeNull();
+  it("gives up on sorts it cannot show on columns", () => {
+    expect(simpleSort('{ score: { $meta: "textScore" } }')).toBeNull();
+    expect(simpleSort("{ a: 2 }")).toBeNull();
   });
 
   it("writes sorts back, quoting dotted paths", () => {
-    expect(sortText({ field: "address.city", direction: -1 })).toBe('{ "address.city": -1 }');
-    expect(sortText(null)).toBe("");
+    expect(sortText([{ field: "address.city", direction: -1 }])).toBe('{ "address.city": -1 }');
+    expect(
+      sortText([
+        { field: "age", direction: 1 },
+        { field: "name", direction: -1 },
+      ]),
+    ).toBe("{ age: 1, name: -1 }");
+    expect(sortText([])).toBe("");
+  });
+});
+
+describe("nextSort", () => {
+  const age = { field: "age", direction: 1 } as const;
+  it("cycles one column with plain clicks", () => {
+    expect(nextSort([], "age", false)).toEqual([age]);
+    expect(nextSort([age], "age", false)).toEqual([{ field: "age", direction: -1 }]);
+    expect(nextSort([{ field: "age", direction: -1 }], "age", false)).toEqual([]);
+    expect(nextSort([age], "name", false)).toEqual([{ field: "name", direction: 1 }]);
+  });
+
+  it("adds and cycles columns with Shift, keeping the others", () => {
+    const both = nextSort([age], "name", true);
+    expect(both).toEqual([age, { field: "name", direction: 1 }]);
+    expect(nextSort(both, "age", true)).toEqual([
+      { field: "age", direction: -1 },
+      { field: "name", direction: 1 },
+    ]);
+    expect(nextSort([{ field: "age", direction: -1 }, both[1] ?? age], "age", true)).toEqual([
+      { field: "name", direction: 1 },
+    ]);
   });
 });
 

@@ -1398,6 +1398,22 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     coll.docs.splice(index, 1);
     return null;
   },
+  distinct_values: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const counts = new Map<string, { value: JsonValue; count: number }>();
+    for (const doc of coll.docs.filter((d) => matchesFilter(d, args.filter as Doc))) {
+      const raw = fieldValue(doc, args.field as string);
+      const values = Array.isArray(raw) ? (raw.length ? raw : [null]) : [raw ?? null];
+      for (const value of values) {
+        const key = JSON.stringify(value);
+        const entry = counts.get(key) ?? { value, count: 0 };
+        entry.count += 1;
+        counts.set(key, entry);
+      }
+    }
+    return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, args.limit as number);
+  },
   update_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);

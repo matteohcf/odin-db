@@ -25,7 +25,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, Columns3, Copy, Filter, PencilLine } from "lucide-react";
+import { ArrowDown, ArrowUp, Columns3, Copy, Filter, ListChecks, PencilLine } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -61,11 +61,14 @@ export interface RowActions {
 
 /** Query shortcuts from the grid. Omitted where results do not come from a query bar. */
 export interface ColumnActions {
-  sort: { field: string; direction: 1 | -1 } | null;
-  /** `null` removes the sort. */
-  onSort: (field: string, direction: 1 | -1 | null) => void;
+  /** The fields results are sorted by, in order. Empty when unsorted or not shown. */
+  sort: readonly { field: string; direction: 1 | -1 }[];
+  /** A column was clicked; with `append` (Shift) it joins the current sort. */
+  onSort: (field: string, append: boolean) => void;
   /** `undefined` means the document has no such field. */
   onFilterBy: (field: string, value: JsonValue | undefined) => void;
+  /** Shows the field's distinct values among the matching documents. */
+  onDistinct?: (field: string) => void;
 }
 
 interface ResultsGridProps {
@@ -209,14 +212,21 @@ export function ResultsGrid({
                 </th>
                 {headers.map((header) => {
                   const meta = header.column.columnDef.meta;
-                  const sorted =
-                    columnActions?.sort?.field === header.id ? columnActions.sort.direction : null;
+                  const sortIndex =
+                    columnActions?.sort.findIndex((sort) => sort.field === header.id) ?? -1;
+                  const sorted = columnActions?.sort[sortIndex]?.direction ?? null;
+                  const multiSort = (columnActions?.sort.length ?? 0) > 1;
                   const label = (
                     <>
                       {meta?.kind && <TypeIcon kind={meta.kind} />}
                       <span className="truncate text-foreground">{header.id}</span>
                       {sorted === 1 && <ArrowUp className="size-3 shrink-0 text-primary" />}
                       {sorted === -1 && <ArrowDown className="size-3 shrink-0 text-primary" />}
+                      {sorted !== null && multiSort && (
+                        <span className="text-[10px] text-primary tabular-nums">
+                          {sortIndex + 1}
+                        </span>
+                      )}
                     </>
                   );
                   return (
@@ -233,13 +243,9 @@ export function ResultsGrid({
                         // Ascending, descending, then back to the natural order.
                         <button
                           type="button"
+                          title={t("column.sortHint", { field: header.id })}
                           className="flex h-full min-w-0 flex-1 items-center gap-1.5 px-2.5 text-left outline-none hover:bg-accent/60 focus-visible:bg-accent"
-                          onClick={() =>
-                            columnActions.onSort(
-                              header.id,
-                              sorted === null ? 1 : sorted === 1 ? -1 : null,
-                            )
-                          }
+                          onClick={(event) => columnActions.onSort(header.id, event.shiftKey)}
                         >
                           {label}
                         </button>
@@ -346,6 +352,12 @@ export function ResultsGrid({
                 >
                   <Filter />
                   <span className="truncate">{t("cell.filter", { field: menuColumn })}</span>
+                </ContextMenuItem>
+              )}
+              {columnActions?.onDistinct && (
+                <ContextMenuItem onSelect={() => columnActions.onDistinct?.(menuColumn)}>
+                  <ListChecks />
+                  <span className="truncate">{t("cell.distinct", { field: menuColumn })}</span>
                 </ContextMenuItem>
               )}
               <ContextMenuSeparator />

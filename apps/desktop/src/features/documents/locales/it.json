@@ -108,5 +108,14 @@
     "updated_other": "Aggiornati {{count, number}} documenti ({{matched, number}} corrispondenti).",
     "deleted_one": "Eliminato {{count, number}} documento.",
     "deleted_other": "Eliminati {{count, number}} documenti."
+  },
+  "distinct": {
+    "title": "Valori distinti di {{field}}",
+    "description": "I {{limit}} valori più frequenti tra i documenti che corrispondono al filtro. Gli elementi degli array contano uno per uno. Scegli un valore per filtrare.",
+    "search": "Cerca valori",
+    "loading": "Conteggio dei valori…",
+    "missing": "null o assente",
+    "filterBy": "Filtra per questo valore",
+    "none": "Nessun valore."
   }
 }

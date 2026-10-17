@@ -39,6 +39,7 @@ export const commands = {
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
 	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
+	distinctValues: (connectionId: ConnectionId, namespace: Namespace, field: string, filter: EJsonDocument, limit: number) => typedError<DistinctValue[], IpcError>(__TAURI_INVOKE("distinct_values", { connectionId, namespace, field, filter, limit })),
 	updateDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, update: EJsonDocument) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("update_documents", { connectionId, namespace, filter, update })),
 	deleteDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("delete_documents", { connectionId, namespace, filter })),
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
@@ -333,6 +334,12 @@ export type DatabaseTransferSummary = {
 	failed: number | null,
 	/**  Import only: the first errors, prefixed with their file. */
 	errors: string[],
+};
+
+export type DistinctValue = {
+	/**  `null` stands for both null and a missing field. */
+	value: EJsonValue,
+	count: number | null,
 };
 
 export type DocumentPage = {

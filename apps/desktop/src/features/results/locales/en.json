@@ -30,7 +30,8 @@
   "cell": {
     "copy": "Copy {{field}} value",
     "filter": "Filter by this {{field}}",
-    "edit": "Edit {{field}} value…"
+    "edit": "Edit {{field}} value…",
+    "distinct": "Distinct values of {{field}}…"
   },
   "view": {
     "label": "Results view",
@@ -44,5 +45,8 @@
     "choose": "Choose columns",
     "label": "{{visible}} of {{total}} columns",
     "showAll": "Show all columns"
+  },
+  "column": {
+    "sortHint": "Sort by {{field}}. Shift-click to add it to the current sort."
   }
 }

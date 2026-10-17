@@ -4,7 +4,9 @@ use odin_core::connection::ConnectionId;
 use odin_core::documents::{self, UpdateManyResult};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::explain::{self, ExplainRequest, QueryPlan};
-use odin_core::query::{self, AggregateRequest, CursorId, DocumentPage, FindRequest, Namespace};
+use odin_core::query::{
+    self, AggregateRequest, CursorId, DistinctValue, DocumentPage, FindRequest, Namespace,
+};
 use odin_core::schema::{self, FieldSummary};
 use tauri::State;
 
@@ -127,6 +129,20 @@ pub async fn delete_document(
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(documents::delete(&handle, &namespace, id).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn distinct_values(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    field: String,
+    filter: EJsonDocument,
+    limit: u32,
+) -> Result<Vec<DistinctValue>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(query::distinct_values(&handle, &namespace, &field, filter, limit).await?)
 }
 
 #[tauri::command]

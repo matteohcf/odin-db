@@ -1874,3 +1874,56 @@ async fn updates_and_deletes_by_filter() {
         15.0
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn counts_distinct_values_including_array_elements() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("people");
+    handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("people")
+        .insert_many([
+            doc! { "plan": "pro", "tags": ["a", "b"], "active": true },
+            doc! { "plan": "pro", "tags": ["a"], "active": true },
+            doc! { "plan": "free", "tags": [], "active": false },
+            doc! { "active": true },
+        ])
+        .await
+        .expect("seeded");
+    let values = |field: &'static str, filter: Document| {
+        let handle = Arc::clone(&handle);
+        let ns = ns.clone();
+        async move {
+            odin_core::query::distinct_values(&handle, &ns, field, EJsonDocument::from(filter), 100)
+                .await
+                .expect("distinct")
+                .into_iter()
+                .map(|v| (Bson::try_from(v.value).expect("bson"), v.count))
+                .collect::<Vec<_>>()
+        }
+    };
+    assert_eq!(
+        values("plan", doc! {}).await,
+        vec![
+            (Bson::String("pro".into()), 2.0),
+            (Bson::Null, 1.0),
+            (Bson::String("free".into()), 1.0),
+        ]
+    );
+    assert_eq!(
+        values("tags", doc! { "active": true }).await,
+        vec![
+            (Bson::String("a".into()), 2.0),
+            (Bson::Null, 1.0),
+            (Bson::String("b".into()), 1.0),
+        ]
+    );
+    assert!(matches!(
+        odin_core::query::distinct_values(&handle, &ns, "$plan", EJsonDocument::from(doc! {}), 10)
+            .await,
+        Err(CoreError::Validation(_))
+    ));
+}

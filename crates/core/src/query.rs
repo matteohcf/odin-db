@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::CoreError;
 use crate::connection::{ConnectionHandle, ConnectionId};
-use crate::ejson::EJsonDocument;
+use crate::ejson::{EJsonDocument, EJsonValue};
 
 pub const MAX_BATCH_SIZE: u32 = 1000;
 
@@ -266,6 +266,50 @@ pub async fn count_documents(
         .await?;
     #[allow(clippy::cast_precision_loss)]
     Ok(count as f64)
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct DistinctValue {
+    /// `null` stands for both null and a missing field.
+    pub value: EJsonValue,
+    pub count: f64,
+}
+
+/// The most common values of `field` among documents matching `filter`, with
+/// their counts. Array elements count individually, like the `distinct` command.
+pub async fn distinct_values(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    field: &str,
+    filter: EJsonDocument,
+    limit: u32,
+) -> Result<Vec<DistinctValue>, CoreError> {
+    if field.is_empty() || field.starts_with('$') {
+        return Err(CoreError::Validation(format!(
+            "{field} is not a field path"
+        )));
+    }
+    let path = format!("${field}");
+    let pipeline = vec![
+        bson::doc! { "$match": Document::try_from(filter)? },
+        bson::doc! { "$unwind": { "path": &path, "preserveNullAndEmptyArrays": true } },
+        bson::doc! { "$group": { "_id": &path, "count": { "$sum": 1 } } },
+        // Ties by value keep the order stable between runs.
+        bson::doc! { "$sort": { "count": -1, "_id": 1 } },
+        bson::doc! { "$limit": i64::from(limit.clamp(1, 1000)) },
+    ];
+    let mut cursor = namespace.collection(handle)?.aggregate(pipeline).await?;
+    let mut values = Vec::new();
+    while cursor.advance().await? {
+        let document = cursor.deserialize_current()?;
+        values.push(DistinctValue {
+            value: EJsonValue::from(document.get("_id").cloned().unwrap_or(bson::Bson::Null)),
+            count: document.get("count").map_or(0.0, crate::ejson::number_of),
+        });
+    }
+    Ok(values)
 }
 
 fn to_pipeline(stages: Vec<EJsonDocument>) -> Result<Vec<Document>, CoreError> {

@@ -44,7 +44,7 @@ import {
   useSetDocumentField,
 } from "../api/mutations";
 import { suggestIndexKeys } from "../lib/index-suggestion";
-import { addFilterCondition, singleFieldSort, sortText } from "../lib/query-edits";
+import { addFilterCondition, nextSort, simpleSort, sortText } from "../lib/query-edits";
 import {
   emptyQueryForm,
   type FindQuery,
@@ -55,6 +55,7 @@ import {
 import { historyKey, useQueryHistory } from "../store/query-history-store";
 import { BulkWriteDialog } from "./bulk-write-dialog";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
+import { DistinctValuesDialog } from "./distinct-values-dialog";
 import { EditFieldDialog } from "./edit-field-dialog";
 import { ExplainDialog } from "./explain-dialog";
 import { QueryBar } from "./query-bar";
@@ -91,6 +92,7 @@ export function DocumentsView({
   const columns = useResultsState(results, (s) => s.columns);
   const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
   const [codeQuery, setCodeQuery] = useState<FindQuery | null>(null);
+  const [distinct, setDistinct] = useState<{ field: string; filter: EJsonDocument } | null>(null);
   const [bulk, setBulk] = useState<{ mode: "update" | "delete"; filter: EJsonDocument } | null>(
     null,
   );
@@ -183,6 +185,11 @@ export function DocumentsView({
   async function showCode() {
     const query = await currentQuery();
     if (query) setCodeQuery(query);
+  }
+
+  async function openDistinct(field: string) {
+    const query = await currentQuery();
+    if (query) setDistinct({ field, filter: query.filter });
   }
 
   async function openBulk(mode: "update" | "delete") {
@@ -317,9 +324,13 @@ export function DocumentsView({
       <ResultsPanel
         controller={results}
         columnActions={{
-          sort: singleFieldSort(form.sort),
-          onSort: (field, direction) =>
-            void runForm({ ...form, sort: sortText(direction ? { field, direction } : null) }),
+          sort: simpleSort(form.sort) ?? [],
+          onSort: (field, append) =>
+            void runForm({
+              ...form,
+              // A sort the columns cannot show is replaced, not appended to.
+              sort: sortText(nextSort(simpleSort(form.sort) ?? [], field, append)),
+            }),
           onFilterBy: (field, value) =>
             void runForm({
               ...form,
@@ -329,6 +340,7 @@ export function DocumentsView({
                 value === undefined ? "{ $exists: false }" : toShellSyntax(value, 0),
               ),
             }),
+          onDistinct: (field) => void openDistinct(field),
         }}
         label={t("results.label", { collection: namespace.collection })}
         selectedIndex={selectedIndex}
@@ -403,6 +415,22 @@ export function DocumentsView({
           onSave={saveDocument}
           completions={completionsFor("document")}
           onClose={() => setEditor({ open: false })}
+        />
+      )}
+      {distinct && (
+        <DistinctValuesDialog
+          connectionId={connection.id}
+          namespace={namespace}
+          field={distinct.field}
+          filter={distinct.filter}
+          onFilterBy={(value) => {
+            setDistinct(null);
+            void runForm({
+              ...form,
+              filter: addFilterCondition(form.filter, distinct.field, toShellSyntax(value, 0)),
+            });
+          }}
+          onClose={() => setDistinct(null)}
         />
       )}
       {bulk && (
