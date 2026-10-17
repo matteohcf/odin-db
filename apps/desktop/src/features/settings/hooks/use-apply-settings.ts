@@ -15,6 +15,7 @@ export function useApplySettings() {
   const update = useSettings((s) => s.update);
   const accent = useSettings((s) => s.accent);
   const darkStyle = useSettings((s) => s.darkStyle);
+  const monoFont = useSettings((s) => s.monoFont);
 
   useEffect(() => {
     const resolved = resolveLanguage(language);
@@ -38,6 +39,15 @@ export function useApplySettings() {
     document.documentElement.dataset.accent = accent;
     document.documentElement.dataset.darkStyle = darkStyle;
   }, [accent, darkStyle]);
+
+  useEffect(() => {
+    const style = document.documentElement.style;
+    const font = monoFont.trim().replaceAll('"', "");
+    // Falls back to the bundled font for glyphs the chosen one lacks, or if it is missing.
+    if (font)
+      style.setProperty("--odin-mono", `"${font}", "IBM Plex Mono", ui-monospace, monospace`);
+    else style.removeProperty("--odin-mono");
+  }, [monoFont]);
 
   const zoomIn = () => update({ zoom: stepZoom(useSettings.getState().zoom, 1) });
   useShortcut("zoomIn", zoomIn);

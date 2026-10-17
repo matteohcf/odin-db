@@ -44,7 +44,9 @@
     "title": "Editors",
     "description": "Documents, pipelines and other multi-line editors.",
     "fontSize": "Font size",
-    "fontSizeHint": "Query bar fields keep their compact size."
+    "fontSizeHint": "Query bar fields keep their compact size.",
+    "monoFont": "Monospace font",
+    "monoFontHint": "Used by the results, editors and shell. Leave empty for the bundled IBM Plex Mono."
   },
   "shell": {
     "title": "Shell",

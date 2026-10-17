@@ -33,6 +33,8 @@ export interface Settings {
   reconnectOnLaunch: boolean;
   /** Ask before deleting one document; off, an undo toast follows the delete. */
   confirmDelete: boolean;
+  /** A monospace font installed on the system; empty for the bundled IBM Plex Mono. */
+  monoFont: string;
 }
 
 export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rowDensity: "normal",
   reconnectOnLaunch: true,
   confirmDelete: true,
+  monoFont: "",
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

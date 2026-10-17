@@ -1,3 +1,4 @@
+import { Input } from "@odin-db/ui/components/input";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "@/lib/settings";
@@ -6,6 +7,18 @@ import { SettingRow } from "./setting-row";
 import { SettingsSection } from "./settings-section";
 
 const FONT_SIZES = [11, 12, 12.5, 13, 14, 15, 16, 18] as const;
+// Suggestions only: any installed font name works.
+const MONO_FONTS = [
+  "JetBrains Mono",
+  "Fira Code",
+  "SF Mono",
+  "Menlo",
+  "Cascadia Code",
+  "Consolas",
+  "Source Code Pro",
+  "Hack",
+  "Ubuntu Mono",
+] as const;
 
 export function EditorSection() {
   const { t } = useTranslation("settings");
@@ -13,10 +26,32 @@ export function EditorSection() {
   const editorFontSize = useSettings((s) => s.editorFontSize);
   const shellFontSize = useSettings((s) => s.shellFontSize);
   const shellScrollback = useSettings((s) => s.shellScrollback);
+  const monoFont = useSettings((s) => s.monoFont);
   const update = useSettings((s) => s.update);
   return (
     <>
       <SettingsSection title={t("editor.title")} description={t("editor.description")}>
+        <SettingRow
+          id={`${id}-mono-font`}
+          label={t("editor.monoFont")}
+          description={t("editor.monoFontHint")}
+        >
+          <Input
+            id={`${id}-mono-font`}
+            value={monoFont}
+            onChange={(event) => update({ monoFont: event.target.value })}
+            placeholder="IBM Plex Mono"
+            list={`${id}-mono-fonts`}
+            spellCheck={false}
+            autoComplete="off"
+            className="h-8 w-52 font-mono text-xs"
+          />
+          <datalist id={`${id}-mono-fonts`}>
+            {MONO_FONTS.map((font) => (
+              <option key={font} value={font} />
+            ))}
+          </datalist>
+        </SettingRow>
         <SettingRow
           id={`${id}-editor-font`}
           label={t("editor.fontSize")}

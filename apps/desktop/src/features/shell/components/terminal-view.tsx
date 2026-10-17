@@ -172,6 +172,17 @@ export function TerminalView({ connectionId }: { connectionId: ConnectionId }) {
     return () => cancelAnimationFrame(frame);
   }, [theme, accent, darkStyle]);
 
+  const monoFont = useSettings((s) => s.monoFont);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the font setting changes.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      if (!terminal.current || !host.current) return;
+      terminal.current.options.fontFamily = getComputedStyle(host.current).fontFamily;
+      fitAddon.current?.fit();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [monoFont]);
+
   useEffect(() => {
     if (!terminal.current) return;
     terminal.current.options.fontSize = fontSize;

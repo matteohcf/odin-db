@@ -178,7 +178,8 @@
 
 @theme inline {
   --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* `--odin-mono` is the user's own monospace font, when they pick one. */
+  --font-mono: var(--odin-mono, "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
