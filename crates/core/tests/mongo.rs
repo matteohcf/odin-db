@@ -922,8 +922,10 @@ async fn shell_answers_the_password_prompt_through_the_pty() {
     let uri = format!("mongodb://root@127.0.0.1:{port}/?authSource=admin&directConnection=true");
 
     // The image restarts mongod after creating the user: wait until auth works.
+    // Shared CI runners can take well over 30 s for that.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
     let mut ready = false;
-    for _ in 0..60 {
+    while std::time::Instant::now() < deadline {
         if test_connection(&uri, Some(Secret::new("s3cr3t-pw")))
             .await
             .is_ok()
@@ -1588,4 +1590,219 @@ async fn exports_a_database_to_a_folder_and_imports_it_back() {
         "canonical JSON keeps BSON types"
     );
     std::fs::remove_dir_all(folder).expect("cleanup");
+}
+
+fn copy_request(
+    source_collection: Option<&str>,
+    target_database: &str,
+    target_collection: Option<&str>,
+) -> odin_core::transfer::CopyRequest {
+    odin_core::transfer::CopyRequest {
+        source_database: "odin_test".into(),
+        source_collection: source_collection.map(Into::into),
+        target_database: target_database.into(),
+        target_collection: target_collection.map(Into::into),
+        mode: ImportMode::Insert,
+        drop_target: false,
+        copy_indexes: true,
+    }
+}
+
+fn drained<T: Send + 'static>() -> tokio::sync::mpsc::Sender<T> {
+    let (progress, mut drain) = tokio::sync::mpsc::channel(64);
+    tokio::spawn(async move { while drain.recv().await.is_some() {} });
+    progress
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn copies_a_collection_with_options_and_indexes_to_another_connection() {
+    use odin_core::transfer::copy;
+
+    let fx = Fixture::start().await;
+    let source = fx.connect(false).await;
+    let target = fx.connect(false).await;
+    let db = source.client.database("odin_test");
+    db.create_collection("people")
+        .validator(doc! { "age": { "$type": "int" } })
+        .await
+        .expect("created");
+    let docs: Vec<Document> = (0..2500)
+        .map(|i| doc! { "age": i, "email": format!("p{i}@example.com"), "price": Decimal128::from_str("1.50").expect("decimal") })
+        .collect();
+    db.collection::<Document>("people")
+        .insert_many(docs)
+        .await
+        .expect("seeded");
+    indexes::create(
+        &source,
+        &namespace("people"),
+        CreateIndexRequest {
+            keys: EJsonDocument::from(doc! { "email": 1 }),
+            name: Some("email_unique".into()),
+            unique: true,
+            sparse: false,
+            hidden: false,
+            expire_after_seconds: None,
+            partial_filter: None,
+        },
+    )
+    .await
+    .expect("index");
+
+    let summary = copy(
+        &source,
+        &target,
+        copy_request(Some("people"), "odin_copy", Some("customers")),
+        drained(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("copied");
+    assert_eq!(
+        (summary.collections, summary.documents, summary.failed),
+        (1.0, 2500.0, 0.0)
+    );
+    assert!(summary.errors.is_empty(), "{:?}", summary.errors);
+
+    let copied = target.client.database("odin_copy");
+    let names: Vec<String> = indexes::list(
+        &target,
+        &Namespace {
+            database: "odin_copy".into(),
+            collection: "customers".into(),
+        },
+    )
+    .await
+    .expect("indexes")
+    .into_iter()
+    .map(|index| index.name)
+    .collect();
+    assert!(names.contains(&"email_unique".to_owned()), "{names:?}");
+    let first = copied
+        .collection::<Document>("customers")
+        .find_one(doc! { "age": 7 })
+        .await
+        .expect("find")
+        .expect("document");
+    assert!(
+        matches!(first.get("price"), Some(Bson::Decimal128(_))),
+        "types survive: {first}"
+    );
+    // The validator came along: a string age is rejected in the copy too.
+    assert!(
+        copied
+            .collection::<Document>("customers")
+            .insert_one(doc! { "age": "old" })
+            .await
+            .is_err()
+    );
+
+    // Copying again inserts nothing new: every _id already exists.
+    let again = copy(
+        &source,
+        &target,
+        copy_request(Some("people"), "odin_copy", Some("customers")),
+        drained(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("copied again");
+    assert_eq!((again.documents, again.failed), (0.0, 2500.0));
+
+    // Replacing the target starts from scratch.
+    let mut replace = copy_request(Some("people"), "odin_copy", Some("customers"));
+    replace.drop_target = true;
+    let replaced = copy(
+        &source,
+        &target,
+        replace,
+        drained(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("replaced");
+    assert_eq!((replaced.documents, replaced.failed), (2500.0, 0.0));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn copies_a_database_with_views_and_guards_the_target() {
+    use odin_core::transfer::copy;
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    fx.seed(&handle, &namespace("orders"), 40).await;
+    fx.seed(&handle, &namespace("users"), 5).await;
+    handle
+        .client
+        .database("odin_test")
+        .create_collection("big_orders")
+        .view_on("orders".to_owned())
+        .pipeline(vec![doc! { "$match": { "n": { "$gte": 30 } } }])
+        .await
+        .expect("view");
+
+    let summary = copy(
+        &handle,
+        &handle,
+        copy_request(None, "odin_clone", None),
+        drained(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("copied");
+    assert_eq!((summary.collections, summary.documents), (3.0, 45.0));
+    let view = handle
+        .client
+        .database("odin_clone")
+        .collection::<Document>("big_orders");
+    assert_eq!(view.count_documents(doc! {}).await.expect("count"), 10);
+
+    // Merge keeps fields the target has and the source lacks.
+    let clone_users = handle
+        .client
+        .database("odin_clone")
+        .collection::<Document>("users");
+    clone_users
+        .update_many(doc! {}, doc! { "$set": { "note": "kept" } })
+        .await
+        .expect("noted");
+    let mut merge = copy_request(Some("users"), "odin_clone", None);
+    merge.mode = ImportMode::Merge;
+    let merged = copy(&handle, &handle, merge, drained(), CancellationToken::new())
+        .await
+        .expect("merged");
+    assert_eq!((merged.documents, merged.updated), (0.0, 5.0));
+    assert_eq!(
+        clone_users
+            .count_documents(doc! { "note": "kept" })
+            .await
+            .expect("count"),
+        5
+    );
+
+    assert!(matches!(
+        copy(
+            &handle,
+            &handle,
+            copy_request(Some("users"), "odin_test", None),
+            drained(),
+            CancellationToken::new(),
+        )
+        .await,
+        Err(CoreError::Validation(_))
+    ));
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        copy(
+            &handle,
+            &read_only,
+            copy_request(Some("users"), "odin_other", None),
+            drained(),
+            CancellationToken::new(),
+        )
+        .await,
+        Err(CoreError::ReadOnly)
+    ));
 }
