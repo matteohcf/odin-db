@@ -58,19 +58,34 @@ const GROUPS = [
   },
 ] as const;
 
-/** Every keyboard shortcut, grouped; shown in the overview dialog and in settings. */
-export function ShortcutsList() {
+/**
+ * Every keyboard shortcut, grouped; shown in the overview dialog and in settings.
+ * `filter` (lowercase) keeps the shortcuts whose description contains it.
+ */
+export function ShortcutsList({ filter = "" }: { filter?: string }) {
   const { t } = useTranslation("common");
+  const groups = GROUPS.map((group) => ({
+    id: group.id,
+    shortcuts: group.shortcuts.filter(([action]) =>
+      t(`shortcuts.actions.${action}`).toLowerCase().includes(filter),
+    ),
+  })).filter((group) => group.shortcuts.length > 0);
+  if (groups.length === 0) return null;
   return (
     <div className="flex flex-col gap-4">
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <section key={group.id} className="flex flex-col gap-1.5">
           <h3 className="font-medium text-muted-foreground text-xs">
             {t(`shortcuts.groups.${group.id}`)}
           </h3>
           <dl className="flex flex-col gap-1">
             {group.shortcuts.map(([action, keys]) => (
-              <div key={action} className="flex items-center justify-between gap-4 text-sm">
+              <div
+                key={action}
+                // Settings search counts these as matches.
+                data-setting-row={filter ? "" : undefined}
+                className="flex items-center justify-between gap-4 text-sm"
+              >
                 <dt>{t(`shortcuts.actions.${action}`)}</dt>
                 <dd className="flex items-center gap-1">
                   {keys.map((key) => (
