@@ -101,5 +101,11 @@
     "close": "Chiudi l'anteprima",
     "toggle": "Anteprima del documento",
     "toggleHint": "Mostra il documento selezionato accanto alla tabella (Spazio)"
+  },
+  "field": {
+    "copyPath": "Copia percorso {{path}}",
+    "pathCopied": "Copiato {{path}}",
+    "copyValue": "Copia valore",
+    "filter": "Filtra per questo valore"
   }
 }

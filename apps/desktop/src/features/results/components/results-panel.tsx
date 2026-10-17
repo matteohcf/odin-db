@@ -102,7 +102,10 @@ export function ResultsPanel({
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col">{grid}</div>
       {preview && (
-        <DocumentPreview document={selectedIndex === null ? undefined : rows[selectedIndex]} />
+        <DocumentPreview
+          document={selectedIndex === null ? undefined : rows[selectedIndex]}
+          onFilter={columnActions?.onFilterBy}
+        />
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import type { JsonValue } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { ChevronsDownUp, ChevronsUpDown, X } from "lucide-react";
 import { useState } from "react";
@@ -7,7 +8,13 @@ import { useResultsView } from "../store/results-view-store";
 import { DocumentTree } from "./document-tree";
 
 /** The selected document beside the table: wide or nested documents read at a glance. */
-export function DocumentPreview({ document }: { document: JsonObject | undefined }) {
+export function DocumentPreview({
+  document,
+  onFilter,
+}: {
+  document: JsonObject | undefined;
+  onFilter?: ((path: string, value: JsonValue) => void) | undefined;
+}) {
   const { t } = useTranslation("results");
   const togglePreview = useResultsView((s) => s.togglePreview);
   const [expanded, setExpanded] = useState(false);
@@ -54,6 +61,7 @@ export function DocumentPreview({ document }: { document: JsonObject | undefined
             key={`${JSON.stringify(id)}:${expanded}`}
             document={document}
             expanded={expanded}
+            onFilter={onFilter}
           />
         ) : (
           <p className="text-muted-foreground text-xs">{t("preview.empty")}</p>

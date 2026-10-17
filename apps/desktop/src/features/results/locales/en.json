@@ -101,5 +101,11 @@
     "close": "Close the preview",
     "toggle": "Document preview",
     "toggleHint": "Show the selected document beside the table (Space)"
+  },
+  "field": {
+    "copyPath": "Copy path {{path}}",
+    "pathCopied": "Copied {{path}}",
+    "copyValue": "Copy value",
+    "filter": "Filter by this value"
   }
 }
