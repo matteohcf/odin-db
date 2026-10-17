@@ -5,6 +5,7 @@ use std::sync::Arc;
 use odin_core::catalog;
 use odin_core::connection::ConnectionId;
 use odin_core::query::Namespace;
+use odin_core::validation::{self, ValidationRules};
 use tauri::State;
 
 use crate::ipc::IpcError;
@@ -53,4 +54,27 @@ pub async fn drop_database(
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(catalog::drop_database(&handle, &database).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_validation(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+) -> Result<ValidationRules, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(validation::get_rules(&handle, &namespace).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_validation(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    rules: ValidationRules,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(validation::set_rules(&handle, &namespace, rules).await?)
 }

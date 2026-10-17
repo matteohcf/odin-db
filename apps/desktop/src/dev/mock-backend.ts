@@ -20,7 +20,15 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import { fieldPathsOf } from "@/lib/ejson-fields";
 
 type Doc = { [key: string]: JsonValue };
-type Collections = Record<string, { kind: CollectionInfo["kind"]; docs: Doc[]; indexes?: Doc[] }>;
+type Collections = Record<
+  string,
+  {
+    kind: CollectionInfo["kind"];
+    docs: Doc[];
+    indexes?: Doc[];
+    validation?: { validator: JsonValue; level: string; action: string };
+  }
+>;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const fail = (kind: IpcError["kind"], message: string): never => {
@@ -945,6 +953,18 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (request.partialFilter) spec.partialFilterExpression = request.partialFilter;
     indexesOf(coll).push(spec);
     return name;
+  },
+  get_validation: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    return coll.validation ?? { validator: {}, level: "strict", action: "error" };
+  },
+  set_validation: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    coll.validation = args.rules as NonNullable<typeof coll.validation>;
+    return null;
   },
   set_index_hidden: (args) => {
     const ns = args.namespace as { database: string; collection: string };

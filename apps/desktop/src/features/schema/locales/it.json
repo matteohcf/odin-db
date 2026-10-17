@@ -14,5 +14,25 @@
   "mixed": "misto",
   "mixedHint": "I documenti memorizzano questo campo con tipi diversi, e le query potrebbero non trovare alcuni documenti.",
   "more_one": "+{{count}} altro",
-  "more_other": "+{{count}} altri"
+  "more_other": "+{{count}} altri",
+  "validation": {
+    "validator": "Validatore",
+    "level": "Si applica a",
+    "action": "In caso di violazione",
+    "levels": {
+      "strict": "Ogni inserimento e aggiornamento",
+      "moderate": "Solo i documenti validi",
+      "off": "Niente (regole disattivate)"
+    },
+    "actions": {
+      "error": "Rifiuta la scrittura",
+      "warn": "Accetta e registra un avviso"
+    },
+    "generate": "Parti dai documenti",
+    "generateHint": "Scrive un $jsonSchema dai campi campionati e dai loro tipi. Controllalo prima di salvare.",
+    "save": "Salva le regole",
+    "saved": "Regole di validazione salvate.",
+    "hint": "Un filtro di query o un $jsonSchema. I documenti esistenti non vengono controllati; ⌘↵ salva.",
+    "readOnly": "Sola lettura: le regole non si possono modificare da questa connessione."
+  }
 }

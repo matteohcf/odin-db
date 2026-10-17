@@ -4,7 +4,8 @@
     "documents": "Documenti",
     "aggregation": "Aggregazione",
     "indexes": "Indici",
-    "schema": "Schema"
+    "schema": "Schema",
+    "validation": "Validazione"
   },
   "header": {
     "readOnly": "Sola lettura",

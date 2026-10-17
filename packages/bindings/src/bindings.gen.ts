@@ -48,6 +48,8 @@ export const commands = {
 	renameCollection: (connectionId: ConnectionId, namespace: Namespace, newName: string) => typedError<null, IpcError>(__TAURI_INVOKE("rename_collection", { connectionId, namespace, newName })),
 	dropCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("drop_collection", { connectionId, namespace })),
 	dropDatabase: (connectionId: ConnectionId, database: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_database", { connectionId, database })),
+	getValidation: (connectionId: ConnectionId, namespace: Namespace) => typedError<ValidationRules, IpcError>(__TAURI_INVOKE("get_validation", { connectionId, namespace })),
+	setValidation: (connectionId: ConnectionId, namespace: Namespace, rules: ValidationRules) => typedError<null, IpcError>(__TAURI_INVOKE("set_validation", { connectionId, namespace, rules })),
 	/**  Field paths of a sample of the collection, for query autocompletion. */
 	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size })),
 	/**  How the server runs a find: winning plan, indexes and counts. */
@@ -751,6 +753,23 @@ export type TransferSummary = {
 export type UpdateManyResult = {
 	matched: number | null,
 	modified: number | null,
+};
+
+/**  What happens to a write that breaks the rules. */
+export type ValidationAction = "error" | 
+/**  Accepted, and logged by the server. */
+"warn";
+
+/**  Which writes the rules apply to. */
+export type ValidationLevel = "off" | "strict" | 
+/**  Only inserts and updates of documents that already pass. */
+"moderate";
+
+export type ValidationRules = {
+	/**  Empty means no rules. */
+	validator: EJsonDocument,
+	level: ValidationLevel,
+	action: ValidationAction,
 };
 
 /* Tauri Specta runtime */

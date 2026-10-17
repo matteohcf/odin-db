@@ -14,5 +14,25 @@
   "mixed": "mixed",
   "mixedHint": "Documents store this field with different types, which can make queries miss documents.",
   "more_one": "+{{count}} more",
-  "more_other": "+{{count}} more"
+  "more_other": "+{{count}} more",
+  "validation": {
+    "validator": "Validator",
+    "level": "Applies to",
+    "action": "On a violation",
+    "levels": {
+      "strict": "Every insert and update",
+      "moderate": "Valid documents only",
+      "off": "Nothing (rules off)"
+    },
+    "actions": {
+      "error": "Reject the write",
+      "warn": "Accept and log a warning"
+    },
+    "generate": "Start from the documents",
+    "generateHint": "Writes a $jsonSchema from the sampled fields and their types. Review it before saving.",
+    "save": "Save rules",
+    "saved": "Validation rules saved.",
+    "hint": "A query filter or a $jsonSchema. Existing documents are not checked; ⌘↵ saves.",
+    "readOnly": "Read-only: the rules cannot be changed from this connection."
+  }
 }

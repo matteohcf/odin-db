@@ -3,7 +3,16 @@ import { Button } from "@odin-db/ui/components/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
-import { Braces, ChartBarBig, Eye, ListTree, Lock, Unplug, Workflow } from "lucide-react";
+import {
+  Braces,
+  ChartBarBig,
+  Eye,
+  ListTree,
+  Lock,
+  ShieldCheck,
+  Unplug,
+  Workflow,
+} from "lucide-react";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
@@ -22,14 +31,18 @@ const IndexesView = lazy(() =>
 const SchemaView = lazy(() =>
   import("@/features/schema").then((module) => ({ default: module.SchemaView })),
 );
+const ValidationView = lazy(() =>
+  import("@/features/schema").then((module) => ({ default: module.ValidationView })),
+);
 
-const VIEWS = ["documents", "aggregation", "schema", "indexes"] as const;
+const VIEWS = ["documents", "aggregation", "schema", "indexes", "validation"] as const;
 type View = (typeof VIEWS)[number];
 const viewIcon = {
   documents: Braces,
   aggregation: Workflow,
   schema: ChartBarBig,
   indexes: ListTree,
+  validation: ShieldCheck,
 } as const;
 
 /** A collection tab: binds it to its profile's live connection and hosts its views. */
@@ -136,7 +149,8 @@ function CollectionWorkspace({
         <div className="ml-auto" />
         {!isView && <CollectionStats connectionId={connection.id} namespace={namespace} />}
         <TabsList className="h-8" aria-label={t("views.label")}>
-          {VIEWS.map((value) => {
+          {/* Views have no validation rules of their own. */}
+          {VIEWS.filter((value) => value !== "validation" || !isView).map((value) => {
             const Icon = viewIcon[value];
             return (
               <TabsTrigger key={value} value={value} className="px-2.5 text-xs">
@@ -180,6 +194,8 @@ function CollectionWorkspace({
                 />
               ) : value === "schema" ? (
                 <SchemaView connection={connection} namespace={namespace} />
+              ) : value === "validation" ? (
+                <ValidationView connection={connection} namespace={namespace} editable={editable} />
               ) : (
                 <IndexesView
                   connection={connection}
