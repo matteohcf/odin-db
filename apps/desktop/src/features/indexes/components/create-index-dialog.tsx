@@ -22,16 +22,23 @@ import { useCreateIndex } from "../api/indexes";
 interface CreateIndexDialogProps {
   connectionId: ConnectionId;
   namespace: Namespace;
+  /** Keys to start from, e.g. suggested by a query plan. */
+  initialKeys?: string;
   onClose: () => void;
 }
 
 type Flag = "unique" | "sparse" | "hidden";
 
-export function CreateIndexDialog({ connectionId, namespace, onClose }: CreateIndexDialogProps) {
+export function CreateIndexDialog({
+  connectionId,
+  namespace,
+  initialKeys = "",
+  onClose,
+}: CreateIndexDialogProps) {
   const { t } = useTranslation("indexes");
   const id = useId();
   const create = useCreateIndex(connectionId, namespace);
-  const [keys, setKeys] = useState("");
+  const [keys, setKeys] = useState(initialKeys);
   const [name, setName] = useState("");
   const [flags, setFlags] = useState<Record<Flag, boolean>>({
     unique: false,

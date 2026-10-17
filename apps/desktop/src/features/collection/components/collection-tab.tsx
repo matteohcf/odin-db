@@ -3,7 +3,7 @@ import { Button } from "@odin-db/ui/components/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { Braces, Eye, ListTree, Lock, Unplug, Workflow } from "lucide-react";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
@@ -67,8 +67,11 @@ function CollectionWorkspace({
   // Views are read-only in MongoDB itself, whatever the connection allows.
   const editable = !connection.readOnly && !isView;
   const [view, setView] = useState<View>("documents");
+  const [indexDraft, setIndexDraft] = useState<string | null>(null);
   // Views mount on first visit and then stay mounted, keeping their state.
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
+
+  const clearIndexDraft = useCallback(() => setIndexDraft(null), []);
 
   function select(value: string) {
     const next = VIEWS.find((candidate) => candidate === value);
@@ -130,13 +133,27 @@ function CollectionWorkspace({
               namespace={namespace}
               editable={editable}
               isView={isView}
+              onCreateIndex={
+                editable
+                  ? (keys) => {
+                      select("indexes");
+                      setIndexDraft(keys);
+                    }
+                  : undefined
+              }
             />
           ) : (
             <Suspense fallback={null}>
               {value === "aggregation" ? (
                 <AggregationView connection={connection} namespace={namespace} />
               ) : (
-                <IndexesView connection={connection} namespace={namespace} editable={editable} />
+                <IndexesView
+                  connection={connection}
+                  namespace={namespace}
+                  editable={editable}
+                  draftKeys={indexDraft}
+                  onDraftOpened={clearIndexDraft}
+                />
               )}
             </Suspense>
           )}

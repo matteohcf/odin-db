@@ -12,7 +12,7 @@ import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { CircleAlert, Loader2, Plus, RotateCw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { describeEJson } from "@/lib/ejson-display";
@@ -24,21 +24,37 @@ interface IndexesViewProps {
   connection: ConnectionInfo;
   namespace: Namespace;
   editable: boolean;
+  /** Opens the create dialog with these keys (from a query plan), once. */
+  draftKeys?: string | null;
+  onDraftOpened?: () => void;
 }
 
 /** The indexes of one collection, with their options, size and usage. */
-export function IndexesView({ connection, namespace, editable }: IndexesViewProps) {
+export function IndexesView({
+  connection,
+  namespace,
+  editable,
+  draftKeys = null,
+  onDraftOpened,
+}: IndexesViewProps) {
   const { t } = useTranslation("indexes");
   const indexes = useIndexes(connection.id, namespace);
   const drop = useDropIndex(connection.id, namespace);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<string | false>(false);
+
+  useEffect(() => {
+    if (draftKeys && editable) {
+      setCreating(draftKeys);
+      onDraftOpened?.();
+    }
+  }, [draftKeys, editable, onDraftOpened]);
   const [toDrop, setToDrop] = useState<string | null>(null);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
         {editable ? (
-          <Button size="sm" onClick={() => setCreating(true)}>
+          <Button size="sm" onClick={() => setCreating("")}>
             <Plus />
             {t("toolbar.create")}
           </Button>
@@ -131,10 +147,11 @@ export function IndexesView({ connection, namespace, editable }: IndexesViewProp
         )}
       </div>
 
-      {creating && (
+      {creating !== false && (
         <CreateIndexDialog
           connectionId={connection.id}
           namespace={namespace}
+          initialKeys={creating}
           onClose={() => setCreating(false)}
         />
       )}

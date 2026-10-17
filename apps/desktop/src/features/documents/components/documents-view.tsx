@@ -41,6 +41,7 @@ import {
   useReplaceDocument,
   useSetDocumentField,
 } from "../api/mutations";
+import { suggestIndexKeys } from "../lib/index-suggestion";
 import { addFilterCondition, singleFieldSort, sortText } from "../lib/query-edits";
 import {
   emptyQueryForm,
@@ -65,6 +66,8 @@ interface DocumentsViewProps {
   /** False for read-only connections and for views. */
   editable: boolean;
   isView: boolean;
+  /** Opens index creation with suggested keys, from a query plan. */
+  onCreateIndex?: ((keys: string) => void) | undefined;
 }
 
 const matchAll: FindQuery = { filter: {}, sort: null, projection: null, skip: null, limit: null };
@@ -72,7 +75,13 @@ const NEW_DOCUMENT = "{\n  \n}";
 const NO_FIELDS: FieldSummary[] = [];
 
 /** Query, browse and edit the documents of one collection. */
-export function DocumentsView({ connection, namespace, editable, isView }: DocumentsViewProps) {
+export function DocumentsView({
+  connection,
+  namespace,
+  editable,
+  isView,
+  onCreateIndex,
+}: DocumentsViewProps) {
   const { t } = useTranslation("documents");
   const label = `${namespace.database}.${namespace.collection}`;
   const results = useResultsController();
@@ -103,7 +112,7 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const explainFind = useExplainFind();
   const setField = useSetDocumentField();
   const [fieldEdit, setFieldEdit] = useState<{ row: JsonObject; field: string } | null>(null);
-  const [plan, setPlan] = useState<QueryPlan | null>(null);
+  const [plan, setPlan] = useState<{ plan: QueryPlan; suggestedIndex: string | null } | null>(null);
   const target = { connectionId: connection.id, namespace };
 
   const execute = useCallback(
@@ -133,7 +142,8 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
     explainFind.mutate(
       { ...target, request: { filter, sort, projection, skip, limit } },
       {
-        onSuccess: setPlan,
+        onSuccess: (result) =>
+          setPlan({ plan: result, suggestedIndex: suggestIndexKeys(filter, sort) }),
         onError: (error) => toast.error(t("explain.failed", { message: errorMessage(error) })),
       },
     );
@@ -381,7 +391,15 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
       {plan && (
         <ExplainDialog
           collection={namespace.collection}
-          plan={plan}
+          plan={plan.plan}
+          suggestedIndex={plan.suggestedIndex}
+          onCreateIndex={
+            onCreateIndex &&
+            ((keys) => {
+              setPlan(null);
+              onCreateIndex(keys);
+            })
+          }
           onClose={() => setPlan(null)}
         />
       )}

@@ -1,4 +1,5 @@
 import type { QueryPlan } from "@odin-db/bindings";
+import { Button } from "@odin-db/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +8,7 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { cn } from "@odin-db/ui/lib/utils";
-import { ChevronRight, CircleCheck, TriangleAlert } from "lucide-react";
+import { ChevronRight, CircleCheck, ListPlus, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code-editor";
@@ -17,11 +18,21 @@ import { toShellSyntax } from "@/lib/shell-syntax";
 interface ExplainDialogProps {
   collection: string;
   plan: QueryPlan;
+  /** Index keys that would serve the query, if any. */
+  suggestedIndex: string | null;
+  /** Omitted when the user cannot create indexes. */
+  onCreateIndex?: ((keys: string) => void) | undefined;
   onClose: () => void;
 }
 
 /** The winning plan in a sentence, its key counts, its stages, and the raw output. */
-export function ExplainDialog({ collection, plan, onClose }: ExplainDialogProps) {
+export function ExplainDialog({
+  collection,
+  plan,
+  suggestedIndex,
+  onCreateIndex,
+  onClose,
+}: ExplainDialogProps) {
   const { t, i18n } = useTranslation("documents");
   const [showRaw, setShowRaw] = useState(false);
   // Counts are f64 over IPC, which the bindings type as nullable.
@@ -70,6 +81,18 @@ export function ExplainDialog({ collection, plan, onClose }: ExplainDialogProps)
             <p className="font-medium selectable">{verdict}</p>
             {wasteful && (
               <p className="text-muted-foreground text-xs">{t("explain.collectionScanHint")}</p>
+            )}
+            {wasteful && suggestedIndex && onCreateIndex && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-1.5 self-start"
+                onClick={() => onCreateIndex(suggestedIndex)}
+              >
+                <ListPlus />
+                {t("explain.createIndex")}
+                <span className="font-mono text-muted-foreground text-xs">{suggestedIndex}</span>
+              </Button>
             )}
           </div>
         </div>

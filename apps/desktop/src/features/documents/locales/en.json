@@ -70,7 +70,8 @@
     "milliseconds": "{{value}} ms",
     "stages": "Stages",
     "raw": "Raw explain output",
-    "failed": "Couldn't explain the query: {{message}}"
+    "failed": "Couldn't explain the query: {{message}}",
+    "createIndex": "Create index"
   },
   "field": {
     "title": "Edit {{field}}",
