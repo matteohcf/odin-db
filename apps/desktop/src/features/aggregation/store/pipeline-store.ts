@@ -10,6 +10,8 @@ interface PipelineState {
   setOperator: (id: string, operator: string) => void;
   remove: (id: string) => void;
   move: (id: string, delta: -1 | 1) => void;
+  /** Replaces the whole pipeline, e.g. with a saved one. */
+  replace: (stages: readonly Omit<Stage, "id">[]) => void;
 }
 
 const newStage = (operator: string): Stage => ({
@@ -43,6 +45,8 @@ export function createPipelineStore() {
         }),
       })),
     remove: (id) => set((state) => ({ stages: state.stages.filter((s) => s.id !== id) })),
+    replace: (stages) =>
+      set({ stages: stages.map((stage) => ({ ...stage, id: crypto.randomUUID() })) }),
     move: (id, delta) =>
       set((state) => {
         const index = state.stages.findIndex((s) => s.id === id);

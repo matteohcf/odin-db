@@ -33,6 +33,8 @@ import { toShellSyntax } from "@/lib/shell-syntax";
 import { isWriteOperator } from "../lib/operators";
 import { buildPipeline, pipelineToText } from "../lib/pipeline";
 import { createPipelineStore } from "../store/pipeline-store";
+import { pipelineKey } from "../store/saved-pipelines-store";
+import { SavedPipelinesMenu } from "./saved-pipelines-menu";
 import { StageCard } from "./stage-card";
 
 interface AggregationViewProps {
@@ -109,6 +111,15 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
           <Copy />
           {t("toolbar.copy")}
         </Button>
+        <SavedPipelinesMenu
+          storageKey={pipelineKey(connection.profileId, namespace.database, namespace.collection)}
+          stages={stages}
+          onLoad={(pipeline) => {
+            actions.replace(pipeline.stages);
+            setRunError(null);
+            toast.success(t("saved.loaded", { name: pipeline.name }));
+          }}
+        />
         {runError && (
           <p
             role="alert"

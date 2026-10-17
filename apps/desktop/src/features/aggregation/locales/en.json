@@ -71,5 +71,16 @@
     "$redact": "Restrict content by a condition",
     "$out": "Write results to a collection (replaces it)",
     "$merge": "Merge results into a collection"
+  },
+  "saved": {
+    "open": "Saved",
+    "name": "Pipeline name",
+    "namePlaceholder": "Name this pipeline",
+    "save": "Save",
+    "replace": "Replace",
+    "done": "Saved {{name}}",
+    "loaded": "Loaded {{name}}",
+    "empty": "Pipelines you save for this collection appear here.",
+    "delete": "Delete {{name}}"
   }
 }
