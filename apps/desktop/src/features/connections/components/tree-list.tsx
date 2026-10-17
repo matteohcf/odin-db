@@ -141,8 +141,9 @@ export function TreeList({
         <li
           data-index={stickyIndex}
           data-sticky
-          className="sticky top-0 z-10 border-b bg-sidebar shadow-xs"
-          style={{ height: ROW_HEIGHT }}
+          // Reaches over the scroller's top padding, so no row peeks out above it.
+          className="sticky -top-1.5 z-10 -mt-1.5 border-b bg-sidebar pt-1.5 shadow-xs"
+          style={{ height: ROW_HEIGHT + 6 }}
         >
           <Row
             row={stickyRow}
