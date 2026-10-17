@@ -45,6 +45,16 @@ impl OperationRegistry {
             .is_some()
     }
 
+    /// Cancels every running operation, e.g. before quitting.
+    pub fn cancel_all(&self) {
+        self.lock().values().for_each(CancellationToken::cancel);
+    }
+
+    /// How many operations are in flight, e.g. to confirm quitting.
+    pub fn running(&self) -> usize {
+        self.lock().len()
+    }
+
     fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<OperationId, CancellationToken>> {
         // The map holds no invariants a panicking thread could break, so poisoning is ignored.
         self.running.lock().unwrap_or_else(PoisonError::into_inner)
@@ -86,11 +96,21 @@ mod tests {
         let guard = registry.start();
         let id = guard.id();
         let token = guard.token();
+        assert_eq!(registry.running(), 1);
 
         assert!(registry.cancel(id));
         assert!(token.is_cancelled());
 
         drop(guard);
         assert!(!registry.cancel(id));
+        assert_eq!(registry.running(), 0);
+    }
+
+    #[test]
+    fn cancel_all_reaches_every_operation() {
+        let registry = Arc::new(OperationRegistry::default());
+        let (a, b) = (registry.start(), registry.start());
+        registry.cancel_all();
+        assert!(a.token().is_cancelled() && b.token().is_cancelled());
     }
 }
