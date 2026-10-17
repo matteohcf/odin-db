@@ -1,0 +1,47 @@
+{
+  "tab": "Server",
+  "title": "Server status",
+  "disconnected": "{{name}} is not connected.",
+  "connect": "Connect",
+  "interval": "Refresh interval",
+  "every": "Every {{seconds}} s",
+  "pause": "Pause",
+  "resume": "Resume",
+  "statusFailed": "Cannot read the server status: {{message}}",
+  "stats": {
+    "operations": "Operations",
+    "connections": "Connections",
+    "available_one": "{{count, number}} more available",
+    "available_other": "{{count, number}} more available",
+    "network": "Network",
+    "inOut": "In {{in}}/s · out {{out}}/s",
+    "memory": "Memory (resident)",
+    "uptime": "Up for {{duration}}"
+  },
+  "ops": {
+    "title": "Running operations",
+    "count_one": "{{count}} running",
+    "count_other": "{{count}} running",
+    "none": "No operation is running right now.",
+    "op": "Operation",
+    "namespace": "Namespace",
+    "running": "Running",
+    "client": "Client",
+    "command": "command",
+    "waiting": "waiting for a lock",
+    "query": "query",
+    "insert": "insert",
+    "update": "update",
+    "delete": "delete",
+    "getmore": "getmore",
+    "commandColumn": "Command"
+  },
+  "kill": {
+    "button": "Kill",
+    "title": "Kill this operation?",
+    "description": "The server stops the {{op}} on {{ns}}. Its client gets an error; work done so far is not rolled back unless it runs in a transaction.",
+    "done": "Operation killed.",
+    "failed": "Could not kill the operation: {{message}}",
+    "readOnly": "Read-only connections cannot kill operations."
+  }
+}

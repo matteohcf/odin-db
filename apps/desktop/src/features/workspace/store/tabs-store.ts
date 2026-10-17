@@ -20,6 +20,13 @@ export interface ShellTab {
   profileId: ProfileId;
 }
 
+/** Live status and running operations of a server; one per connection. */
+export interface ServerTab {
+  kind: "server";
+  id: string;
+  profileId: ProfileId;
+}
+
 /** Backup history and schedules of every connection; at most one is open. */
 interface BackupsTab {
   kind: "backups";
@@ -32,7 +39,7 @@ interface SettingsTab {
   id: "settings";
 }
 
-export type WorkspaceTab = CollectionTab | ShellTab | BackupsTab | SettingsTab;
+export type WorkspaceTab = CollectionTab | ShellTab | ServerTab | BackupsTab | SettingsTab;
 
 interface TabsState {
   /** Display order; pinned tabs always come first. */
@@ -43,6 +50,7 @@ interface TabsState {
   closed: WorkspaceTab[];
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
   openShell: (profileId: ProfileId) => void;
+  openServer: (profileId: ProfileId) => void;
   openBackups: () => void;
   openSettings: () => void;
   activate: (id: string) => void;
@@ -121,6 +129,12 @@ export const useTabs = create<TabsState>()(
         set((state) => {
           const id = `shell:${crypto.randomUUID()}`;
           return { tabs: [...state.tabs, { kind: "shell", id, profileId }], activeTabId: id };
+        }),
+      openServer: (profileId) =>
+        set((state) => {
+          const id = `server:${profileId}`;
+          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
+          return { tabs: [...state.tabs, { kind: "server", id, profileId }], activeTabId: id };
         }),
       openBackups: () =>
         set((state) =>

@@ -497,6 +497,31 @@ function simulateTransfer(
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
 const importFolders = new Set<string>();
 
+const mockOps = [
+  {
+    opid: { $numberInt: "4721" },
+    op: "query",
+    ns: "analytics.events",
+    startedAt: Date.now() - 42_000,
+    client: "10.0.4.17:51234",
+    appName: "reporting-job",
+    description: "conn812",
+    waitingForLock: false,
+    command: { find: "events", filter: { type: "purchase" }, sort: { at: { $numberInt: "-1" } } },
+  },
+  {
+    opid: { $numberInt: "4790" },
+    op: "command",
+    ns: "shop.orders",
+    startedAt: Date.now() - 7_000,
+    client: "10.0.4.22:50110",
+    appName: "api",
+    description: "conn901",
+    waitingForLock: true,
+    command: { createIndexes: "orders", indexes: [{ key: { customer: { $numberInt: "1" } } }] },
+  },
+];
+
 /** Streams tool output lines, then totals, like mongodump/mongorestore runs. */
 function simulateTool(channel: unknown, lines: string[], summary: unknown) {
   const send = channelSender(channel);
@@ -1404,6 +1429,47 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const index = coll.docs.findIndex((d) => JSON.stringify(d._id) === JSON.stringify(args.id));
     if (index < 0) fail("notFound", "document not found");
     coll.docs.splice(index, 1);
+    return null;
+  },
+  server_status: (args) => {
+    serverOf(id("connectionId", args));
+    const now = Date.now();
+    // Counters grow with time, so consecutive samples give believable rates.
+    const t = now / 1000;
+    return {
+      host: "localhost:27017",
+      version: "8.0.4",
+      process: "mongod",
+      uptimeSeconds: Math.floor(t % 864000),
+      connectionsCurrent: 12 + Math.round(Math.sin(t / 7) * 3),
+      connectionsAvailable: 838848,
+      opcounters: {
+        insert: Math.floor(t * 40),
+        query: Math.floor(t * 120 + Math.sin(t) * 30),
+        update: Math.floor(t * 25),
+        delete: Math.floor(t * 4),
+        getmore: Math.floor(t * 10),
+        command: Math.floor(t * 300),
+      },
+      residentMb: 512,
+      virtualMb: 2048,
+      networkBytesIn: Math.floor(t * 80_000),
+      networkBytesOut: Math.floor(t * 240_000 + Math.sin(t) * 50_000),
+      sampledAt: now,
+    };
+  },
+  current_ops: (args) => {
+    serverOf(id("connectionId", args));
+    return mockOps.map((op) => ({
+      ...op,
+      secsRunning: Math.floor((Date.now() - op.startedAt) / 1000),
+    }));
+  },
+  kill_op: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const index = mockOps.findIndex((op) => op.opid === args.opid);
+    if (index >= 0) mockOps.splice(index, 1);
     return null;
   },
   distinct_values: (args) => {

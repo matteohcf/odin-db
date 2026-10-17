@@ -53,6 +53,9 @@ export const commands = {
 	/**  Returns the name of the new index. */
 	createIndex: (connectionId: ConnectionId, namespace: Namespace, request: CreateIndexRequest) => typedError<string, IpcError>(__TAURI_INVOKE("create_index", { connectionId, namespace, request })),
 	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
+	serverStatus: (connectionId: ConnectionId) => typedError<ServerStatus, IpcError>(__TAURI_INVOKE("server_status", { connectionId })),
+	currentOps: (connectionId: ConnectionId) => typedError<CurrentOp[], IpcError>(__TAURI_INVOKE("current_ops", { connectionId })),
+	killOp: (connectionId: ConnectionId, opid: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("kill_op", { connectionId, opid })),
 	/**  Asks where to save, then exports in the background. `None` if the user cancels. */
 	exportDocuments: (connectionId: ConnectionId, namespace: Namespace, request: ExportRequest, channel: Channel<StreamEvent<TransferEvent<TransferSummary>>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_documents", { connectionId, namespace, request, channel })),
 	/**  Asks for a JSON, NDJSON or CSV file and previews it. `None` if the user cancels. */
@@ -296,6 +299,20 @@ export type CsvType = "skip" | "string" | "int32" | "int64" | "double" | "decima
 /**  Extended JSON (canonical or relaxed), for nested documents and arrays. */
 "json";
 
+export type CurrentOp = {
+	/**  A number on mongod, `"shard:number"` on mongos: passed back as is to kill it. */
+	opid: EJsonValue,
+	op: string,
+	ns: string,
+	secsRunning: number | null,
+	client: string | null,
+	appName: string | null,
+	description: string | null,
+	waitingForLock: boolean,
+	/**  What the operation runs, as reported (the server truncates long ones). */
+	command: EJsonDocument | null,
+};
+
 export type CursorId = string;
 
 export type DatabaseExportRequest = {
@@ -521,6 +538,15 @@ export type Namespace = {
 	collection: string,
 };
 
+export type Opcounters = {
+	insert: number | null,
+	query: number | null,
+	update: number | null,
+	delete: number | null,
+	getmore: number | null,
+	command: number | null,
+};
+
 /**  Identifies a long-running, cancellable operation (ADR-0006). */
 export type OperationId = string;
 
@@ -626,6 +652,27 @@ export type Secret = string;
 
 export type ServerInfo = {
 	serverVersion: string,
+};
+
+/**
+ *  One `serverStatus` sample. Counters are cumulative since startup; the UI
+ *  turns two samples into rates.
+ */
+export type ServerStatus = {
+	host: string,
+	version: string,
+	/**  `mongod` or `mongos`. */
+	process: string,
+	uptimeSeconds: number | null,
+	connectionsCurrent: number | null,
+	connectionsAvailable: number | null,
+	opcounters: Opcounters,
+	residentMb: number | null,
+	virtualMb: number | null,
+	networkBytesIn: number | null,
+	networkBytesOut: number | null,
+	/**  Unix milliseconds, from the server's clock. */
+	sampledAt: number | null,
 };
 
 export type ShellEvent = 

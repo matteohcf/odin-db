@@ -2,6 +2,7 @@
 export { type TabLabelContext, WorkspaceTabs } from "./components/workspace-tabs";
 export {
   type CollectionTab,
+  type ServerTab,
   type ShellTab,
   useTabs,
   type WorkspaceTab,

@@ -1,0 +1,47 @@
+{
+  "tab": "Server",
+  "title": "Stato del server",
+  "disconnected": "{{name}} non è connesso.",
+  "connect": "Connetti",
+  "interval": "Intervallo di aggiornamento",
+  "every": "Ogni {{seconds}} s",
+  "pause": "Pausa",
+  "resume": "Riprendi",
+  "statusFailed": "Impossibile leggere lo stato del server: {{message}}",
+  "stats": {
+    "operations": "Operazioni",
+    "connections": "Connessioni",
+    "available_one": "Ancora {{count, number}} disponibile",
+    "available_other": "Ancora {{count, number}} disponibili",
+    "network": "Rete",
+    "inOut": "In {{in}}/s · out {{out}}/s",
+    "memory": "Memoria (residente)",
+    "uptime": "Attivo da {{duration}}"
+  },
+  "ops": {
+    "title": "Operazioni in corso",
+    "count_one": "{{count}} in corso",
+    "count_other": "{{count}} in corso",
+    "none": "Nessuna operazione in corso in questo momento.",
+    "op": "Operazione",
+    "namespace": "Namespace",
+    "running": "Durata",
+    "client": "Client",
+    "command": "command",
+    "waiting": "in attesa di un lock",
+    "query": "query",
+    "insert": "insert",
+    "update": "update",
+    "delete": "delete",
+    "getmore": "getmore",
+    "commandColumn": "Comando"
+  },
+  "kill": {
+    "button": "Termina",
+    "title": "Terminare questa operazione?",
+    "description": "Il server interrompe {{op}} su {{ns}}. Il client riceve un errore; il lavoro già fatto non viene annullato, a meno che non sia in una transazione.",
+    "done": "Operazione terminata.",
+    "failed": "Impossibile terminare l'operazione: {{message}}",
+    "readOnly": "Le connessioni in sola lettura non possono terminare operazioni."
+  }
+}

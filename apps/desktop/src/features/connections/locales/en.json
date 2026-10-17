@@ -31,7 +31,8 @@
     "copyName": "{{name}} (copy)",
     "duplicated": "Created {{name}}.",
     "copyUri": "Copy connection string",
-    "uriCopied": "Connection string copied, without the password."
+    "uriCopied": "Connection string copied, without the password.",
+    "serverStatus": "Server status"
   },
   "tree": {
     "loading": "Loading…",

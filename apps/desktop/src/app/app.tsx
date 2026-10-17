@@ -4,6 +4,7 @@ import { ThemeMenu } from "@/components/theme-menu";
 import { BackupsTabLabel, BackupsView } from "@/features/backups";
 import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
+import { MonitorTab, MonitorTabLabel } from "@/features/monitor";
 import { useAutorunEnabled } from "@/features/perf-lab";
 import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
 import { ShellTab, ShellTabLabel } from "@/features/shell";
@@ -66,6 +67,8 @@ function renderLabel(tab: WorkspaceTab, context: TabLabelContext) {
       return <CollectionTabLabel tab={tab} context={context} />;
     case "shell":
       return <ShellTabLabel tab={tab} />;
+    case "server":
+      return <MonitorTabLabel tab={tab} />;
     case "backups":
       return <BackupsTabLabel />;
     case "settings":
@@ -79,6 +82,8 @@ function renderTab(tab: WorkspaceTab) {
       return <CollectionTab tab={tab} />;
     case "shell":
       return <ShellTab tab={tab} />;
+    case "server":
+      return <MonitorTab tab={tab} />;
     case "backups":
       return <BackupsView />;
     case "settings":

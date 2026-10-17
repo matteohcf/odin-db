@@ -16,6 +16,8 @@ import documents from "@/features/documents/locales/en.json";
 import documentsIt from "@/features/documents/locales/it.json";
 import indexes from "@/features/indexes/locales/en.json";
 import indexesIt from "@/features/indexes/locales/it.json";
+import monitor from "@/features/monitor/locales/en.json";
+import monitorIt from "@/features/monitor/locales/it.json";
 import perfLab from "@/features/perf-lab/locales/en.json";
 import perfLabIt from "@/features/perf-lab/locales/it.json";
 import results from "@/features/results/locales/en.json";
@@ -45,6 +47,7 @@ export const resources = {
     connections,
     documents,
     indexes,
+    monitor,
     perfLab,
     results,
     schema,
@@ -63,6 +66,7 @@ export const resources = {
     connections: connectionsIt,
     documents: documentsIt,
     indexes: indexesIt,
+    monitor: monitorIt,
     perfLab: perfLabIt,
     results: resultsIt,
     schema: schemaIt,

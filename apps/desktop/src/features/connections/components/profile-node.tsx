@@ -3,6 +3,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/
 import { cn } from "@odin-db/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
   CalendarClock,
   CopyPlus,
   DatabaseZap,
@@ -57,6 +58,7 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   );
   const queryClient = useQueryClient();
   const openShell = useTabs((s) => s.openShell);
+  const openServer = useTabs((s) => s.openServer);
   const openBackups = useTabs((s) => s.openBackups);
 
   function open() {
@@ -150,6 +152,10 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
                     {t("profile.createDatabase")}
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onSelect={() => openServer(profile.id)}>
+                  <Activity />
+                  {t("profile.serverStatus")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openShell(profile.id)}>
                   <SquareTerminal />
                   {t("profile.openShell")}

@@ -168,4 +168,14 @@ describe("tabs store", () => {
     useTabs.getState().renameCollection("p1", "shop", "a", "z");
     expect(useTabs.getState().pinned).toEqual(["p1/shop/z"]);
   });
+
+  it("keeps one server tab per connection, closed with it", () => {
+    useTabs.getState().openServer("p1");
+    useTabs.getState().openServer("p2");
+    useTabs.getState().openServer("p1");
+    expect(ids()).toEqual(["server:p1", "server:p2"]);
+    expect(useTabs.getState().activeTabId).toBe("server:p1");
+    useTabs.getState().closeForProfile("p1");
+    expect(ids()).toEqual(["server:p2"]);
+  });
 });

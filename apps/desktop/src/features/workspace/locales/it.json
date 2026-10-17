@@ -16,6 +16,7 @@
     },
     "backups": "Backup",
     "settings": "Impostazioni",
-    "unpinNamed": "Sblocca {{name}}"
+    "unpinNamed": "Sblocca {{name}}",
+    "server": "Stato del server"
   }
 }

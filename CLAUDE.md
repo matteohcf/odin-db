@@ -43,6 +43,7 @@ docs/adr/                Architecture Decision Records
   - `collection` (the collection tab) composes `documents`, `aggregation`, `schema` and `indexes` with `connections`;
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
+  - `monitor` (the server status tab) uses `connections` for the profile and its connection;
   - `settings` (the settings tab) reads `results` and `documents` stores; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `connections` may use `workspace` to open tabs, and `backup` and `transfer` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.

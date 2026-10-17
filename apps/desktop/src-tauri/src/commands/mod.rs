@@ -8,6 +8,7 @@ pub mod catalog;
 pub mod connections;
 pub mod documents;
 pub mod indexes;
+pub mod monitor;
 pub mod operations;
 pub mod perf_lab;
 pub mod profiles;
