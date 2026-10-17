@@ -14,7 +14,8 @@
       "moveLeft": "Sposta a sinistra",
       "moveRight": "Sposta a destra",
       "copyNamespace": "Copia il namespace",
-      "duplicate": "Duplica scheda"
+      "duplicate": "Duplica scheda",
+      "closeConnection": "Chiudi le schede di questa connessione"
     },
     "backups": "Backup",
     "settings": "Impostazioni",

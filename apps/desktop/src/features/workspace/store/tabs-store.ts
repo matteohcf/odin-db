@@ -89,6 +89,8 @@ interface TabsState {
   closeOthers: (id: string) => void;
   closeToTheRight: (id: string) => void;
   closeAll: () => void;
+  /** Closes the tabs of one connection, sparing pinned ones and remembering them to reopen. */
+  closeConnection: (profileId: ProfileId) => void;
   closeForProfile: (profileId: ProfileId) => void;
   /** Closes the tabs of a dropped collection, or of every collection of a dropped database. */
   closeCollections: (profileId: ProfileId, database: string, collection?: string) => void;
@@ -263,6 +265,15 @@ export const useTabs = create<TabsState>()(
           return keepTabs(state, (tab) => kept.has(tab.id) || state.pinned.includes(tab.id), true);
         }),
       closeAll: () => set((state) => keepTabs(state, (tab) => state.pinned.includes(tab.id), true)),
+      closeConnection: (profileId) =>
+        set((state) =>
+          keepTabs(
+            state,
+            (tab) =>
+              !("profileId" in tab) || tab.profileId !== profileId || state.pinned.includes(tab.id),
+            true,
+          ),
+        ),
       closeForProfile: (profileId) =>
         set((state) => ({
           ...keepTabs(state, (tab) => !("profileId" in tab) || tab.profileId !== profileId, false),

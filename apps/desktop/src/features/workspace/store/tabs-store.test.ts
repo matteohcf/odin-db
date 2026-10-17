@@ -113,6 +113,18 @@ describe("tabs store", () => {
     expect(activeTabId).toBe("p1/shop/users");
   });
 
+  it("closes one connection's tabs, sparing pinned ones", () => {
+    const { openCollection, togglePin, closeConnection } = useTabs.getState();
+    openCollection(target("users"));
+    openCollection(target("orders"));
+    openCollection(target("events", "p2"));
+    togglePin("p1/shop/orders");
+    closeConnection("p1");
+    const { tabs, closed } = useTabs.getState();
+    expect(tabs.map((tab) => tab.id)).toEqual(["p1/shop/orders", "p2/shop/events"]);
+    expect(closed.map((tab) => tab.id)).toEqual(["p1/shop/users"]);
+  });
+
   it("closes other tabs, tabs to the right, or all", () => {
     const { openCollection } = useTabs.getState();
     for (const name of ["a", "b", "c", "d"]) openCollection(target(name));

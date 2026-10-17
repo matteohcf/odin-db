@@ -14,7 +14,8 @@
       "moveLeft": "Move left",
       "moveRight": "Move right",
       "copyNamespace": "Copy namespace",
-      "duplicate": "Duplicate tab"
+      "duplicate": "Duplicate tab",
+      "closeConnection": "Close tabs of this connection"
     },
     "backups": "Backups",
     "settings": "Settings",

@@ -45,6 +45,7 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
   const closeOthers = useTabs((s) => s.closeOthers);
   const closeToTheRight = useTabs((s) => s.closeToTheRight);
   const closeAll = useTabs((s) => s.closeAll);
+  const closeConnection = useTabs((s) => s.closeConnection);
   const pinned = useTabs((s) => s.pinned);
   const togglePin = useTabs((s) => s.togglePin);
   const move = useTabs((s) => s.move);
@@ -238,6 +239,11 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                   >
                     {t("tabs.menu.closeToTheRight")}
                   </ContextMenuItem>
+                  {"profileId" in tab && (
+                    <ContextMenuItem onSelect={() => closeConnection(tab.profileId)}>
+                      {t("tabs.menu.closeConnection")}
+                    </ContextMenuItem>
+                  )}
                   <ContextMenuSeparator />
                   <ContextMenuItem onSelect={closeAll}>{t("tabs.menu.closeAll")}</ContextMenuItem>
                   <ContextMenuItem onSelect={reopenClosed}>
