@@ -30,6 +30,26 @@ enum JsonValue {
     Object(std::collections::HashMap<String, JsonValue>),
 }
 
+/// Any BSON value encoded as canonical Extended JSON v2, e.g. an `_id`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(transparent)]
+pub struct EJsonValue(#[cfg_attr(feature = "specta", specta(type = JsonValue))] serde_json::Value);
+
+impl From<Bson> for EJsonValue {
+    fn from(value: Bson) -> Self {
+        Self(value.into_canonical_extjson())
+    }
+}
+
+impl TryFrom<EJsonValue> for Bson {
+    type Error = CoreError;
+
+    fn try_from(value: EJsonValue) -> Result<Self, Self::Error> {
+        Bson::try_from(value.0).map_err(|error| CoreError::Validation(error.to_string()))
+    }
+}
+
 impl From<Document> for EJsonDocument {
     fn from(document: Document) -> Self {
         Self(Bson::Document(document).into_canonical_extjson())

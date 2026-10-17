@@ -14,6 +14,10 @@ specta = ["dep:specta"]
 
 [dependencies]
 bson.workspace = true
+keyring.workspace = true
+mongodb.workspace = true
+rusqlite.workspace = true
+rusqlite_migration.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 specta = { workspace = true, optional = true }
@@ -21,6 +25,9 @@ thiserror.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+testcontainers-modules.workspace = true
 
 [lints]
 workspace = true
