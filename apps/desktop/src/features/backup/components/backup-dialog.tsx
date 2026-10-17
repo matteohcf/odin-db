@@ -9,11 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
+import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
+import { useQuery } from "@tanstack/react-query";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { call } from "@/lib/ipc";
+import { call, errorMessage } from "@/lib/ipc";
+import { parseShellDocument } from "@/lib/shell-syntax";
 import { useToolRun } from "../hooks/use-tool-run";
 import { ToolLog } from "./tool-log";
 import { ToolsGate } from "./tools-gate";
@@ -29,6 +32,20 @@ export function BackupDialog({ connectionId, profileName, scope, onClose }: Back
   const { t } = useTranslation("backup");
   const id = useId();
   const [gzip, setGzip] = useState(true);
+  const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
+  const [filter, setFilter] = useState("");
+  const [oplog, setOplog] = useState(false);
+  const [optionError, setOptionError] = useState<string | null>(null);
+  const database = scope.kind === "deployment" ? null : scope.database;
+  const collections = useQuery({
+    // The tree's key, so an expanded database is already cached.
+    queryKey: ["connections", connectionId, "databases", database ?? "", "collections"],
+    queryFn: () => call(commands.listCollections(connectionId, database ?? "")),
+    enabled: scope.kind === "database",
+  });
+  const backupable = (collections.data ?? []).filter(
+    (collection) => collection.kind !== "view" && !collection.name.startsWith("system."),
+  );
   const run = useToolRun();
   const { state, summary } = run;
   const busy = state.status === "running";
@@ -41,8 +58,26 @@ export function BackupDialog({ connectionId, profileName, scope, onClose }: Back
         ? t("scope.database", { database: scope.database })
         : t("scope.collection", { database: scope.database, collection: scope.collection });
 
-  const submit = () =>
-    run.start((channel) => call(commands.backupDatabase(connectionId, { scope, gzip }, channel)));
+  async function submit() {
+    setOptionError(null);
+    let query = null;
+    if (scope.kind === "collection" && filter.trim() !== "") {
+      try {
+        query = await parseShellDocument(filter);
+      } catch (error) {
+        setOptionError(errorMessage(error));
+        return;
+      }
+    }
+    const request = {
+      scope,
+      gzip,
+      excludeCollections: scope.kind === "database" ? [...excluded] : [],
+      query,
+      oplog: scope.kind === "deployment" && oplog,
+    };
+    await run.start((channel) => call(commands.backupDatabase(connectionId, request, channel)));
+  }
 
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
@@ -54,19 +89,81 @@ export function BackupDialog({ connectionId, profileName, scope, onClose }: Back
 
         <ToolsGate>
           {state.status === "idle" ? (
-            <div className="flex items-start gap-2.5">
-              <Checkbox
+            <div className="flex flex-col gap-4">
+              <Option
                 id={`${id}-gzip`}
                 checked={gzip}
-                onCheckedChange={(checked) => setGzip(checked === true)}
-                className="mt-0.5"
+                onChange={setGzip}
+                label={t("backup.gzip")}
+                hint={t("backup.gzipHint")}
               />
-              <div className="flex flex-col gap-0.5">
-                <Label htmlFor={`${id}-gzip`} className="font-normal">
-                  {t("backup.gzip")}
-                </Label>
-                <span className="text-muted-foreground text-xs">{t("backup.gzipHint")}</span>
-              </div>
+              {scope.kind === "deployment" && (
+                <Option
+                  id={`${id}-oplog`}
+                  checked={oplog}
+                  onChange={setOplog}
+                  label={t("backup.oplog")}
+                  hint={t("backup.oplogHint")}
+                />
+              )}
+              {scope.kind === "database" && backupable.length > 0 && (
+                <fieldset className="flex flex-col gap-1.5">
+                  <legend className="mb-1.5 font-medium text-sm">
+                    {t("backup.collections", {
+                      selected: backupable.length - excluded.size,
+                      total: backupable.length,
+                    })}
+                  </legend>
+                  <ul className="grid max-h-40 grid-cols-2 gap-x-3 gap-y-1 overflow-y-auto rounded-md border p-2">
+                    {backupable.map((collection) => (
+                      <li key={collection.name} className="flex min-w-0 items-center gap-2">
+                        <Checkbox
+                          id={`${id}-c-${collection.name}`}
+                          checked={!excluded.has(collection.name)}
+                          onCheckedChange={(checked) =>
+                            setExcluded((current) => {
+                              const next = new Set(current);
+                              if (checked === true) next.delete(collection.name);
+                              else next.add(collection.name);
+                              return next;
+                            })
+                          }
+                        />
+                        <Label
+                          htmlFor={`${id}-c-${collection.name}`}
+                          className="truncate font-mono font-normal text-xs"
+                        >
+                          {collection.name}
+                        </Label>
+                      </li>
+                    ))}
+                  </ul>
+                </fieldset>
+              )}
+              {scope.kind === "collection" && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${id}-filter`}>{t("backup.filter")}</Label>
+                  <Input
+                    id={`${id}-filter`}
+                    value={filter}
+                    onChange={(event) => setFilter(event.target.value)}
+                    placeholder={t("backup.filterPlaceholder")}
+                    className="font-mono text-xs"
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                  <span className="text-muted-foreground text-xs">{t("backup.filterHint")}</span>
+                </div>
+              )}
+              {optionError && (
+                <p
+                  role="alert"
+                  className="flex items-start gap-1.5 text-destructive text-xs selectable"
+                >
+                  <CircleAlert className="mt-px size-3.5 shrink-0" />
+                  {optionError}
+                </p>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -113,11 +210,51 @@ export function BackupDialog({ connectionId, profileName, scope, onClose }: Back
               <Button variant="ghost" onClick={onClose}>
                 {t("actions.cancel")}
               </Button>
-              <Button onClick={() => void submit()}>{t("backup.submit")}</Button>
+              <Button
+                onClick={() => void submit()}
+                disabled={
+                  scope.kind === "database" &&
+                  backupable.length > 0 &&
+                  excluded.size === backupable.length
+                }
+              >
+                {t("backup.submit")}
+              </Button>
             </>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Option({
+  id,
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(value) => onChange(value === true)}
+        className="mt-0.5"
+      />
+      <div className="flex flex-col gap-0.5">
+        <Label htmlFor={id} className="font-normal">
+          {label}
+        </Label>
+        <span className="text-muted-foreground text-xs">{hint}</span>
+      </div>
+    </div>
   );
 }

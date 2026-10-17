@@ -971,14 +971,18 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (!toolsInstalled())
       fail("notFound", "MongoDB Database Tools (mongodump and mongorestore) not found");
     const { databases } = serverOf(id("connectionId", args));
-    const scope = (
-      args.request as { scope: { kind: string; database?: string; collection?: string } }
-    ).scope;
+    const request = args.request as {
+      scope: { kind: string; database?: string; collection?: string };
+      excludeCollections?: string[];
+    };
+    const scope = request.scope;
+    const excluded = new Set(request.excludeCollections ?? []);
     const targets = Object.entries(databases).flatMap(([db, colls]) =>
       Object.entries(colls)
         .filter(
           ([name]) =>
             !name.startsWith("system.") &&
+            !excluded.has(name) &&
             (!scope.database || scope.database === db) &&
             (!scope.collection || scope.collection === name),
         )
@@ -1039,6 +1043,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   restore_source_from_backup: (args) => {
     const run = backupRuns.find((r) => r.id === args.id) ?? fail("notFound", "backup not found");
     return { token: crypto.randomUUID(), name: String(run.archive).split("/").at(-1) };
+  },
+  restore_contents: (args) => {
+    const { databases } = serverOf(id("connectionId", args));
+    return Object.entries(databases).flatMap(([db, colls]) =>
+      Object.keys(colls)
+        .filter((name) => !name.startsWith("system.") && db !== "admin")
+        .map((name) => `${db}.${name}`),
+    );
   },
   choose_restore_source: (args) => {
     const token = crypto.randomUUID();

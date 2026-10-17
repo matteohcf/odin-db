@@ -193,10 +193,7 @@ pub async fn run_schedule(
     let job = BackupJob {
         profile_id: schedule.profile_id,
         schedule: Some((schedule.id, schedule.keep)),
-        request: BackupRequest {
-            scope: schedule.scope,
-            gzip: true,
-        },
+        request: BackupRequest::of(schedule.scope),
         archive,
     };
     // Scheduled runs have no window to stream output to.

@@ -166,6 +166,29 @@ pub(crate) fn remember_path(state: &AppState, path: PathBuf) -> String {
     token.to_string()
 }
 
+/// What a picked backup contains (`db.collection` names), read without writing.
+#[tauri::command]
+#[specta::specta]
+pub async fn restore_contents(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    token: String,
+    source: RestoreSource,
+) -> Result<Vec<String>, IpcError> {
+    let tools = require_tools()?;
+    let credentials = profile_credentials(&state, connection_id).await?;
+    let token = uuid::Uuid::parse_str(&token).map_err(|_| CoreError::NotFound("restore source"))?;
+    let path = state
+        .picked_files
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&token)
+        .cloned()
+        .ok_or(CoreError::NotFound("restore source"))?;
+    let connection = tool_connection(&credentials);
+    Ok(backup::archive_contents(&tools, connection, source, &path).await?)
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn restore_database(

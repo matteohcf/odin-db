@@ -63,6 +63,8 @@ export const commands = {
 	name: string,
 } | null, IpcError>(__TAURI_INVOKE("choose_restore_source", { source })),
 	restoreDatabase: (connectionId: ConnectionId, token: string, request: RestoreRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("restore_database", { connectionId, token, request, channel })),
+	/**  What a picked backup contains (`db.collection` names), read without writing. */
+	restoreContents: (connectionId: ConnectionId, token: string, source: RestoreSource) => typedError<string[], IpcError>(__TAURI_INVOKE("restore_contents", { connectionId, token, source })),
 	listBackupRuns: () => typedError<BackupRun[], IpcError>(__TAURI_INVOKE("list_backup_runs")),
 	/**  Forgets a backup; with `delete_archive` its file is deleted too. */
 	deleteBackupRun: (id: RunId, deleteArchive: boolean) => typedError<null, IpcError>(__TAURI_INVOKE("delete_backup_run", { id, deleteArchive })),
@@ -137,6 +139,15 @@ export type BackupEvent = { kind: "output"; value: ToolEvent } | { kind: "finish
 export type BackupRequest = {
 	scope: BackupScope,
 	gzip: boolean,
+	/**  Database backups only: collections to leave out. */
+	excludeCollections?: string[],
+	/**  Collection backups only: back up just the documents matching this filter. */
+	query?: EJsonDocument | null,
+	/**
+	 *  Whole-server backups of a replica set only: include the oplog for a
+	 *  point-in-time snapshot (`--oplog`).
+	 */
+	oplog?: boolean,
 };
 
 export type BackupRun = {
@@ -463,6 +474,13 @@ export type RestoreRequest = {
 	/**  Restore only this database, optionally under a new name. */
 	database: string | null,
 	renameTo: string | null,
+	/**
+	 *  Restore only these namespaces (`db.collection`), as listed by
+	 *  `archive_contents`. Empty means everything (or the whole `database`).
+	 */
+	namespaces?: string[],
+	/**  Replay the oplog of a `--oplog` backup for a point-in-time restore. */
+	oplogReplay?: boolean,
 };
 
 export type RestoreSource = 

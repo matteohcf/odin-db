@@ -57,6 +57,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::backup::backup_database,
             commands::backup::choose_restore_source,
             commands::backup::restore_database,
+            commands::backup::restore_contents,
             commands::backups::list_backup_runs,
             commands::backups::delete_backup_run,
             commands::backups::reveal_backup,

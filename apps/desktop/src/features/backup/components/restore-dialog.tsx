@@ -13,10 +13,11 @@ import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { RadioGroup, RadioGroupItem } from "@odin-db/ui/components/radio-group";
 import { CircleAlert, Loader2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { call, errorMessage } from "@/lib/ipc";
 import { useToolRun } from "../hooks/use-tool-run";
+import { ArchiveContents } from "./archive-contents";
 import { ToolLog } from "./tool-log";
 import { ToolsGate } from "./tools-gate";
 
@@ -48,8 +49,10 @@ export function RestoreDialog({
   const [picked, setPicked] = useState<{ token: string; name: string } | null>(
     initialSource ?? null,
   );
-  const [onlyDatabase, setOnlyDatabase] = useState(database ?? "");
+  const [selection, setSelection] = useState<Set<string> | null>(null);
+  const [allNamespaces, setAllNamespaces] = useState<readonly string[]>([]);
   const [renameTo, setRenameTo] = useState("");
+  const [oplogReplay, setOplogReplay] = useState(false);
   const [drop, setDrop] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [pickError, setPickError] = useState<string | null>(null);
@@ -58,15 +61,27 @@ export function RestoreDialog({
   const busy = state.status === "running";
   const done = state.status !== "idle" && !busy;
 
+  const selectedDatabases = [
+    ...new Set([...(selection ?? [])].map((ns) => ns.split(".")[0] ?? "")),
+  ];
+  const singleDatabase = selectedDatabases.length === 1 ? selectedDatabases[0] : undefined;
+  const everything = selection === null || selection.size === allNamespaces.length;
   // What a destructive restore would overwrite: the user types it to confirm (ADR-0017).
-  const dropTarget = renameTo.trim() || onlyDatabase.trim() || profileName;
+  const dropTarget = renameTo.trim() || singleDatabase || profileName;
   const confirmed = !drop || confirmation === dropTarget;
+  const onSelection = useCallback((next: Set<string>, all: readonly string[]) => {
+    setSelection(next);
+    setAllNamespaces(all);
+  }, []);
 
   async function choose() {
     setPickError(null);
     try {
       const file = await call(commands.chooseRestoreSource(source));
-      if (file) setPicked(file);
+      if (file) {
+        setPicked(file);
+        setSelection(null);
+      }
     } catch (error) {
       setPickError(errorMessage(error));
     }
@@ -82,8 +97,10 @@ export function RestoreDialog({
           {
             source,
             drop,
-            database: onlyDatabase.trim() || null,
-            renameTo: renameTo.trim() || null,
+            database: singleDatabase ?? null,
+            renameTo: singleDatabase ? renameTo.trim() || null : null,
+            namespaces: everything ? [] : [...(selection ?? [])],
+            oplogReplay,
           },
           channel,
         ),
@@ -142,25 +159,47 @@ export function RestoreDialog({
                   {pickError && <p className="text-destructive text-xs selectable">{pickError}</p>}
                 </fieldset>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={`${id}-db`}>{t("restore.database")}</Label>
-                    <Input
-                      id={`${id}-db`}
-                      value={onlyDatabase}
-                      onChange={(e) => setOnlyDatabase(e.target.value)}
-                      placeholder={t("restore.databasePlaceholder")}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={`${id}-rename`}>{t("restore.renameTo")}</Label>
-                    <Input
-                      id={`${id}-rename`}
-                      value={renameTo}
-                      onChange={(e) => setRenameTo(e.target.value)}
-                      placeholder={t("restore.renamePlaceholder")}
-                      disabled={onlyDatabase.trim() === ""}
-                    />
+                {picked && (
+                  <ArchiveContents
+                    connectionId={connectionId}
+                    token={picked.token}
+                    source={source}
+                    selected={selection}
+                    onChange={onSelection}
+                    database={database}
+                  />
+                )}
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${id}-rename`}>{t("restore.renameTo")}</Label>
+                  <Input
+                    id={`${id}-rename`}
+                    value={renameTo}
+                    onChange={(e) => setRenameTo(e.target.value)}
+                    placeholder={
+                      singleDatabase
+                        ? t("restore.renamePlaceholder", { database: singleDatabase })
+                        : t("restore.renameNeedsOne")
+                    }
+                    disabled={!singleDatabase}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <Checkbox
+                    id={`${id}-oplog`}
+                    checked={oplogReplay}
+                    onCheckedChange={(checked) => setOplogReplay(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <Label htmlFor={`${id}-oplog`} className="font-normal">
+                      {t("restore.oplogReplay")}
+                    </Label>
+                    <span className="text-muted-foreground text-xs">
+                      {t("restore.oplogReplayHint")}
+                    </span>
                   </div>
                 </div>
 
@@ -255,7 +294,7 @@ export function RestoreDialog({
               <Button
                 variant={drop ? "destructive" : "default"}
                 onClick={() => void submit()}
-                disabled={!picked || !confirmed}
+                disabled={!picked || !confirmed || selection?.size === 0}
               >
                 {t("restore.submit")}
               </Button>
