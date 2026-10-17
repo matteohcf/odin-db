@@ -7,6 +7,7 @@ pub mod connection;
 pub mod documents;
 pub mod ejson;
 pub mod error;
+pub mod explain;
 pub mod indexes;
 pub mod operations;
 pub mod profiles;

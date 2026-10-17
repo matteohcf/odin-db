@@ -26,7 +26,7 @@ use odin_core::transfer::{
     CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
     JsonMode, TransferProgress, export_documents, import_documents,
 };
-use odin_core::{CoreError, browse, catalog, documents, schema};
+use odin_core::{CoreError, browse, catalog, documents, explain, schema};
 use std::str::FromStr;
 use std::sync::Arc;
 use testcontainers_modules::mongo::Mongo;
@@ -1075,4 +1075,50 @@ async fn creates_renames_and_drops_collections_and_databases() {
         catalog::drop_database(&read_only, "shop").await,
         Err(CoreError::ReadOnly)
     ));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn explains_collection_and_index_scans() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("plans");
+    fx.seed(&handle, &ns, 300).await;
+    let request = |filter: Document| explain::ExplainRequest {
+        filter: EJsonDocument::from(filter),
+        projection: None,
+        sort: None,
+        skip: None,
+        limit: None,
+    };
+
+    let scan = explain::explain_find(&handle, &ns, request(doc! { "n": { "$lt": 10 } }))
+        .await
+        .expect("explains");
+    assert!(scan.collection_scan);
+    assert!((scan.returned - 10.0).abs() < f64::EPSILON);
+    assert!((scan.documents_examined - 300.0).abs() < f64::EPSILON);
+
+    indexes::create(
+        &handle,
+        &ns,
+        CreateIndexRequest {
+            keys: EJsonDocument::from(doc! { "n": 1 }),
+            name: None,
+            unique: false,
+            sparse: false,
+            hidden: false,
+            expire_after_seconds: None,
+            partial_filter: None,
+        },
+    )
+    .await
+    .expect("index");
+    let indexed = explain::explain_find(&handle, &ns, request(doc! { "n": { "$lt": 10 } }))
+        .await
+        .expect("explains");
+    assert!(!indexed.collection_scan);
+    assert_eq!(indexed.indexes, ["n_1"]);
+    assert!(indexed.stages.contains(&"IXSCAN".to_owned()));
+    assert!((indexed.documents_examined - 10.0).abs() < f64::EPSILON);
 }
