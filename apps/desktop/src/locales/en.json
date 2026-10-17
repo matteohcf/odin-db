@@ -117,7 +117,21 @@
       "year": "Year of a date",
       "month": "Month of a date",
       "mergeObjects": "Combines documents",
-      "literal": "Value taken as is, not evaluated"
+      "literal": "Value taken as is, not evaluated",
+      "set": "Set fields to values",
+      "unset": "Remove fields",
+      "inc": "Add to a number",
+      "updatePush": "Append to an array",
+      "updateAddToSet": "Append if not already present",
+      "pull": "Remove matching array items",
+      "rename": "Rename a field",
+      "currentDate": "Set to the current date",
+      "mul": "Multiply a number",
+      "updateMin": "Set if smaller than the current value",
+      "updateMax": "Set if larger than the current value",
+      "pop": "Remove the first (-1) or last (1) array item",
+      "pullAll": "Remove every listed array item",
+      "setOnInsert": "Set only when an upsert inserts"
     }
   },
   "shortcuts": {

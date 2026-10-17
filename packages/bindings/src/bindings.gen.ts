@@ -39,6 +39,8 @@ export const commands = {
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
 	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
+	updateDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, update: EJsonDocument) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("update_documents", { connectionId, namespace, filter, update })),
+	deleteDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("delete_documents", { connectionId, namespace, filter })),
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
 	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: JsonValue | null) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
 	aggregateDocuments: (connectionId: ConnectionId, namespace: Namespace, request: AggregateRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("aggregate_documents", { connectionId, namespace, request })),
@@ -662,6 +664,11 @@ export type TransferProgress = {
 export type TransferSummary = {
 	documents: number | null,
 	bytes: number | null,
+};
+
+export type UpdateManyResult = {
+	matched: number | null,
+	modified: number | null,
 };
 
 /* Tauri Specta runtime */

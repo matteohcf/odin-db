@@ -15,11 +15,13 @@ import { queryContext } from "./query-context";
  * `expression` is the body of aggregation stages other than $match, $sort and
  * $project; `document` is a whole document being written (insert, edit).
  */
-export type QueryKind = "filter" | "sort" | "projection" | "expression" | "document";
+export type QueryKind = "filter" | "sort" | "projection" | "expression" | "document" | "update";
 
 interface Snippet {
   label: string;
   template: string;
+  /** Help key when the label alone is ambiguous, e.g. `$min` as an update. */
+  help?: string;
 }
 
 /** Query operators valid where a document of conditions starts, with its fields. */
@@ -62,6 +64,24 @@ const PROJECTION_OPERATORS: Snippet[] = [
   { label: "$slice", template: "$slice: #{}" },
   { label: "$elemMatch", template: "$elemMatch: { #{} }" },
   { label: "$meta", template: '$meta: "#{textScore}"' },
+];
+
+/** Update operators, the top-level keys of an update document. */
+const UPDATE_OPERATORS: Snippet[] = [
+  { label: "$set", template: "$set: { #{} }", help: "set" },
+  { label: "$unset", template: '$unset: { #{}: "" }', help: "unset" },
+  { label: "$inc", template: "$inc: { #{}: 1 }", help: "inc" },
+  { label: "$push", template: "$push: { #{} }", help: "updatePush" },
+  { label: "$addToSet", template: "$addToSet: { #{} }", help: "updateAddToSet" },
+  { label: "$pull", template: "$pull: { #{} }", help: "pull" },
+  { label: "$rename", template: '$rename: { #{}: "" }', help: "rename" },
+  { label: "$currentDate", template: "$currentDate: { #{}: true }", help: "currentDate" },
+  { label: "$mul", template: "$mul: { #{}: 1 }", help: "mul" },
+  { label: "$min", template: "$min: { #{} }", help: "updateMin" },
+  { label: "$max", template: "$max: { #{} }", help: "updateMax" },
+  { label: "$pop", template: "$pop: { #{}: 1 }", help: "pop" },
+  { label: "$pullAll", template: "$pullAll: { #{}: [] }", help: "pullAll" },
+  { label: "$setOnInsert", template: "$setOnInsert: { #{} }", help: "setOnInsert" },
 ];
 
 /** Accumulators and expression operators, for aggregation stage bodies. */
@@ -249,6 +269,14 @@ function keyCompletions(
   const enclosing = path.at(-1);
   const hasColon = /^\s*["']?\s*:/.test(after);
 
+  if (kind === "update") {
+    // Operators at the top, then any field path, dotted ones included.
+    if (enclosing === undefined)
+      return quoted ? [] : snippets(UPDATE_OPERATORS, options, sections.operators);
+    return path.length === 1 && enclosing.startsWith("$")
+      ? fieldCompletions(options, "", quoted, hasColon)
+      : [];
+  }
   if (kind === "document") {
     // Keys of a nested document are the sampled sub-fields of its path.
     if (path.some((part) => part.startsWith("$") || /^\d+$/.test(part))) return [];
@@ -368,6 +396,7 @@ function knownValues(options: Resolved, key: string | null, path: string[]): str
 /** The sampled field a value is written for, if any. */
 function valueField(options: Resolved, key: string | null, path: string[]): string | undefined {
   if (!key) return undefined;
+  if (options.kind === "update") return path.length === 1 && !key.startsWith("$") ? key : undefined;
   if (options.kind === "document") {
     // In a document, nesting is the path itself; array positions do not count.
     return [...path.filter((part) => !/^\d+$/.test(part)), key].join(".");
@@ -424,13 +453,13 @@ export const reopensCompletion = (completion: Completion) => reopening.has(compl
 
 function snippets(list: Snippet[], options: Resolved, section: CompletionSection) {
   // Catalogs are ordered by how common each entry is.
-  return list.map(({ label, template }, rank) => {
+  return list.map(({ label, template, help }, rank) => {
     const completion = snippetCompletion(template, {
       label,
       boost: -Math.min(rank, 99),
       type: label.startsWith("$") ? "keyword" : "function",
       section,
-      ...detail(options.describe(label)),
+      ...detail(options.describe(help ?? label)),
     });
     if (template.includes('"$#{}')) reopening.add(completion);
     return completion;

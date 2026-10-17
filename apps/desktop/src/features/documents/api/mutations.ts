@@ -70,3 +70,24 @@ export function useSetDocumentField() {
     meta: { handlesErrors: true },
   });
 }
+
+export function useUpdateDocuments() {
+  return useMutation({
+    mutationFn: ({
+      connectionId,
+      namespace,
+      filter,
+      update,
+    }: Target & { filter: EJsonDocument; update: EJsonDocument }) =>
+      call(commands.updateDocuments(connectionId, namespace, filter, update)),
+    meta: { handlesErrors: true },
+  });
+}
+
+export function useDeleteDocuments() {
+  return useMutation({
+    mutationFn: ({ connectionId, namespace, filter }: Target & { filter: EJsonDocument }) =>
+      call(commands.deleteDocuments(connectionId, namespace, filter)),
+    meta: { handlesErrors: true },
+  });
+}

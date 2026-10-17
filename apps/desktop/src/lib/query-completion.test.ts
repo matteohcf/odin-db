@@ -100,4 +100,14 @@ describe("queryCompletionSource", () => {
     expect(labels(complete("{ plan: |", "document", true)).slice(0, 1)).toEqual(['"free"']);
     expect(labels(complete("{ |", "document"))).not.toContain("$or");
   });
+
+  it("suggests update operators, then field paths and their values", () => {
+    expect(labels(complete("{ |", "update")).slice(0, 3)).toEqual(["$set", "$unset", "$inc"]);
+    expect(labels(complete("{ |", "update"))).not.toContain("name");
+    expect(labels(complete("{ $set: { |", "update"))).toEqual(
+      expect.arrayContaining(["name", "address.city", "items.sku"]),
+    );
+    expect(labels(complete("{ $set: { plan: |", "update", true)).slice(0, 1)).toEqual(['"free"']);
+    expect(labels(complete("{ $set: { address: { |", "update"))).toEqual([]);
+  });
 });

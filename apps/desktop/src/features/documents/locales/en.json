@@ -83,5 +83,30 @@
     "remove": "Remove field",
     "saved": "{{field}} updated",
     "removed": "{{field}} removed"
+  },
+  "bulk": {
+    "menuUpdate": "Update matching documents…",
+    "menuDelete": "Delete matching documents…",
+    "updateTitle": "Update documents",
+    "deleteTitle": "Delete documents",
+    "updateDescription": "Applies update operators to every document of {{namespace}} that matches the query bar's filter.",
+    "deleteDescription": "Deletes every document of {{namespace}} that matches the query bar's filter. This cannot be undone.",
+    "filter": "Filter",
+    "allDocuments": "{} — every document",
+    "counting": "Counting matching documents…",
+    "countFailed": "Could not count: {{message}}",
+    "matching_one": "{{count, number}} document matches.",
+    "matching_other": "{{count, number}} documents match.",
+    "update": "Update",
+    "updateHint": "Operators such as $set, $unset, $inc or $push. ⌘↵ applies it.",
+    "confirmAll": "This writes all {{count, number}} documents of the collection. Type {{name}} to confirm.",
+    "updateSubmit_one": "Update {{count, number}} document",
+    "updateSubmit_other": "Update {{count, number}} documents",
+    "deleteSubmit_one": "Delete {{count, number}} document",
+    "deleteSubmit_other": "Delete {{count, number}} documents",
+    "updated_one": "Updated {{count, number}} document ({{matched, number}} matched).",
+    "updated_other": "Updated {{count, number}} documents ({{matched, number}} matched).",
+    "deleted_one": "Deleted {{count, number}} document.",
+    "deleted_other": "Deleted {{count, number}} documents."
   }
 }

@@ -117,7 +117,21 @@
       "year": "Anno di una data",
       "month": "Mese di una data",
       "mergeObjects": "Unisce documenti",
-      "literal": "Valore preso così com'è, senza valutazione"
+      "literal": "Valore preso così com'è, senza valutazione",
+      "set": "Imposta i campi ai valori",
+      "unset": "Rimuove i campi",
+      "inc": "Somma a un numero",
+      "updatePush": "Aggiunge in fondo a un array",
+      "updateAddToSet": "Aggiunge se non già presente",
+      "pull": "Rimuove gli elementi dell'array corrispondenti",
+      "rename": "Rinomina un campo",
+      "currentDate": "Imposta alla data corrente",
+      "mul": "Moltiplica un numero",
+      "updateMin": "Imposta se minore del valore attuale",
+      "updateMax": "Imposta se maggiore del valore attuale",
+      "pop": "Rimuove il primo (-1) o l'ultimo (1) elemento dell'array",
+      "pullAll": "Rimuove tutti gli elementi elencati dell'array",
+      "setOnInsert": "Imposta solo quando un upsert inserisce"
     }
   },
   "shortcuts": {

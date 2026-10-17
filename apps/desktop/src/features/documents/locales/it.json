@@ -83,5 +83,30 @@
     "remove": "Rimuovi campo",
     "saved": "{{field}} aggiornato",
     "removed": "{{field}} rimosso"
+  },
+  "bulk": {
+    "menuUpdate": "Aggiorna i documenti corrispondenti…",
+    "menuDelete": "Elimina i documenti corrispondenti…",
+    "updateTitle": "Aggiorna documenti",
+    "deleteTitle": "Elimina documenti",
+    "updateDescription": "Applica gli operatori di aggiornamento a ogni documento di {{namespace}} che corrisponde al filtro della barra delle query.",
+    "deleteDescription": "Elimina ogni documento di {{namespace}} che corrisponde al filtro della barra delle query. L'operazione non si può annullare.",
+    "filter": "Filtro",
+    "allDocuments": "{} — tutti i documenti",
+    "counting": "Conteggio dei documenti corrispondenti…",
+    "countFailed": "Conteggio non riuscito: {{message}}",
+    "matching_one": "{{count, number}} documento corrisponde.",
+    "matching_other": "{{count, number}} documenti corrispondono.",
+    "update": "Aggiornamento",
+    "updateHint": "Operatori come $set, $unset, $inc o $push. ⌘↵ lo applica.",
+    "confirmAll": "Verranno modificati tutti i {{count, number}} documenti della collezione. Digita {{name}} per confermare.",
+    "updateSubmit_one": "Aggiorna {{count, number}} documento",
+    "updateSubmit_other": "Aggiorna {{count, number}} documenti",
+    "deleteSubmit_one": "Elimina {{count, number}} documento",
+    "deleteSubmit_other": "Elimina {{count, number}} documenti",
+    "updated_one": "Aggiornato {{count, number}} documento ({{matched, number}} corrispondenti).",
+    "updated_other": "Aggiornati {{count, number}} documenti ({{matched, number}} corrispondenti).",
+    "deleted_one": "Eliminato {{count, number}} documento.",
+    "deleted_other": "Eliminati {{count, number}} documenti."
   }
 }

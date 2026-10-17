@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use odin_core::connection::ConnectionId;
-use odin_core::documents;
+use odin_core::documents::{self, UpdateManyResult};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::explain::{self, ExplainRequest, QueryPlan};
 use odin_core::query::{self, AggregateRequest, CursorId, DocumentPage, FindRequest, Namespace};
@@ -127,6 +127,31 @@ pub async fn delete_document(
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(documents::delete(&handle, &namespace, id).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_documents(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    filter: EJsonDocument,
+    update: EJsonDocument,
+) -> Result<UpdateManyResult, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(documents::update_many(&handle, &namespace, filter, update).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_documents(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    filter: EJsonDocument,
+) -> Result<f64, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(documents::delete_many(&handle, &namespace, filter).await?)
 }
 
 #[tauri::command]

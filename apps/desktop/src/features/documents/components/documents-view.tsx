@@ -13,9 +13,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
-import { Code2, Download, MoreHorizontal, Plus, Upload } from "lucide-react";
+import { Code2, Download, FilePen, MoreHorizontal, Plus, Trash2, Upload } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ import {
   type QueryForm,
 } from "../lib/query-form";
 import { historyKey, useQueryHistory } from "../store/query-history-store";
+import { BulkWriteDialog } from "./bulk-write-dialog";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { EditFieldDialog } from "./edit-field-dialog";
 import { ExplainDialog } from "./explain-dialog";
@@ -89,6 +91,9 @@ export function DocumentsView({
   const columns = useResultsState(results, (s) => s.columns);
   const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
   const [codeQuery, setCodeQuery] = useState<FindQuery | null>(null);
+  const [bulk, setBulk] = useState<{ mode: "update" | "delete"; filter: EJsonDocument } | null>(
+    null,
+  );
 
   const [form, setForm] = useState<QueryForm>(emptyQueryForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<QueryField, string>>>({});
@@ -164,14 +169,25 @@ export function DocumentsView({
   }
 
   /** Shows the query as written in the bar, or its errors if it does not parse. */
-  async function showCode() {
+  /** The query as written in the bar, or null after showing its errors. */
+  async function currentQuery() {
     const parsed = await parseQueryForm(form, { invalidNumber: t("query.invalidNumber") });
     if (!parsed.ok) {
       setFormErrors(parsed.errors);
-      return;
+      return null;
     }
     setFormErrors({});
-    setCodeQuery(parsed.query);
+    return parsed.query;
+  }
+
+  async function showCode() {
+    const query = await currentQuery();
+    if (query) setCodeQuery(query);
+  }
+
+  async function openBulk(mode: "update" | "delete") {
+    const query = await currentQuery();
+    if (query) setBulk({ mode, filter: query.filter });
   }
 
   /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
@@ -271,6 +287,23 @@ export function DocumentsView({
                   <Download />
                   {t("menu.export", { ns: "transfer" })}
                 </DropdownMenuItem>
+                {editable && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => void openBulk("update")}>
+                      <FilePen />
+                      {t("bulk.menuUpdate")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() => void openBulk("delete")}
+                    >
+                      <Trash2 />
+                      {t("bulk.menuDelete")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onSelect={() => void showCode()}>
                   <Code2 />
                   {t("queryCode.menu", { ns: "common" })}
@@ -370,6 +403,17 @@ export function DocumentsView({
           onSave={saveDocument}
           completions={completionsFor("document")}
           onClose={() => setEditor({ open: false })}
+        />
+      )}
+      {bulk && (
+        <BulkWriteDialog
+          mode={bulk.mode}
+          connectionId={connection.id}
+          namespace={namespace}
+          filter={bulk.filter}
+          completions={completionsFor("update")}
+          onDone={() => refresh(true)}
+          onClose={() => setBulk(null)}
         />
       )}
       {codeQuery && (

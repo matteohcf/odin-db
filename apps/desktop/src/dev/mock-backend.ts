@@ -1392,6 +1392,31 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     coll.docs.splice(index, 1);
     return null;
   },
+  update_documents: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const update = args.update as Record<string, Doc>;
+    if (Object.keys(update).length === 0 || !Object.keys(update).every((k) => k.startsWith("$")))
+      fail(
+        "validation",
+        "invalid input: an update needs operators such as { $set: { field: value } }",
+      );
+    const matched = coll.docs.filter((doc) => matchesFilter(doc, args.filter as Doc));
+    for (const doc of matched) {
+      Object.assign(doc, update.$set ?? {});
+      for (const field of Object.keys(update.$unset ?? {})) delete doc[field];
+    }
+    return { matched: matched.length, modified: matched.length };
+  },
+  delete_documents: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const before = coll.docs.length;
+    coll.docs = coll.docs.filter((doc) => !matchesFilter(doc, args.filter as Doc));
+    return before - coll.docs.length;
+  },
 };
 
 export function installMockBackend() {
