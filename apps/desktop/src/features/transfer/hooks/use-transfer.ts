@@ -1,15 +1,6 @@
-import type {
-  IpcError,
-  OperationId,
-  StreamEvent,
-  TransferEvent,
-  TransferProgress,
-} from "@odin-db/bindings";
-import { commands } from "@odin-db/bindings";
-import type { Channel } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage } from "@/lib/ipc";
-import { startStream } from "@/lib/streaming";
+import type { TransferEvent, TransferProgress } from "@odin-db/bindings";
+import { useCallback, useState } from "react";
+import { useOperation } from "@/hooks/use-operation";
 
 export type TransferState<S> =
   | { status: "idle" }
@@ -18,71 +9,35 @@ export type TransferState<S> =
   | { status: "cancelled" }
   | { status: "failed"; error: string };
 
-type Start<S> = (channel: Channel<StreamEvent<TransferEvent<S>>>) => Promise<OperationId | null>;
+type Begin<S> = Parameters<ReturnType<typeof useOperation<TransferEvent<S>>>["start"]>[0];
 
-/** Runs one cancellable transfer and tracks its progress and outcome. */
+/** A transfer: progress events, then a summary. */
 export function useTransfer<S>() {
-  const [state, setState] = useState<TransferState<S>>({ status: "idle" });
-  const operation = useRef<OperationId | null>(null);
-  // Stop can be pressed before the backend has returned the operation id.
-  const cancelRequested = useRef(false);
+  const operation = useOperation<TransferEvent<S>>();
+  const [progress, setProgress] = useState<TransferProgress | null>(null);
+  const [summary, setSummary] = useState<S | null>(null);
 
-  // Leaving the dialog mid-transfer cancels it rather than orphaning it.
-  useEffect(
-    () => () => {
-      if (operation.current) void commands.cancelOperation(operation.current);
+  const start = useCallback(
+    (begin: Begin<S>) => {
+      setProgress(null);
+      setSummary(null);
+      return operation.start(begin, (event) => {
+        if (event.kind === "finished") setSummary(event.value);
+        else setProgress(event.value);
+      });
     },
-    [],
+    [operation.start],
   );
 
-  const start = useCallback(async (begin: Start<S>): Promise<boolean> => {
-    let summary: S | undefined;
-    cancelRequested.current = false;
-    setState({ status: "running", progress: null });
-    try {
-      let started = false;
-      const handle = await startStream<TransferEvent<S>>(
-        async (channel) => {
-          const id = await begin(channel);
-          started = id !== null;
-          // `startStream` needs an id; a cancelled file dialog never starts anything.
-          return id ?? "";
-        },
-        (event) => {
-          if (event.kind === "finished") summary = event.value;
-          else if (summary === undefined) setState({ status: "running", progress: event.value });
-        },
-      );
-      if (!started) {
-        setState({ status: "idle" });
-        return false;
-      }
-      operation.current = handle.id;
-      if (cancelRequested.current) void commands.cancelOperation(handle.id);
-      const outcome = await handle.done;
-      operation.current = null;
-      if (outcome.status === "failed")
-        setState({ status: "failed", error: errorMessage(outcome.error.message) });
-      else if (outcome.status === "cancelled") setState({ status: "cancelled" });
-      else if (summary !== undefined) setState({ status: "finished", summary });
-      return true;
-    } catch (error) {
-      setState({
-        status: "failed",
-        error: errorMessage(isIpcError(error) ? error.message : error),
-      });
-      return true;
-    }
-  }, []);
+  const { state: op } = operation;
+  const state: TransferState<S> =
+    op.status === "running"
+      ? { status: "running", progress }
+      : op.status === "completed" && summary !== null
+        ? { status: "finished", summary }
+        : op.status === "completed"
+          ? { status: "running", progress }
+          : op;
 
-  const cancel = useCallback(() => {
-    cancelRequested.current = true;
-    if (operation.current) void commands.cancelOperation(operation.current);
-  }, []);
-
-  return { state, start, cancel };
-}
-
-function isIpcError(value: unknown): value is IpcError {
-  return typeof value === "object" && value !== null && "kind" in value && "message" in value;
+  return { state, start, cancel: operation.cancel };
 }
