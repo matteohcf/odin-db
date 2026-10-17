@@ -51,7 +51,9 @@ export function DatabaseImportDialog({
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
   const [stopOnError, setStopOnError] = useState(false);
   const [chooseError, setChooseError] = useState<string | null>(null);
-  const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>();
+  const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>(
+    t("database.import.title"),
+  );
   const { state } = transfer;
   const busy = state.status === "running";
   const done =

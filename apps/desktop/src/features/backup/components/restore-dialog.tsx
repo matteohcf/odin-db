@@ -56,7 +56,7 @@ export function RestoreDialog({
   const [drop, setDrop] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [pickError, setPickError] = useState<string | null>(null);
-  const run = useToolRun();
+  const run = useToolRun(t("restore.title", { name: profileName }));
   const { state, summary } = run;
   const busy = state.status === "running";
   const done = state.status !== "idle" && !busy;

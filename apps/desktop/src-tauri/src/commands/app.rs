@@ -1,4 +1,6 @@
 use serde::Serialize;
+use tauri::Manager;
+use tauri_plugin_notification::NotificationExt;
 
 #[derive(Debug, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -39,4 +41,20 @@ pub async fn confirm_quit(
     }
     app.exit(0);
     Ok(())
+}
+
+/// A desktop notification, only when odin-db is in the background: a long export
+/// that ends while the user works elsewhere should not go unnoticed.
+#[tauri::command]
+#[specta::specta]
+pub fn notify_if_unfocused(app: tauri::AppHandle, title: String, body: String) {
+    let focused = app
+        .get_webview_window("main")
+        .and_then(|window| window.is_focused().ok())
+        .unwrap_or(false);
+    if focused {
+        return;
+    }
+    // Best effort: notifications may be turned off for the app.
+    let _ = app.notification().builder().title(title).body(body).show();
 }

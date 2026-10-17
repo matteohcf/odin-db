@@ -829,6 +829,15 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     arch: "mock",
   }),
   perf_autorun_enabled: () => false,
+  // Recorded for tests; like the app, only while the window is in the background.
+  notify_if_unfocused: (args) => {
+    if (!document.hasFocus()) {
+      const sent = (window as { odinNotifications?: unknown[] }).odinNotifications ?? [];
+      sent.push({ title: args.title, body: args.body });
+      Object.assign(window, { odinNotifications: sent });
+    }
+    return null;
+  },
   confirm_quit: () => {
     Object.assign(window, { odinMockQuit: true });
     return null;

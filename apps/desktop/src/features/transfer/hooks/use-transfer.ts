@@ -14,8 +14,8 @@ type Event<S, P> = { kind: "progress"; value: P } | { kind: "finished"; value: S
 type Begin<S, P> = Parameters<ReturnType<typeof useOperation<Event<S, P>>>["start"]>[0];
 
 /** A transfer: progress events, then a summary. */
-export function useTransfer<S, P = TransferProgress>() {
-  const operation = useOperation<Event<S, P>>();
+export function useTransfer<S, P = TransferProgress>(title?: string) {
+  const operation = useOperation<Event<S, P>>(title);
   const [progress, setProgress] = useState<P | null>(null);
   const [summary, setSummary] = useState<S | null>(null);
 

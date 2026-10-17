@@ -191,5 +191,8 @@
     "hint": "La stringa di connessione viene letta dalla variabile d'ambiente MONGODB_URI.",
     "menu": "Codice della query…",
     "toolbar": "Codice"
+  },
+  "operation": {
+    "finished": "Completato."
   }
 }

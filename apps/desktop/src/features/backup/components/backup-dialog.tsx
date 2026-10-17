@@ -46,17 +46,16 @@ export function BackupDialog({ connectionId, profileName, scope, onClose }: Back
   const backupable = (collections.data ?? []).filter(
     (collection) => collection.kind !== "view" && !collection.name.startsWith("system."),
   );
-  const run = useToolRun();
-  const { state, summary } = run;
-  const busy = state.status === "running";
-  const done = state.status !== "idle" && !busy;
-
   const target =
     scope.kind === "deployment"
       ? t("scope.deployment", { name: profileName })
       : scope.kind === "database"
         ? t("scope.database", { database: scope.database })
         : t("scope.collection", { database: scope.database, collection: scope.collection });
+  const run = useToolRun(t("backup.title", { target }));
+  const { state, summary } = run;
+  const busy = state.status === "running";
+  const done = state.status !== "idle" && !busy;
 
   async function submit() {
     setOptionError(null);

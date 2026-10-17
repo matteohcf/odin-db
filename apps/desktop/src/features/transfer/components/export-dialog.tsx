@@ -50,7 +50,7 @@ export function ExportDialog({
   const [format, setFormat] = useState<ExportFormat>("jsonArray");
   const [jsonMode, setJsonMode] = useState<JsonMode>("canonical");
   const [fields, setFields] = useState<ReadonlySet<string>>(() => new Set(columns));
-  const transfer = useTransfer<TransferSummary>();
+  const transfer = useTransfer<TransferSummary>(t("export.title"));
   const { state } = transfer;
   const busy = state.status === "running";
   const done =

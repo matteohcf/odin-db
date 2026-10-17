@@ -1,5 +1,6 @@
 import { commands, type OperationId, type StreamEvent } from "@odin-db/bindings";
 import type { Channel } from "@tauri-apps/api/core";
+import i18n from "i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage } from "@/lib/ipc";
 import { startStream } from "@/lib/streaming";
@@ -18,7 +19,10 @@ type Begin<E> = (channel: Channel<StreamEvent<E>>) => Promise<OperationId | null
  * One cancellable long-running operation (ADR-0006). Stop works even before the
  * backend has returned the operation id, and unmounting cancels a running operation.
  */
-export function useOperation<E>() {
+export function useOperation<E>(
+  /** Names the operation in a desktop notification when it ends in the background. */
+  title?: string,
+) {
   const [state, setState] = useState<OperationStatus>({ status: "idle" });
   const operation = useRef<OperationId | null>(null);
   const cancelRequested = useRef(false);
@@ -50,6 +54,15 @@ export function useOperation<E>() {
         if (cancelRequested.current) void commands.cancelOperation(handle.id);
         const outcome = await handle.done;
         operation.current = null;
+        // The user stopped it, so they know; the backend skips it while odin-db has focus.
+        if (title && outcome.status !== "cancelled") {
+          void commands.notifyIfUnfocused(
+            title,
+            outcome.status === "failed"
+              ? errorMessage(outcome.error.message)
+              : i18n.t("operation.finished", { ns: "common" }),
+          );
+        }
         setState(
           outcome.status === "failed"
             ? { status: "failed", error: errorMessage(outcome.error.message) }
@@ -60,7 +73,7 @@ export function useOperation<E>() {
       }
       return true;
     },
-    [],
+    [title],
   );
 
   const cancel = useCallback(() => {

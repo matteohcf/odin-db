@@ -7,8 +7,8 @@ const LOG_LIMIT = 500;
 type Begin = Parameters<ReturnType<typeof useOperation<BackupEvent>>["start"]>[0];
 
 /** A mongodump/mongorestore run: streamed output lines and final totals. */
-export function useToolRun() {
-  const operation = useOperation<BackupEvent>();
+export function useToolRun(title?: string) {
+  const operation = useOperation<BackupEvent>(title);
   const [lines, setLines] = useState<string[]>([]);
   const [summary, setSummary] = useState<ToolSummary | null>(null);
 

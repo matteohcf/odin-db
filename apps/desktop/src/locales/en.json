@@ -191,5 +191,8 @@
     "hint": "The connection string is read from the MONGODB_URI environment variable.",
     "menu": "Query code…",
     "toolbar": "Code"
+  },
+  "operation": {
+    "finished": "Finished."
   }
 }

@@ -78,7 +78,9 @@ export function CopyDialog({
   );
   const [copyIndexes, setCopyIndexes] = useState(true);
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
-  const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>();
+  const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>(
+    collection ? t("copy.collectionTitle") : t("copy.databaseTitle"),
+  );
   const { state } = transfer;
   const busy = state.status === "running";
   const done =

@@ -47,7 +47,9 @@ export function DatabaseExportDialog({
   const [format, setFormat] = useState<(typeof FORMATS)[number]>("ndjson");
   const [jsonMode, setJsonMode] = useState<JsonMode>("canonical");
   const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
-  const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>();
+  const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>(
+    t("database.export.title"),
+  );
   const { state } = transfer;
   const busy = state.status === "running";
   const done =

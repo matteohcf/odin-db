@@ -22,6 +22,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
         .commands(collect_commands![
             commands::app::app_info,
             commands::app::confirm_quit,
+            commands::app::notify_if_unfocused,
             commands::profiles::list_profiles,
             commands::profiles::create_profile,
             commands::profiles::update_profile,
@@ -126,6 +127,7 @@ pub fn run() {
 
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(Arc::new(OperationRegistry::default()))
         .manage(quit::QuitConfirmation::default())

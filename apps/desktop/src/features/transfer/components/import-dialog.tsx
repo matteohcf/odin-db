@@ -70,7 +70,7 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
   const [stopOnError, setStopOnError] = useState(false);
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
   const [chooseError, setChooseError] = useState<string | null>(null);
-  const transfer = useTransfer<ImportSummary>();
+  const transfer = useTransfer<ImportSummary>(t("import.title"));
   const { state } = transfer;
   const busy = state.status === "running";
   const done =

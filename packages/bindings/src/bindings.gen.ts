@@ -11,6 +11,11 @@ export const commands = {
 	 *  moment to clean up (exports delete their partial file) before exiting.
 	 */
 	confirmQuit: () => typedError<null, IpcError>(__TAURI_INVOKE("confirm_quit")),
+	/**
+	 *  A desktop notification, only when odin-db is in the background: a long export
+	 *  that ends while the user works elsewhere should not go unnoticed.
+	 */
+	notifyIfUnfocused: (title: string, body: string) => __TAURI_INVOKE<void>("notify_if_unfocused", { title, body }),
 	listProfiles: () => typedError<ConnectionProfile[], IpcError>(__TAURI_INVOKE("list_profiles")),
 	createProfile: (input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("create_profile", { input })),
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
