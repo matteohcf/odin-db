@@ -109,6 +109,30 @@ function event(i: number): Doc {
   };
 }
 
+function wide(i: number): Doc {
+  const doc: Doc = { _id: oid() };
+  for (let f = 0; f < 300; f++) {
+    doc[`field_${String(f).padStart(3, "0")}`] =
+      f % 3 === 0 ? { $numberInt: String(i * f) } : f % 3 === 1 ? `value ${i}-${f}` : f % 2 === 0;
+  }
+  return doc;
+}
+
+function nested(i: number): Doc {
+  let leaf: Doc = { depth: { $numberInt: "12" }, note: `leaf ${i}` };
+  for (let d = 11; d > 0; d--) leaf = { depth: { $numberInt: String(d) }, child: leaf };
+  return {
+    _id: oid(),
+    name: `nested ${i}`,
+    tree: leaf,
+    tags: Array.from({ length: 50 }, (_, t) => `tag-${t}`),
+    items: Array.from({ length: 30 }, (_, t) => ({
+      sku: `SKU-${i}-${t}`,
+      qty: { $numberInt: String(t) },
+    })),
+  };
+}
+
 const servers: Record<string, Record<string, Collections>> = {
   local: {
     shop: {
@@ -138,6 +162,9 @@ const servers: Record<string, Record<string, Collections>> = {
     analytics: {
       events: { kind: "collection", docs: Array.from({ length: 25_000 }, (_, i) => event(i)) },
       metrics: { kind: "timeseries", docs: [] },
+      // Stress shapes: very wide documents and deep, array-heavy ones.
+      wide: { kind: "collection", docs: Array.from({ length: 400 }, (_, i) => wide(i)) },
+      nested: { kind: "collection", docs: Array.from({ length: 200 }, (_, i) => nested(i)) },
     },
     admin: {},
   },

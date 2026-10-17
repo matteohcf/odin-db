@@ -66,3 +66,28 @@ export function fitWidth(rows: readonly JsonObject[], key: string): number {
   }
   return Math.round(Math.min(640, Math.max(64, longest * CHAR_WIDTH + CELL_PADDING)));
 }
+
+export type ColumnSlot = { index: number } | { gap: number; key: string };
+
+/**
+ * The columns to render, in order, with one spacer for each run of skipped columns, so
+ * a document with hundreds of fields only renders the cells in view.
+ */
+export function columnSlots(widths: readonly number[], rendered: Iterable<number>): ColumnSlot[] {
+  const indexes = [...new Set(rendered)]
+    .filter((index) => index >= 0 && index < widths.length)
+    .sort((a, b) => a - b);
+  const offsets = [0];
+  for (const width of widths) offsets.push((offsets.at(-1) ?? 0) + width);
+  const slots: ColumnSlot[] = [];
+  let end = 0;
+  for (const index of indexes) {
+    const start = offsets[index] ?? 0;
+    if (start > end) slots.push({ gap: start - end, key: `gap-${index}` });
+    slots.push({ index });
+    end = offsets[index + 1] ?? start;
+  }
+  const total = offsets.at(-1) ?? 0;
+  if (total > end) slots.push({ gap: total - end, key: "gap-end" });
+  return slots;
+}

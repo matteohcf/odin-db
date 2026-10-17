@@ -45,7 +45,7 @@ import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
 import { compactEJson, type JsonObject } from "@/lib/ejson-display";
 import { toShellSyntax } from "@/lib/shell-syntax";
-import { columnWidth, dominantKind, fitWidth } from "../lib/columns";
+import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
@@ -199,6 +199,27 @@ export function ResultsGrid({
     overscan: 12,
   });
   const items = virtualizer.getVirtualItems();
+
+  // Wide documents have hundreds of fields: only the columns in view are rendered.
+  const widths = headers.map((header) => header.getSize());
+  const columnVirtualizer = useVirtualizer({
+    horizontal: true,
+    count: headers.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: (index) => widths[index] ?? 150,
+    scrollMargin: INDEX_WIDTH,
+    overscan: 3,
+  });
+  const widthsKey = widths.join();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `widthsKey` stands for the sizes.
+  useEffect(() => columnVirtualizer.measure(), [widthsKey, columnVirtualizer]);
+  const idIndex = headers.findIndex((header) => header.id === "_id");
+  const slots = columnSlots(widths, [
+    ...columnVirtualizer.getVirtualItems().map((column) => column.index),
+    // `_id` is pinned, and a cell being edited must stay mounted.
+    idIndex,
+    headers.findIndex((header) => header.id === editingCell?.field),
+  ]);
   const lastVisible = items.at(-1)?.index ?? 0;
 
   useEffect(() => {
@@ -222,6 +243,7 @@ export function ResultsGrid({
     while (row && at >= 0 && at < fields.length) {
       const next = fields[at];
       if (next !== undefined && inlineEditable(row, next)) {
+        columnVirtualizer.scrollToIndex(at, { align: "auto" });
         setEditingCell({ index, field: next });
         return;
       }
@@ -303,7 +325,19 @@ export function ResultsGrid({
                     onShowAll={() => table.toggleAllColumnsVisible(true)}
                   />
                 </th>
-                {headers.map((header) => {
+                {slots.map((slot) => {
+                  if ("gap" in slot) {
+                    return (
+                      <th
+                        key={slot.key}
+                        aria-hidden
+                        className="shrink-0"
+                        style={{ width: slot.gap }}
+                      />
+                    );
+                  }
+                  const header = headers[slot.index];
+                  if (!header) return null;
                   const meta = header.column.columnDef.meta;
                   const sortIndex =
                     columnActions?.sort.findIndex((sort) => sort.field === header.id) ?? -1;
@@ -427,43 +461,57 @@ export function ResultsGrid({
                     >
                       {item.index + 1}
                     </th>
-                    {headers.map((header) => (
-                      <td
-                        key={header.id}
-                        onContextMenu={() => setMenuColumn(header.id)}
-                        onDoubleClick={(event) => {
-                          if (!inlineEditable(row, header.id)) return;
-                          // Edits the value here instead of opening the document.
-                          event.stopPropagation();
-                          setEditingCell({ index: item.index, field: header.id });
-                        }}
-                        className={cn(
-                          "flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
-                          header.id === "_id" &&
-                            (isSelected
-                              ? "sticky z-[5] bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"
-                              : "sticky z-[5] bg-background"),
-                        )}
-                        style={{
-                          width: header.getSize(),
-                          ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
-                        }}
-                      >
-                        {editingCell?.index === item.index && editingCell.field === header.id ? (
-                          <InlineCellEditor
-                            value={row[header.id]}
-                            onSave={async (value) => {
-                              await actions.onSetField?.(row, header.id, value);
-                              setEditingCell(null);
-                            }}
-                            onCancel={() => setEditingCell(null)}
-                            onMove={(step) => moveEditing(item.index, header.id, step)}
+                    {slots.map((slot) => {
+                      if ("gap" in slot) {
+                        return (
+                          <td
+                            key={slot.key}
+                            aria-hidden
+                            className="shrink-0"
+                            style={{ width: slot.gap }}
                           />
-                        ) : (
-                          <EJsonCell value={row[header.id]} />
-                        )}
-                      </td>
-                    ))}
+                        );
+                      }
+                      const header = headers[slot.index];
+                      if (!header) return null;
+                      return (
+                        <td
+                          key={header.id}
+                          onContextMenu={() => setMenuColumn(header.id)}
+                          onDoubleClick={(event) => {
+                            if (!inlineEditable(row, header.id)) return;
+                            // Edits the value here instead of opening the document.
+                            event.stopPropagation();
+                            setEditingCell({ index: item.index, field: header.id });
+                          }}
+                          className={cn(
+                            "flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
+                            header.id === "_id" &&
+                              (isSelected
+                                ? "sticky z-[5] bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"
+                                : "sticky z-[5] bg-background"),
+                          )}
+                          style={{
+                            width: header.getSize(),
+                            ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
+                          }}
+                        >
+                          {editingCell?.index === item.index && editingCell.field === header.id ? (
+                            <InlineCellEditor
+                              value={row[header.id]}
+                              onSave={async (value) => {
+                                await actions.onSetField?.(row, header.id, value);
+                                setEditingCell(null);
+                              }}
+                              onCancel={() => setEditingCell(null)}
+                              onMove={(step) => moveEditing(item.index, header.id, step)}
+                            />
+                          ) : (
+                            <EJsonCell value={row[header.id]} />
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
