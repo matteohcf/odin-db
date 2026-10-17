@@ -91,11 +91,19 @@ export function createResultsController(
     });
   }
 
-  async function run(open: OpenCursor) {
+  /**
+   * `keepRows` leaves the current rows on screen until the new first page arrives,
+   * so refreshing after an edit doesn't flash an empty grid.
+   */
+  async function run(open: OpenCursor, { keepRows = false }: { keepRows?: boolean } = {}) {
     generation += 1;
     const current = generation;
     releaseCursor();
-    store.setState({ ...initialState, status: "loading", columns: store.getState().columns });
+    store.setState(
+      keepRows
+        ? { status: "loading", error: null, hasMore: false, loadingMore: false }
+        : { ...initialState, status: "loading", columns: store.getState().columns },
+    );
     const startedAt = performance.now();
 
     try {

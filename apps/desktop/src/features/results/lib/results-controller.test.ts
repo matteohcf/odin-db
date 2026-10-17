@@ -74,6 +74,19 @@ describe("results controller", () => {
     expect(noBackend.close).toHaveBeenCalledWith("stale");
   });
 
+  it("keeps rows on screen while refreshing when asked", async () => {
+    const results = createResultsController(noBackend);
+    await results.run(async () => ({ documents: docs(0, 3), cursorId: null }));
+    let resolve: (page: DocumentPage) => void = () => {};
+    const refresh = results.run(() => new Promise<DocumentPage>((r) => (resolve = r)), {
+      keepRows: true,
+    });
+    expect(results.store.getState()).toMatchObject({ status: "loading", rows: docs(0, 3) });
+    resolve({ documents: docs(10, 1), cursorId: null });
+    await refresh;
+    expect(results.store.getState().rows).toEqual(docs(10, 1));
+  });
+
   it("collects columns across documents with _id first", async () => {
     const results = createResultsController(noBackend);
     await results.run(async () => ({

@@ -1,7 +1,13 @@
 import type { ConnectionInfo, EJsonDocument, EJsonValue, Namespace } from "@odin-db/bindings";
 import { commands } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { Plus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@odin-db/ui/components/dropdown-menu";
+import { Download, MoreHorizontal, Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -11,7 +17,9 @@ import {
   ResultsPanel,
   ResultsStatusBar,
   useResultsController,
+  useResultsState,
 } from "@/features/results";
+import { ExportDialog, ImportDialog } from "@/features/transfer";
 import type { JsonObject } from "@/lib/ejson-display";
 import { call } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
@@ -51,6 +59,8 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const { t } = useTranslation("documents");
   const label = `${namespace.database}.${namespace.collection}`;
   const results = useResultsController();
+  const columns = useResultsState(results, (s) => s.columns);
+  const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
 
   const [form, setForm] = useState<QueryForm>(emptyQueryForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<QueryField, string>>>({});
@@ -67,13 +77,15 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const target = { connectionId: connection.id, namespace };
 
   const execute = useCallback(
-    async (query: FindQuery) => {
+    async (query: FindQuery, { keepRows = false } = {}) => {
       lastQuery.current = query;
-      setSelectedIndex(null);
+      if (!keepRows) setSelectedIndex(null);
       count.reset();
       setRunning(true);
-      await results.run((batchSize) =>
-        call(commands.findDocuments(connection.id, namespace, { ...query, batchSize })),
+      await results.run(
+        (batchSize) =>
+          call(commands.findDocuments(connection.id, namespace, { ...query, batchSize })),
+        { keepRows },
       );
       setRunning(false);
     },
@@ -90,10 +102,11 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
     await execute(parsed.query);
   }
 
-  const refresh = () => void execute(lastQuery.current);
+  /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
+  const refresh = (keepRows = false) => void execute(lastQuery.current, { keepRows });
 
   // First load, and again after a reconnect binds the tab to a new connection.
-  const initialLoad = useEffectEvent(refresh);
+  const initialLoad = useEffectEvent(() => refresh());
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the tab gets a new connection.
   useEffect(() => {
     initialLoad();
@@ -112,7 +125,7 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
       toast.success(t("editor.saved"));
     }
     setEditor({ open: false });
-    refresh();
+    refresh(true);
   }
 
   function confirmDelete() {
@@ -124,7 +137,7 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         onSuccess: () => {
           toast.success(t("delete.deleted"));
           setToDelete(undefined);
-          refresh();
+          refresh(true);
         },
       },
     );
@@ -141,12 +154,38 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         onChange={(field, value) => setForm((current) => ({ ...current, [field]: value }))}
         onRun={() => void runForm()}
         actions={
-          editable && (
-            <Button variant="outline" size="sm" onClick={() => openInsert()}>
-              <Plus />
-              {t("insert")}
-            </Button>
-          )
+          <>
+            {editable && (
+              <Button variant="outline" size="sm" onClick={() => openInsert()}>
+                <Plus />
+                {t("insert")}
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  aria-label={t("menu.more", { ns: "transfer" })}
+                >
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {editable && (
+                  <DropdownMenuItem onSelect={() => setTransfer("import")}>
+                    <Upload />
+                    {t("menu.import", { ns: "transfer" })}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => setTransfer("export")}>
+                  <Download />
+                  {t("menu.export", { ns: "transfer" })}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         }
       />
 
@@ -223,6 +262,23 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
           initialText={editor.text}
           onSave={saveDocument}
           onClose={() => setEditor({ open: false })}
+        />
+      )}
+      {transfer === "export" && (
+        <ExportDialog
+          connectionId={connection.id}
+          namespace={namespace}
+          source={{ kind: "find", request: { ...lastQuery.current, batchSize: 1000 } }}
+          columns={columns}
+          onClose={() => setTransfer(null)}
+        />
+      )}
+      {transfer === "import" && (
+        <ImportDialog
+          connectionId={connection.id}
+          namespace={namespace}
+          onImported={() => refresh(true)}
+          onClose={() => setTransfer(null)}
         />
       )}
       <DeleteDocumentDialog

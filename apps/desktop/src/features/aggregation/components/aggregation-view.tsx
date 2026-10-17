@@ -1,4 +1,9 @@
-import { type ConnectionInfo, commands, type Namespace } from "@odin-db/bindings";
+import {
+  type ConnectionInfo,
+  commands,
+  type EJsonDocument,
+  type Namespace,
+} from "@odin-db/bindings";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -10,8 +15,8 @@ import {
 } from "@odin-db/ui/components/alert-dialog";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { CircleAlert, Copy, Play, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { CircleAlert, Copy, Download, Play, Plus, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useStore } from "zustand";
@@ -20,7 +25,9 @@ import {
   ResultsPanel,
   ResultsStatusBar,
   useResultsController,
+  useResultsState,
 } from "@/features/results";
+import { ExportDialog } from "@/features/transfer";
 import { call } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { isWriteOperator } from "../lib/operators";
@@ -47,6 +54,10 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
   const [confirmWrite, setConfirmWrite] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<EJsonDocument[] | null>(null);
+  const resultColumns = useResultsState(results, (s) => s.columns);
+  const resultsReady = useResultsState(results, (s) => s.status === "ready");
+  const lastPipeline = useRef<EJsonDocument[]>([]);
 
   const writeStage = stages.find((s) => s.enabled && isWriteOperator(s.operator));
   const label = `${namespace.database}.${namespace.collection}`;
@@ -69,6 +80,7 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
     setRunError(null);
     setSelectedIndex(null);
     setResultsOpen(true);
+    lastPipeline.current = built.pipeline;
     void results.run((batchSize) =>
       call(
         commands.aggregateDocuments(connection.id, namespace, {
@@ -159,8 +171,18 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
           aria-label={t("results.title")}
           className="flex h-[45%] min-h-48 shrink-0 flex-col border-t"
         >
-          <header className="flex h-9 shrink-0 items-center justify-between border-b bg-sidebar px-3">
+          <header className="flex h-9 shrink-0 items-center gap-1 border-b bg-sidebar px-3">
             <h2 className="font-medium text-xs">{t("results.title")}</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 text-xs"
+              disabled={!resultsReady}
+              onClick={() => setExporting(lastPipeline.current)}
+            >
+              <Download />
+              {t("menu.export", { ns: "transfer" })}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -189,6 +211,16 @@ export function AggregationView({ connection, namespace }: AggregationViewProps)
           />
           <ResultsStatusBar controller={results} />
         </section>
+      )}
+
+      {exporting && (
+        <ExportDialog
+          connectionId={connection.id}
+          namespace={namespace}
+          source={{ kind: "aggregate", pipeline: exporting }}
+          columns={resultColumns}
+          onClose={() => setExporting(null)}
+        />
       )}
 
       {viewing !== null && (

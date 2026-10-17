@@ -382,6 +382,55 @@ const ensureWritable = (connection: ConnectionInfo) => {
   if (connection.readOnly) fail("readOnly", "this connection is read-only");
 };
 
+/** Sends ordered messages to a Tauri `Channel`, like the Rust side does. */
+function channelSender(channel: unknown) {
+  const id = (channel as { id: number }).id;
+  let index = 0;
+  return (message: unknown) => {
+    const internals = (
+      window as unknown as {
+        __TAURI_INTERNALS__: { runCallback: (id: number, data: unknown) => void };
+      }
+    ).__TAURI_INTERNALS__;
+    internals.runCallback(id, { index, message });
+    index += 1;
+  };
+}
+
+const operations = new Map<string, { cancelled: boolean }>();
+
+/** Simulates a long transfer: progress ticks, then a summary, then the terminal event. */
+function simulateTransfer(channel: unknown, total: number, summary: unknown, bytesPerDoc: number) {
+  const send = channelSender(channel);
+  const operationId = crypto.randomUUID();
+  const operation = { cancelled: false };
+  operations.set(operationId, operation);
+  let done = 0;
+  const tick = () => {
+    if (operation.cancelled) {
+      send({ event: "cancelled" });
+      operations.delete(operationId);
+      return;
+    }
+    done = Math.min(total, done + Math.ceil(total / 8));
+    send({
+      event: "data",
+      data: { kind: "progress", value: { documents: done, bytes: done * bytesPerDoc } },
+    });
+    if (done < total) {
+      setTimeout(tick, 250);
+      return;
+    }
+    send({ event: "data", data: { kind: "finished", value: summary } });
+    send({ event: "completed" });
+    operations.delete(operationId);
+  };
+  setTimeout(tick, 250);
+  return operationId;
+}
+
+const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
+
 const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   app_info: () => ({
     version: "0.0.0",
@@ -543,6 +592,79 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (args.name === "_id_") fail("validation", "invalid input: the _id index cannot be dropped");
     coll.indexes = indexesOf(coll).filter((spec) => spec.name !== args.name);
     return null;
+  },
+  cancel_operation: (args) => {
+    const operation = operations.get(id("id", args));
+    if (operation) operation.cancelled = true;
+    return operation !== undefined;
+  },
+  export_documents: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    const total = coll.docs.length;
+    return simulateTransfer(args.channel, total, { documents: total, bytes: total * 412 }, 412);
+  },
+  choose_import_file: () => {
+    const headers = ["email", "name", "age", "joined", "city"];
+    const rows = Array.from({ length: 120 }, (_, i) => [
+      i === 7 ? "not-an-email" : `customer.${i}@example.com`,
+      `Customer ${i}`,
+      i === 42 ? "unknown" : String(20 + (i % 50)),
+      `2025-0${(i % 9) + 1}-15T09:30:00Z`,
+      cities[i % cities.length] ?? "Milano",
+    ]);
+    const token = crypto.randomUUID();
+    importFiles.set(token, { rows, headers });
+    return {
+      token,
+      name: "customers.csv",
+      preview: {
+        kind: "csv",
+        headers,
+        rows: rows.slice(0, 20),
+        suggested: ["string", "string", "int32", "date", "string"],
+      },
+    };
+  },
+  import_documents: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const file = importFiles.get(id("token", args)) ?? fail("notFound", "import file not found");
+    importFiles.delete(id("token", args));
+    const options = args.options as {
+      format: { kind: string; columns?: { header: string; field: string; kind: string }[] };
+    };
+    const errors: { record: number; message: string }[] = [];
+    let inserted = 0;
+    file.rows.forEach((row, index) => {
+      const doc: Doc = { _id: oid() };
+      for (const column of options.format.columns ?? []) {
+        if (column.kind === "skip") continue;
+        const cell = row[file.headers.indexOf(column.header)] ?? "";
+        if (column.kind === "int32" && !/^-?\d+$/.test(cell)) {
+          errors.push({
+            record: index + 1,
+            message: `${column.header}: "${cell}" is not a 32-bit integer`,
+          });
+          return;
+        }
+        doc[column.field] =
+          column.kind === "int32"
+            ? { $numberInt: cell }
+            : column.kind === "date"
+              ? { $date: { $numberLong: String(Date.parse(cell)) } }
+              : cell;
+      }
+      coll.docs.push(doc);
+      inserted += 1;
+    });
+    return simulateTransfer(
+      args.channel,
+      file.rows.length,
+      { inserted, failed: errors.length, errors, stopped: false },
+      80,
+    );
   },
   find_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
