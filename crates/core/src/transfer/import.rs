@@ -47,6 +47,25 @@ pub struct ImportOptions {
     pub format: ImportFormat,
     /// Stop at the first failing document instead of skipping it.
     pub stop_on_error: bool,
+    #[serde(default)]
+    pub mode: ImportMode,
+    /// Empty the collection before importing. Destructive: confirmed in the UI.
+    #[serde(default)]
+    pub drop_first: bool,
+}
+
+/// What happens to documents whose `_id` already exists in the collection.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub enum ImportMode {
+    /// Insert every document; duplicates of an existing `_id` fail.
+    #[default]
+    Insert,
+    /// Replace the existing document with the file's version.
+    Upsert,
+    /// Keep the existing document and set the file's fields on it.
+    Merge,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -63,6 +82,8 @@ pub struct RecordError {
 #[serde(rename_all = "camelCase")]
 pub struct ImportSummary {
     pub inserted: f64,
+    /// Existing documents replaced or merged (upsert and merge modes).
+    pub updated: f64,
     pub failed: f64,
     /// The first errors, enough to fix the file.
     pub errors: Vec<RecordError>,
@@ -153,6 +174,9 @@ pub async fn import_documents(
 ) -> Result<ImportSummary, CoreError> {
     handle.ensure_writable()?;
     let collection = namespace.collection(handle)?;
+    if options.drop_first {
+        collection.delete_many(bson::doc! {}).await?;
+    }
     let total_bytes = std::fs::metadata(&path).map_or(0, |m| m.len());
 
     let (tx, mut rx) = mpsc::channel::<Parsed>(INSERT_BATCH * 2);
@@ -165,6 +189,7 @@ pub async fn import_documents(
     let mut reporter = ProgressReporter::new(progress);
     let mut summary = ImportSummary {
         inserted: 0.0,
+        updated: 0.0,
         failed: 0.0,
         errors: Vec::new(),
         stopped: false,
@@ -195,13 +220,20 @@ pub async fn import_documents(
         }
 
         if (batch.len() >= INSERT_BATCH || (finished && !batch.is_empty())) && !summary.stopped {
-            insert_batch(
-                &collection,
-                std::mem::take(&mut batch),
-                options.stop_on_error,
-                &mut summary,
-            )
-            .await?;
+            let batch = std::mem::take(&mut batch);
+            if options.mode == ImportMode::Insert {
+                insert_batch(&collection, batch, options.stop_on_error, &mut summary).await?;
+            } else {
+                upsert_batch(
+                    handle,
+                    namespace,
+                    batch,
+                    options.mode,
+                    options.stop_on_error,
+                    &mut summary,
+                )
+                .await?;
+            }
         }
         reporter.report(records, total_bytes.min(records * 200));
         if finished || summary.stopped {
@@ -261,6 +293,67 @@ async fn insert_batch(
             _ => Err(error.into()),
         },
     }
+}
+
+/// Upserts by `_id` with the `update` command, which every supported server
+/// version accepts (the driver's `bulk_write` needs MongoDB 8.0).
+async fn upsert_batch(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    batch: Vec<(u64, Document)>,
+    mode: ImportMode,
+    ordered: bool,
+    summary: &mut ImportSummary,
+) -> Result<(), CoreError> {
+    let positions: Vec<u64> = batch.iter().map(|(position, _)| *position).collect();
+    let updates: Vec<Document> = batch
+        .into_iter()
+        .map(|(_, mut document)| {
+            // Without an `_id` a document is new: give it one so it can be upserted.
+            let id = document
+                .get("_id")
+                .cloned()
+                .unwrap_or_else(|| bson::Bson::ObjectId(bson::oid::ObjectId::new()));
+            document.insert("_id", id.clone());
+            let update = match mode {
+                ImportMode::Merge => bson::doc! { "$set": document },
+                ImportMode::Upsert | ImportMode::Insert => document,
+            };
+            bson::doc! { "q": { "_id": id }, "u": update, "upsert": true }
+        })
+        .collect();
+    let reply = handle
+        .client
+        .database(&namespace.database)
+        .run_command(bson::doc! {
+            "update": &namespace.collection,
+            "updates": updates,
+            "ordered": ordered,
+        })
+        .await?;
+    let count = |key: &str| reply.get(key).map_or(0.0, crate::ejson::number_of);
+    let upserted = reply.get_array("upserted").map_or(0, Vec::len);
+    #[allow(clippy::cast_precision_loss)]
+    let upserted = upserted as f64;
+    summary.inserted += upserted;
+    // `n` counts matched and upserted documents.
+    summary.updated += count("n") - upserted;
+    if let Ok(errors) = reply.get_array("writeErrors") {
+        for error in errors.iter().filter_map(bson::Bson::as_document) {
+            let index = error.get("index").map_or(0.0, crate::ejson::number_of);
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let record = positions.get(index as usize).copied().unwrap_or_default();
+            record_failure(
+                summary,
+                PendingError {
+                    record,
+                    message: error.get_str("errmsg").unwrap_or("write failed").to_owned(),
+                },
+            );
+        }
+        summary.stopped |= ordered && !errors.is_empty();
+    }
+    Ok(())
 }
 
 fn record_failure(summary: &mut ImportSummary, error: PendingError) {

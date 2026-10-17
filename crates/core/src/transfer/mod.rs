@@ -1,6 +1,7 @@
 //! Import and export, streaming end to end (ADR-0019).
 
 mod csv_values;
+mod database;
 mod export;
 mod import;
 
@@ -10,9 +11,13 @@ use serde::Serialize;
 use tokio::sync::mpsc;
 
 pub use csv_values::CsvType;
+pub use database::{
+    DatabaseExportRequest, DatabaseProgress, DatabaseTransferSummary, database_files,
+    export_database, import_database,
+};
 pub use export::{ExportFormat, ExportRequest, ExportSource, JsonMode, export_documents};
 pub use import::{
-    CsvColumn, FilePreview, ImportFormat, ImportOptions, ImportSummary, RecordError,
+    CsvColumn, FilePreview, ImportFormat, ImportMode, ImportOptions, ImportSummary, RecordError,
     import_documents, is_csv, preview_file,
 };
 

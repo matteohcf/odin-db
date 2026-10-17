@@ -23,8 +23,8 @@ use odin_core::shell::{
 };
 use odin_core::storage::Storage;
 use odin_core::transfer::{
-    CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportOptions,
-    JsonMode, TransferProgress, export_documents, import_documents,
+    CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportMode,
+    ImportOptions, JsonMode, TransferProgress, export_documents, import_documents,
 };
 use odin_core::{CoreError, browse, catalog, documents, explain, schema};
 use std::str::FromStr;
@@ -513,6 +513,8 @@ async fn json_exports_round_trip_exactly() {
             ImportOptions {
                 format: ImportFormat::Json,
                 stop_on_error: false,
+                mode: ImportMode::Insert,
+                drop_first: false,
             },
             progress(),
             CancellationToken::new(),
@@ -584,6 +586,8 @@ async fn csv_round_trips_with_explicit_column_types() {
             ],
         },
         stop_on_error: false,
+        mode: ImportMode::Insert,
+        drop_first: false,
     };
     let target = namespace("people_copy");
     let summary = import_documents(
@@ -624,6 +628,8 @@ async fn import_reports_failures_and_can_stop_at_the_first() {
                 ImportOptions {
                     format: ImportFormat::Json,
                     stop_on_error,
+                    mode: ImportMode::Insert,
+                    drop_first: false,
                 },
                 progress(),
                 CancellationToken::new(),
@@ -684,6 +690,8 @@ async fn failed_exports_leave_no_file_and_read_only_blocks_imports() {
         ImportOptions {
             format: ImportFormat::Json,
             stop_on_error: false,
+            mode: ImportMode::Insert,
+            drop_first: false,
         },
         progress(),
         CancellationToken::new(),
@@ -1420,4 +1428,164 @@ async fn backup_options_contents_and_selective_restore() {
     );
     let _ = std::fs::remove_file(archive);
     let _ = std::fs::remove_file(filtered);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn imports_upsert_merge_and_replace_the_whole_collection() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("modes");
+    let collection = handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection);
+    collection
+        .insert_many([
+            doc! { "_id": 1, "name": "a", "keep": true },
+            doc! { "_id": 2, "name": "b" },
+        ])
+        .await
+        .expect("seeded");
+    let file = temp_path("modes.json");
+    std::fs::write(
+        &file,
+        r#"[{"_id": 1, "name": "A"}, {"_id": 3, "name": "c"}, {"name": "no id"}]"#,
+    )
+    .expect("file");
+    let import = |mode: ImportMode, drop_first: bool| {
+        let (handle, ns, file) = (handle.clone(), ns.clone(), file.clone());
+        async move {
+            let (progress, mut drain) = tokio::sync::mpsc::channel(64);
+            tokio::spawn(async move { while drain.recv().await.is_some() {} });
+            import_documents(
+                &handle,
+                &ns,
+                file,
+                ImportOptions {
+                    format: ImportFormat::Json,
+                    stop_on_error: false,
+                    mode,
+                    drop_first,
+                },
+                progress,
+                CancellationToken::new(),
+            )
+            .await
+            .expect("import")
+        }
+    };
+    let one = || async {
+        collection
+            .find_one(doc! { "_id": 1 })
+            .await
+            .expect("find")
+            .expect("one")
+    };
+
+    let merged = import(ImportMode::Merge, false).await;
+    assert_eq!((merged.inserted, merged.updated), (2.0, 1.0));
+    assert_eq!(
+        one().await,
+        doc! { "_id": 1, "name": "A", "keep": true },
+        "merge keeps other fields"
+    );
+
+    let upserted = import(ImportMode::Upsert, false).await;
+    assert_eq!(
+        (upserted.inserted, upserted.updated),
+        (1.0, 2.0),
+        "the id-less document is new again"
+    );
+    assert_eq!(
+        one().await,
+        doc! { "_id": 1, "name": "A" },
+        "upsert replaces the document"
+    );
+
+    let replaced = import(ImportMode::Insert, true).await;
+    assert_eq!(replaced.inserted, 3.0);
+    assert_eq!(
+        collection.count_documents(doc! {}).await.expect("count"),
+        3,
+        "emptied first"
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn exports_a_database_to_a_folder_and_imports_it_back() {
+    use odin_core::transfer::{
+        DatabaseExportRequest, database_files, export_database, import_database,
+    };
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    for (name, count) in [("orders", 30), ("users", 12)] {
+        fx.seed(&handle, &namespace(name), count).await;
+    }
+    let folder = temp_path("db-export");
+    let quiet = || {
+        let (progress, mut drain) = tokio::sync::mpsc::channel(64);
+        tokio::spawn(async move { while drain.recv().await.is_some() {} });
+        progress
+    };
+
+    let exported = export_database(
+        &handle,
+        "odin_test",
+        &folder,
+        DatabaseExportRequest {
+            format: ExportFormat::Ndjson,
+            json_mode: JsonMode::Canonical,
+            collections: Vec::new(),
+        },
+        quiet(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("export");
+    assert_eq!((exported.collections, exported.documents), (2.0, 42.0));
+
+    let files = database_files(&folder).expect("files");
+    assert_eq!(
+        files
+            .iter()
+            .map(|(name, _)| name.as_str())
+            .collect::<Vec<_>>(),
+        ["orders", "users"]
+    );
+    let imported = import_database(
+        &handle,
+        "odin_copy",
+        files,
+        ImportOptions {
+            format: ImportFormat::Json,
+            stop_on_error: false,
+            mode: ImportMode::Insert,
+            drop_first: false,
+        },
+        quiet(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("import");
+    assert_eq!(
+        (imported.collections, imported.documents, imported.failed),
+        (2.0, 42.0, 0.0)
+    );
+    let copy = handle
+        .client
+        .database("odin_copy")
+        .collection::<Document>("orders");
+    let first = copy
+        .find_one(doc! { "n": 0 })
+        .await
+        .expect("find")
+        .expect("document");
+    assert!(
+        matches!(first.get("n"), Some(Bson::Int32(0))),
+        "canonical JSON keeps BSON types"
+    );
+    std::fs::remove_dir_all(folder).expect("cleanup");
 }
