@@ -155,6 +155,7 @@ function DocumentCard({
 }) {
   const { t } = useTranslation("results");
   const [expanded, setExpanded] = useState(false);
+  const setField = actions.onSetField;
   // Remounting the tree applies "expand all" to every nested field.
   const [treeKey, setTreeKey] = useState(0);
 
@@ -208,7 +209,12 @@ function DocumentCard({
         )}
       </div>
       {format === "tree" ? (
-        <DocumentTree key={treeKey} document={row} expanded={expanded} />
+        <DocumentTree
+          key={treeKey}
+          document={row}
+          expanded={expanded}
+          onSetField={setField && ((field, value) => setField(row, field, value))}
+        />
       ) : (
         <JsonDocument document={row} />
       )}

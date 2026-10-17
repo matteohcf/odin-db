@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { kindTextClass } from "@/components/ejson-cell";
 import { describeEJson, type JsonObject } from "@/lib/ejson-display";
 import { toShellSyntax } from "@/lib/shell-syntax";
+import { InlineCellEditor } from "./inline-cell-editor";
 
 /** Arrays longer than this show their first items and a "show all" button. */
 const ARRAY_PREVIEW = 50;
@@ -25,16 +26,27 @@ export function DocumentTree({
   document,
   expanded,
   onFilter,
+  onSetField,
 }: {
   document: JsonObject;
   expanded: boolean;
   /** Offers "filter by this value" in the field menu; the menu exists only with it. */
   onFilter?: ((path: string, value: JsonValue) => void) | undefined;
+  /** Saves a top-level value edited in place (double-click). Omitted when read-only. */
+  onSetField?: ((field: string, value: JsonValue) => Promise<void>) | undefined;
 }) {
   const fields = (
     <ul className="font-mono text-xs leading-5">
       {Object.entries(document).map(([key, value]) => (
-        <Field key={key} name={key} path={key} value={value} depth={0} expandAll={expanded} />
+        <Field
+          key={key}
+          name={key}
+          path={key}
+          value={value}
+          depth={0}
+          expandAll={expanded}
+          onSave={key === "_id" || !onSetField ? undefined : (next) => onSetField(key, next)}
+        />
       ))}
     </ul>
   );
@@ -128,6 +140,7 @@ function Field({
   depth,
   expandAll,
   index = false,
+  onSave,
 }: {
   name: string;
   path: string;
@@ -135,7 +148,10 @@ function Field({
   depth: number;
   expandAll: boolean;
   index?: boolean;
+  /** Top-level scalar fields of editable results: double-click edits in place. */
+  onSave?: ((value: JsonValue) => Promise<void>) | undefined;
 }) {
+  const [editing, setEditing] = useState(false);
   const { t } = useTranslation("common");
   const { kind, text } = describeEJson(value);
   const structure = kind === "document" || kind === "array";
@@ -186,8 +202,35 @@ function Field({
           >
             {open ? (kind === "array" ? "[" : "{") : summary}
           </button>
+        ) : editing && onSave ? (
+          <span className="min-w-0 flex-1">
+            <InlineCellEditor
+              value={value}
+              onSave={async (next) => {
+                await onSave(next);
+                setEditing(false);
+              }}
+              onCancel={() => setEditing(false)}
+              onMove={() => setEditing(false)}
+            />
+          </span>
         ) : (
-          <span className={cn("min-w-0 break-all selectable", kindTextClass[kind])}>{text}</span>
+          // biome-ignore lint/a11y/noStaticElementInteractions: double-click is a pointer shortcut; the document editor edits from the keyboard.
+          <span
+            className={cn(
+              "min-w-0 break-all selectable",
+              kindTextClass[kind],
+              onSave && "cursor-text rounded-sm hover:bg-accent/60",
+            )}
+            onDoubleClick={(event) => {
+              if (!onSave) return;
+              // Edits this value instead of opening the whole document.
+              event.stopPropagation();
+              setEditing(true);
+            }}
+          >
+            {text}
+          </span>
         )}
       </div>
       {structure && open && (
