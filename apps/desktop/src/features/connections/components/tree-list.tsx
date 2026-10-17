@@ -3,9 +3,10 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTreeRows } from "../hooks/use-tree-rows";
-import type { TreeItem } from "../lib/tree-rows";
+import { collapsedGroupKey, type TreeItem } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
 import { CollectionNode, DatabaseNode } from "./catalog-nodes";
+import { GroupNode } from "./group-node";
 import { ProfileNode } from "./profile-node";
 import { TreeMessage } from "./tree-row";
 
@@ -52,13 +53,19 @@ export function TreeList({ profiles, scrollRef, onEdit, onDelete, onExport }: Tr
   });
 
   // Waits for the catalog to load: the row appears in a later render.
+  const setExpanded = useExplorer((s) => s.setExpanded);
   useEffect(() => {
     if (!revealing) return;
     const index = rows.findIndex((row) => row.key === revealing);
-    if (index < 0) return;
+    if (index < 0) {
+      // The connection may sit in a collapsed group.
+      const group = profiles.find((profile) => revealing.startsWith(`${profile.id}/`))?.group;
+      if (group) setExpanded(collapsedGroupKey(group), false);
+      return;
+    }
     virtualizer.scrollToIndex(index, { align: "center" });
     revealed();
-  }, [revealing, rows, virtualizer, revealed]);
+  }, [revealing, rows, virtualizer, revealed, profiles, setExpanded]);
 
   const { t } = useTranslation("connections");
   const filter = useExplorer((s) => s.filter.trim());
@@ -95,9 +102,12 @@ function Row({
 }: { row: TreeItem } & Omit<TreeListProps, "profiles" | "scrollRef">) {
   const { t } = useTranslation("connections");
   switch (row.kind) {
+    case "group":
+      return <GroupNode name={row.name} count={row.count} collapsed={row.collapsed} />;
     case "profile":
       return (
         <ProfileNode
+          indent={row.indent}
           profile={row.profile}
           onEdit={() => onEdit(row.profile)}
           onDelete={() => onDelete(row.profile)}
@@ -107,6 +117,7 @@ function Row({
     case "database":
       return (
         <DatabaseNode
+          indent={row.indent}
           connection={row.connection}
           database={row.database}
           open={row.open}
@@ -116,6 +127,7 @@ function Row({
     case "collection":
       return (
         <CollectionNode
+          indent={row.indent}
           connection={row.connection}
           database={row.database}
           collection={row.collection}

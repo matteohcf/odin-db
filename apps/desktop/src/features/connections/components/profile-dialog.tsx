@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { PROFILE_COLOR_CLASS, PROFILE_COLORS } from "@/lib/profile-colors";
 import { useConnect, useSaveProfile, useTestConnection } from "../api/mutations";
+import { useProfiles } from "../api/queries";
 import { useExplorer } from "../store/explorer-store";
 import { ConnectionFormFields } from "./connection-form-fields";
 import { SshFields, type SshForm } from "./ssh-fields";
@@ -37,6 +38,7 @@ interface FormState {
   password: string;
   readOnly: boolean;
   color: ProfileColor | null;
+  group: string;
   ssh: SshForm;
   /** A host key fingerprint confirmed while testing, saved as trusted. */
   sshHostKey: string | null;
@@ -49,6 +51,7 @@ function initialState(profile: ConnectionProfile | undefined): FormState {
     password: "",
     readOnly: profile?.readOnly ?? false,
     color: profile?.color ?? null,
+    group: profile?.group ?? "",
     ssh: {
       enabled: profile?.ssh != null,
       host: profile?.ssh?.host ?? "",
@@ -70,6 +73,7 @@ function toInput(form: FormState): ProfileInput {
     password: form.password === "" ? null : form.password,
     readOnly: form.readOnly,
     color: form.color,
+    group: form.group.trim() || null,
     ssh: form.ssh.enabled
       ? {
           host: form.ssh.host.trim(),
@@ -99,6 +103,8 @@ export function ProfileDialog({ open, profile, onClose }: ProfileDialogProps) {
 
 function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
   const { t } = useTranslation("connections");
+  const { data: profiles = [] } = useProfiles();
+  const groups = [...new Set(profiles.flatMap((p) => p.group ?? []))].sort();
   const id = useId();
   const [form, setForm] = useState(() => initialState(profile));
   const [submitted, setSubmitted] = useState(false);
@@ -255,6 +261,23 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
         </ToggleGroup>
         <p className="text-muted-foreground text-xs">{t("dialog.colorHint")}</p>
       </div>
+
+      <Field id={`${id}-group`} label={t("dialog.group")} hint={t("dialog.groupHint")}>
+        <Input
+          id={`${id}-group`}
+          value={form.group}
+          placeholder={t("dialog.groupPlaceholder")}
+          onChange={(event) => update("group", event.target.value)}
+          list={`${id}-groups`}
+          autoComplete="off"
+        />
+        {/* Existing groups as suggestions, so a typo does not start a new one. */}
+        <datalist id={`${id}-groups`}>
+          {groups.map((group) => (
+            <option key={group} value={group} />
+          ))}
+        </datalist>
+      </Field>
 
       <div className="flex items-start justify-between gap-4 rounded-md border p-3">
         <div className="flex flex-col gap-1">

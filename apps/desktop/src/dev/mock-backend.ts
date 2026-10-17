@@ -215,6 +215,7 @@ const profiles: ConnectionProfile[] = [
     ssh: null,
     hasSshSecret: false,
     sshHostKey: null,
+    group: null,
   },
   {
     id: "0192f000-0000-7000-8000-000000000002",
@@ -226,6 +227,7 @@ const profiles: ConnectionProfile[] = [
     ssh: null,
     hasSshSecret: false,
     sshHostKey: null,
+    group: null,
   },
   {
     id: "0192f000-0000-7000-8000-000000000003",
@@ -242,12 +244,14 @@ const profiles: ConnectionProfile[] = [
     },
     hasSshSecret: true,
     sshHostKey: null,
+    group: null,
   },
 ];
 
 profiles.push({
   id: "0192f000-0000-7000-8000-000000000004",
   name: "Tenants cluster",
+  // Grouped, so the sidebar shows a folder in the browser preview.
   connectionString: "mongodb://tenants.internal:27017",
   readOnly: false,
   hasPassword: false,
@@ -255,6 +259,7 @@ profiles.push({
   ssh: null,
   hasSshSecret: false,
   sshHostKey: null,
+  group: "Clients",
 });
 
 const connections = new Map<string, ConnectionInfo>();
@@ -844,6 +849,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       ssh: input.ssh ?? null,
       hasSshSecret: input.ssh != null && input.sshSecret != null,
       sshHostKey: input.ssh ? (input.sshHostKey ?? null) : null,
+      group: input.group?.trim() || null,
     };
     profiles.push(profile);
     return profile;
@@ -865,6 +871,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       sshHostKey: input.ssh
         ? (input.sshHostKey ?? (profile.ssh?.host === input.ssh.host ? profile.sshHostKey : null))
         : null,
+      group: input.group?.trim() || null,
     });
     return { ...profile };
   },
@@ -883,6 +890,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
           ssh: null,
           hasSshSecret: false,
           sshHostKey: null,
+          group: null,
         };
         profiles.push(profile);
         return { ...profile };

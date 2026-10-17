@@ -41,11 +41,13 @@ import { TreeRow } from "./tree-row";
 
 /** A database row; its collections are rows of their own, after it. */
 export function DatabaseNode({
+  indent,
   connection,
   database,
   open,
   loading,
 }: {
+  indent: number;
   connection: ConnectionInfo;
   database: DatabaseInfo;
   open: boolean;
@@ -66,7 +68,7 @@ export function DatabaseNode({
   return (
     <>
       <TreeRow
-        depth={1}
+        depth={1 + indent}
         expanded={open}
         loading={loading}
         onActivate={() => setExpanded(!expanded)}
@@ -199,10 +201,12 @@ export function DatabaseNode({
 const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 
 export function CollectionNode({
+  indent,
   connection,
   database,
   collection,
 }: {
+  indent: number;
   connection: ConnectionInfo;
   database: string;
   collection: CollectionInfo;
@@ -232,7 +236,7 @@ export function CollectionNode({
   return (
     <>
       <TreeRow
-        depth={2}
+        depth={2 + indent}
         onActivate={() =>
           openCollection({
             profileId: connection.profileId,

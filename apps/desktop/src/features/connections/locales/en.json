@@ -92,7 +92,10 @@
       "purple": "Purple",
       "pink": "Pink",
       "gray": "Gray"
-    }
+    },
+    "group": "Group",
+    "groupHint": "Connections with the same group share a folder in the sidebar.",
+    "groupPlaceholder": "None"
   },
   "delete": {
     "title": "Delete {{name}}?",

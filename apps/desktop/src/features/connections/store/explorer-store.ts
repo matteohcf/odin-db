@@ -4,7 +4,8 @@ import { create } from "zustand";
 interface ExplorerState {
   expanded: ReadonlySet<string>;
   setExpanded: (key: string, expanded: boolean) => void;
-  collapseAll: () => void;
+  /** Collapses every node; `collapsed` are inverted keys (open by default) to set. */
+  collapseAll: (collapsed?: readonly string[]) => void;
   /** Narrows the tree to databases and collections whose name contains it. */
   filter: string;
   setFilter: (filter: string) => void;
@@ -23,7 +24,7 @@ export const useExplorer = create<ExplorerState>()((set) => ({
       else next.delete(key);
       return { expanded: next };
     }),
-  collapseAll: () => set({ expanded: new Set() }),
+  collapseAll: (collapsed = []) => set({ expanded: new Set(collapsed) }),
   filter: "",
   setFilter: (filter) => set({ filter }),
   revealing: null,

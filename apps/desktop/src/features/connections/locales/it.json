@@ -92,7 +92,10 @@
       "purple": "Viola",
       "pink": "Rosa",
       "gray": "Grigio"
-    }
+    },
+    "group": "Gruppo",
+    "groupHint": "Le connessioni con lo stesso gruppo condividono una cartella nella barra laterale.",
+    "groupPlaceholder": "Nessuno"
   },
   "delete": {
     "title": "Eliminare {{name}}?",

@@ -7,10 +7,12 @@ import type {
 
 /** What the sidebar shows, one entry per row, so it can render only the visible ones. */
 export type TreeItem =
-  | { kind: "profile"; key: string; profile: ConnectionProfile }
+  | { kind: "group"; key: string; name: string; count: number; collapsed: boolean }
+  | { kind: "profile"; key: string; indent: number; profile: ConnectionProfile }
   | {
       kind: "database";
       key: string;
+      indent: number;
       connection: ConnectionInfo;
       database: DatabaseInfo;
       open: boolean;
@@ -19,6 +21,7 @@ export type TreeItem =
   | {
       kind: "collection";
       key: string;
+      indent: number;
       connection: ConnectionInfo;
       database: string;
       collection: CollectionInfo;
@@ -73,36 +76,69 @@ export function listsCollections(
 }
 
 /**
- * Flattens profiles, databases and collections into rows. A filter keeps connections
- * whose name matches, databases whose name matches (with all their collections) and the
- * matching collections of the others.
+ * Flattens groups, profiles, databases and collections into rows. A filter keeps groups
+ * and connections whose name matches, databases whose name matches (with all their
+ * collections) and the matching collections of the others.
  */
 export function buildTreeRows(input: TreeInput): TreeItem[] {
-  const { filter } = input;
-  const rows: TreeItem[] = [];
+  const groups = new Map<string, ConnectionProfile[]>();
+  const ungrouped: ConnectionProfile[] = [];
   for (const profile of input.profiles) {
-    const connection = input.connectionOf(profile);
-    const children =
-      connection && (filter || input.expanded.has(profile.id))
-        ? catalogRows(input, profile, connection)
-        : [];
-    if (filter && !profile.name.toLowerCase().includes(filter) && children.length === 0) {
-      continue;
-    }
-    rows.push({ kind: "profile", key: profile.id, profile }, ...children);
+    if (profile.group) groups.set(profile.group, [...(groups.get(profile.group) ?? []), profile]);
+    else ungrouped.push(profile);
   }
+  const rows: TreeItem[] = [];
+  // Folders first, like a file browser.
+  for (const name of [...groups.keys()].sort(collator.compare)) {
+    const members = groups.get(name) ?? [];
+    const nameMatches = input.filter !== "" && name.toLowerCase().includes(input.filter);
+    const children = members.flatMap((profile) => profileRows(input, profile, 1, nameMatches));
+    if (input.filter && !nameMatches && children.length === 0) continue;
+    const collapsed = !input.filter && input.expanded.has(collapsedGroupKey(name));
+    rows.push({ kind: "group", key: `group:${name}`, name, count: members.length, collapsed });
+    if (!collapsed) rows.push(...children);
+  }
+  for (const profile of ungrouped) rows.push(...profileRows(input, profile, 0, false));
   return rows;
+}
+
+/** Groups start open, so the explorer stores the collapsed ones. */
+export const collapsedGroupKey = (name: string) => `collapsed-group:${name}`;
+
+function profileRows(
+  input: TreeInput,
+  profile: ConnectionProfile,
+  indent: number,
+  /** The group's name matched the filter: its connections all show. */
+  shown: boolean,
+): TreeItem[] {
+  const { filter } = input;
+  const connection = input.connectionOf(profile);
+  const children =
+    connection && (filter || input.expanded.has(profile.id))
+      ? catalogRows(input, profile, connection, indent)
+      : [];
+  if (filter && !shown && !profile.name.toLowerCase().includes(filter) && !children.length) {
+    return [];
+  }
+  return [{ kind: "profile", key: profile.id, indent, profile }, ...children];
 }
 
 function catalogRows(
   input: TreeInput,
   profile: ConnectionProfile,
   connection: ConnectionInfo,
+  indent: number,
 ): TreeItem[] {
   const { filter } = input;
   const rows: TreeItem[] = [];
   const message = (key: string, depth: number, kind: TreeMessageKind) =>
-    rows.push({ kind: "message", key: `${profile.id}/${key}`, depth, message: kind });
+    rows.push({
+      kind: "message",
+      key: `${profile.id}/${key}`,
+      depth: depth + indent,
+      message: kind,
+    });
 
   const databases = input.databases(connection);
   if (databases.error) {
@@ -129,7 +165,7 @@ function catalogRows(
     if (searched && !shown?.length) continue;
     const open = searched || input.expanded.has(key);
     const loading = open && !collections.data && !collections.error;
-    rows.push({ kind: "database", key, connection, database, open, loading });
+    rows.push({ kind: "database", key, indent, connection, database, open, loading });
     if (!open || loading) continue;
     if (collections.error) {
       message(`${database.name}:failed`, 2, { type: "failed", error: collections.error.message });
@@ -144,6 +180,7 @@ function catalogRows(
         rows.push({
           kind: "collection",
           key: `${key}/${collection.name}`,
+          indent,
           connection,
           database: database.name,
           collection,

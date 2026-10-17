@@ -28,6 +28,7 @@ import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { useExportConnections, useImportConnections } from "../api/mutations";
 import { useProfiles } from "../api/queries";
 import { useHealthEvents } from "../hooks/use-health-events";
+import { collapsedGroupKey } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
 import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
@@ -95,7 +96,13 @@ export function ConnectionExplorer() {
                 variant="ghost"
                 className="size-7"
                 aria-label={t("explorer.collapseAll")}
-                onClick={collapseAll}
+                onClick={() =>
+                  collapseAll(
+                    [...new Set(profiles?.flatMap((profile) => profile.group ?? []))].map(
+                      collapsedGroupKey,
+                    ),
+                  )
+                }
               >
                 <ChevronsDownUp className="size-3.5" />
               </Button>

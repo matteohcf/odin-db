@@ -37,13 +37,15 @@ import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
 
 interface ProfileNodeProps {
+  /** Levels added by an enclosing group. */
+  indent: number;
   profile: ConnectionProfile;
   onEdit: () => void;
   onDelete: () => void;
   onExport: () => void;
 }
 
-export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNodeProps) {
+export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: ProfileNodeProps) {
   const { t } = useTranslation("connections");
   const connection = useConnectionOf(profile.id);
   const unreachable = useConnectionHealth((s) =>
@@ -88,7 +90,7 @@ export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNode
   return (
     <>
       <TreeRow
-        depth={0}
+        depth={indent}
         expanded={connection ? expanded : false}
         loading={connect.isPending}
         onActivate={open}

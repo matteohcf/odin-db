@@ -17,16 +17,21 @@ const catalog: Record<string, string[]> = {
   tenant_2: ["users_10", "users_2"],
 };
 
-function rows(overrides: Partial<TreeInput> = {}) {
-  return buildTreeRows({
+function baseInput(): TreeInput {
+  return {
     profiles: [profile],
     connectionOf: () => connection,
     expanded: new Set(["p1"]),
     filter: "",
     databases: () => ({ data: Object.keys(catalog).map(db), error: null }),
     collections: (_, name) => ({ data: catalog[name]?.map(coll), error: null }),
-    ...overrides,
-  }).map((row) => (row.kind === "message" ? `${row.depth}:${row.message.type}` : row.key));
+  };
+}
+
+function rows(overrides: Partial<TreeInput> = {}) {
+  return buildTreeRows({ ...baseInput(), ...overrides }).map((row) =>
+    row.kind === "message" ? `${row.depth}:${row.message.type}` : row.key,
+  );
 }
 
 describe("buildTreeRows", () => {
@@ -79,6 +84,33 @@ describe("buildTreeRows", () => {
       "p1/tenant_2/users_10",
     ]);
     expect(rows({ ...both, filter: "nothing" })).toEqual([]);
+  });
+
+  it("lists groups first, with their connections indented under them", () => {
+    const grouped = (id: string, name: string, group: string | null) =>
+      ({ id, name, group }) as ConnectionProfile;
+    const profiles = [
+      grouped("a", "Alpha", "Clients"),
+      grouped("b", "Beta", null),
+      grouped("c", "Gamma", "Clients"),
+    ];
+    const input = { profiles, connectionOf: () => undefined };
+    const built = buildTreeRows({ ...baseInput(), ...input });
+    expect(built.map((row) => `${row.key}${"indent" in row ? `@${row.indent}` : ""}`)).toEqual([
+      "group:Clients",
+      "a@1",
+      "c@1",
+      "b@0",
+    ]);
+    expect(rows({ ...input, expanded: new Set(["collapsed-group:Clients"]) })).toEqual([
+      "group:Clients",
+      "b",
+    ]);
+    // A filter opens collapsed groups, and a matching group name shows all its connections.
+    expect(
+      rows({ ...input, expanded: new Set(["collapsed-group:Clients"]), filter: "gam" }),
+    ).toEqual(["group:Clients", "c"]);
+    expect(rows({ ...input, filter: "clients" })).toEqual(["group:Clients", "a", "c"]);
   });
 
   it("shows loading, empty and failed states", () => {
