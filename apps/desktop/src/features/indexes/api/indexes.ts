@@ -36,3 +36,14 @@ export function useDropIndex(connectionId: ConnectionId, namespace: Namespace) {
       queryClient.invalidateQueries({ queryKey: indexKeys(connectionId, namespace) }),
   });
 }
+
+export function useSetIndexHidden(connectionId: ConnectionId, namespace: Namespace) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, hidden }: { name: string; hidden: boolean }) =>
+      call(commands.setIndexHidden(connectionId, namespace, name, hidden)),
+    meta: { handlesErrors: true },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: indexKeys(connectionId, namespace) }),
+  });
+}

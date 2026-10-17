@@ -904,7 +904,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       partialFilter: spec.partialFilterExpression ?? null,
       definition: spec,
       size: 20_480 + coll.docs.length * (position === 0 ? 24 : 40),
-      usageCount: position === 0 ? 1532 : 87,
+      usageCount: position === 0 ? 1532 : position === 1 ? 87 : 0,
       usageSince: "2026-10-01T08:00:00Z",
     }));
   },
@@ -945,6 +945,17 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (request.partialFilter) spec.partialFilterExpression = request.partialFilter;
     indexesOf(coll).push(spec);
     return name;
+  },
+  set_index_hidden: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const spec =
+      indexesOf(coll).find((candidate) => candidate.name === args.name) ??
+      fail("database", `index not found with name [${String(args.name)}]`);
+    if (args.hidden) spec.hidden = true;
+    else delete spec.hidden;
+    return null;
   },
   drop_index: (args) => {
     const ns = args.namespace as { database: string; collection: string };

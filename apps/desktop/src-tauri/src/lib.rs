@@ -58,6 +58,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::indexes::list_indexes,
             commands::indexes::create_index,
             commands::indexes::drop_index,
+            commands::indexes::set_index_hidden,
             commands::monitor::server_status,
             commands::monitor::current_ops,
             commands::monitor::kill_op,

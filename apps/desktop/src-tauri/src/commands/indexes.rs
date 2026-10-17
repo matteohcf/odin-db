@@ -43,3 +43,16 @@ pub async fn drop_index(
     let handle = state.connections.get(connection_id).await?;
     Ok(indexes::drop(&handle, &namespace, &name).await?)
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_index_hidden(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    name: String,
+    hidden: bool,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(indexes::set_hidden(&handle, &namespace, &name, hidden).await?)
+}

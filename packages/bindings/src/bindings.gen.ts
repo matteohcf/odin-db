@@ -67,6 +67,7 @@ export const commands = {
 	/**  Returns the name of the new index. */
 	createIndex: (connectionId: ConnectionId, namespace: Namespace, request: CreateIndexRequest) => typedError<string, IpcError>(__TAURI_INVOKE("create_index", { connectionId, namespace, request })),
 	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
+	setIndexHidden: (connectionId: ConnectionId, namespace: Namespace, name: string, hidden: boolean) => typedError<null, IpcError>(__TAURI_INVOKE("set_index_hidden", { connectionId, namespace, name, hidden })),
 	serverStatus: (connectionId: ConnectionId) => typedError<ServerStatus, IpcError>(__TAURI_INVOKE("server_status", { connectionId })),
 	currentOps: (connectionId: ConnectionId) => typedError<CurrentOp[], IpcError>(__TAURI_INVOKE("current_ops", { connectionId })),
 	killOp: (connectionId: ConnectionId, opid: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("kill_op", { connectionId, opid })),

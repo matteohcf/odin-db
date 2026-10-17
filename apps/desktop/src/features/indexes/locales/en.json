@@ -14,7 +14,14 @@
     "actions": "Actions",
     "drop": "Drop {{name}}",
     "loading": "Loading indexes…",
-    "failed": "Couldn't load indexes: {{message}}"
+    "failed": "Couldn't load indexes: {{message}}",
+    "unusedSince": "Unused since {{date}}",
+    "hide": "Hide {{name}}",
+    "unhide": "Unhide {{name}}",
+    "hideHint": "Hide from the query planner. The index is kept up to date, so unhiding it is instant: try this before dropping.",
+    "unhideHint": "Let the query planner use this index again.",
+    "hidden": "{{name}} is hidden from the query planner.",
+    "unhidden": "{{name}} is used by the query planner again."
   },
   "badge": {
     "unique": "Unique",

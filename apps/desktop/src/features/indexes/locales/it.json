@@ -14,7 +14,14 @@
     "actions": "Azioni",
     "drop": "Elimina {{name}}",
     "loading": "Caricamento indici…",
-    "failed": "Impossibile caricare gli indici: {{message}}"
+    "failed": "Impossibile caricare gli indici: {{message}}",
+    "unusedSince": "Mai usato dal {{date}}",
+    "hide": "Nascondi {{name}}",
+    "unhide": "Mostra {{name}}",
+    "hideHint": "Nascondi al query planner. L'indice resta aggiornato, quindi mostrarlo di nuovo è immediato: prova questo prima di eliminarlo.",
+    "unhideHint": "Permetti di nuovo al query planner di usare questo indice.",
+    "hidden": "{{name}} è nascosto al query planner.",
+    "unhidden": "{{name}} è di nuovo usato dal query planner."
   },
   "badge": {
     "unique": "Univoco",

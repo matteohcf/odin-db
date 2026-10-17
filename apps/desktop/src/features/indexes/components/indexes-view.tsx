@@ -11,13 +11,14 @@ import {
 import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
-import { CircleAlert, Loader2, Plus, RotateCw, Trash2 } from "lucide-react";
+import { cn } from "@odin-db/ui/lib/utils";
+import { CircleAlert, Eye, EyeOff, Loader2, Plus, RotateCw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { describeEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
-import { useDropIndex, useIndexes } from "../api/indexes";
+import { useDropIndex, useIndexes, useSetIndexHidden } from "../api/indexes";
 import { CreateIndexDialog } from "./create-index-dialog";
 
 interface IndexesViewProps {
@@ -40,6 +41,7 @@ export function IndexesView({
   const { t } = useTranslation("indexes");
   const indexes = useIndexes(connection.id, namespace);
   const drop = useDropIndex(connection.id, namespace);
+  const setHidden = useSetIndexHidden(connection.id, namespace);
   const [creating, setCreating] = useState<string | false>(false);
 
   useEffect(() => {
@@ -117,17 +119,60 @@ export function IndexesView({
                   <td className="px-3 text-right text-muted-foreground text-xs tabular-nums">
                     {index.size == null ? "—" : formatBytes(index.size)}
                   </td>
-                  <td className="px-3 text-right text-muted-foreground text-xs tabular-nums">
+                  <td
+                    className={cn(
+                      "px-3 text-right text-xs tabular-nums",
+                      // An index never used costs writes and memory for nothing.
+                      index.usageCount === 0 && index.name !== "_id_"
+                        ? "text-warning"
+                        : "text-muted-foreground",
+                    )}
+                  >
                     {index.usageCount == null
                       ? "—"
-                      : t("table.usageSince", {
-                          count: index.usageCount,
-                          date: index.usageSince
-                            ? new Date(index.usageSince).toLocaleDateString()
-                            : "",
-                        })}
+                      : index.usageCount === 0 && index.name !== "_id_"
+                        ? t("table.unusedSince", {
+                            date: index.usageSince
+                              ? new Date(index.usageSince).toLocaleDateString()
+                              : "",
+                          })
+                        : t("table.usageSince", {
+                            count: index.usageCount,
+                            date: index.usageSince
+                              ? new Date(index.usageSince).toLocaleDateString()
+                              : "",
+                          })}
                   </td>
                   <td className="px-3 text-right">
+                    {editable && index.name !== "_id_" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                        aria-label={
+                          index.hidden
+                            ? t("table.unhide", { name: index.name })
+                            : t("table.hide", { name: index.name })
+                        }
+                        title={index.hidden ? t("table.unhideHint") : t("table.hideHint")}
+                        disabled={setHidden.isPending}
+                        onClick={() =>
+                          setHidden.mutate(
+                            { name: index.name, hidden: !index.hidden },
+                            {
+                              onSuccess: () =>
+                                toast.success(
+                                  index.hidden
+                                    ? t("table.unhidden", { name: index.name })
+                                    : t("table.hidden", { name: index.name }),
+                                ),
+                            },
+                          )
+                        }
+                      >
+                        {index.hidden ? <Eye /> : <EyeOff />}
+                      </Button>
+                    )}
                     {editable && index.name !== "_id_" && (
                       <Button
                         variant="ghost"
