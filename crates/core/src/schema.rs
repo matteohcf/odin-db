@@ -13,6 +13,9 @@ pub const MAX_SAMPLE_SIZE: u32 = 1000;
 /// Deeper paths are rare in queries and would make wide documents explode.
 const MAX_DEPTH: usize = 6;
 const MAX_FIELDS: usize = 1000;
+/// Fields with at most this many distinct short strings get them as value suggestions.
+const MAX_VALUES: usize = 12;
+const MAX_VALUE_LENGTH: usize = 64;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -25,6 +28,9 @@ pub struct FieldSummary {
     pub types: Vec<String>,
     /// Share of sampled documents that contain the path, from 0 to 1.
     pub frequency: f64,
+    /// The field's string values, most common first, when there are only a few
+    /// (an enum-like field such as `status`); empty otherwise.
+    pub values: Vec<String>,
 }
 
 /// Samples up to `size` documents and summarizes their field paths, most common first.
@@ -53,6 +59,15 @@ pub async fn sample_fields(
 struct PathStats {
     documents: usize,
     types: HashMap<&'static str, usize>,
+    /// Documents per distinct string value; `None` once there are too many to suggest.
+    strings: Option<HashMap<String, usize>>,
+}
+
+/// What one document holds at one path.
+#[derive(Default)]
+struct Seen {
+    types: Vec<&'static str>,
+    strings: Vec<String>,
 }
 
 fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
@@ -60,11 +75,22 @@ fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
     for document in documents {
         let mut seen = HashMap::new();
         collect(document, "", 0, &mut seen);
-        for (path, types) in seen {
-            let stats = paths.entry(path).or_default();
+        for (path, found) in seen {
+            let stats = paths.entry(path).or_insert_with(|| PathStats {
+                strings: Some(HashMap::new()),
+                ..PathStats::default()
+            });
             stats.documents += 1;
-            for kind in types {
+            for kind in found.types {
                 *stats.types.entry(kind).or_default() += 1;
+            }
+            if let Some(strings) = stats.strings.as_mut() {
+                for value in found.strings {
+                    *strings.entry(value).or_default() += 1;
+                }
+                if strings.len() > MAX_VALUES {
+                    stats.strings = None;
+                }
             }
         }
     }
@@ -78,10 +104,13 @@ fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
             types.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
             #[allow(clippy::cast_precision_loss)]
             let frequency = stats.documents as f64 / total;
+            let mut values: Vec<_> = stats.strings.unwrap_or_default().into_iter().collect();
+            values.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
             FieldSummary {
                 path,
                 types: types.into_iter().map(|(kind, _)| kind.to_owned()).collect(),
                 frequency,
+                values: values.into_iter().map(|(value, _)| value).collect(),
             }
         })
         .collect();
@@ -95,12 +124,7 @@ fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
 }
 
 /// Records each path of `document` once per sampled document, with the types it holds.
-fn collect(
-    document: &Document,
-    prefix: &str,
-    depth: usize,
-    seen: &mut HashMap<String, Vec<&'static str>>,
-) {
+fn collect(document: &Document, prefix: &str, depth: usize, seen: &mut HashMap<String, Seen>) {
     for (key, value) in document {
         let path = if prefix.is_empty() {
             key.clone()
@@ -111,11 +135,17 @@ fn collect(
     }
 }
 
-fn record(value: &Bson, path: &str, depth: usize, seen: &mut HashMap<String, Vec<&'static str>>) {
-    let types = seen.entry(path.to_owned()).or_default();
+fn record(value: &Bson, path: &str, depth: usize, seen: &mut HashMap<String, Seen>) {
+    let found = seen.entry(path.to_owned()).or_default();
     let kind = type_name(value);
-    if !types.contains(&kind) {
-        types.push(kind);
+    if !found.types.contains(&kind) {
+        found.types.push(kind);
+    }
+    if let Bson::String(text) = value
+        && text.len() <= MAX_VALUE_LENGTH
+        && !found.strings.contains(text)
+    {
+        found.strings.push(text.clone());
     }
     if depth + 1 >= MAX_DEPTH {
         return;
@@ -193,6 +223,21 @@ mod tests {
         let fields = summarize(&[doc! { "b": 1, "a": 1 }, doc! { "b": 1 }]);
         let paths: Vec<_> = fields.iter().map(|field| field.path.as_str()).collect();
         assert_eq!(paths, ["b", "a"]);
+    }
+
+    #[test]
+    fn suggests_values_of_enum_like_fields_only() {
+        let plans = ["free", "free", "pro"];
+        let mut documents: Vec<Document> = (0..30)
+            .map(|i| doc! { "plan": plans[i % 3], "email": format!("u{i}@x.io") })
+            .collect();
+        documents.push(doc! { "plan": "team" });
+        let fields = summarize(&documents);
+        assert_eq!(field(&fields, "plan").values, ["free", "pro", "team"]);
+        assert!(
+            field(&fields, "email").values.is_empty(),
+            "too many distinct values"
+        );
     }
 
     #[test]
