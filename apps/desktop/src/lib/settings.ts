@@ -32,7 +32,7 @@ export interface Settings {
 }
 
 export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
-export type Accent = (typeof ACCENTS)[number];
+type Accent = (typeof ACCENTS)[number];
 
 export const ROW_HEIGHTS = { compact: 24, normal: 30, comfortable: 36 } as const;
 export type RowDensity = keyof typeof ROW_HEIGHTS;
