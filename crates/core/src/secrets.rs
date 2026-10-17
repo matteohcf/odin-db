@@ -41,6 +41,11 @@ pub trait SecretStore: Send + Sync {
     fn password(&self, profile: ProfileId) -> Result<Option<Secret>, CoreError>;
     /// Succeeds when there is nothing to delete.
     fn delete_password(&self, profile: ProfileId) -> Result<(), CoreError>;
+    /// The SSH tunnel's password or private key passphrase (ADR-0036).
+    fn set_ssh_secret(&self, profile: ProfileId, secret: &Secret) -> Result<(), CoreError>;
+    fn ssh_secret(&self, profile: ProfileId) -> Result<Option<Secret>, CoreError>;
+    /// Succeeds when there is nothing to delete.
+    fn delete_ssh_secret(&self, profile: ProfileId) -> Result<(), CoreError>;
 }
 
 /// The platform keyring: Keychain, Windows Credential Manager or Secret Service.
@@ -49,8 +54,27 @@ pub struct KeyringStore;
 
 impl KeyringStore {
     fn entry(profile: ProfileId) -> Result<keyring::Entry, CoreError> {
-        keyring::Entry::new(SERVICE, &format!("profile:{profile}:password"))
+        Self::entry_named(profile, "password")
+    }
+
+    fn entry_named(profile: ProfileId, name: &str) -> Result<keyring::Entry, CoreError> {
+        keyring::Entry::new(SERVICE, &format!("profile:{profile}:{name}"))
             .map_err(|error| CoreError::SecretStore(error.to_string()))
+    }
+
+    fn read(entry: &keyring::Entry) -> Result<Option<Secret>, CoreError> {
+        match entry.get_password() {
+            Ok(value) => Ok(Some(Secret::new(value))),
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(error) => Err(CoreError::SecretStore(error.to_string())),
+        }
+    }
+
+    fn remove(entry: &keyring::Entry) -> Result<(), CoreError> {
+        match entry.delete_credential() {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Err(error) => Err(CoreError::SecretStore(error.to_string())),
+        }
     }
 }
 
@@ -75,15 +99,34 @@ impl SecretStore for KeyringStore {
             Err(error) => Err(CoreError::SecretStore(error.to_string())),
         }
     }
+
+    fn set_ssh_secret(&self, profile: ProfileId, secret: &Secret) -> Result<(), CoreError> {
+        Self::entry_named(profile, "ssh")?
+            .set_password(secret.expose())
+            .map_err(|error| CoreError::SecretStore(error.to_string()))
+    }
+
+    fn ssh_secret(&self, profile: ProfileId) -> Result<Option<Secret>, CoreError> {
+        Self::read(&Self::entry_named(profile, "ssh")?)
+    }
+
+    fn delete_ssh_secret(&self, profile: ProfileId) -> Result<(), CoreError> {
+        Self::remove(&Self::entry_named(profile, "ssh")?)
+    }
 }
 
 /// In-memory store for tests and for sessions where no keyring is available.
 #[derive(Debug, Default)]
 pub struct MemoryStore {
     passwords: Mutex<HashMap<ProfileId, Secret>>,
+    ssh: Mutex<HashMap<ProfileId, Secret>>,
 }
 
 impl MemoryStore {
+    fn ssh_lock(&self) -> std::sync::MutexGuard<'_, HashMap<ProfileId, Secret>> {
+        self.ssh.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
     fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<ProfileId, Secret>> {
         self.passwords
             .lock()
@@ -103,6 +146,20 @@ impl SecretStore for MemoryStore {
 
     fn delete_password(&self, profile: ProfileId) -> Result<(), CoreError> {
         self.lock().remove(&profile);
+        Ok(())
+    }
+
+    fn set_ssh_secret(&self, profile: ProfileId, secret: &Secret) -> Result<(), CoreError> {
+        self.ssh_lock().insert(profile, secret.clone());
+        Ok(())
+    }
+
+    fn ssh_secret(&self, profile: ProfileId) -> Result<Option<Secret>, CoreError> {
+        Ok(self.ssh_lock().get(&profile).cloned())
+    }
+
+    fn delete_ssh_secret(&self, profile: ProfileId) -> Result<(), CoreError> {
+        self.ssh_lock().remove(&profile);
         Ok(())
     }
 }

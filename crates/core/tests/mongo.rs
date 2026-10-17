@@ -17,7 +17,7 @@ use odin_core::profiles::{self, ConnectionProfile, ProfileInput};
 use odin_core::query::{
     AggregateRequest, CursorRegistry, FindRequest, Namespace, count_documents, preview_aggregation,
 };
-use odin_core::secrets::{MemoryStore, Secret};
+use odin_core::secrets::{MemoryStore, Secret, SecretStore};
 use odin_core::shell::{
     self, HIGH_WATERMARK, ShellEvent, ShellOptions, ShellSession, locate_mongosh,
 };
@@ -73,6 +73,9 @@ impl Fixture {
                 password: None,
                 read_only,
                 color: None,
+                ssh: None,
+                ssh_secret: None,
+                ssh_host_key: None,
             },
         )
         .expect("profile created")
@@ -81,7 +84,7 @@ impl Fixture {
     async fn connect(&self, read_only: bool) -> Arc<ConnectionHandle> {
         let info = self
             .manager
-            .connect(&self.profile(read_only), None)
+            .connect(&self.profile(read_only), None, None)
             .await
             .expect("connects");
         self.manager.get(info.id).await.expect("registered")
@@ -121,7 +124,7 @@ fn find_all(batch_size: u32) -> FindRequest {
 #[ignore = "requires Docker"]
 async fn connects_lists_and_reports_server_version() {
     let fx = Fixture::start().await;
-    let info = test_connection(&fx.uri, None)
+    let info = test_connection(&fx.uri, None, None)
         .await
         .expect("test connection");
     assert_ne!(info.server_version, "");
@@ -327,7 +330,7 @@ async fn read_only_profiles_reject_every_write() {
 async fn wrong_credentials_are_reported_as_auth_errors() {
     let fx = Fixture::start().await;
     let uri = fx.uri.replace("mongodb://", "mongodb://nobody@");
-    let result = test_connection(&uri, Some(Secret::new("wrong"))).await;
+    let result = test_connection(&uri, Some(Secret::new("wrong")), None).await;
     assert!(matches!(result, Err(CoreError::Auth(_))), "got {result:?}");
 }
 
@@ -942,7 +945,7 @@ async fn shell_answers_the_password_prompt_through_the_pty() {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
     let mut ready = false;
     while std::time::Instant::now() < deadline {
-        if test_connection(&uri, Some(Secret::new("s3cr3t-pw")))
+        if test_connection(&uri, Some(Secret::new("s3cr3t-pw")), None)
             .await
             .is_ok()
         {
@@ -1225,10 +1228,17 @@ async fn reports_a_server_that_stops_answering() {
             password: None,
             read_only: false,
             color: None,
+            ssh: None,
+            ssh_secret: None,
+            ssh_host_key: None,
         },
     )
     .expect("profile");
-    let info = fx.manager.connect(&profile, None).await.expect("connects");
+    let info = fx
+        .manager
+        .connect(&profile, None, None)
+        .await
+        .expect("connects");
     assert!(
         tokio::time::timeout(std::time::Duration::from_secs(2), changes.recv())
             .await
@@ -2083,4 +2093,235 @@ async fn reads_and_changes_validation_rules() {
         set_rules(&read_only, &ns, rules).await,
         Err(CoreError::ReadOnly)
     ));
+}
+
+/// An OpenSSH server allowing tunnels, with a password and an encrypted client key.
+async fn ssh_bastion(
+    network: &str,
+) -> testcontainers_modules::testcontainers::ContainerAsync<
+    testcontainers_modules::testcontainers::GenericImage,
+> {
+    use testcontainers_modules::testcontainers::GenericImage;
+    use testcontainers_modules::testcontainers::core::{IntoContainerPort, WaitFor};
+
+    let script = "apk add --no-cache openssh >/dev/null && ssh-keygen -A >/dev/null \
+        && echo 'root:s3cr3t' | chpasswd \
+        && mkdir -p /root/.ssh && ssh-keygen -t ed25519 -N 'kp4ss' -f /root/client_key -q \
+        && cp /root/client_key.pub /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys \
+        && sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/; s/^#*PasswordAuthentication.*/PasswordAuthentication yes/; s/^#*AllowTcpForwarding.*/AllowTcpForwarding yes/' /etc/ssh/sshd_config \
+        && exec /usr/sbin/sshd -D -e";
+    GenericImage::new("alpine", "3.20")
+        .with_exposed_port(22.tcp())
+        .with_wait_for(WaitFor::message_on_stderr("Server listening"))
+        .with_cmd(["sh", "-c", script])
+        .with_network(network)
+        .start()
+        .await
+        .expect("ssh server starts")
+}
+
+type Container<I> = testcontainers_modules::testcontainers::ContainerAsync<I>;
+
+/// MongoDB and an SSH bastion on a private network: only the bastion is
+/// reachable from the host, as in production setups.
+struct SshFixture {
+    _mongo: Container<Mongo>,
+    bastion: Container<testcontainers_modules::testcontainers::GenericImage>,
+    mongo_name: String,
+    port: u16,
+}
+
+impl SshFixture {
+    async fn start() -> Self {
+        let network = format!("odin-ssh-{}", ObjectId::new());
+        let mongo_name = format!("odin-mongo-{}", ObjectId::new());
+        let mongo = Mongo::default()
+            .with_tag(std::env::var("MONGO_VERSION").unwrap_or_else(|_| "8.0".into()))
+            .with_network(&network)
+            .with_container_name(&mongo_name)
+            .start()
+            .await
+            .expect("mongo starts");
+        let bastion = ssh_bastion(&network).await;
+        let port = bastion.get_host_port_ipv4(22).await.expect("ssh port");
+        Self {
+            _mongo: mongo,
+            bastion,
+            mongo_name,
+            port,
+        }
+    }
+
+    fn settings(&self, auth: odin_core::ssh::SshAuth) -> odin_core::ssh::SshSettings {
+        odin_core::ssh::SshSettings {
+            host: "127.0.0.1".into(),
+            port: self.port,
+            username: "root".into(),
+            auth,
+        }
+    }
+
+    fn target(&self) -> (String, u16) {
+        (self.mongo_name.clone(), 27017)
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn ssh_tunnels_pin_host_keys_and_check_passwords() {
+    use odin_core::ssh::{SshAuth, host_fingerprint, open_tunnel};
+
+    let fx = SshFixture::start().await;
+    let password = Secret::new("s3cr3t");
+    let with = |password: &Secret, pin: Option<&str>| {
+        let settings = fx.settings(SshAuth::Password);
+        let target = fx.target();
+        let password = password.clone();
+        let pin = pin.map(str::to_owned);
+        async move { open_tunnel(&settings, Some(&password), pin.as_deref(), target).await }
+    };
+
+    // Unknown key: refused before any credential is sent, fingerprint reported.
+    let fingerprint = match with(&password, None).await {
+        Err(CoreError::UnknownHostKey(found)) => found,
+        other => panic!("expected an unknown host key, got {other:?}"),
+    };
+    assert!(fingerprint.starts_with("SHA256:"));
+    assert_eq!(
+        host_fingerprint(&fx.settings(SshAuth::Password))
+            .await
+            .expect("fingerprint"),
+        fingerprint
+    );
+    assert!(matches!(
+        with(&password, Some("SHA256:forged")).await,
+        Err(CoreError::HostKeyChanged(found)) if found == fingerprint
+    ));
+    assert!(matches!(
+        with(&Secret::new("wrong"), Some(&fingerprint)).await,
+        Err(CoreError::Auth(_))
+    ));
+
+    let tunnel = with(&password, Some(&fingerprint)).await.expect("tunnel");
+    let uri = format!(
+        "mongodb://127.0.0.1:{}/?directConnection=true",
+        tunnel.local_port
+    );
+    let info = test_connection(&uri, None, None)
+        .await
+        .expect("mongodb through the tunnel");
+    assert_ne!(info.server_version, "");
+    drop(tunnel);
+    assert!(
+        test_connection(&uri, None, None).await.is_err(),
+        "the tunnel closes when dropped"
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn ssh_tunnels_authenticate_with_encrypted_private_keys() {
+    use odin_core::ssh::{SshAuth, host_fingerprint, open_tunnel};
+    use testcontainers_modules::testcontainers::core::ExecCommand;
+
+    let fx = SshFixture::start().await;
+    let fingerprint = host_fingerprint(&fx.settings(SshAuth::Password))
+        .await
+        .expect("fingerprint");
+    let mut output = fx
+        .bastion
+        .exec(ExecCommand::new(["cat", "/root/client_key"]))
+        .await
+        .expect("read the client key");
+    let key = String::from_utf8(output.stdout_to_vec().await.expect("stdout")).expect("utf-8");
+    let key_path = temp_path("ssh-client-key");
+    std::fs::write(&key_path, key).expect("write the key");
+    let settings = fx.settings(SshAuth::PrivateKey {
+        path: key_path.display().to_string(),
+    });
+
+    let tunnel = open_tunnel(
+        &settings,
+        Some(&Secret::new("kp4ss")),
+        Some(&fingerprint),
+        fx.target(),
+    )
+    .await
+    .expect("tunnel with a private key");
+    let uri = format!(
+        "mongodb://127.0.0.1:{}/?directConnection=true",
+        tunnel.local_port
+    );
+    test_connection(&uri, None, None)
+        .await
+        .expect("mongodb through the key tunnel");
+    assert!(matches!(
+        open_tunnel(
+            &settings,
+            Some(&Secret::new("bad")),
+            Some(&fingerprint),
+            fx.target()
+        )
+        .await,
+        Err(CoreError::Auth(_))
+    ));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn connects_a_profile_through_ssh_after_trusting_the_host_key() {
+    use odin_core::ssh::SshAuth;
+
+    let fx = SshFixture::start().await;
+    let storage = Storage::open_in_memory().expect("storage");
+    let secrets = MemoryStore::default();
+    let manager = ConnectionManager::default();
+    let profile = profiles::create(
+        &storage,
+        &secrets,
+        ProfileInput {
+            name: "behind a bastion".into(),
+            connection_string: format!("mongodb://{}:27017", fx.mongo_name),
+            password: None,
+            read_only: false,
+            color: None,
+            ssh: Some(fx.settings(SshAuth::Password)),
+            ssh_secret: Some(Secret::new("s3cr3t")),
+            ssh_host_key: None,
+        },
+    )
+    .expect("profile");
+    let connect = |profile: ConnectionProfile| {
+        let ssh_secret = secrets.ssh_secret(profile.id).expect("secret");
+        let manager = &manager;
+        async move { manager.connect(&profile, None, ssh_secret).await }
+    };
+
+    let fingerprint = match connect(profile.clone()).await {
+        Err(CoreError::UnknownHostKey(found)) => found,
+        other => panic!("expected an unknown host key, got {other:?}"),
+    };
+    profiles::trust_host_key(&storage, profile.id, &fingerprint).expect("trust");
+    let trusted = profiles::get(&storage, &secrets, profile.id).expect("profile");
+    let info = connect(trusted).await.expect("connects through the tunnel");
+    let handle = manager.get(info.id).await.expect("handle");
+    assert!(
+        handle.uri.starts_with("mongodb://127.0.0.1:"),
+        "{}",
+        handle.uri
+    );
+    handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("through_ssh")
+        .insert_one(doc! { "ok": true })
+        .await
+        .expect("writes through the tunnel");
+    let uri = handle.uri.clone();
+    drop(handle);
+    manager.disconnect(info.id).await.expect("disconnect");
+    assert!(
+        test_connection(&uri, None, None).await.is_err(),
+        "disconnecting closes the tunnel"
+    );
 }

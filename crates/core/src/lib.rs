@@ -16,6 +16,7 @@ pub mod query;
 pub mod schema;
 pub mod secrets;
 pub mod shell;
+pub mod ssh;
 pub mod storage;
 pub mod synthetic;
 pub mod transfer;

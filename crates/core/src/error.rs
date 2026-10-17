@@ -18,6 +18,10 @@ pub enum ErrorKind {
     SecretStore,
     /// A download failed verification: damaged in transit, or altered.
     Integrity,
+    /// An SSH server presented a host key the profile does not trust yet.
+    UnknownHostKey,
+    /// An SSH server presented a different key than the one trusted before.
+    HostKeyChanged,
     Internal,
 }
 
@@ -47,11 +51,26 @@ pub enum CoreError {
     SecretStore(String),
     #[error("{0}")]
     Integrity(String),
+    #[error("the SSH server's host key ({0}) is not trusted yet")]
+    UnknownHostKey(String),
+    #[error("the SSH server's host key changed to {0}: someone may be intercepting the connection")]
+    HostKeyChanged(String),
     #[error("internal error: {0}")]
     Internal(String),
 }
 
 impl CoreError {
+    /// Data the UI needs to act on the error, such as a host key fingerprint.
+    #[must_use]
+    pub fn detail(&self) -> Option<String> {
+        match self {
+            Self::UnknownHostKey(fingerprint) | Self::HostKeyChanged(fingerprint) => {
+                Some(fingerprint.clone())
+            }
+            _ => None,
+        }
+    }
+
     #[must_use]
     pub fn kind(&self) -> ErrorKind {
         match self {
@@ -67,6 +86,8 @@ impl CoreError {
             Self::Storage(_) => ErrorKind::Storage,
             Self::SecretStore(_) => ErrorKind::SecretStore,
             Self::Integrity(_) => ErrorKind::Integrity,
+            Self::UnknownHostKey(_) => ErrorKind::UnknownHostKey,
+            Self::HostKeyChanged(_) => ErrorKind::HostKeyChanged,
             Self::Internal(_) => ErrorKind::Internal,
         }
     }

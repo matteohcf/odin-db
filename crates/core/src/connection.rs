@@ -18,6 +18,7 @@ use uuid::Uuid;
 use crate::CoreError;
 use crate::profiles::{ConnectionProfile, ProfileId};
 use crate::secrets::Secret;
+use crate::ssh::{SshSettings, SshTunnel, open_tunnel, tunnel_target, tunneled_uri};
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -66,6 +67,35 @@ pub struct ConnectionHandle {
     pub info: ConnectionInfo,
     pub client: Client,
     health: Arc<Health>,
+    /// The connection string actually used, without the password: through
+    /// the SSH tunnel when there is one. Tools such as mongosh get this one.
+    pub uri: String,
+    /// Kept for the connection's lifetime; dropping it closes the tunnel.
+    _tunnel: Option<SshTunnel>,
+}
+
+/// How to reach a server: directly, or through an SSH bastion.
+#[derive(Debug, Clone, Copy)]
+pub struct SshRoute<'a> {
+    pub settings: &'a SshSettings,
+    pub secret: Option<&'a Secret>,
+    /// The trusted host key fingerprint, if any yet.
+    pub pinned: Option<&'a str>,
+}
+
+/// Opens the SSH tunnel when needed. Returns the connection string to use,
+/// and the tunnel to keep alive while using it.
+pub async fn route(
+    connection_string: &str,
+    ssh: Option<SshRoute<'_>>,
+) -> Result<(String, Option<SshTunnel>), CoreError> {
+    let Some(ssh) = ssh else {
+        return Ok((connection_string.to_owned(), None));
+    };
+    let target = tunnel_target(connection_string)?;
+    let tunnel = open_tunnel(ssh.settings, ssh.secret, ssh.pinned, target).await?;
+    let uri = tunneled_uri(connection_string, tunnel.local_port)?;
+    Ok((uri, Some(tunnel)))
 }
 
 impl ConnectionHandle {
@@ -105,6 +135,7 @@ impl ConnectionManager {
         &self,
         profile: &ConnectionProfile,
         password: Option<Secret>,
+        ssh_secret: Option<Secret>,
     ) -> Result<ConnectionInfo, CoreError> {
         if let Some(existing) = self.find_by_profile(profile.id).await {
             return Ok(existing.info.clone());
@@ -113,7 +144,13 @@ impl ConnectionManager {
         let id = ConnectionId(Uuid::now_v7());
         let health = Arc::new(Health::default());
         let handler = health_handler(id, Arc::clone(&health), self.health.clone());
-        let client = open_client(&profile.connection_string, password, Some(handler)).await?;
+        let ssh = profile.ssh.as_ref().map(|settings| SshRoute {
+            settings,
+            secret: ssh_secret.as_ref(),
+            pinned: profile.ssh_host_key.as_deref(),
+        });
+        let (uri, tunnel) = route(&profile.connection_string, ssh).await?;
+        let client = open_client(&uri, password, Some(handler)).await?;
         let server_version = server_version(&client).await?;
         health.reachable.store(true, Ordering::SeqCst);
         health.armed.store(true, Ordering::SeqCst);
@@ -127,6 +164,8 @@ impl ConnectionManager {
             info: info.clone(),
             client,
             health,
+            uri,
+            _tunnel: tunnel,
         });
         self.connections.write().await.insert(info.id, handle);
         Ok(info)
@@ -176,8 +215,10 @@ impl ConnectionManager {
 pub async fn test_connection(
     connection_string: &str,
     password: Option<Secret>,
+    ssh: Option<SshRoute<'_>>,
 ) -> Result<ServerInfo, CoreError> {
-    let client = open_client(connection_string, password, None).await?;
+    let (uri, _tunnel) = route(connection_string, ssh).await?;
+    let client = open_client(&uri, password, None).await?;
     let result = server_version(&client).await;
     client.shutdown().await;
     Ok(ServerInfo {

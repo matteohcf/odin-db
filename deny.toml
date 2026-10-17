@@ -16,6 +16,10 @@ ignore = [
   { id = "RUSTSEC-2026-0370", reason = "zvariant: via keyring -> secret-service -> zbus 5" },
   { id = "RUSTSEC-2026-0371", reason = "zbus_names: via keyring -> secret-service -> zbus 5" },
   { id = "RUSTSEC-2026-0372", reason = "zvariant_derive: via keyring -> secret-service -> zbus 5" },
+  # Marvin: timing of RSA private-key operations. russh uses it only to sign the
+  # SSH login with the user's own RSA key, once per connection on their machine;
+  # no fixed `rsa` release exists. Users with Ed25519 keys never touch it (ADR-0036).
+  { id = "RUSTSEC-2023-0071", reason = "rsa: via russh, SSH logins with RSA keys only" },
 ]
 
 [licenses]

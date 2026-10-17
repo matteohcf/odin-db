@@ -11,6 +11,7 @@ use crate::backup::BackupScope;
 use crate::backup::history::{RunId, RunStatus, StoredRun};
 use crate::backup::schedule::{Frequency, ScheduleId, StoredSchedule, Timing};
 use crate::profiles::{ProfileColor, ProfileId, StoredProfile};
+use crate::ssh::SshSettings;
 
 const MIGRATIONS: &[M<'static>] = &[
     M::up(
@@ -55,6 +56,11 @@ const MIGRATIONS: &[M<'static>] = &[
         CREATE INDEX backup_runs_started ON backup_runs(started_at DESC);",
     ),
     M::up("ALTER TABLE connection_profiles ADD COLUMN color TEXT;"),
+    // SSH tunnel settings as JSON, and the pinned host key fingerprint (ADR-0036).
+    M::up(
+        "ALTER TABLE connection_profiles ADD COLUMN ssh TEXT;
+        ALTER TABLE connection_profiles ADD COLUMN ssh_host_key TEXT;",
+    ),
 ];
 
 #[derive(Debug)]
@@ -92,7 +98,7 @@ impl Storage {
     pub(crate) fn list_profiles(&self) -> Result<Vec<StoredProfile>, CoreError> {
         let connection = self.lock();
         let mut statement = connection.prepare(
-            "SELECT id, name, connection_string, read_only, color
+            "SELECT id, name, connection_string, read_only, color, ssh, ssh_host_key
              FROM connection_profiles ORDER BY name COLLATE NOCASE, created_at",
         )?;
         let rows = statement.query_map([], read_profile_row)?;
@@ -103,7 +109,7 @@ impl Storage {
         let row = self
             .lock()
             .query_row(
-                "SELECT id, name, connection_string, read_only, color
+                "SELECT id, name, connection_string, read_only, color, ssh, ssh_host_key
                  FROM connection_profiles WHERE id = ?1",
                 params![id.to_string()],
                 read_profile_row,
@@ -115,14 +121,17 @@ impl Storage {
 
     pub(crate) fn insert_profile(&self, profile: &StoredProfile) -> Result<(), CoreError> {
         self.lock().execute(
-            "INSERT INTO connection_profiles (id, name, connection_string, read_only, color)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+            "INSERT INTO connection_profiles
+                 (id, name, connection_string, read_only, color, ssh, ssh_host_key)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 profile.id.to_string(),
                 profile.name,
                 profile.connection_string,
                 profile.read_only,
-                profile.color.map(ProfileColor::as_str)
+                profile.color.map(ProfileColor::as_str),
+                ssh_json(profile.ssh.as_ref())?,
+                profile.ssh_host_key,
             ],
         )?;
         Ok(())
@@ -132,14 +141,16 @@ impl Storage {
         let changed = self.lock().execute(
             "UPDATE connection_profiles
              SET name = ?2, connection_string = ?3, read_only = ?4, color = ?5,
-                 updated_at = unixepoch()
+                 ssh = ?6, ssh_host_key = ?7, updated_at = unixepoch()
              WHERE id = ?1",
             params![
                 profile.id.to_string(),
                 profile.name,
                 profile.connection_string,
                 profile.read_only,
-                profile.color.map(ProfileColor::as_str)
+                profile.color.map(ProfileColor::as_str),
+                ssh_json(profile.ssh.as_ref())?,
+                profile.ssh_host_key,
             ],
         )?;
         if changed == 0 {
@@ -460,7 +471,15 @@ fn parse_scope(text: &str) -> Result<BackupScope, CoreError> {
         .map_err(|error| CoreError::Storage(format!("corrupt scope: {error}")))
 }
 
-type ProfileRow = (String, String, String, bool, Option<String>);
+type ProfileRow = (
+    String,
+    String,
+    String,
+    bool,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
 
 fn read_profile_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProfileRow> {
     Ok((
@@ -469,11 +488,13 @@ fn read_profile_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProfileRow> {
         row.get(2)?,
         row.get(3)?,
         row.get(4)?,
+        row.get(5)?,
+        row.get(6)?,
     ))
 }
 
 fn to_profile(
-    (id, name, connection_string, read_only, color): ProfileRow,
+    (id, name, connection_string, read_only, color, ssh, ssh_host_key): ProfileRow,
 ) -> Result<StoredProfile, CoreError> {
     Ok(StoredProfile {
         id: ProfileId::parse(&id)?,
@@ -481,7 +502,19 @@ fn to_profile(
         connection_string,
         read_only,
         color: color.as_deref().and_then(ProfileColor::parse),
+        ssh: ssh
+            .as_deref()
+            .map(serde_json::from_str)
+            .transpose()
+            .map_err(|error| CoreError::Storage(format!("corrupt SSH settings: {error}")))?,
+        ssh_host_key,
     })
+}
+
+fn ssh_json(ssh: Option<&SshSettings>) -> Result<Option<String>, CoreError> {
+    ssh.map(serde_json::to_string)
+        .transpose()
+        .map_err(|error| CoreError::Internal(error.to_string()))
 }
 
 #[cfg(test)]

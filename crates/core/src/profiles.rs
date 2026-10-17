@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::CoreError;
 use crate::secrets::{Secret, SecretStore};
+use crate::ssh::{SshSettings, tunnel_target};
 use crate::storage::Storage;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -94,6 +95,12 @@ pub struct ConnectionProfile {
     pub read_only: bool,
     pub has_password: bool,
     pub color: Option<ProfileColor>,
+    /// Reach the server through this SSH bastion (ADR-0036).
+    pub ssh: Option<SshSettings>,
+    /// Whether an SSH password or key passphrase is in the keychain.
+    pub has_ssh_secret: bool,
+    /// SHA-256 fingerprint of the trusted SSH host key.
+    pub ssh_host_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -109,6 +116,14 @@ pub struct ProfileInput {
     pub read_only: bool,
     #[serde(default)]
     pub color: Option<ProfileColor>,
+    #[serde(default)]
+    pub ssh: Option<SshSettings>,
+    /// SSH password or key passphrase. On update, `None` keeps the stored one.
+    #[serde(default)]
+    pub ssh_secret: Option<Secret>,
+    /// A host key fingerprint the user confirmed while testing, to trust it.
+    #[serde(default)]
+    pub ssh_host_key: Option<String>,
 }
 
 /// Validates a connection string and removes the password from it.
@@ -184,6 +199,7 @@ pub fn create(
 ) -> Result<ConnectionProfile, CoreError> {
     let name = validate_name(&input.name)?;
     let (connection_string, embedded) = split_password(&input.connection_string)?;
+    validate_ssh(input.ssh.as_ref(), &connection_string)?;
     let id = ProfileId::new();
     let row = StoredProfile {
         id,
@@ -191,15 +207,25 @@ pub fn create(
         connection_string,
         read_only: input.read_only,
         color: input.color,
+        ssh_host_key: input.ssh.as_ref().and(input.ssh_host_key),
+        ssh: input.ssh,
     };
     storage.insert_profile(&row)?;
 
-    if let Some(password) = input.password.or(embedded) {
-        // Roll back so a profile never exists without the password the user gave.
-        if let Err(error) = secrets.set_password(id, &password) {
-            let _ = storage.delete_profile(id);
-            return Err(error);
+    // Roll back so a profile never exists without the secrets the user gave.
+    let stored = (|| {
+        if let Some(password) = input.password.or(embedded) {
+            secrets.set_password(id, &password)?;
         }
+        if let (Some(_), Some(secret)) = (&row.ssh, &input.ssh_secret) {
+            secrets.set_ssh_secret(id, secret)?;
+        }
+        Ok::<(), CoreError>(())
+    })();
+    if let Err(error) = stored {
+        let _ = secrets.delete_password(id);
+        let _ = storage.delete_profile(id);
+        return Err(error);
     }
     get(storage, secrets, id)
 }
@@ -212,15 +238,31 @@ pub fn update(
 ) -> Result<ConnectionProfile, CoreError> {
     let name = validate_name(&input.name)?;
     let (connection_string, embedded) = split_password(&input.connection_string)?;
+    validate_ssh(input.ssh.as_ref(), &connection_string)?;
+    let previous = storage.get_profile(id)?;
+    // A pin belongs to one host: a new SSH host or port must be trusted again.
+    let same_host = |a: &SshSettings, b: &SshSettings| a.host == b.host && a.port == b.port;
+    let ssh_host_key = match (&input.ssh, &previous.ssh) {
+        (Some(_), _) if input.ssh_host_key.is_some() => input.ssh_host_key.clone(),
+        (Some(next), Some(before)) if same_host(next, before) => previous.ssh_host_key.clone(),
+        _ => None,
+    };
     storage.update_profile(&StoredProfile {
         id,
         name,
         connection_string,
         read_only: input.read_only,
         color: input.color,
+        ssh: input.ssh.clone(),
+        ssh_host_key,
     })?;
     if let Some(password) = input.password.or(embedded) {
         secrets.set_password(id, &password)?;
+    }
+    match (&input.ssh, &input.ssh_secret) {
+        (None, _) => secrets.delete_ssh_secret(id)?,
+        (Some(_), Some(secret)) => secrets.set_ssh_secret(id, secret)?,
+        (Some(_), None) => {}
     }
     get(storage, secrets, id)
 }
@@ -242,6 +284,9 @@ pub fn duplicate(
             password: secrets.password(id)?,
             read_only: source.read_only,
             color: source.color,
+            ssh_secret: secrets.ssh_secret(id)?,
+            ssh_host_key: source.ssh_host_key,
+            ssh: source.ssh,
         },
     )
 }
@@ -263,6 +308,9 @@ struct SharedConnection {
     read_only: bool,
     #[serde(default)]
     color: Option<ProfileColor>,
+    /// Settings only: SSH secrets and trusted host keys stay on this machine.
+    #[serde(default)]
+    ssh: Option<SshSettings>,
 }
 
 const SHARED_FORMAT: &str = "odin-db.connections";
@@ -278,6 +326,7 @@ pub fn export_profiles(storage: &Storage, ids: &[ProfileId]) -> Result<String, C
             connection_string: row.connection_string,
             read_only: row.read_only,
             color: row.color,
+            ssh: row.ssh,
         })
         .collect();
     serde_json::to_string_pretty(&SharedFile {
@@ -326,6 +375,9 @@ pub fn import_profiles(
                 password: None,
                 read_only: entry.read_only,
                 color: entry.color,
+                ssh: entry.ssh,
+                ssh_secret: None,
+                ssh_host_key: None,
             },
         )?);
     }
@@ -363,6 +415,7 @@ fn parse_shared(json: &str) -> Result<Vec<SharedConnection>, CoreError> {
                     connection_string: uri.to_owned(),
                     read_only: false,
                     color: None,
+                    ssh: None,
                 })
             })
             .collect();
@@ -376,6 +429,7 @@ pub fn delete(
     id: ProfileId,
 ) -> Result<(), CoreError> {
     secrets.delete_password(id)?;
+    secrets.delete_ssh_secret(id)?;
     storage.delete_profile(id)
 }
 
@@ -394,7 +448,32 @@ fn with_password_flag(
         connection_string: row.connection_string,
         read_only: row.read_only,
         color: row.color,
+        has_ssh_secret: row.ssh.is_some() && secrets.ssh_secret(row.id)?.is_some(),
+        ssh: row.ssh,
+        ssh_host_key: row.ssh_host_key,
     })
+}
+
+fn validate_ssh(ssh: Option<&SshSettings>, connection_string: &str) -> Result<(), CoreError> {
+    let Some(ssh) = ssh else { return Ok(()) };
+    ssh.validate()?;
+    tunnel_target(connection_string).map(|_| ())
+}
+
+/// Trusts the SSH host key the user confirmed for this profile.
+pub fn trust_host_key(
+    storage: &Storage,
+    id: ProfileId,
+    fingerprint: &str,
+) -> Result<(), CoreError> {
+    let mut row = storage.get_profile(id)?;
+    if row.ssh.is_none() {
+        return Err(CoreError::Validation(
+            "this connection has no SSH tunnel".into(),
+        ));
+    }
+    row.ssh_host_key = Some(fingerprint.to_owned());
+    storage.update_profile(&row)
 }
 
 /// A profile as persisted in SQLite.
@@ -405,6 +484,8 @@ pub(crate) struct StoredProfile {
     pub connection_string: String,
     pub read_only: bool,
     pub color: Option<ProfileColor>,
+    pub ssh: Option<SshSettings>,
+    pub ssh_host_key: Option<String>,
 }
 
 #[cfg(test)]
@@ -454,6 +535,9 @@ mod tests {
             password: None,
             read_only: true,
             color: Some(ProfileColor::Teal),
+            ssh: None,
+            ssh_secret: None,
+            ssh_host_key: None,
         };
         create(
             &storage,
@@ -497,6 +581,80 @@ mod tests {
     }
 
     #[test]
+    fn ssh_pins_follow_the_host_and_secrets_follow_the_tunnel() {
+        use crate::ssh::{SshAuth, SshSettings};
+
+        let storage = Storage::open_in_memory().expect("storage");
+        let secrets = MemoryStore::default();
+        let ssh = |host: &str| SshSettings {
+            host: host.into(),
+            port: 22,
+            username: "ada".into(),
+            auth: SshAuth::Password,
+        };
+        let input = |settings: Option<SshSettings>, pin: Option<&str>| ProfileInput {
+            name: "Prod".into(),
+            connection_string: "mongodb://db.internal:27017".into(),
+            password: None,
+            read_only: false,
+            color: None,
+            ssh: settings,
+            ssh_secret: Some(Secret::new("tunnel-pw")),
+            ssh_host_key: pin.map(str::to_owned),
+        };
+        let profile = create(
+            &storage,
+            &secrets,
+            input(Some(ssh("bastion")), Some("SHA256:a")),
+        )
+        .expect("created");
+        assert_eq!(profile.ssh_host_key.as_deref(), Some("SHA256:a"));
+        assert!(profile.has_ssh_secret);
+
+        // Same host: the pin stays. Another host: it must be trusted again.
+        let kept = update(
+            &storage,
+            &secrets,
+            profile.id,
+            input(Some(ssh("bastion")), None),
+        )
+        .expect("kept");
+        assert_eq!(kept.ssh_host_key.as_deref(), Some("SHA256:a"));
+        let moved = update(
+            &storage,
+            &secrets,
+            profile.id,
+            input(Some(ssh("other")), None),
+        )
+        .expect("moved");
+        assert_eq!(moved.ssh_host_key, None);
+        trust_host_key(&storage, profile.id, "SHA256:b").expect("trusted");
+        assert_eq!(
+            get(&storage, &secrets, profile.id)
+                .expect("get")
+                .ssh_host_key
+                .as_deref(),
+            Some("SHA256:b")
+        );
+
+        // No tunnel any more: settings, pin and secret go away.
+        let plain = update(&storage, &secrets, profile.id, input(None, None)).expect("plain");
+        assert!(plain.ssh.is_none() && plain.ssh_host_key.is_none() && !plain.has_ssh_secret);
+        assert!(secrets.ssh_secret(profile.id).expect("read").is_none());
+        assert!(matches!(
+            create(
+                &storage,
+                &secrets,
+                ProfileInput {
+                    connection_string: "mongodb+srv://cluster0.example.net".into(),
+                    ..input(Some(ssh("bastion")), None)
+                }
+            ),
+            Err(CoreError::Validation(_))
+        ));
+    }
+
+    #[test]
     fn duplicates_keep_everything_but_the_name() {
         let storage = Storage::open_in_memory().expect("storage");
         let secrets = MemoryStore::default();
@@ -509,6 +667,9 @@ mod tests {
                 password: None,
                 read_only: true,
                 color: Some(ProfileColor::Red),
+                ssh: None,
+                ssh_secret: None,
+                ssh_host_key: None,
             },
         )
         .expect("created");
@@ -538,6 +699,9 @@ mod tests {
             password: None,
             read_only: false,
             color,
+            ssh: None,
+            ssh_secret: None,
+            ssh_host_key: None,
         };
         let profile = create(&storage, &secrets, input(Some(ProfileColor::Red))).expect("created");
         assert_eq!(profile.color, Some(ProfileColor::Red));
@@ -575,6 +739,9 @@ mod tests {
                 password: None,
                 read_only: true,
                 color: None,
+                ssh: None,
+                ssh_secret: None,
+                ssh_host_key: None,
             },
         )
         .expect("created");
@@ -610,6 +777,9 @@ mod tests {
             password: password.map(Secret::new),
             read_only: false,
             color: None,
+            ssh: None,
+            ssh_secret: None,
+            ssh_host_key: None,
         };
         let profile = create(&storage, &secrets, input(Some("first"))).expect("created");
 

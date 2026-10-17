@@ -320,6 +320,9 @@ mod tests {
                 password: None,
                 read_only: false,
                 color: None,
+                ssh: None,
+                ssh_secret: None,
+                ssh_host_key: None,
             },
         )
         .unwrap();
