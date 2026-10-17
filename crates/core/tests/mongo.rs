@@ -155,6 +155,19 @@ async fn connects_lists_and_reports_server_version() {
 
 #[tokio::test]
 #[ignore = "requires Docker"]
+async fn concurrent_connects_to_one_profile_share_a_connection() {
+    let fx = Fixture::start().await;
+    let profile = fx.profile(false);
+    let (first, second) = tokio::join!(
+        fx.manager.connect(&profile, None, None),
+        fx.manager.connect(&profile, None, None),
+    );
+    assert_eq!(first.expect("connects").id, second.expect("connects").id);
+    assert_eq!(fx.manager.list().await.len(), 1);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
 async fn pages_through_results_with_a_server_cursor() {
     let fx = Fixture::start().await;
     let handle = fx.connect(false).await;

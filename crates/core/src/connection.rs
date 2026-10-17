@@ -167,7 +167,19 @@ impl ConnectionManager {
             uri,
             _tunnel: tunnel,
         });
-        self.connections.write().await.insert(info.id, handle);
+        let mut connections = self.connections.write().await;
+        // A concurrent connect to the same profile may have finished first: keep that one.
+        if let Some(existing) = connections
+            .values()
+            .find(|other| other.info.profile_id == profile.id)
+            .map(|other| other.info.clone())
+        {
+            drop(connections);
+            handle.health.armed.store(false, Ordering::SeqCst);
+            handle.client.clone().shutdown().await;
+            return Ok(existing);
+        }
+        connections.insert(info.id, handle);
         Ok(info)
     }
 
