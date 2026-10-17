@@ -9,7 +9,7 @@
     "localhost": "Connetti a localhost:27017",
     "localhostMissing": "Nessun server MongoDB ha risposto su localhost:27017.",
     "collapseAll": "Comprimi tutto",
-    "filter": "Filtra database e collezioni ({{shortcut}})",
+    "filter": "Filtra le collezioni",
     "filterLabel": "Filtra database e collezioni",
     "clearFilter": "Cancella il filtro"
   },
@@ -161,5 +161,11 @@
     "allowInvalidWarning": "Chiunque sulla rete potrebbe intercettare questa connessione. Usare solo per test in locale.",
     "directConnection": "Connessione diretta",
     "directConnectionHint": "Connettiti solo a questo host, senza rilevare il resto di un replica set."
+  },
+  "favorites": {
+    "title": "Preferiti",
+    "add": "Aggiungi ai preferiti",
+    "remove": "Rimuovi dai preferiti",
+    "starred": "Preferito"
   }
 }

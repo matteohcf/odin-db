@@ -12,6 +12,7 @@ import { useHealthEvents } from "../hooks/use-health-events";
 import { useExplorer } from "../store/explorer-store";
 import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
+import { FavoritesSection } from "./favorites-section";
 import { ProfileDialog } from "./profile-dialog";
 import { ProfileNode } from "./profile-node";
 import { TryLocalhostButton } from "./try-localhost-button";
@@ -110,7 +111,8 @@ export function ConnectionExplorer() {
                 event.currentTarget.blur();
               }
             }}
-            placeholder={t("explorer.filter", { shortcut: label(SHORTCUTS.filterSidebar) })}
+            placeholder={t("explorer.filter")}
+            title={`${t("explorer.filterLabel")} (${label(SHORTCUTS.filterSidebar)})`}
             aria-label={t("explorer.filterLabel")}
             spellCheck={false}
             className="h-7 w-full rounded-md border bg-background pr-7 pl-7 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
@@ -151,17 +153,20 @@ export function ConnectionExplorer() {
             </div>
           </div>
         ) : (
-          <ul className="flex flex-col gap-px">
-            {profiles.map((profile) => (
-              <li key={profile.id}>
-                <ProfileNode
-                  profile={profile}
-                  onEdit={() => setDialog({ type: "edit", profile })}
-                  onDelete={() => setDialog({ type: "delete", profile })}
-                />
-              </li>
-            ))}
-          </ul>
+          <>
+            <FavoritesSection />
+            <ul className="flex flex-col gap-px">
+              {profiles.map((profile) => (
+                <li key={profile.id}>
+                  <ProfileNode
+                    profile={profile}
+                    onEdit={() => setDialog({ type: "edit", profile })}
+                    onDelete={() => setDialog({ type: "delete", profile })}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
 import { useRenameCollection } from "../api/mutations";
+import { useFavorites } from "../store/favorites-store";
 
 interface RenameCollectionDialogProps {
   connection: ConnectionInfo;
@@ -35,6 +36,7 @@ export function RenameCollectionDialog({
   const id = useId();
   const rename = useRenameCollection(connection.id);
   const renameTabs = useTabs((s) => s.renameCollection);
+  const renameFavorite = useFavorites((s) => s.rename);
   const [name, setName] = useState(collection);
   const [error, setError] = useState<string | null>(null);
   const newName = name.trim();
@@ -49,6 +51,7 @@ export function RenameCollectionDialog({
       return;
     }
     renameTabs(connection.profileId, database, collection, newName);
+    renameFavorite(connection.profileId, database, collection, newName);
     toast.success(t("catalog.rename.renamed", { name: newName }));
     onClose();
   }

@@ -12,6 +12,8 @@ import {
   HardDriveUpload,
   PencilLine,
   Plus,
+  Star,
+  StarOff,
   Table2,
   Trash2,
 } from "lucide-react";
@@ -25,6 +27,7 @@ import { connectionKeys } from "../api/keys";
 import { useCollections, useDatabases, useProfile } from "../api/queries";
 import { useCopyTargets } from "../hooks/use-copy-targets";
 import { useExpanded, useTreeFilter } from "../store/explorer-store";
+import { useFavorites, useIsFavorite } from "../store/favorites-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
@@ -247,6 +250,8 @@ function CollectionNode({
   collection: CollectionInfo;
 }) {
   const { t } = useTranslation("connections");
+  const favorite = useIsFavorite(connection.profileId, database, collection.name);
+  const toggleFavorite = useFavorites((s) => s.toggle);
   const filter = useTreeFilter();
   const openCollection = useTabs((s) => s.openCollection);
   const Icon = kindIcon[collection.kind];
@@ -270,39 +275,63 @@ function CollectionNode({
         icon={<Icon className="size-3.5" />}
         label={<HighlightMatch text={collection.name} query={filter} />}
         muted={isSystem(collection)}
-        trailing={collection.kind === "collection" ? undefined : t(`tree.${collection.kind}`)}
+        trailing={
+          favorite || collection.kind !== "collection" ? (
+            <span className="flex items-center gap-1.5">
+              {collection.kind !== "collection" && t(`tree.${collection.kind}`)}
+              {favorite && (
+                <Star
+                  className="size-3 fill-current text-yellow-500"
+                  aria-label={t("favorites.starred")}
+                />
+              )}
+            </span>
+          ) : undefined
+        }
         actions={
-          isView && !writable ? undefined : (
-            <NodeMenu label={t("tree.actions", { name: collection.name })}>
-              {writable && !isView && (
-                <DropdownMenuItem onSelect={() => setDialog("rename")}>
-                  <PencilLine />
-                  {t("catalog.renameCollection")}
+          <NodeMenu label={t("tree.actions", { name: collection.name })}>
+            <DropdownMenuItem
+              onSelect={() =>
+                toggleFavorite({
+                  profileId: connection.profileId,
+                  database,
+                  collection: collection.name,
+                  collectionKind: collection.kind,
+                })
+              }
+            >
+              {favorite ? <StarOff /> : <Star />}
+              {favorite ? t("favorites.remove") : t("favorites.add")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {writable && !isView && (
+              <DropdownMenuItem onSelect={() => setDialog("rename")}>
+                <PencilLine />
+                {t("catalog.renameCollection")}
+              </DropdownMenuItem>
+            )}
+            {!isView && (
+              <>
+                <DropdownMenuItem onSelect={() => setDialog("copy")}>
+                  <Copy />
+                  {t("copy.menuCollection", { ns: "transfer" })}
                 </DropdownMenuItem>
-              )}
-              {!isView && (
-                <>
-                  <DropdownMenuItem onSelect={() => setDialog("copy")}>
-                    <Copy />
-                    {t("copy.menuCollection", { ns: "transfer" })}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setDialog("backup")}>
-                    <HardDriveDownload />
-                    {t("menu.backup", { ns: "backup" })}
-                  </DropdownMenuItem>
-                </>
-              )}
-              {writable && (
-                <>
-                  {!isView && <DropdownMenuSeparator />}
-                  <DropdownMenuItem variant="destructive" onSelect={() => setDialog("drop")}>
-                    <Trash2 />
-                    {isView ? t("catalog.dropView") : t("catalog.dropCollection")}
-                  </DropdownMenuItem>
-                </>
-              )}
-            </NodeMenu>
-          )
+                <DropdownMenuItem onSelect={() => setDialog("backup")}>
+                  <HardDriveDownload />
+                  {t("menu.backup", { ns: "backup" })}
+                </DropdownMenuItem>
+              </>
+            )}
+            {writable && (
+              <>
+                {!isView && <DropdownMenuSeparator />}
+                <DropdownMenuItem variant="destructive" onSelect={() => setDialog("drop")}>
+                  <Trash2 />
+                  {isView ? t("catalog.dropView") : t("catalog.dropCollection")}
+                </DropdownMenuItem>
+              </>
+            )}
+          </NodeMenu>
         }
       />
       {dialog === "backup" && (

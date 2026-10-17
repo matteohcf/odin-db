@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
 import { useDropCollection, useDropDatabase } from "../api/mutations";
+import { useFavorites } from "../store/favorites-store";
 
 type DropTarget =
   | { kind: "database"; database: string }
@@ -36,6 +37,7 @@ export function DropDialog({ connection, target, onClose }: DropDialogProps) {
   const dropCollection = useDropCollection(connection.id);
   const dropDatabase = useDropDatabase(connection.id);
   const closeCollections = useTabs((s) => s.closeCollections);
+  const forgetFavorites = useFavorites((s) => s.forget);
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -51,12 +53,14 @@ export function DropDialog({ connection, target, onClose }: DropDialogProps) {
       if (target.kind === "database") {
         await dropDatabase.mutateAsync(target.database);
         closeCollections(connection.profileId, target.database);
+        forgetFavorites(connection.profileId, target.database);
       } else {
         await dropCollection.mutateAsync({
           database: target.database,
           collection: target.collection,
         });
         closeCollections(connection.profileId, target.database, target.collection);
+        forgetFavorites(connection.profileId, target.database, target.collection);
       }
     } catch (cause) {
       setError(errorMessage(cause));

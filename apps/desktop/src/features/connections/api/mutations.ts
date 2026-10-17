@@ -8,6 +8,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTabs } from "@/features/workspace";
 import { call } from "@/lib/ipc";
+import { useFavorites } from "../store/favorites-store";
 import { connectionKeys } from "./keys";
 
 export function useSaveProfile() {
@@ -23,10 +24,12 @@ export function useSaveProfile() {
 export function useDeleteProfile() {
   const queryClient = useQueryClient();
   const closeForProfile = useTabs((s) => s.closeForProfile);
+  const forgetFavorites = useFavorites((s) => s.forgetProfile);
   return useMutation({
     mutationFn: (id: ProfileId) => call(commands.deleteProfile(id)),
     onSuccess: (_, id) => {
       closeForProfile(id);
+      forgetFavorites(id);
       void queryClient.invalidateQueries({ queryKey: connectionKeys.profiles });
       void queryClient.invalidateQueries({ queryKey: connectionKeys.connections });
     },

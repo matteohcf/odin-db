@@ -6,7 +6,7 @@ Open source desktop client for MongoDB. A free alternative to Studio 3T, built w
 
 ## Features
 
-- **Connections**: connection string or form (SRV, TLS, auth, replica sets), passwords in the OS keychain, read-only profiles enforced in the backend, a color per connection shown on its tabs and collections, live status when a server stops answering.
+- **Connections**: connection string or form (SRV, TLS, auth, replica sets), passwords in the OS keychain, read-only profiles enforced in the backend, a color per connection shown on its tabs and collections, live status when a server stops answering; a resizable sidebar with a filter and favorite collections.
 - **Queries**: filter, sort and projection editors that suggest the collection's fields, operators, BSON constructors and the values of enum-like fields; saved and recent queries; Explain with index suggestions; Query Code turns a query or pipeline into mongosh, Node.js, Python, Java, C# or Go.
 - **Results**: a fast virtualized table (resize, hide and sort columns, edit or filter by a single value) a list of expandable document trees, or the documents as highlighted text (JSON view); documents edited in mongosh syntax that keeps every BSON type; update or delete every document matching a filter.
 - **Aggregation builder**: stages with live previews and suggestions based on the previous stage's output; saved pipelines.
