@@ -1,6 +1,6 @@
 # 0015. mongodump/mongorestore as sidecars
 
-- Status: Accepted
+- Status: Accepted, sourcing superseded by ADR-0033
 - Date: 2026-10-17
 
 ## Context

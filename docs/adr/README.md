@@ -18,7 +18,7 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0012](0012-query-editor.md) | Query editor syntax and aggregation builder | Accepted |
 | [0013](0013-integrated-shell.md) | Integrated shell: hybrid model | Accepted |
 | [0014](0014-mongosh-distribution.md) | mongosh distribution: detect or download | Accepted |
-| [0015](0015-database-tools-sidecars.md) | mongodump/mongorestore as sidecars | Accepted |
+| [0015](0015-database-tools-sidecars.md) | mongodump/mongorestore as sidecars | Accepted, sourcing superseded by [0033](0033-database-tools-from-source.md) |
 | [0016](0016-local-persistence.md) | Local persistence: SQLite and OS keyring | Accepted |
 | [0017](0017-security-model.md) | Security model | Accepted |
 | [0018](0018-authentication-scope.md) | Authentication mechanisms scope | Accepted |
@@ -36,3 +36,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0030](0030-shell-flow-control.md) | Shell sessions and flow control | Accepted |
 | [0031](0031-query-bar-assistance.md) | Query bar assistance | Accepted |
 | [0032](0032-aggregation-stage-assistance.md) | Aggregation stage assistance | Accepted |
+| [0033](0033-database-tools-from-source.md) | Database Tools built from source | Accepted |

@@ -2,11 +2,20 @@
 
 Open source desktop client for MongoDB. A free alternative to Studio 3T, built with Tauri 2 (Rust) and React.
 
-> **Status: early development.** Connections, database browsing, queries and document editing work. Indexes, aggregation, import/export, backup and the shell are next. Not ready for production data yet.
+> **Status: pre-release.** The v1 feature set works: connections, browsing, queries with autocompletion, document editing, indexes, aggregation builder, import/export, backup/restore and an integrated mongosh shell. Not ready for production data yet.
 
 ## Planned for v1
 
 Document CRUD, query editor, index management, aggregation builder, backup/restore (mongodump/mongorestore), JSON/CSV import and export, integrated mongosh shell. Windows, macOS and Linux.
+
+## Installing
+
+Installers for macOS (Apple silicon and Intel), Windows and Linux (AppImage, deb, rpm) are attached to each [release](https://github.com/matteohcf/odin-db/releases). mongodump and mongorestore are included; the shell uses your installed [mongosh](https://www.mongodb.com/try/download/shell).
+
+Early builds are not code-signed yet:
+
+- **macOS**: the first time, right-click the app and choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/odin-db.app`.
+- **Windows**: SmartScreen may warn about an unknown publisher; choose **More info → Run anyway**.
 
 ## Principles
 
