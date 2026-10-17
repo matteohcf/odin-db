@@ -3,7 +3,7 @@ use std::sync::Arc;
 use odin_core::connection::ConnectionId;
 use odin_core::documents;
 use odin_core::ejson::{EJsonDocument, EJsonValue};
-use odin_core::query::{self, CursorId, DocumentPage, FindRequest, Namespace};
+use odin_core::query::{self, AggregateRequest, CursorId, DocumentPage, FindRequest, Namespace};
 use tauri::State;
 
 use crate::ipc::IpcError;
@@ -84,4 +84,33 @@ pub async fn delete_document(
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(documents::delete(&handle, &namespace, id).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn aggregate_documents(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    request: AggregateRequest,
+) -> Result<DocumentPage, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(state
+        .cursors
+        .aggregate(&handle, &namespace, request)
+        .await?)
+}
+
+/// First results of a pipeline for the builder's stage previews. Never runs `$out`/`$merge`.
+#[tauri::command]
+#[specta::specta]
+pub async fn preview_aggregation(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    pipeline: Vec<EJsonDocument>,
+    limit: u32,
+) -> Result<Vec<EJsonDocument>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(query::preview_aggregation(&handle, &namespace, pipeline, limit).await?)
 }

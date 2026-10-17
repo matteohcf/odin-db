@@ -24,6 +24,13 @@ export const commands = {
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
 	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
+	aggregateDocuments: (connectionId: ConnectionId, namespace: Namespace, request: AggregateRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("aggregate_documents", { connectionId, namespace, request })),
+	/**  First results of a pipeline for the builder's stage previews. Never runs `$out`/`$merge`. */
+	previewAggregation: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], limit: number) => typedError<EJsonDocument[], IpcError>(__TAURI_INVOKE("preview_aggregation", { connectionId, namespace, pipeline, limit })),
+	listIndexes: (connectionId: ConnectionId, namespace: Namespace) => typedError<IndexInfo[], IpcError>(__TAURI_INVOKE("list_indexes", { connectionId, namespace })),
+	/**  Returns the name of the new index. */
+	createIndex: (connectionId: ConnectionId, namespace: Namespace, request: CreateIndexRequest) => typedError<string, IpcError>(__TAURI_INVOKE("create_index", { connectionId, namespace, request })),
+	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
 	/**  Returns `false` if the operation already finished. */
 	cancelOperation: (id: OperationId) => __TAURI_INVOKE<boolean>("cancel_operation", { id }),
 	streamSampleDocuments: (options: DocumentStreamOptions, channel: Channel<StreamEvent<EJsonDocument[]>>) => __TAURI_INVOKE<OperationId>("stream_sample_documents", { options, channel }),
@@ -40,6 +47,11 @@ export const commands = {
 };
 
 /* Types */
+export type AggregateRequest = {
+	pipeline: EJsonDocument[],
+	batchSize: number,
+};
+
 export type AppInfo = {
 	version: string,
 	tauriVersion: string,
@@ -71,6 +83,16 @@ export type ConnectionProfile = {
 	connectionString: string,
 	readOnly: boolean,
 	hasPassword: boolean,
+};
+
+export type CreateIndexRequest = {
+	keys: EJsonDocument,
+	name: string | null,
+	unique: boolean,
+	sparse: boolean,
+	hidden: boolean,
+	expireAfterSeconds: number | null,
+	partialFilter: EJsonDocument | null,
 };
 
 export type CursorId = string;
@@ -114,6 +136,23 @@ export type FindRequest = {
 	skip: number | null,
 	limit: number | null,
 	batchSize: number,
+};
+
+export type IndexInfo = {
+	name: string,
+	keys: EJsonDocument,
+	unique: boolean,
+	sparse: boolean,
+	hidden: boolean,
+	expireAfterSeconds: number | null,
+	partialFilter: EJsonDocument | null,
+	/**  The complete spec as returned by the server. */
+	definition: EJsonDocument,
+	/**  Bytes on disk, when the server reports it. */
+	size: number | null,
+	/**  Operations that used the index since `usage_since`, when reported. */
+	usageCount: number | null,
+	usageSince: string | null,
 };
 
 export type IpcError = {
