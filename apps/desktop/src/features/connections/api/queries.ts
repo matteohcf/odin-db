@@ -40,10 +40,6 @@ export const collectionsQuery = (connectionId: ConnectionId, database: string) =
     queryFn: () => call(commands.listCollections(connectionId, database)),
   });
 
-export function useDatabases(connectionId: ConnectionId) {
-  return useQuery(databasesQuery(connectionId));
-}
-
 /** Estimated document counts, shown next to collections; refreshed with the tree. */
 export function useCollectionCounts(
   connectionId: ConnectionId,

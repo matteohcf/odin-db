@@ -30,10 +30,9 @@ import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect, useDuplicateProfile } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
-import { useExpanded, useTreeFilter } from "../store/explorer-store";
+import { useExpanded } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
-import { DatabaseList } from "./database-list";
 import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
 
@@ -54,8 +53,6 @@ export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNode
   const disconnect = useDisconnect();
   const duplicate = useDuplicateProfile();
   const [expanded, setExpanded] = useExpanded(profile.id);
-  // A filter searches every open connection, whether expanded or not.
-  const filtering = useTreeFilter() !== "";
   const [toolDialog, setToolDialog] = useState<"backup" | "restore" | "createDatabase" | null>(
     null,
   );
@@ -226,7 +223,6 @@ export function ProfileNode({ profile, onEdit, onDelete, onExport }: ProfileNode
           </NodeMenu>
         }
       />
-      {connection && (expanded || filtering) && <DatabaseList connection={connection} />}
       {connection && toolDialog === "createDatabase" && (
         <CreateCollectionDialog connection={connection} onClose={() => setToolDialog(null)} />
       )}

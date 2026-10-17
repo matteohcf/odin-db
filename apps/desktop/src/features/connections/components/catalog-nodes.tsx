@@ -27,8 +27,9 @@ import { CopyDialog, DatabaseExportDialog, DatabaseImportDialog } from "@/featur
 import { useTabs } from "@/features/workspace";
 import { formatBytes } from "@/lib/format";
 import { connectionKeys } from "../api/keys";
-import { useCollectionCounts, useCollections, useDatabases, useProfile } from "../api/queries";
+import { useCollectionCounts, useCollections, useProfile } from "../api/queries";
 import { useCopyTargets } from "../hooks/use-copy-targets";
+import { isSystem, SYSTEM_DATABASES } from "../lib/tree-rows";
 import { useExpanded, useTreeFilter } from "../store/explorer-store";
 import { useFavorites, useIsFavorite } from "../store/favorites-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
@@ -36,37 +37,19 @@ import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
 import { NodeMenu } from "./node-menu";
 import { RenameCollectionDialog } from "./rename-collection-dialog";
-import { TreeMessage, TreeRow } from "./tree-row";
+import { TreeRow } from "./tree-row";
 
-export function DatabaseList({ connection }: { connection: ConnectionInfo }) {
-  const { t } = useTranslation("connections");
-  const { data, error, isPending } = useDatabases(connection.id);
-  const filter = useTreeFilter();
-
-  if (isPending) return <TreeMessage depth={1}>{t("tree.loading")}</TreeMessage>;
-  if (error) {
-    return <TreeMessage depth={1}>{t("tree.failed", { message: error.message })}</TreeMessage>;
-  }
-  if (data.length === 0) return <TreeMessage depth={1}>{t("tree.noDatabases")}</TreeMessage>;
-  if (filter && data.every((database) => SYSTEM_DATABASES.has(database.name))) return null;
-
-  return (
-    <ul className="flex flex-col gap-px">
-      {data.map((database) => (
-        <li key={database.name}>
-          <DatabaseNode connection={connection} database={database} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function DatabaseNode({
+/** A database row; its collections are rows of their own, after it. */
+export function DatabaseNode({
   connection,
   database,
+  open,
+  loading,
 }: {
   connection: ConnectionInfo;
   database: DatabaseInfo;
+  open: boolean;
+  loading: boolean;
 }) {
   const { t } = useTranslation("connections");
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
@@ -74,31 +57,18 @@ function DatabaseNode({
     "backup" | "restore" | "export" | "import" | "copy" | "createCollection" | "drop" | null
   >(null);
   const filter = useTreeFilter();
-  const nameMatches = filter !== "" && database.name.toLowerCase().includes(filter);
-  const collections = useCollections(
-    connection.id,
-    database.name,
-    expanded || toolDialog === "export" || filter !== "",
-  );
-  // A matching database shows all its collections; otherwise only matching ones.
-  const shownCollections =
-    filter && !nameMatches
-      ? collections.data?.filter((collection) => collection.name.toLowerCase().includes(filter))
-      : collections.data;
-  const open = filter && !nameMatches ? true : expanded;
-  const counts = useCollectionCounts(connection.id, database.name, open);
+  // The export dialog lists the collections even when the database is collapsed.
+  const collections = useCollections(connection.id, database.name, toolDialog === "export");
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const queryClient = useQueryClient();
   const writable = !connection.readOnly;
-
-  if (filter && !nameMatches && !shownCollections?.length && toolDialog === null) return null;
 
   return (
     <>
       <TreeRow
         depth={1}
         expanded={open}
-        loading={open && collections.isPending}
+        loading={loading}
         onActivate={() => setExpanded(!expanded)}
         icon={<Database className="size-3.5" />}
         label={<HighlightMatch text={database.name} query={filter} />}
@@ -222,47 +192,25 @@ function DatabaseNode({
           onClose={() => setToolDialog(null)}
         />
       )}
-      {open &&
-        (collections.error ? (
-          <TreeMessage depth={2}>
-            {t("tree.failed", { message: collections.error.message })}
-          </TreeMessage>
-        ) : collections.data?.length === 0 ? (
-          <TreeMessage depth={2}>{t("tree.noCollections")}</TreeMessage>
-        ) : (
-          <ul className="flex flex-col gap-px">
-            {sortSystemLast(shownCollections ?? []).map((collection) => (
-              <li key={collection.name}>
-                <CollectionNode
-                  connection={connection}
-                  database={database.name}
-                  collection={collection}
-                  count={counts.data?.get(collection.name)}
-                />
-              </li>
-            ))}
-          </ul>
-        ))}
     </>
   );
 }
 
 const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 
-function CollectionNode({
+export function CollectionNode({
   connection,
   database,
   collection,
-  count,
 }: {
   connection: ConnectionInfo;
   database: string;
   collection: CollectionInfo;
-  /** Estimated documents; absent for views and while loading. */
-  count: number | undefined;
 }) {
   const { t, i18n: translation } = useTranslation("connections");
   const favorite = useIsFavorite(connection.profileId, database, collection.name);
+  // One query per database, shared by its rows; absent for views and while loading.
+  const count = useCollectionCounts(connection.id, database, true).data?.get(collection.name);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const filter = useTreeFilter();
   const openCollection = useTabs((s) => s.openCollection);
@@ -396,9 +344,6 @@ function CollectionNode({
   );
 }
 
-/** Databases MongoDB manages itself; core refuses to drop them too. */
-const SYSTEM_DATABASES = new Set(["admin", "local", "config"]);
-
 /** 1.2K, 3.4M: short enough for the tree; the exact estimate is in the tooltip. */
 function compactCount(count: number, locale: string) {
   return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(
@@ -437,13 +382,4 @@ function CopyDialogFor({
       onClose={onClose}
     />
   );
-}
-
-function isSystem(collection: CollectionInfo) {
-  return collection.name.startsWith("system.");
-}
-
-/** Internal `system.*` collections stay visible but out of the way. */
-function sortSystemLast(collections: CollectionInfo[]) {
-  return [...collections].sort((a, b) => Number(isSystem(a)) - Number(isSystem(b)));
 }

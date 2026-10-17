@@ -25,6 +25,8 @@ type Collections = Record<
   {
     kind: CollectionInfo["kind"];
     docs: Doc[];
+    /** Known size of lazily built `docs`, so listing does not build them. */
+    count?: number;
     indexes?: Doc[];
     validation?: { validator: JsonValue; level: string; action: string };
   }
@@ -139,7 +141,41 @@ const servers: Record<string, Record<string, Collections>> = {
     },
     admin: {},
   },
+  // A busy multi-tenant cluster: hundreds of databases, one with thousands of collections.
+  large: largeCluster(),
 };
+
+function largeCluster(): Record<string, Collections> {
+  const kinds = ["users", "orders", "events", "invoices", "sessions", "audit_log", "settings"];
+  const databases: Record<string, Collections> = {};
+  for (let d = 0; d < 320; d++) {
+    const name = d === 0 ? "archive" : `tenant_${String(d).padStart(3, "0")}`;
+    const total = d === 0 ? 2500 : (d * 7) % 40;
+    const collections: Collections = {};
+    for (let c = 0; c < total; c++) {
+      const base = kinds[c % kinds.length] ?? "items";
+      const collection = c < kinds.length ? base : `${base}_${Math.floor(c / kinds.length)}`;
+      // Documents are built on first read: most collections are never opened.
+      let docs: Doc[] | undefined;
+      const count = (c * 13 + d) % 60;
+      collections[collection] = {
+        kind: "collection",
+        get count() {
+          return docs?.length ?? count;
+        },
+        get docs() {
+          docs ??= Array.from({ length: count }, (_, i) => user(i));
+          return docs;
+        },
+        set docs(next) {
+          docs = next;
+        },
+      };
+    }
+    databases[name] = collections;
+  }
+  return databases;
+}
 
 const profiles: ConnectionProfile[] = [
   {
@@ -182,6 +218,18 @@ const profiles: ConnectionProfile[] = [
   },
 ];
 
+profiles.push({
+  id: "0192f000-0000-7000-8000-000000000004",
+  name: "Tenants cluster",
+  connectionString: "mongodb://tenants.internal:27017",
+  readOnly: false,
+  hasPassword: false,
+  color: "blue",
+  ssh: null,
+  hasSshSecret: false,
+  sshHostKey: null,
+});
+
 const connections = new Map<string, ConnectionInfo>();
 const cursors = new Map<string, { docs: Doc[]; offset: number }>();
 
@@ -189,7 +237,9 @@ function serverOf(connectionId: string) {
   const connection =
     connections.get(connectionId) ?? fail("notConnected", "connection is not open");
   // Every profile points at the same fake server.
-  return { connection, databases: servers.local ?? {} };
+  const profile = profiles.find((p) => p.id === connection.profileId);
+  const large = profile?.connectionString.includes("tenants") ?? false;
+  return { connection, databases: (large ? servers.large : servers.local) ?? {} };
 }
 
 /** Orders by each sort key in turn; numbers and dates compare by value, the rest as text. */
@@ -886,7 +936,10 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       ([name, colls]): DatabaseInfo => ({
         name,
         empty: Object.keys(colls).length === 0,
-        sizeOnDisk: Object.values(colls).reduce((sum, c) => sum + c.docs.length * 412, 40_960),
+        sizeOnDisk: Object.values(colls).reduce(
+          (sum, c) => sum + (c.count ?? c.docs.length) * 412,
+          40_960,
+        ),
       }),
     ),
   list_collections: (args) =>
@@ -897,7 +950,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const { databases } = serverOf(id("connectionId", args));
     return Object.entries(databases[args.database as string] ?? {})
       .filter(([, coll]) => coll.kind !== "view")
-      .map(([name, coll]) => ({ name, count: coll.docs.length }));
+      .map(([name, coll]) => ({ name, count: coll.count ?? coll.docs.length }));
   },
   collection_stats: (args) => {
     const ns = args.namespace as { database: string; collection: string };

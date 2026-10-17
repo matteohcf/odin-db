@@ -34,7 +34,7 @@ import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { FavoritesSection } from "./favorites-section";
 import { HostKeyDialog } from "./host-key-dialog";
 import { ProfileDialog } from "./profile-dialog";
-import { ProfileNode } from "./profile-node";
+import { TreeList } from "./tree-list";
 import { TryLocalhostButton } from "./try-localhost-button";
 
 const isMac = navigator.userAgent.includes("Mac");
@@ -56,6 +56,7 @@ export function ConnectionExplorer() {
   const setFilter = useExplorer((s) => s.setFilter);
   const collapseAll = useExplorer((s) => s.collapseAll);
   const filterInput = useRef<HTMLInputElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   useShortcut("filterSidebar", () => filterInput.current?.focus());
   useHealthEvents();
   const importMutation = useImportConnections();
@@ -198,7 +199,7 @@ export function ConnectionExplorer() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
+      <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto p-1.5">
         {error ? (
           <p className="p-2 text-destructive text-xs">
             {t("explorer.loadFailed", { message: error.message })}
@@ -223,18 +224,13 @@ export function ConnectionExplorer() {
         ) : (
           <>
             <FavoritesSection />
-            <ul className="flex flex-col gap-px">
-              {profiles.map((profile) => (
-                <li key={profile.id}>
-                  <ProfileNode
-                    profile={profile}
-                    onExport={() => void exportConnections([profile.id])}
-                    onEdit={() => setDialog({ type: "edit", profile })}
-                    onDelete={() => setDialog({ type: "delete", profile })}
-                  />
-                </li>
-              ))}
-            </ul>
+            <TreeList
+              profiles={profiles}
+              scrollRef={scroller}
+              onExport={(profile) => void exportConnections([profile.id])}
+              onEdit={(profile) => setDialog({ type: "edit", profile })}
+              onDelete={(profile) => setDialog({ type: "delete", profile })}
+            />
           </>
         )}
       </div>
