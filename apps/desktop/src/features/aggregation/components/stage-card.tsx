@@ -1,4 +1,4 @@
-import type { ConnectionId, Namespace } from "@odin-db/bindings";
+import type { ConnectionId, FieldSummary, Namespace } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Switch } from "@odin-db/ui/components/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
@@ -26,7 +26,8 @@ interface StageCardProps {
   namespace: Namespace;
   stages: readonly Stage[];
   index: number;
-  onOperatorChange: (operator: string) => void;
+  /** `field` is a likely field of the stage's input, for the new template. */
+  onOperatorChange: (operator: string, field?: string) => void;
   onBodyChange: (body: string) => void;
   onToggle: (enabled: boolean) => void;
   onMove: (delta: -1 | 1) => void;
@@ -66,7 +67,10 @@ export function StageCard({
         <span className="flex size-5 items-center justify-center rounded-full bg-muted font-mono text-[11px] text-muted-foreground">
           {number}
         </span>
-        <OperatorPicker value={stage.operator} onChange={onOperatorChange} />
+        <OperatorPicker
+          value={stage.operator}
+          onChange={(operator) => onOperatorChange(operator, templateField(fields))}
+        />
         <span className="truncate text-muted-foreground text-xs">
           {t(`operators.${stage.operator}` as "operators.$match", { defaultValue: "" })}
         </span>
@@ -247,4 +251,10 @@ function IconAction({ label, children }: { label: string; children: ReactNode })
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+/** A field worth starting a stage with: a string (good to group or match on), else any. */
+function templateField(fields: readonly FieldSummary[]): string | undefined {
+  const candidates = fields.filter((field) => field.path !== "_id" && !field.path.includes("."));
+  return (candidates.find((field) => field.types[0] === "string") ?? candidates[0])?.path;
 }

@@ -176,7 +176,9 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
                 namespace={namespace}
                 stages={stages}
                 index={index}
-                onOperatorChange={(operator) => actions.setOperator(stage.id, operator)}
+                onOperatorChange={(operator, field) =>
+                  actions.setOperator(stage.id, operator, field)
+                }
                 onBodyChange={(body) => actions.update(stage.id, { body })}
                 onToggle={(enabled) => actions.update(stage.id, { enabled })}
                 onMove={(delta) => actions.move(stage.id, delta)}

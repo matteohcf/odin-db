@@ -7,7 +7,7 @@ interface PipelineState {
   add: (operator: string, afterId?: string) => void;
   update: (id: string, patch: Partial<Omit<Stage, "id">>) => void;
   /** Changes the operator, replacing the body only if it was untouched. */
-  setOperator: (id: string, operator: string) => void;
+  setOperator: (id: string, operator: string, field?: string) => void;
   remove: (id: string) => void;
   move: (id: string, delta: -1 | 1) => void;
   /** Replaces the whole pipeline, e.g. with a saved one. */
@@ -36,12 +36,15 @@ export function createPipelineStore() {
       }),
     update: (id, patch) =>
       set((state) => ({ stages: state.stages.map((s) => (s.id === id ? { ...s, ...patch } : s)) })),
-    setOperator: (id, operator) =>
+    setOperator: (id, operator, field) =>
       set((state) => ({
         stages: state.stages.map((s) => {
           if (s.id !== id) return s;
-          const untouched = s.body.trim() === "" || s.body === templateFor(s.operator);
-          return { ...s, operator, body: untouched ? templateFor(operator) : s.body };
+          const untouched =
+            s.body.trim() === "" ||
+            s.body === templateFor(s.operator) ||
+            s.body === templateFor(s.operator, field);
+          return { ...s, operator, body: untouched ? templateFor(operator, field) : s.body };
         }),
       })),
     remove: (id) => set((state) => ({ stages: state.stages.filter((s) => s.id !== id) })),

@@ -53,8 +53,19 @@ export const STAGE_OPERATORS = [
 
 export type StageOperator = (typeof STAGE_OPERATORS)[number]["operator"];
 
-export function templateFor(operator: string): string {
-  return STAGE_OPERATORS.find((entry) => entry.operator === operator)?.template ?? "{}";
+/**
+ * The starting body of a stage. With `field` (a path from the stage's input), the
+ * `field` placeholder becomes that real field, so the stage previews something useful.
+ */
+export function templateFor(operator: string, field?: string): string {
+  const template = STAGE_OPERATORS.find((entry) => entry.operator === operator)?.template ?? "{}";
+  if (!field) return template;
+  const key = /^[A-Za-z_$][\w$]*$/.test(field) ? field : JSON.stringify(field);
+  return template
+    .replaceAll('"$field"', JSON.stringify(`$${field}`))
+    .replaceAll('"field"', JSON.stringify(field))
+    .replace(/^(\s+)field:/m, `$1${key}:`)
+    .replace(/\{ field: 1 \}/, `{ ${key}: 1 }`);
 }
 
 /** Stages that write data: never previewed, confirmed before running. */
