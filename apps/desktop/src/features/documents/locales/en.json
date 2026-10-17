@@ -123,5 +123,38 @@
     "restored_one": "Restored {{count}} document.",
     "restored_other": "Restored {{count}} documents.",
     "failed": "Could not restore: {{message}}"
+  },
+  "builder": {
+    "open": "Build a filter visually",
+    "title": "Filter builder",
+    "combinator": "Match",
+    "all": "All conditions",
+    "any": "Any condition",
+    "field": "Field {{number}}",
+    "fieldPlaceholder": "field",
+    "operator": "Operator {{number}}",
+    "value": "Value {{number}}",
+    "listPlaceholder": "a, b, c",
+    "remove": "Remove condition {{number}}",
+    "add": "Add condition",
+    "preview": "Filter",
+    "empty": "Fill in a field and a value.",
+    "clear": "Clear",
+    "apply": "Apply",
+    "applyRun": "Apply and run",
+    "operators": {
+      "eq": "equals",
+      "ne": "does not equal",
+      "gt": "greater than",
+      "gte": "greater or equal",
+      "lt": "less than",
+      "lte": "less or equal",
+      "in": "is one of",
+      "nin": "is none of",
+      "contains": "contains",
+      "startsWith": "starts with",
+      "exists": "exists",
+      "missing": "is missing"
+    }
   }
 }

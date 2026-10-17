@@ -11,6 +11,7 @@ import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
 import { QueryFieldFrame } from "./query-field-frame";
 import { QueryHistoryMenu } from "./query-history-menu";
+import { VisualQueryBuilder } from "./visual-query-builder";
 
 interface QueryBarProps {
   form: QueryForm;
@@ -86,6 +87,12 @@ export function QueryBar({
             autoFocus
           />
         </QueryFieldFrame>
+        <VisualQueryBuilder
+          fields={fields}
+          onApply={(filter, run) =>
+            run ? onRunForm({ ...form, filter }) : onChange("filter", filter)
+          }
+        />
         <QueryHistoryMenu historyKey={historyKey} onSelect={onRunForm} />
         <Tooltip>
           <TooltipTrigger asChild>

@@ -123,5 +123,38 @@
     "restored_one": "Ripristinato {{count}} documento.",
     "restored_other": "Ripristinati {{count}} documenti.",
     "failed": "Ripristino non riuscito: {{message}}"
+  },
+  "builder": {
+    "open": "Costruisci un filtro visualmente",
+    "title": "Costruttore di filtri",
+    "combinator": "Corrispondenza",
+    "all": "Tutte le condizioni",
+    "any": "Almeno una condizione",
+    "field": "Campo {{number}}",
+    "fieldPlaceholder": "campo",
+    "operator": "Operatore {{number}}",
+    "value": "Valore {{number}}",
+    "listPlaceholder": "a, b, c",
+    "remove": "Rimuovi la condizione {{number}}",
+    "add": "Aggiungi condizione",
+    "preview": "Filtro",
+    "empty": "Compila un campo e un valore.",
+    "clear": "Svuota",
+    "apply": "Applica",
+    "applyRun": "Applica ed esegui",
+    "operators": {
+      "eq": "uguale a",
+      "ne": "diverso da",
+      "gt": "maggiore di",
+      "gte": "maggiore o uguale",
+      "lt": "minore di",
+      "lte": "minore o uguale",
+      "in": "è uno tra",
+      "nin": "non è nessuno tra",
+      "contains": "contiene",
+      "startsWith": "inizia con",
+      "exists": "esiste",
+      "missing": "è assente"
+    }
   }
 }
