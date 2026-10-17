@@ -29,6 +29,8 @@ interface ProfileDialogProps {
   open: boolean;
   /** Present when editing an existing profile. */
   profile?: ConnectionProfile | undefined;
+  /** The group a new connection starts in. */
+  defaultGroup?: string | undefined;
   onClose: () => void;
 }
 
@@ -44,14 +46,14 @@ interface FormState {
   sshHostKey: string | null;
 }
 
-function initialState(profile: ConnectionProfile | undefined): FormState {
+function initialState(profile: ConnectionProfile | undefined, defaultGroup?: string): FormState {
   return {
     name: profile?.name ?? "",
     connectionString: profile?.connectionString ?? "mongodb://localhost:27017",
     password: "",
     readOnly: profile?.readOnly ?? false,
     color: profile?.color ?? null,
-    group: profile?.group ?? "",
+    group: profile?.group ?? defaultGroup ?? "",
     ssh: {
       enabled: profile?.ssh != null,
       host: profile?.ssh?.host ?? "",
@@ -90,23 +92,23 @@ function toInput(form: FormState): ProfileInput {
   };
 }
 
-export function ProfileDialog({ open, profile, onClose }: ProfileDialogProps) {
+export function ProfileDialog({ open, profile, defaultGroup, onClose }: ProfileDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[calc(100vh-3rem)] overflow-y-auto sm:max-w-lg">
         {/* Radix unmounts closed content, so the form starts fresh on every open. */}
-        <ProfileForm profile={profile} onClose={onClose} />
+        <ProfileForm profile={profile} defaultGroup={defaultGroup} onClose={onClose} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
+function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps, "open">) {
   const { t } = useTranslation("connections");
   const { data: profiles = [] } = useProfiles();
   const groups = [...new Set(profiles.flatMap((p) => p.group ?? []))].sort();
   const id = useId();
-  const [form, setForm] = useState(() => initialState(profile));
+  const [form, setForm] = useState(() => initialState(profile, defaultGroup));
   const [submitted, setSubmitted] = useState(false);
   const save = useSaveProfile();
   const test = useTestConnection();

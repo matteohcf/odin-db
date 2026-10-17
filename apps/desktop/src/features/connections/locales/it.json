@@ -228,5 +228,16 @@
     "trustNew": "Considera attendibile la nuova chiave",
     "trustAndTest": "Considera attendibile e riprova",
     "trustNewAndTest": "Considera attendibile la nuova chiave e prova"
+  },
+  "group": {
+    "actions": "Azioni per il gruppo {{name}}",
+    "newConnection": "Nuova connessione in questo gruppo…",
+    "rename": "Rinomina gruppo…",
+    "renameTitle": "Rinomina {{name}}",
+    "renameDescription_one": "Sposta la sua {{count}} connessione sotto il nuovo nome. Un nome di gruppo esistente unisce i due.",
+    "renameDescription_other": "Sposta le sue {{count}} connessioni sotto il nuovo nome. Un nome di gruppo esistente unisce i due.",
+    "name": "Nome del gruppo",
+    "ungroup": "Separa",
+    "renameSubmit": "Rinomina"
   }
 }

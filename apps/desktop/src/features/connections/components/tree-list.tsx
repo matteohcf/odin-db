@@ -19,13 +19,21 @@ interface TreeListProps {
   onEdit: (profile: ConnectionProfile) => void;
   onDelete: (profile: ConnectionProfile) => void;
   onExport: (profile: ConnectionProfile) => void;
+  onNewConnection: (group: string) => void;
 }
 
 /**
  * The connection tree as one flat, virtualized list: a cluster with hundreds of databases
  * and thousands of collections renders only the rows in view.
  */
-export function TreeList({ profiles, scrollRef, onEdit, onDelete, onExport }: TreeListProps) {
+export function TreeList({
+  profiles,
+  scrollRef,
+  onEdit,
+  onDelete,
+  onExport,
+  onNewConnection,
+}: TreeListProps) {
   const rows = useTreeRows(profiles);
   const list = useRef<HTMLUListElement>(null);
   // Where the list starts in the scroller, below the favorites.
@@ -86,7 +94,13 @@ export function TreeList({ profiles, scrollRef, onEdit, onDelete, onExport }: Tr
             className="absolute inset-x-0 top-0"
             style={{ height: ROW_HEIGHT, transform: `translateY(${item.start - offset}px)` }}
           >
-            <Row row={row} onEdit={onEdit} onDelete={onDelete} onExport={onExport} />
+            <Row
+              row={row}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onExport={onExport}
+              onNewConnection={onNewConnection}
+            />
           </li>
         );
       })}
@@ -99,11 +113,19 @@ function Row({
   onEdit,
   onDelete,
   onExport,
+  onNewConnection,
 }: { row: TreeItem } & Omit<TreeListProps, "profiles" | "scrollRef">) {
   const { t } = useTranslation("connections");
   switch (row.kind) {
     case "group":
-      return <GroupNode name={row.name} count={row.count} collapsed={row.collapsed} />;
+      return (
+        <GroupNode
+          name={row.name}
+          count={row.count}
+          collapsed={row.collapsed}
+          onNewConnection={onNewConnection}
+        />
+      );
     case "profile":
       return (
         <ProfileNode

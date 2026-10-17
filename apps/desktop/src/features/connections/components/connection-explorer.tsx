@@ -42,7 +42,7 @@ const isMac = navigator.userAgent.includes("Mac");
 
 type DialogState =
   | { type: "closed" }
-  | { type: "create" }
+  | { type: "create"; group?: string }
   | { type: "edit"; profile: ConnectionProfile }
   | { type: "delete"; profile: ConnectionProfile };
 
@@ -237,6 +237,7 @@ export function ConnectionExplorer() {
               onExport={(profile) => void exportConnections([profile.id])}
               onEdit={(profile) => setDialog({ type: "edit", profile })}
               onDelete={(profile) => setDialog({ type: "delete", profile })}
+              onNewConnection={(group) => setDialog({ type: "create", group })}
             />
           </>
         )}
@@ -245,6 +246,7 @@ export function ConnectionExplorer() {
       <ProfileDialog
         open={dialog.type === "create" || dialog.type === "edit"}
         profile={dialog.type === "edit" ? dialog.profile : undefined}
+        defaultGroup={dialog.type === "create" ? dialog.group : undefined}
         onClose={closeDialog}
       />
       <HostKeyDialog />

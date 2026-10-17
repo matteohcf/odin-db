@@ -1,5 +1,6 @@
 import {
   type ConnectionId,
+  type ConnectionProfile,
   commands,
   type Namespace,
   type ProfileId,
@@ -19,6 +20,38 @@ export function useSaveProfile() {
       call(id ? commands.updateProfile(id, input) : commands.createProfile(input)),
     meta: { handlesErrors: true },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.profiles }),
+  });
+}
+
+/** Moves profiles into a group, or out of any with `null`; everything else is kept. */
+export function useSetGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      profiles,
+      group,
+    }: {
+      profiles: ConnectionProfile[];
+      group: string | null;
+    }) => {
+      for (const profile of profiles) {
+        await call(
+          commands.updateProfile(profile.id, {
+            name: profile.name,
+            connectionString: profile.connectionString,
+            // Null keeps the saved password, SSH secret and trusted host key.
+            password: null,
+            readOnly: profile.readOnly,
+            color: profile.color,
+            ssh: profile.ssh,
+            sshSecret: null,
+            sshHostKey: null,
+            group,
+          }),
+        );
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: connectionKeys.profiles }),
   });
 }
 

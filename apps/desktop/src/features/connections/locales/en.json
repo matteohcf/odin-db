@@ -228,5 +228,16 @@
     "trustNew": "Trust the new key",
     "trustAndTest": "Trust and test again",
     "trustNewAndTest": "Trust the new key and test"
+  },
+  "group": {
+    "actions": "Actions for group {{name}}",
+    "newConnection": "New connection in this group…",
+    "rename": "Rename group…",
+    "renameTitle": "Rename {{name}}",
+    "renameDescription_one": "Moves its {{count}} connection to the new name. An existing group name merges the two.",
+    "renameDescription_other": "Moves its {{count}} connections to the new name. An existing group name merges the two.",
+    "name": "Group name",
+    "ungroup": "Ungroup",
+    "renameSubmit": "Rename"
   }
 }
