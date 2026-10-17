@@ -5,60 +5,91 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * odin-db design tokens. Cool graphite neutrals let the data carry the color:
+ * the only accent is Odin indigo (selection, focus, primary actions), and BSON
+ * types each get one stable hue used in cells, headers and the editor.
+ */
 :root {
-  --radius: 0.5rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --success: oklch(0.6 0.15 150);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --radius: 0.375rem;
+
+  --background: #fbfbfd;
+  --foreground: #1a1a23;
+  --sidebar: #f3f3f7;
+  --card: #ffffff;
+  --card-foreground: #1a1a23;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a23;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #ececf2;
+  --secondary-foreground: #1a1a23;
+  --muted: #f0f0f4;
+  --muted-foreground: #6b6b7b;
+  --accent: #e9e9f0;
+  --accent-foreground: #1a1a23;
+  --selection: #4f46e51a;
+  --destructive: #d23a3a;
+  --success: #2f7d4f;
+  --warning: #9a5b00;
+  --border: #e3e3ea;
+  --input: #dcdce4;
+  --ring: #4f46e580;
+
+  --type-string: #2f7d4f;
+  --type-number: #2459c9;
+  --type-object-id: #9a5b00;
+  --type-date: #0e7490;
+  --type-boolean: #7c3aed;
+  --type-null: #8a8a99;
+  --type-binary: #8a8a99;
+  --type-structure: #6b6b7b;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --success: oklch(0.72 0.17 150);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #15151c;
+  --foreground: #e7e7ee;
+  --sidebar: #101016;
+  --card: #1b1b23;
+  --card-foreground: #e7e7ee;
+  --popover: #1d1d26;
+  --popover-foreground: #e7e7ee;
+  --primary: #8b85ff;
+  --primary-foreground: #121218;
+  --secondary: #23232e;
+  --secondary-foreground: #e7e7ee;
+  --muted: #1d1d26;
+  --muted-foreground: #9a9aab;
+  --accent: #262632;
+  --accent-foreground: #e7e7ee;
+  --selection: #8b85ff24;
+  --destructive: #f06363;
+  --success: #7ccf9a;
+  --warning: #e2b053;
+  --border: #2a2a35;
+  --input: #34343f;
+  --ring: #8b85ff80;
+
+  --type-string: #7ccf9a;
+  --type-number: #7aa7ff;
+  --type-object-id: #e2b053;
+  --type-date: #5cc8dc;
+  --type-boolean: #b69cff;
+  --type-null: #707082;
+  --type-binary: #8a8a9c;
+  --type-structure: #9a9aab;
 }
 
 @theme inline {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, monospace;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-sidebar: var(--sidebar);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -71,18 +102,43 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-selection: var(--selection);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-type-string: var(--type-string);
+  --color-type-number: var(--type-number);
+  --color-type-object-id: var(--type-object-id);
+  --color-type-date: var(--type-date);
+  --color-type-boolean: var(--type-boolean);
+  --color-type-null: var(--type-null);
+  --color-type-binary: var(--type-binary);
+  --color-type-structure: var(--type-structure);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
     @apply bg-background text-foreground antialiased;
+    font-size: 13px;
+    /* A desktop app: no rubber-band scrolling or accidental text selection of chrome. */
+    overscroll-behavior: none;
+    user-select: none;
+  }
+  input,
+  textarea,
+  [contenteditable],
+  .selectable {
+    user-select: text;
   }
 }

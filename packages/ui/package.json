@@ -15,7 +15,9 @@
   "dependencies": {
     "class-variance-authority": "catalog:",
     "cn": "catalog:",
+    "lucide-react": "catalog:",
     "radix-ui": "catalog:",
+    "sonner": "catalog:",
     "tw-animate-css": "catalog:"
   },
   "peerDependencies": {
