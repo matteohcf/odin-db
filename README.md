@@ -10,7 +10,7 @@ Document CRUD, query editor, index management, aggregation builder, backup/resto
 
 ## Installing
 
-Installers for macOS (Apple silicon and Intel), Windows and Linux (AppImage, deb, rpm) are attached to each [release](https://github.com/matteohcf/odin-db/releases). mongodump and mongorestore are included; the shell uses your installed [mongosh](https://www.mongodb.com/try/download/shell).
+Installers for macOS (Apple silicon and Intel), Windows and Linux (AppImage, deb, rpm) are attached to each [release](https://github.com/matteohcf/odin-db/releases). mongodump and mongorestore are included. The shell uses your installed [mongosh](https://www.mongodb.com/try/download/shell), or downloads and verifies it in one click.
 
 Early builds are not code-signed yet:
 
