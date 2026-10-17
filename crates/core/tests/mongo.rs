@@ -8,8 +8,11 @@
 use bson::{Binary, Bson, DateTime, Decimal128, Document, doc, oid::ObjectId, spec::BinarySubtype};
 use odin_core::connection::{ConnectionHandle, ConnectionManager, test_connection};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
+use odin_core::indexes::{self, CreateIndexRequest};
 use odin_core::profiles::{self, ConnectionProfile, ProfileInput};
-use odin_core::query::{CursorRegistry, FindRequest, Namespace, count_documents};
+use odin_core::query::{
+    AggregateRequest, CursorRegistry, FindRequest, Namespace, count_documents, preview_aggregation,
+};
 use odin_core::secrets::{MemoryStore, Secret};
 use odin_core::storage::Storage;
 use odin_core::{CoreError, browse, documents};
@@ -274,4 +277,125 @@ async fn wrong_credentials_are_reported_as_auth_errors() {
     let uri = fx.uri.replace("mongodb://", "mongodb://nobody@");
     let result = test_connection(&uri, Some(Secret::new("wrong"))).await;
     assert!(matches!(result, Err(CoreError::Auth(_))), "got {result:?}");
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn aggregates_with_paging_and_safe_previews() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("agg");
+    fx.seed(&handle, &ns, 300).await;
+    let cursors = CursorRegistry::default();
+    let stage = |d: Document| EJsonDocument::from(d);
+
+    let page = cursors
+        .aggregate(
+            &handle,
+            &ns,
+            AggregateRequest {
+                pipeline: vec![
+                    stage(doc! { "$match": { "n": { "$gte": 100 } } }),
+                    stage(doc! { "$sort": { "n": 1 } }),
+                ],
+                batch_size: 150,
+            },
+        )
+        .await
+        .expect("aggregate");
+    assert_eq!(page.documents.len(), 150);
+    let cursor = page.cursor_id.expect("more results");
+    let rest = cursors.fetch_more(cursor, 150).await.expect("rest");
+    assert_eq!(rest.documents.len(), 50);
+    assert_eq!(rest.cursor_id, None);
+
+    let preview = preview_aggregation(
+        &handle,
+        &ns,
+        vec![stage(
+            doc! { "$group": { "_id": null, "total": { "$sum": 1 } } },
+        )],
+        20,
+    )
+    .await
+    .expect("preview");
+    let total = Document::try_from(preview[0].clone()).expect("doc");
+    assert_eq!(total.get_i32("total").ok(), Some(300));
+
+    let writes = preview_aggregation(&handle, &ns, vec![stage(doc! { "$out": "copy" })], 20).await;
+    assert!(matches!(writes, Err(CoreError::Validation(_))));
+    let collections = browse::list_collections(&handle, "odin_test")
+        .await
+        .expect("list");
+    assert!(
+        collections.iter().all(|c| c.name != "copy"),
+        "preview must not write"
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn read_only_profiles_cannot_run_write_stages() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(true).await;
+    let result = CursorRegistry::default()
+        .aggregate(
+            &handle,
+            &namespace("locked"),
+            AggregateRequest {
+                pipeline: vec![EJsonDocument::from(doc! { "$out": "copy" })],
+                batch_size: 10,
+            },
+        )
+        .await;
+    assert!(matches!(result, Err(CoreError::ReadOnly)));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn creates_lists_and_drops_indexes() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("indexed");
+    fx.seed(&handle, &ns, 10).await;
+
+    let name = indexes::create(
+        &handle,
+        &ns,
+        CreateIndexRequest {
+            keys: EJsonDocument::from(doc! { "n": -1 }),
+            name: None,
+            unique: true,
+            sparse: false,
+            hidden: false,
+            expire_after_seconds: None,
+            partial_filter: Some(EJsonDocument::from(doc! { "n": { "$gt": 2 } })),
+        },
+    )
+    .await
+    .expect("create");
+    assert_eq!(name, "n_-1");
+
+    let listed = indexes::list(&handle, &ns).await.expect("list");
+    assert_eq!(
+        listed.iter().map(|i| i.name.as_str()).collect::<Vec<_>>(),
+        ["_id_", "n_-1"]
+    );
+    let created = &listed[1];
+    assert!(created.unique);
+    assert!(created.partial_filter.is_some());
+    assert!(created.size.is_some(), "sizes come from $collStats");
+
+    assert!(matches!(
+        indexes::drop(&handle, &ns, "_id_").await,
+        Err(CoreError::Validation(_))
+    ));
+    indexes::drop(&handle, &ns, "n_-1").await.expect("drop");
+    assert_eq!(indexes::list(&handle, &ns).await.expect("list").len(), 1);
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        indexes::drop(&read_only, &ns, "anything").await,
+        Err(CoreError::ReadOnly)
+    ));
 }

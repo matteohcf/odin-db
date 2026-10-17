@@ -51,6 +51,14 @@ pub struct FindRequest {
     pub batch_size: u32,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct AggregateRequest {
+    pub pipeline: Vec<EJsonDocument>,
+    pub batch_size: u32,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(transparent)]
@@ -110,7 +118,38 @@ impl CursorRegistry {
             find = find.limit(i64::from(limit));
         }
 
-        let mut cursor = find.await?;
+        let cursor = find.await?;
+        self.first_page(handle, cursor, batch_size).await
+    }
+
+    /// Runs an aggregation pipeline, paged exactly like `find`.
+    /// Write stages (`$out`, `$merge`) are refused on read-only connections.
+    pub async fn aggregate(
+        &self,
+        handle: &ConnectionHandle,
+        namespace: &Namespace,
+        request: AggregateRequest,
+    ) -> Result<DocumentPage, CoreError> {
+        let batch_size = validate_batch_size(request.batch_size)?;
+        let pipeline = to_pipeline(request.pipeline)?;
+        if has_write_stage(&pipeline) {
+            handle.ensure_writable()?;
+        }
+        let cursor = namespace
+            .collection(handle)?
+            .aggregate(pipeline)
+            .batch_size(batch_size)
+            .allow_disk_use(true)
+            .await?;
+        self.first_page(handle, cursor, batch_size).await
+    }
+
+    async fn first_page(
+        &self,
+        handle: &ConnectionHandle,
+        mut cursor: Cursor<Document>,
+        batch_size: u32,
+    ) -> Result<DocumentPage, CoreError> {
         let documents = read_batch(&mut cursor, batch_size).await?;
         if !cursor.has_next() {
             return Ok(DocumentPage {
@@ -171,6 +210,32 @@ impl CursorRegistry {
     }
 }
 
+/// The first `limit` results of a pipeline, for the stage previews of the
+/// aggregation builder. Nothing is kept open, and write stages are never run:
+/// a preview must not change data (ADR-0012).
+pub async fn preview_aggregation(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    pipeline: Vec<EJsonDocument>,
+    limit: u32,
+) -> Result<Vec<EJsonDocument>, CoreError> {
+    let limit = validate_batch_size(limit)?;
+    let mut pipeline = to_pipeline(pipeline)?;
+    if has_write_stage(&pipeline) {
+        return Err(CoreError::Validation(
+            "pipelines with $out or $merge cannot be previewed".into(),
+        ));
+    }
+    pipeline.push(bson::doc! { "$limit": i64::from(limit) });
+    let mut cursor = namespace
+        .collection(handle)?
+        .aggregate(pipeline)
+        .batch_size(limit)
+        .allow_disk_use(true)
+        .await?;
+    read_batch(&mut cursor, limit).await
+}
+
 pub async fn count_documents(
     handle: &ConnectionHandle,
     namespace: &Namespace,
@@ -182,6 +247,27 @@ pub async fn count_documents(
         .await?;
     #[allow(clippy::cast_precision_loss)]
     Ok(count as f64)
+}
+
+fn to_pipeline(stages: Vec<EJsonDocument>) -> Result<Vec<Document>, CoreError> {
+    stages
+        .into_iter()
+        .map(|stage| {
+            let stage = Document::try_from(stage)?;
+            if stage.len() != 1 || !stage.keys().all(|key| key.starts_with('$')) {
+                return Err(CoreError::Validation(
+                    "each stage must be a document with a single $operator".into(),
+                ));
+            }
+            Ok(stage)
+        })
+        .collect()
+}
+
+fn has_write_stage(pipeline: &[Document]) -> bool {
+    pipeline
+        .iter()
+        .any(|stage| stage.contains_key("$out") || stage.contains_key("$merge"))
 }
 
 fn validate_batch_size(batch_size: u32) -> Result<u32, CoreError> {
@@ -202,4 +288,39 @@ async fn read_batch(
         documents.push(EJsonDocument::from(cursor.deserialize_current()?));
     }
     Ok(documents)
+}
+
+#[cfg(test)]
+mod tests {
+    use bson::doc;
+
+    use super::*;
+
+    #[test]
+    fn pipelines_must_be_single_operator_stages() {
+        let valid = vec![EJsonDocument::from(doc! { "$match": { "a": 1 } })];
+        assert!(to_pipeline(valid).is_ok());
+
+        let two_keys = vec![EJsonDocument::from(doc! { "$match": {}, "$limit": 1 })];
+        assert!(matches!(
+            to_pipeline(two_keys),
+            Err(CoreError::Validation(_))
+        ));
+
+        let not_an_operator = vec![EJsonDocument::from(doc! { "match": {} })];
+        assert!(matches!(
+            to_pipeline(not_an_operator),
+            Err(CoreError::Validation(_))
+        ));
+    }
+
+    #[test]
+    fn detects_write_stages() {
+        assert!(has_write_stage(&[
+            doc! { "$match": {} },
+            doc! { "$out": "copy" }
+        ]));
+        assert!(has_write_stage(&[doc! { "$merge": { "into": "copy" } }]));
+        assert!(!has_write_stage(&[doc! { "$group": { "_id": "$a" } }]));
+    }
 }
