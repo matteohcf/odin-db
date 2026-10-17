@@ -45,7 +45,7 @@ import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
 import { compactEJson, type JsonObject } from "@/lib/ejson-display";
 import { toShellSyntax } from "@/lib/shell-syntax";
-import { columnWidth, dominantKind } from "../lib/columns";
+import { columnWidth, dominantKind, fitWidth } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
@@ -216,6 +216,12 @@ export function ResultsGrid({
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
     const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / ROW_HEIGHT) - 1;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "c" && selected) {
+      event.preventDefault();
+      void navigator.clipboard.writeText(toShellSyntax(multiple ? markedRows : selected));
+      toast.success(multiple ? t("rows.copied", { count: markedRows.length }) : t("row.copied"));
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "v" && actions.onPaste) {
       event.preventDefault();
       actions.onPaste();
@@ -303,8 +309,15 @@ export function ResultsGrid({
                       aria-sort={
                         sorted === 1 ? "ascending" : sorted === -1 ? "descending" : undefined
                       }
-                      className="group/header relative flex shrink-0 items-center border-r text-left font-medium"
-                      style={{ width: header.getSize() }}
+                      className={cn(
+                        "group/header relative flex shrink-0 items-center border-r text-left font-medium",
+                        // _id stays in view while wide documents scroll sideways.
+                        header.id === "_id" && "sticky z-20 bg-sidebar",
+                      )}
+                      style={{
+                        width: header.getSize(),
+                        ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
+                      }}
                       title={header.id}
                     >
                       {columnActions ? (
@@ -326,7 +339,12 @@ export function ResultsGrid({
                         aria-hidden
                         onMouseDown={header.getResizeHandler()}
                         onTouchStart={header.getResizeHandler()}
-                        onDoubleClick={() => header.column.resetSize()}
+                        onDoubleClick={() =>
+                          table.setColumnSizing((sizes) => ({
+                            ...sizes,
+                            [header.id]: fitWidth(rows, header.id),
+                          }))
+                        }
                         className={cn(
                           "absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize touch-none select-none",
                           "after:absolute after:inset-y-1 after:left-[3px] after:w-0.5 after:rounded-full after:bg-primary after:opacity-0 group-hover/header:after:opacity-40",
@@ -400,8 +418,17 @@ export function ResultsGrid({
                           event.stopPropagation();
                           setEditingCell({ index: item.index, field: header.id });
                         }}
-                        className="flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5"
-                        style={{ width: header.getSize() }}
+                        className={cn(
+                          "flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
+                          header.id === "_id" &&
+                            (isSelected
+                              ? "sticky z-[5] bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"
+                              : "sticky z-[5] bg-background"),
+                        )}
+                        style={{
+                          width: header.getSize(),
+                          ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
+                        }}
                       >
                         {editingCell?.index === item.index && editingCell.field === header.id ? (
                           <InlineCellEditor

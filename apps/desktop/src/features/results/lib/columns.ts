@@ -1,5 +1,5 @@
 import type { CellData, RowData, TableFeatures } from "@tanstack/react-table";
-import { describeEJson, type EJsonKind, type JsonObject } from "@/lib/ejson-display";
+import { compactEJson, describeEJson, type EJsonKind, type JsonObject } from "@/lib/ejson-display";
 
 const SAMPLE_SIZE = 100;
 
@@ -47,4 +47,22 @@ declare module "@tanstack/react-table" {
   > {
     kind: EJsonKind | undefined;
   }
+}
+
+/** Monospace width per character at the grid's font size, plus cell padding. */
+const CHAR_WIDTH = 7.3;
+const CELL_PADDING = 40;
+
+/** A width that shows the longest value among the first rows, within limits. */
+export function fitWidth(rows: readonly JsonObject[], key: string): number {
+  let longest = key.length;
+  for (const row of rows.slice(0, 200)) {
+    const value = row[key];
+    if (value === undefined) continue;
+    const { kind, text } = compactEJson(value);
+    // Documents and arrays show a short summary ("3 fields"), not their text.
+    const length = kind === "document" || kind === "array" ? 12 : text.length;
+    longest = Math.max(longest, length);
+  }
+  return Math.round(Math.min(640, Math.max(64, longest * CHAR_WIDTH + CELL_PADDING)));
 }
