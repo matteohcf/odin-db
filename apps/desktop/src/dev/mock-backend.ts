@@ -156,6 +156,49 @@ function serverOf(connectionId: string) {
   return { connection, databases: servers.local ?? {} };
 }
 
+/** Orders by each sort key in turn; numbers and dates compare by value, the rest as text. */
+function sortDocs(docs: Doc[], sort: Doc): Doc[] {
+  const scalar = (value: JsonValue | undefined): number | string => {
+    if (value === undefined || value === null) return "";
+    if (typeof value !== "object" || Array.isArray(value))
+      return typeof value === "number" ? value : String(value);
+    const inner = Object.values(value)[0];
+    if ("$date" in value) return Number((inner as Doc).$numberLong ?? inner);
+    if (["$numberInt", "$numberLong", "$numberDouble", "$numberDecimal"].some((k) => k in value))
+      return Number(inner);
+    return JSON.stringify(value);
+  };
+  const keys = Object.entries(sort).map(([field, direction]) => ({
+    field,
+    direction: Number(scalar(direction)) < 0 ? -1 : 1,
+  }));
+  return [...docs].sort((a, b) => {
+    for (const { field, direction } of keys) {
+      const left = scalar(
+        field
+          .split(".")
+          .reduce<JsonValue | undefined>(
+            (doc, part) =>
+              doc && typeof doc === "object" && !Array.isArray(doc) ? doc[part] : undefined,
+            a,
+          ),
+      );
+      const right = scalar(
+        field
+          .split(".")
+          .reduce<JsonValue | undefined>(
+            (doc, part) =>
+              doc && typeof doc === "object" && !Array.isArray(doc) ? doc[part] : undefined,
+            b,
+          ),
+      );
+      if (left < right) return -direction;
+      if (left > right) return direction;
+    }
+    return 0;
+  });
+}
+
 function collectionOf(connectionId: string, database: string, collection: string) {
   const { connection, databases } = serverOf(connectionId);
   databases[database] ??= {};
@@ -877,6 +920,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const request = args.request as FindRequest;
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
     let docs = coll.docs.filter((doc) => matchesFilter(doc, request.filter as Doc));
+    if (request.sort) docs = sortDocs(docs, request.sort as Doc);
     docs = docs.slice(
       request.skip ?? 0,
       request.limit ? (request.skip ?? 0) + request.limit : undefined,

@@ -7,14 +7,22 @@ import {
   ContextMenuTrigger,
 } from "@odin-db/ui/components/context-menu";
 import { cn } from "@odin-db/ui/lib/utils";
-import { createColumnHelper, tableFeatures, useTable } from "@tanstack/react-table";
+import {
+  columnResizingFeature,
+  columnSizingFeature,
+  createColumnHelper,
+  tableFeatures,
+  useTable,
+} from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Copy, CopyPlus, Eye, Pencil, Trash2 } from "lucide-react";
-import { type KeyboardEvent, useEffect, useId, useMemo, useRef } from "react";
+import { ArrowDown, ArrowUp, Copy, CopyPlus, Eye, Filter, Pencil, Trash2 } from "lucide-react";
+import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
 import type { JsonObject } from "@/lib/ejson-display";
+import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnWidth, dominantKind } from "../lib/columns";
 
 const ROW_HEIGHT = 30;
@@ -22,7 +30,7 @@ const INDEX_WIDTH = 56;
 /** Start fetching the next page this many rows before the end. */
 const PREFETCH_ROWS = 40;
 
-const features = tableFeatures({});
+const features = tableFeatures({ columnSizingFeature, columnResizingFeature });
 const helper = createColumnHelper<typeof features, JsonObject>();
 
 /** Row commands. Omitting `onDuplicate`/`onDelete` makes the results view-only. */
@@ -34,6 +42,15 @@ export interface RowActions {
   onDelete?: ((row: JsonObject) => void) | undefined;
 }
 
+/** Query shortcuts from the grid. Omitted where results do not come from a query bar. */
+export interface ColumnActions {
+  sort: { field: string; direction: 1 | -1 } | null;
+  /** `null` removes the sort. */
+  onSort: (field: string, direction: 1 | -1 | null) => void;
+  /** `undefined` means the document has no such field. */
+  onFilterBy: (field: string, value: JsonValue | undefined) => void;
+}
+
 interface ResultsGridProps {
   label: string;
   rows: readonly JsonObject[];
@@ -43,6 +60,7 @@ interface ResultsGridProps {
   onSelect: (index: number) => void;
   onLoadMore: () => void;
   actions: RowActions;
+  columnActions?: ColumnActions | undefined;
 }
 
 /**
@@ -61,11 +79,14 @@ export function ResultsGrid({
   onSelect,
   onLoadMore,
   actions,
+  columnActions,
 }: ResultsGridProps) {
   const { t } = useTranslation("results");
   const { onOpen, openMode, onCopy, onDuplicate, onDelete } = actions;
   const gridId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
+  // The column under the pointer when the context menu opened, for cell actions.
+  const [menuColumn, setMenuColumn] = useState<string | null>(null);
 
   // Column types are sampled when a result set first arrives, not on every page.
   const hasRows = rows.length > 0;
@@ -76,16 +97,25 @@ export function ResultsGrid({
       return helper.accessor((row): JsonValue | undefined => row[key], {
         id: key,
         header: key,
-        meta: { kind, width: columnWidth(key, kind) },
+        size: columnWidth(key, kind),
+        minSize: 64,
+        maxSize: 1600,
+        meta: { kind },
       });
     });
     return helper.columns(defs);
   }, [columns, hasRows]);
 
-  const table = useTable({ features, columns: columnDefs, data: rows as JsonObject[] });
+  // Widths the user sets survive new runs of the query: sizing state is keyed by field.
+  const table = useTable({
+    features,
+    columns: columnDefs,
+    data: rows as JsonObject[],
+    columnResizeMode: "onChange",
+  });
   const headers = table.getHeaderGroups()[0]?.headers ?? [];
-  const totalWidth =
-    INDEX_WIDTH + headers.reduce((sum, header) => sum + widthOf(header.column.columnDef.meta), 0);
+  const totalWidth = INDEX_WIDTH + table.getTotalSize();
+  const resizing = headers.some((header) => header.column.getIsResizing());
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -142,7 +172,10 @@ export function ResultsGrid({
             aria-rowcount={rows.length + 1}
             aria-activedescendant={selected ? `${gridId}-row-${selectedIndex}` : undefined}
             onKeyDown={onKeyDown}
-            className="grid border-collapse outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className={cn(
+              "grid border-collapse outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              resizing && "cursor-col-resize select-none",
+            )}
             style={{ width: totalWidth, minWidth: "100%" }}
           >
             <thead className="sticky top-0 z-10 grid">
@@ -154,15 +187,56 @@ export function ResultsGrid({
                 />
                 {headers.map((header) => {
                   const meta = header.column.columnDef.meta;
+                  const sorted =
+                    columnActions?.sort?.field === header.id ? columnActions.sort.direction : null;
+                  const label = (
+                    <>
+                      {meta?.kind && <TypeIcon kind={meta.kind} />}
+                      <span className="truncate text-foreground">{header.id}</span>
+                      {sorted === 1 && <ArrowUp className="size-3 shrink-0 text-primary" />}
+                      {sorted === -1 && <ArrowDown className="size-3 shrink-0 text-primary" />}
+                    </>
+                  );
                   return (
                     <th
                       key={header.id}
-                      className="flex shrink-0 items-center gap-1.5 border-r px-2.5 text-left font-medium"
-                      style={{ width: widthOf(meta) }}
+                      aria-sort={
+                        sorted === 1 ? "ascending" : sorted === -1 ? "descending" : undefined
+                      }
+                      className="group/header relative flex shrink-0 items-center border-r text-left font-medium"
+                      style={{ width: header.getSize() }}
                       title={header.id}
                     >
-                      {meta?.kind && <TypeIcon kind={meta.kind} />}
-                      <span className="truncate text-foreground">{header.id}</span>
+                      {columnActions ? (
+                        // Ascending, descending, then back to the natural order.
+                        <button
+                          type="button"
+                          className="flex h-full min-w-0 flex-1 items-center gap-1.5 px-2.5 text-left outline-none hover:bg-accent/60 focus-visible:bg-accent"
+                          onClick={() =>
+                            columnActions.onSort(
+                              header.id,
+                              sorted === null ? 1 : sorted === 1 ? -1 : null,
+                            )
+                          }
+                        >
+                          {label}
+                        </button>
+                      ) : (
+                        <span className="flex min-w-0 flex-1 items-center gap-1.5 px-2.5">
+                          {label}
+                        </span>
+                      )}
+                      <div
+                        aria-hidden
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        onDoubleClick={() => header.column.resetSize()}
+                        className={cn(
+                          "absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize touch-none select-none",
+                          "after:absolute after:inset-y-1 after:left-[3px] after:w-0.5 after:rounded-full after:bg-primary after:opacity-0 group-hover/header:after:opacity-40",
+                          header.column.getIsResizing() && "after:opacity-100!",
+                        )}
+                      />
                     </th>
                   );
                 })}
@@ -180,7 +254,11 @@ export function ResultsGrid({
                     aria-rowindex={item.index + 2}
                     aria-selected={isSelected}
                     onMouseDown={() => onSelect(item.index)}
-                    onContextMenu={() => onSelect(item.index)}
+                    onContextMenu={(event) => {
+                      onSelect(item.index);
+                      // Cells set their column first; the row number has none.
+                      if (!(event.target as HTMLElement).closest("td")) setMenuColumn(null);
+                    }}
                     onDoubleClick={() => onOpen(row)}
                     className={cn(
                       "absolute left-0 flex w-full border-b border-border/60",
@@ -204,8 +282,9 @@ export function ResultsGrid({
                     {headers.map((header) => (
                       <td
                         key={header.id}
+                        onContextMenu={() => setMenuColumn(header.id)}
                         className="flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5"
-                        style={{ width: widthOf(header.column.columnDef.meta) }}
+                        style={{ width: header.getSize() }}
                       >
                         <EJsonCell value={row[header.id]} />
                       </td>
@@ -218,7 +297,32 @@ export function ResultsGrid({
         </div>
       </ContextMenuTrigger>
       {selected && (
-        <ContextMenuContent className="w-52">
+        <ContextMenuContent className="w-60">
+          {menuColumn !== null && (
+            <>
+              <ContextMenuItem
+                disabled={selected[menuColumn] === undefined}
+                onSelect={() => {
+                  const value = selected[menuColumn];
+                  if (value === undefined) return;
+                  void navigator.clipboard.writeText(toShellSyntax(value));
+                  toast.success(t("row.copied"));
+                }}
+              >
+                <Copy />
+                <span className="truncate">{t("cell.copy", { field: menuColumn })}</span>
+              </ContextMenuItem>
+              {columnActions && (
+                <ContextMenuItem
+                  onSelect={() => columnActions.onFilterBy(menuColumn, selected[menuColumn])}
+                >
+                  <Filter />
+                  <span className="truncate">{t("cell.filter", { field: menuColumn })}</span>
+                </ContextMenuItem>
+              )}
+              <ContextMenuSeparator />
+            </>
+          )}
           <ContextMenuItem onSelect={() => onOpen(selected)}>
             {openMode === "view" ? <Eye /> : <Pencil />}
             {openMode === "view" ? t("row.view") : t("row.edit")}
@@ -246,8 +350,4 @@ export function ResultsGrid({
       )}
     </ContextMenu>
   );
-}
-
-function widthOf(meta: { width: number } | undefined): number {
-  return meta?.width ?? 200;
 }

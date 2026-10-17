@@ -26,5 +26,9 @@
     "save": "Save",
     "insert": "Insert",
     "saving": "Saving…"
+  },
+  "cell": {
+    "copy": "Copy {{field}} value",
+    "filter": "Filter by this {{field}}"
   }
 }

@@ -3,7 +3,7 @@ import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronDown, Play } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
@@ -45,6 +45,10 @@ export function QueryBar({
   const hasOptions = hasOptionsIn(form);
   const isEmpty = !hasOptions && form.filter.trim() === "";
   const [expanded, setExpanded] = useState(hasOptions);
+  // A sort set from outside (a grid header, history) should be visible.
+  useEffect(() => {
+    if (hasOptions) setExpanded(true);
+  }, [hasOptions]);
   const showOptions = expanded || errors.sort || errors.projection || errors.skip || errors.limit;
 
   const completionsFor = useQueryCompletions(fields);
@@ -77,13 +81,7 @@ export function QueryBar({
             autoFocus
           />
         </QueryFieldFrame>
-        <QueryHistoryMenu
-          historyKey={historyKey}
-          onSelect={(entry) => {
-            if (hasOptionsIn(entry)) setExpanded(true);
-            onRunForm(entry);
-          }}
-        />
+        <QueryHistoryMenu historyKey={historyKey} onSelect={onRunForm} />
         <Button
           variant="ghost"
           size="sm"

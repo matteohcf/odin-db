@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsState } from "../hooks/use-results";
 import type { ResultsController } from "../lib/results-controller";
-import { ResultsGrid, type RowActions } from "./results-grid";
+import { type ColumnActions, ResultsGrid, type RowActions } from "./results-grid";
 
 interface ResultsPanelProps {
   controller: ResultsController;
@@ -16,6 +16,7 @@ interface ResultsPanelProps {
   selectedIndex: number | null;
   onSelect: (index: number | null) => void;
   actions: RowActions;
+  columnActions?: ColumnActions | undefined;
 }
 
 /** Results area: loading, error, empty and grid states for one controller. */
@@ -27,6 +28,7 @@ export function ResultsPanel({
   selectedIndex,
   onSelect,
   actions,
+  columnActions,
 }: ResultsPanelProps) {
   const { t } = useTranslation("results");
   const rows = useResultsState(controller, (s) => s.rows);
@@ -73,6 +75,7 @@ export function ResultsPanel({
       onSelect={onSelect}
       onLoadMore={loadMore}
       actions={actions}
+      columnActions={columnActions}
     />
   );
 }

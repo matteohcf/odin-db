@@ -36,6 +36,7 @@ import {
   useInsertDocument,
   useReplaceDocument,
 } from "../api/mutations";
+import { addFilterCondition, singleFieldSort, sortText } from "../lib/query-edits";
 import {
   emptyQueryForm,
   type FindQuery,
@@ -213,6 +214,20 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
 
       <ResultsPanel
         controller={results}
+        columnActions={{
+          sort: singleFieldSort(form.sort),
+          onSort: (field, direction) =>
+            void runForm({ ...form, sort: sortText(direction ? { field, direction } : null) }),
+          onFilterBy: (field, value) =>
+            void runForm({
+              ...form,
+              filter: addFilterCondition(
+                form.filter,
+                field,
+                value === undefined ? "{ $exists: false }" : toShellSyntax(value, 0),
+              ),
+            }),
+        }}
         label={t("results.label", { collection: namespace.collection })}
         selectedIndex={selectedIndex}
         onSelect={setSelectedIndex}

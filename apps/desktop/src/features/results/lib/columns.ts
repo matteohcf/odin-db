@@ -46,6 +46,5 @@ declare module "@tanstack/react-table" {
     TValue extends CellData,
   > {
     kind: EJsonKind | undefined;
-    width: number;
   }
 }
