@@ -1,0 +1,76 @@
+{
+  "header": {
+    "readOnly": "Read-only",
+    "readOnlyHint": "This connection is read-only. Documents can be viewed but not changed.",
+    "refresh": "Run again",
+    "insert": "Insert document",
+    "view": "View",
+    "viewHint": "Views are read-only. Change documents in the source collection instead."
+  },
+  "query": {
+    "filter": "Filter",
+    "sort": "Sort",
+    "projection": "Projection",
+    "skip": "Skip",
+    "limit": "Limit",
+    "run": "Run",
+    "runShortcut": "Run query",
+    "options": "Sort and projection",
+    "filterPlaceholder": "{ status: \"active\", age: { $gt: 30 } }",
+    "sortPlaceholder": "{ createdAt: -1 }",
+    "projectionPlaceholder": "{ name: 1, email: 1 }",
+    "numberPlaceholder": "0",
+    "invalidNumber": "Use a whole number of 0 or more."
+  },
+  "results": {
+    "label": "Documents in {{collection}}",
+    "loading": "Running query…",
+    "empty": "No documents match this filter.",
+    "emptyCollection": "This collection is empty.",
+    "failed": "The query failed",
+    "row": "Document {{index}}",
+    "emptyView": "This view returns no documents."
+  },
+  "status": {
+    "loaded_one": "{{count, number}} document",
+    "loaded_other": "{{count, number}} documents",
+    "more": "Scroll for more",
+    "truncated": "Showing the first {{count}}. Narrow the filter to see the rest.",
+    "duration": "{{ms}} ms",
+    "count": "Count matches",
+    "counting": "Counting…",
+    "counted_one": "{{count, number}} match in total",
+    "counted_other": "{{count, number}} matches in total"
+  },
+  "row": {
+    "edit": "Edit document",
+    "view": "View document",
+    "duplicate": "Duplicate",
+    "copy": "Copy as shell syntax",
+    "copied": "Copied to clipboard",
+    "delete": "Delete document"
+  },
+  "editor": {
+    "editTitle": "Edit document",
+    "viewTitle": "View document",
+    "insertTitle": "Insert document",
+    "description": "Document in {{namespace}}, written in mongosh syntax. Press {{shortcut}} to save.",
+    "label": "Document",
+    "save": "Save",
+    "insert": "Insert",
+    "saving": "Saving…",
+    "saved": "Document saved",
+    "inserted": "Document inserted"
+  },
+  "delete": {
+    "title": "Delete this document?",
+    "body": "The document with _id {{id}} is permanently removed from {{collection}}.",
+    "confirm": "Delete document",
+    "deleted": "Document deleted"
+  },
+  "disconnected": {
+    "title": "{{name}} is disconnected",
+    "body": "Connect again to query {{namespace}}.",
+    "connect": "Connect"
+  }
+}

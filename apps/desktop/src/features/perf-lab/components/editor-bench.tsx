@@ -5,12 +5,12 @@ import { Button } from "@odin-db/ui/components/button";
 import { basicSetup } from "codemirror";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { startStream } from "../../../lib/streaming";
-import { type AutorunProps, useAutorun } from "../hooks/use-autorun";
-import { budgets } from "../lib/budgets";
-import { runScrollBenchmark } from "../lib/frame-stats";
-import { afterPaint, formatDuration, formatFrames } from "../lib/metrics";
-import { useBenchResults } from "../store/bench-results-store";
+import { type AutorunProps, useAutorun } from "@/features/perf-lab/hooks/use-autorun";
+import { budgets } from "@/features/perf-lab/lib/budgets";
+import { runScrollBenchmark } from "@/features/perf-lab/lib/frame-stats";
+import { afterPaint, formatDuration, formatFrames } from "@/features/perf-lab/lib/metrics";
+import { useBenchResults } from "@/features/perf-lab/store/bench-results-store";
+import { startStream } from "@/lib/streaming";
 
 // Roughly 5 MB of pretty-printed canonical EJSON.
 const DOCUMENT_COUNT = 7_500;

@@ -1,5 +1,5 @@
 import type { AppInfo } from "@odin-db/bindings";
-import type { Metric } from "../store/bench-results-store";
+import type { Metric } from "@/features/perf-lab/store/bench-results-store";
 
 export function buildReport(
   info: AppInfo | undefined,

@@ -1,33 +1,41 @@
 import type { JsonValue } from "@odin-db/bindings";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useTranslation } from "react-i18next";
-import { describeEJson, type EJsonKind } from "../../../lib/ejson-display";
+import { compactEJson, describeEJson, type EJsonKind } from "@/lib/ejson-display";
 
-const kindClass: Record<EJsonKind, string> = {
-  null: "text-muted-foreground italic",
-  boolean: "text-purple-600 dark:text-purple-400",
-  number: "text-blue-600 dark:text-blue-400",
-  string: "text-foreground",
-  objectId: "text-amber-700 dark:text-amber-400",
-  date: "text-teal-700 dark:text-teal-400",
-  binary: "text-muted-foreground",
-  document: "text-muted-foreground",
-  array: "text-muted-foreground",
+export const kindTextClass: Record<EJsonKind, string> = {
+  null: "text-type-null italic",
+  boolean: "text-type-boolean",
+  number: "text-type-number",
+  string: "text-type-string",
+  objectId: "text-type-object-id",
+  date: "text-type-date",
+  binary: "text-type-binary",
+  document: "text-type-structure",
+  array: "text-type-structure",
   other: "text-foreground",
 };
 
+/** One BSON value in a grid cell: typed color, nested values summarized. */
 export function EJsonCell({ value }: { value: JsonValue | undefined }) {
-  const { t } = useTranslation("perfLab");
+  const { t } = useTranslation("common");
   if (value === undefined) return null;
 
-  const { kind, text } = describeEJson(value);
-  // Nested values are summarized in the grid; the full value belongs to the tree view.
+  const { kind, text } = compactEJson(value);
   const label =
     kind === "document" && typeof value === "object" && value !== null
-      ? t("cell.fields", { count: Object.keys(value).length })
+      ? t("value.fields", { count: Object.keys(value).length })
       : kind === "array" && Array.isArray(value)
-        ? t("cell.items", { count: value.length })
+        ? t("value.items", { count: value.length })
         : text;
 
-  return <span className={cn("truncate font-mono text-xs", kindClass[kind])}>{label}</span>;
+  return (
+    <span
+      className={cn("truncate font-mono text-xs", kindTextClass[kind], text === "" && "italic")}
+      // The exact mongosh form, e.g. NumberLong("5"), stays one hover away.
+      title={describeEJson(value).text}
+    >
+      {text === "" && kind === "string" ? '""' : label}
+    </span>
+  );
 }

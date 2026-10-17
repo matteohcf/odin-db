@@ -1,6 +1,6 @@
 import type { EJsonDocument, IpcError } from "@odin-db/bindings";
 import { createStore } from "zustand/vanilla";
-import { isJsonObject, type JsonObject } from "../../../lib/ejson-display";
+import { isJsonObject, type JsonObject } from "@/lib/ejson-display";
 
 type ResultStatus =
   | { type: "idle" }

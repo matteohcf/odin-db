@@ -23,12 +23,6 @@
     "failed": "Failed: {{message}}",
     "cancelled": "Cancelled"
   },
-  "cell": {
-    "fields_one": "{ {{count}} field }",
-    "fields_other": "{ {{count}} fields }",
-    "items_one": "[ {{count}} element ]",
-    "items_other": "[ {{count}} elements ]"
-  },
   "results": {
     "title": "Results",
     "empty": "Run a benchmark to see results.",

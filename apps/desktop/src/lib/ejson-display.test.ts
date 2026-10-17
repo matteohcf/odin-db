@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeEJson } from "./ejson-display";
+import { compactEJson, describeEJson } from "./ejson-display";
 
 describe("describeEJson", () => {
   it.each([
@@ -35,5 +35,19 @@ describe("describeEJson", () => {
 
   it("treats objects with several keys as documents even if one starts with $", () => {
     expect(describeEJson({ $oid: "x", other: 1 }).kind).toBe("document");
+  });
+});
+
+describe("compactEJson", () => {
+  it.each([
+    ["plain", "plain"],
+    [{ $oid: "650000000000000000000001" }, "650000000000000000000001"],
+    [{ $numberLong: "42" }, "42"],
+    [{ $numberDecimal: "1.10" }, "1.10"],
+    [{ $numberDouble: "5" }, "5.0"],
+    [{ $date: { $numberLong: "0" } }, "1970-01-01 00:00:00.000 UTC"],
+    [{ a: 1 }, "{ a: 1 }"],
+  ] as const)("renders %j as %s", (input, text) => {
+    expect(compactEJson(input).text).toBe(text);
   });
 });

@@ -10,9 +10,15 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "catalog:",
     "@codemirror/lang-json": "catalog:",
+    "@codemirror/language": "catalog:",
+    "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
-    "@fontsource-variable/inter": "catalog:",
+    "@fontsource-variable/ibm-plex-sans": "catalog:",
+    "@fontsource/ibm-plex-mono": "catalog:",
+    "@lezer/highlight": "catalog:",
+    "@mongodb-js/shell-bson-parser": "catalog:",
     "@odin-db/bindings": "workspace:*",
     "@odin-db/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
@@ -22,11 +28,14 @@
     "@xterm/addon-fit": "catalog:",
     "@xterm/addon-webgl": "catalog:",
     "@xterm/xterm": "catalog:",
+    "bson": "catalog:",
     "codemirror": "catalog:",
     "i18next": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
+    "sonner": "catalog:",
     "zustand": "catalog:"
   },
   "devDependencies": {

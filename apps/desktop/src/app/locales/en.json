@@ -1,3 +1,7 @@
 {
-  "title": "odin-db"
+  "title": "odin-db",
+  "welcome": {
+    "title": "Open a collection",
+    "body": "Connect to a server in the sidebar, then pick a collection to browse, query and edit its documents."
+  }
 }

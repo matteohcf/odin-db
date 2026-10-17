@@ -1,0 +1,34 @@
+{
+  "value": {
+    "fields_one": "{ {{count}} field }",
+    "fields_other": "{ {{count}} fields }",
+    "items_one": "[ {{count}} element ]",
+    "items_other": "[ {{count}} elements ]"
+  },
+  "types": {
+    "null": "Null",
+    "boolean": "Boolean",
+    "number": "Number",
+    "string": "String",
+    "objectId": "ObjectId",
+    "date": "Date",
+    "binary": "Binary",
+    "document": "Document",
+    "array": "Array",
+    "other": "Other"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "errors": {
+    "unexpected": "Something went wrong: {{message}}"
+  },
+  "theme": {
+    "label": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  }
+}

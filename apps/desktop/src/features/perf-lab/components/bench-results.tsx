@@ -1,10 +1,10 @@
 import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { useTranslation } from "react-i18next";
-import { useAppInfo } from "../api/use-app-info";
-import { jsHeapMb } from "../lib/metrics";
-import { buildReport } from "../lib/report";
-import { useBenchResults } from "../store/bench-results-store";
+import { useAppInfo } from "@/features/perf-lab/api/use-app-info";
+import { jsHeapMb } from "@/features/perf-lab/lib/metrics";
+import { buildReport } from "@/features/perf-lab/lib/report";
+import { useBenchResults } from "@/features/perf-lab/store/bench-results-store";
 
 export function BenchResults() {
   const { t } = useTranslation("perfLab");

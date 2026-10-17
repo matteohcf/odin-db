@@ -109,3 +109,32 @@ function formatDate(inner: JsonValue | undefined): string {
 function formatKey(key: string): string {
   return /^[A-Za-z_$][\w$]*$/.test(key) ? key : JSON.stringify(key);
 }
+
+/**
+ * Grid rendering: the bare value, since the column header and the color already
+ * carry the type. Strings lose their quotes, ObjectIds and numbers their wrappers,
+ * dates read as UTC timestamps. Anything else falls back to `describeEJson`.
+ */
+export function compactEJson(value: JsonValue): { kind: EJsonKind; text: string } {
+  const described = describeEJson(value);
+  if (typeof value === "string") return { kind: "string", text: value };
+  if (!isJsonObject(value)) return described;
+
+  const [key] = Object.keys(value);
+  const inner = key === undefined ? undefined : value[key];
+  switch (described.kind) {
+    case "objectId":
+      return { kind: "objectId", text: String(inner) };
+    case "date": {
+      const millis = isJsonObject(inner) ? Number(inner.$numberLong) : Number.NaN;
+      const date = new Date(millis);
+      return Number.isNaN(date.getTime())
+        ? described
+        : { kind: "date", text: date.toISOString().replace("T", " ").replace("Z", " UTC") };
+    }
+    case "number":
+      return key === "$numberDouble" ? described : { kind: "number", text: String(inner) };
+    default:
+      return described;
+  }
+}

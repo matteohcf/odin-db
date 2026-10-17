@@ -1,0 +1,56 @@
+{
+  "explorer": {
+    "title": "Connections",
+    "new": "New connection",
+    "label": "Connections and databases",
+    "emptyTitle": "No connections yet",
+    "emptyBody": "Add a MongoDB server with its connection string. Passwords are stored in your system keychain.",
+    "loadFailed": "Couldn't load connections: {{message}}"
+  },
+  "profile": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "edit": "Edit…",
+    "delete": "Delete…",
+    "actions": "Actions for {{name}}",
+    "readOnly": "Read-only",
+    "connecting": "Connecting…",
+    "connected": "Connected to MongoDB {{version}}",
+    "connectFailed": "Couldn't connect to {{name}}"
+  },
+  "tree": {
+    "loading": "Loading…",
+    "noDatabases": "No databases",
+    "noCollections": "No collections",
+    "failed": "Couldn't load: {{message}}",
+    "view": "View",
+    "timeseries": "Time series"
+  },
+  "dialog": {
+    "createTitle": "New connection",
+    "editTitle": "Edit connection",
+    "description": "Paste the connection string from your provider or write one by hand.",
+    "name": "Name",
+    "namePlaceholder": "Local development",
+    "connectionString": "Connection string",
+    "connectionStringHint": "If it contains a password, odin-db moves it to your keychain.",
+    "password": "Password",
+    "passwordPlaceholder": "Optional",
+    "passwordSaved": "Saved in keychain. Leave empty to keep it.",
+    "readOnly": "Read-only connection",
+    "readOnlyHint": "Blocks every change to data from odin-db. Recommended for production.",
+    "test": "Test connection",
+    "testing": "Testing…",
+    "testOk": "Connected to MongoDB {{version}}",
+    "save": "Save",
+    "saveAndConnect": "Save and connect",
+    "saving": "Saving…",
+    "nameRequired": "Give this connection a name.",
+    "connectionStringRequired": "Enter a connection string, for example mongodb://localhost:27017."
+  },
+  "delete": {
+    "title": "Delete {{name}}?",
+    "body": "The connection and its saved password are removed from this computer. Your data on the server is not affected.",
+    "confirm": "Delete connection"
+  }
+}
