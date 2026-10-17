@@ -32,6 +32,8 @@ interface BulkWriteDialogProps {
   filter: EJsonDocument;
   completions: CompletionSource;
   onDone: () => void;
+  /** Replaces the default "deleted" message, e.g. to offer an undo. */
+  onDeleted?: ((count: number) => void) | undefined;
   onClose: () => void;
 }
 
@@ -43,6 +45,7 @@ export function BulkWriteDialog({
   filter,
   completions,
   onDone,
+  onDeleted,
   onClose,
 }: BulkWriteDialogProps) {
   const { t } = useTranslation("documents");
@@ -79,7 +82,8 @@ export function BulkWriteDialog({
         );
       } else {
         const deleted = await deleteMany.mutateAsync(target);
-        toast.success(t("bulk.deleted", { count: deleted ?? 0 }));
+        if (onDeleted) onDeleted(deleted ?? 0);
+        else toast.success(t("bulk.deleted", { count: deleted ?? 0 }));
       }
     } catch (cause) {
       setError(errorMessage(cause));

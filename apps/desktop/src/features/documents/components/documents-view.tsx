@@ -97,9 +97,12 @@ export function DocumentsView({
   const [transfer, setTransfer] = useState<"import" | "export" | null>(null);
   const [codeQuery, setCodeQuery] = useState<FindQuery | null>(null);
   const [distinct, setDistinct] = useState<{ field: string; filter: EJsonDocument } | null>(null);
-  const [bulk, setBulk] = useState<{ mode: "update" | "delete"; filter: EJsonDocument } | null>(
-    null,
-  );
+  const [bulk, setBulk] = useState<{
+    mode: "update" | "delete";
+    filter: EJsonDocument;
+    /** The selected documents being deleted, kept to undo the delete. */
+    rows?: JsonObject[];
+  } | null>(null);
 
   const [form, setForm] = useState<QueryForm>(emptyQueryForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<QueryField, string>>>({});
@@ -229,14 +232,37 @@ export function DocumentsView({
     refresh(true);
   }
 
+  /** Puts deleted documents back exactly as they were, `_id` and types included. */
+  async function restore(rows: JsonObject[]) {
+    try {
+      for (const row of rows) {
+        await call(commands.insertDocument(connection.id, namespace, row));
+      }
+    } catch (error) {
+      toast.error(t("undo.failed", { message: errorMessage(error) }));
+      refresh(true);
+      return;
+    }
+    toast.success(t("undo.restored", { count: rows.length }));
+    refresh(true);
+  }
+
+  function offerUndo(rows: JsonObject[], message: string) {
+    toast.success(message, {
+      duration: 10_000,
+      action: { label: t("undo.action"), onClick: () => void restore(rows) },
+    });
+  }
+
   function confirmDelete() {
-    const id = toDelete?._id;
-    if (id === undefined) return;
+    const row = toDelete;
+    const id = row?._id;
+    if (!row || id === undefined) return;
     remove.mutate(
       { ...target, id },
       {
         onSuccess: () => {
-          toast.success(t("delete.deleted"));
+          offerUndo([row], t("delete.deleted"));
           setToDelete(undefined);
           refresh(true);
         },
@@ -399,6 +425,7 @@ export function DocumentsView({
                 setBulk({
                   mode: "delete",
                   filter: { _id: { $in: rows.map((row) => row._id ?? null) } },
+                  rows,
                 })
             : undefined,
         }}
@@ -459,6 +486,14 @@ export function DocumentsView({
           filter={bulk.filter}
           completions={completionsFor("update")}
           onDone={() => refresh(true)}
+          onDeleted={
+            bulk.rows
+              ? (count) => {
+                  const rows = bulk.rows ?? [];
+                  offerUndo(rows, t("bulk.deleted", { count }));
+                }
+              : undefined
+          }
           onClose={() => setBulk(null)}
         />
       )}

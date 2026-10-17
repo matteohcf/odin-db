@@ -54,6 +54,8 @@
     "copy_other": "Copy {{count}} documents",
     "delete_one": "Delete {{count}} document…",
     "delete_other": "Delete {{count}} documents…",
-    "copied_other": "Copied {{count}} documents as a shell array."
+    "copied_other": "Copied {{count}} documents as a shell array.",
+    "selected_one": "{{count}} selected · right-click for actions, Esc to clear",
+    "selected_other": "{{count}} selected · right-click for actions, Esc to clear"
   }
 }

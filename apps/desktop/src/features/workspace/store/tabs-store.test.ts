@@ -9,7 +9,9 @@ const target = (collection: string, profileId = "p1") => ({
 });
 
 describe("tabs store", () => {
-  beforeEach(() => useTabs.setState({ tabs: [], activeTabId: null, pinned: [], closed: [] }));
+  beforeEach(() =>
+    useTabs.setState({ tabs: [], activeTabId: null, pinned: [], closed: [], recent: [] }),
+  );
 
   it("opens one tab per collection and focuses existing ones", () => {
     const { openCollection } = useTabs.getState();
@@ -177,5 +179,17 @@ describe("tabs store", () => {
     expect(useTabs.getState().activeTabId).toBe("server:p1");
     useTabs.getState().closeForProfile("p1");
     expect(ids()).toEqual(["server:p2"]);
+  });
+
+  it("remembers recently opened collections, newest first", () => {
+    for (const name of ["a", "b", "a"]) useTabs.getState().openCollection(target(name));
+    const recent = () => useTabs.getState().recent.map((r) => r.collection);
+    expect(recent()).toEqual(["a", "b"]);
+    useTabs.getState().renameCollection("p1", "shop", "b", "z");
+    expect(recent()).toEqual(["a", "z"]);
+    useTabs.getState().closeCollections("p1", "shop", "a");
+    expect(recent()).toEqual(["z"]);
+    useTabs.getState().closeForProfile("p1");
+    expect(recent()).toEqual([]);
   });
 });

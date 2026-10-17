@@ -378,6 +378,14 @@ export function ResultsGrid({
               })}
             </tbody>
           </table>
+          {multiple && (
+            <div
+              role="status"
+              className="pointer-events-none sticky bottom-3 left-full z-20 mr-3 ml-auto w-fit rounded-full border bg-background/95 px-3 py-1 text-xs shadow-sm"
+            >
+              {t("rows.selected", { count: markedRows.length })}
+            </div>
+          )}
         </div>
       </ContextMenuTrigger>
       {selected && (

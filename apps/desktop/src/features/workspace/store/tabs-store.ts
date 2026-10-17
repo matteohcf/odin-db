@@ -41,6 +41,13 @@ interface SettingsTab {
 
 export type WorkspaceTab = CollectionTab | ShellTab | ServerTab | BackupsTab | SettingsTab;
 
+export type RecentCollection = Omit<CollectionTab, "kind" | "id">;
+
+const MAX_RECENT = 8;
+
+const sameCollection = (a: RecentCollection, b: RecentCollection) =>
+  a.profileId === b.profileId && a.database === b.database && a.collection === b.collection;
+
 interface TabsState {
   /** Display order; pinned tabs always come first. */
   tabs: WorkspaceTab[];
@@ -48,6 +55,8 @@ interface TabsState {
   pinned: string[];
   /** Recently closed tabs, newest last, for reopening. Not persisted. */
   closed: WorkspaceTab[];
+  /** Collections opened lately, newest first, shown on the start screen. */
+  recent: RecentCollection[];
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
@@ -102,13 +111,15 @@ function nextActive(state: TabsState, remaining: WorkspaceTab[]): string | null 
  * What survives a restart: every tab but shells, whose sessions end with the app.
  * Collection tabs come back disconnected and offer to reconnect.
  */
-export function restorableTabs(state: Pick<TabsState, "tabs" | "activeTabId" | "pinned">) {
+export function restorableTabs(
+  state: Pick<TabsState, "tabs" | "activeTabId" | "pinned" | "recent">,
+) {
   const tabs = state.tabs.filter((tab) => tab.kind !== "shell");
   const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
     ? state.activeTabId
     : (tabs.at(-1)?.id ?? null);
   const pinned = state.pinned.filter((id) => tabs.some((tab) => tab.id === id));
-  return { tabs, activeTabId, pinned };
+  return { tabs, activeTabId, pinned, recent: state.recent };
 }
 
 export const useTabs = create<TabsState>()(
@@ -118,12 +129,21 @@ export const useTabs = create<TabsState>()(
       activeTabId: null,
       pinned: [],
       closed: [],
+      recent: [],
       openCollection: (target) =>
         set((state) => {
           // One tab per collection: opening it again focuses the existing tab.
           const id = collectionTabId(target.profileId, target.database, target.collection);
-          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
-          return { tabs: [...state.tabs, { kind: "collection", id, ...target }], activeTabId: id };
+          const recent = [target, ...state.recent.filter((r) => !sameCollection(r, target))].slice(
+            0,
+            MAX_RECENT,
+          );
+          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id, recent };
+          return {
+            tabs: [...state.tabs, { kind: "collection", id, ...target }],
+            activeTabId: id,
+            recent,
+          };
         }),
       openShell: (profileId) =>
         set((state) => {
@@ -204,12 +224,21 @@ export const useTabs = create<TabsState>()(
         }),
       closeAll: () => set((state) => keepTabs(state, (tab) => state.pinned.includes(tab.id), true)),
       closeForProfile: (profileId) =>
-        set((state) =>
-          keepTabs(state, (tab) => !("profileId" in tab) || tab.profileId !== profileId, false),
-        ),
+        set((state) => ({
+          ...keepTabs(state, (tab) => !("profileId" in tab) || tab.profileId !== profileId, false),
+          recent: state.recent.filter((r) => r.profileId !== profileId),
+        })),
       closeCollections: (profileId, database, collection) =>
-        set((state) =>
-          keepTabs(
+        set((state) => ({
+          recent: state.recent.filter(
+            (r) =>
+              !(
+                r.profileId === profileId &&
+                r.database === database &&
+                (collection === undefined || r.collection === collection)
+              ),
+          ),
+          ...keepTabs(
             state,
             (tab) =>
               !(
@@ -220,7 +249,7 @@ export const useTabs = create<TabsState>()(
               ),
             false,
           ),
-        ),
+        })),
       renameCollection: (profileId, database, from, to) =>
         set((state) => {
           const oldId = collectionTabId(profileId, database, from);
@@ -233,6 +262,11 @@ export const useTabs = create<TabsState>()(
             ),
             activeTabId: state.activeTabId === oldId ? newId : state.activeTabId,
             pinned: state.pinned.map((pinnedId) => (pinnedId === oldId ? newId : pinnedId)),
+            recent: state.recent.map((r) =>
+              sameCollection(r, { ...r, profileId, database, collection: from })
+                ? { ...r, collection: to }
+                : r,
+            ),
           };
         }),
     }),

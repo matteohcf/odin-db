@@ -117,5 +117,11 @@
     "missing": "null or missing",
     "filterBy": "Filter by this value",
     "none": "No values."
+  },
+  "undo": {
+    "action": "Undo",
+    "restored_one": "Restored {{count}} document.",
+    "restored_other": "Restored {{count}} documents.",
+    "failed": "Could not restore: {{message}}"
   }
 }

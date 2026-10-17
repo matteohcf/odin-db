@@ -3,7 +3,8 @@
   "welcome": {
     "title": "Apri una collezione",
     "body": "Connettiti a un server nella barra laterale, poi scegli una collezione per sfogliarne, interrogarne e modificarne i documenti.",
-    "palette": "Premi <kbd>{{shortcut}}</kbd> per passare a qualsiasi collezione o azione."
+    "palette": "Premi <kbd>{{shortcut}}</kbd> per passare a qualsiasi collezione o azione.",
+    "recent": "Aperte di recente"
   },
   "quit": {
     "title_one": "Uscire mentre un'operazione è in corso?",

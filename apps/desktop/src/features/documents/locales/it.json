@@ -117,5 +117,11 @@
     "missing": "null o assente",
     "filterBy": "Filtra per questo valore",
     "none": "Nessun valore."
+  },
+  "undo": {
+    "action": "Annulla",
+    "restored_one": "Ripristinato {{count}} documento.",
+    "restored_other": "Ripristinati {{count}} documenti.",
+    "failed": "Ripristino non riuscito: {{message}}"
   }
 }
