@@ -48,6 +48,7 @@ import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
+import { ColumnMenu } from "./column-menu";
 import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
 import { RowMenuItems } from "./row-menu-items";
@@ -87,6 +88,8 @@ export interface ColumnActions {
   sort: readonly { field: string; direction: 1 | -1 }[];
   /** A column was clicked; with `append` (Shift) it joins the current sort. */
   onSort: (field: string, append: boolean) => void;
+  /** Sorts by this field alone, in the given direction (from the column menu). */
+  onSortBy?: ((field: string, direction: 1 | -1) => void) | undefined;
   /**
    * Adds a condition on the cell's value: equal, different, greater or less.
    * `undefined` means the document has no such field.
@@ -140,6 +143,7 @@ export function ResultsGrid({
   const [marked, setMarked] = useState<ReadonlySet<number>>(() => new Set());
   const anchor = useRef<number | null>(null);
   const [editingCell, setEditingCell] = useState<{ index: number; field: string } | null>(null);
+  const [columnMenu, setColumnMenu] = useState<string | null>(null);
   // Top-level scalars only: documents and arrays need the full editor.
   const inlineEditable = (row: JsonObject, field: string) => {
     if (!actions.onSetField || field === "_id" || field.includes(".")) return false;
@@ -375,6 +379,12 @@ export function ResultsGrid({
                         ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
                       }}
                       title={header.id}
+                      onContextMenu={(event) => {
+                        // The header has its own menu, not the selected row's.
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setColumnMenu(header.id);
+                      }}
                     >
                       {columnActions ? (
                         // Ascending, descending, then back to the natural order.
@@ -391,6 +401,23 @@ export function ResultsGrid({
                           {label}
                         </span>
                       )}
+                      <ColumnMenu
+                        field={header.id}
+                        open={columnMenu === header.id}
+                        onOpenChange={(open) => setColumnMenu(open ? header.id : null)}
+                        columnActions={columnActions}
+                        onFit={() =>
+                          table.setColumnSizing((sizes) => ({
+                            ...sizes,
+                            [header.id]: fitWidth(rows, header.id),
+                          }))
+                        }
+                        onHide={
+                          headers.length > 1
+                            ? () => header.column.toggleVisibility(false)
+                            : undefined
+                        }
+                      />
                       <div
                         aria-hidden
                         onMouseDown={header.getResizeHandler()}

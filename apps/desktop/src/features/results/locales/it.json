@@ -59,7 +59,16 @@
     "showAll": "Mostra tutte le colonne"
   },
   "column": {
-    "sortHint": "Ordina per {{field}}. Maiusc-clic per aggiungerlo all'ordinamento attuale."
+    "sortHint": "Ordina per {{field}}. Maiusc-clic per aggiungerlo all'ordinamento attuale.",
+    "menu": "Opzioni della colonna {{field}}",
+    "sortAscending": "Ordina crescente",
+    "sortDescending": "Ordina decrescente",
+    "exists": "Solo documenti con questo campo",
+    "missing": "Solo documenti senza questo campo",
+    "fit": "Adatta la larghezza al contenuto",
+    "hide": "Nascondi colonna",
+    "copyName": "Copia nome del campo",
+    "copied": "Copiato {{field}}"
   },
   "rows": {
     "copy_one": "Copia {{count}} documento",

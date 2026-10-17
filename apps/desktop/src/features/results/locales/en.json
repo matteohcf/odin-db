@@ -59,7 +59,16 @@
     "showAll": "Show all columns"
   },
   "column": {
-    "sortHint": "Sort by {{field}}. Shift-click to add it to the current sort."
+    "sortHint": "Sort by {{field}}. Shift-click to add it to the current sort.",
+    "menu": "Column {{field}} options",
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending",
+    "exists": "Only documents with this field",
+    "missing": "Only documents without this field",
+    "fit": "Fit width to content",
+    "hide": "Hide column",
+    "copyName": "Copy field name",
+    "copied": "Copied {{field}}"
   },
   "rows": {
     "copy_one": "Copy {{count}} document",

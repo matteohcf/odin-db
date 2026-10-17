@@ -401,6 +401,8 @@ export function DocumentsView({
               // A sort the columns cannot show is replaced, not appended to.
               sort: sortText(nextSort(simpleSort(form.sort) ?? [], field, append)),
             }),
+          onSortBy: (field, direction) =>
+            void runForm({ ...form, sort: sortText([{ field, direction }]) }),
           onFilterBy: (field, value, how = "eq") => {
             const literal = value === undefined ? null : toShellSyntax(value, 0);
             const condition = {
