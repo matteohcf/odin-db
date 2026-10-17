@@ -76,6 +76,7 @@ impl Fixture {
                 ssh: None,
                 ssh_secret: None,
                 ssh_host_key: None,
+                group: None,
             },
         )
         .expect("profile created")
@@ -1244,6 +1245,7 @@ async fn reports_a_server_that_stops_answering() {
             ssh: None,
             ssh_secret: None,
             ssh_host_key: None,
+            group: None,
         },
     )
     .expect("profile");
@@ -2301,6 +2303,7 @@ async fn connects_a_profile_through_ssh_after_trusting_the_host_key() {
             ssh: Some(fx.settings(SshAuth::Password)),
             ssh_secret: Some(Secret::new("s3cr3t")),
             ssh_host_key: None,
+            group: None,
         },
     )
     .expect("profile");

@@ -302,6 +302,8 @@ export type ConnectionProfile = {
 	hasSshSecret: boolean,
 	/**  SHA-256 fingerprint of the trusted SSH host key. */
 	sshHostKey: string | null,
+	/**  The folder the profile is listed under, like "Clients" or "Staging". */
+	group: string | null,
 };
 
 export type CopyRequest = {
@@ -638,6 +640,7 @@ export type ProfileInput = {
 	sshSecret?: Secret | null,
 	/**  A host key fingerprint the user confirmed while testing, to trust it. */
 	sshHostKey?: string | null,
+	group?: string | null,
 };
 
 export type QueryPlan = {

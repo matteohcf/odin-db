@@ -323,6 +323,7 @@ mod tests {
                 ssh: None,
                 ssh_secret: None,
                 ssh_host_key: None,
+                group: None,
             },
         )
         .unwrap();

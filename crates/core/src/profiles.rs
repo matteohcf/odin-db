@@ -101,6 +101,8 @@ pub struct ConnectionProfile {
     pub has_ssh_secret: bool,
     /// SHA-256 fingerprint of the trusted SSH host key.
     pub ssh_host_key: Option<String>,
+    /// The folder the profile is listed under, like "Clients" or "Staging".
+    pub group: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -124,6 +126,8 @@ pub struct ProfileInput {
     /// A host key fingerprint the user confirmed while testing, to trust it.
     #[serde(default)]
     pub ssh_host_key: Option<String>,
+    #[serde(default)]
+    pub group: Option<String>,
 }
 
 /// Validates a connection string and removes the password from it.
@@ -209,6 +213,7 @@ pub fn create(
         color: input.color,
         ssh_host_key: input.ssh.as_ref().and(input.ssh_host_key),
         ssh: input.ssh,
+        group: clean_group(input.group),
     };
     storage.insert_profile(&row)?;
 
@@ -255,6 +260,7 @@ pub fn update(
         color: input.color,
         ssh: input.ssh.clone(),
         ssh_host_key,
+        group: clean_group(input.group.clone()),
     })?;
     if let Some(password) = input.password.or(embedded) {
         secrets.set_password(id, &password)?;
@@ -287,6 +293,7 @@ pub fn duplicate(
             ssh_secret: secrets.ssh_secret(id)?,
             ssh_host_key: source.ssh_host_key,
             ssh: source.ssh,
+            group: source.group,
         },
     )
 }
@@ -311,6 +318,8 @@ struct SharedConnection {
     /// Settings only: SSH secrets and trusted host keys stay on this machine.
     #[serde(default)]
     ssh: Option<SshSettings>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    group: Option<String>,
 }
 
 const SHARED_FORMAT: &str = "odin-db.connections";
@@ -327,6 +336,7 @@ pub fn export_profiles(storage: &Storage, ids: &[ProfileId]) -> Result<String, C
             read_only: row.read_only,
             color: row.color,
             ssh: row.ssh,
+            group: row.group,
         })
         .collect();
     serde_json::to_string_pretty(&SharedFile {
@@ -378,6 +388,7 @@ pub fn import_profiles(
                 ssh: entry.ssh,
                 ssh_secret: None,
                 ssh_host_key: None,
+                group: entry.group,
             },
         )?);
     }
@@ -416,6 +427,7 @@ fn parse_shared(json: &str) -> Result<Vec<SharedConnection>, CoreError> {
                     read_only: false,
                     color: None,
                     ssh: None,
+                    group: None,
                 })
             })
             .collect();
@@ -451,7 +463,15 @@ fn with_password_flag(
         has_ssh_secret: row.ssh.is_some() && secrets.ssh_secret(row.id)?.is_some(),
         ssh: row.ssh,
         ssh_host_key: row.ssh_host_key,
+        group: row.group,
     })
+}
+
+/// Blank groups mean no group; surrounding spaces are not part of the name.
+fn clean_group(group: Option<String>) -> Option<String> {
+    group
+        .map(|group| group.trim().to_owned())
+        .filter(|group| !group.is_empty())
 }
 
 fn validate_ssh(ssh: Option<&SshSettings>, connection_string: &str) -> Result<(), CoreError> {
@@ -486,6 +506,7 @@ pub(crate) struct StoredProfile {
     pub color: Option<ProfileColor>,
     pub ssh: Option<SshSettings>,
     pub ssh_host_key: Option<String>,
+    pub group: Option<String>,
 }
 
 #[cfg(test)]
@@ -538,6 +559,7 @@ mod tests {
             ssh: None,
             ssh_secret: None,
             ssh_host_key: None,
+            group: None,
         };
         create(
             &storage,
@@ -601,6 +623,7 @@ mod tests {
             ssh: settings,
             ssh_secret: Some(Secret::new("tunnel-pw")),
             ssh_host_key: pin.map(str::to_owned),
+            group: None,
         };
         let profile = create(
             &storage,
@@ -670,6 +693,7 @@ mod tests {
                 ssh: None,
                 ssh_secret: None,
                 ssh_host_key: None,
+                group: None,
             },
         )
         .expect("created");
@@ -702,6 +726,7 @@ mod tests {
             ssh: None,
             ssh_secret: None,
             ssh_host_key: None,
+            group: None,
         };
         let profile = create(&storage, &secrets, input(Some(ProfileColor::Red))).expect("created");
         assert_eq!(profile.color, Some(ProfileColor::Red));
@@ -716,6 +741,34 @@ mod tests {
         let cleared = update(&storage, &secrets, profile.id, input(None)).expect("cleared");
         assert_eq!(cleared.color, None);
         assert_eq!(ProfileColor::parse("ultraviolet"), None);
+    }
+
+    #[test]
+    fn groups_are_trimmed_kept_on_copies_and_shared() {
+        let storage = Storage::open_in_memory().expect("storage");
+        let secrets = MemoryStore::default();
+        let input = |group: &str| ProfileInput {
+            name: "Tenant A".into(),
+            connection_string: "mongodb://localhost".into(),
+            password: None,
+            read_only: false,
+            color: None,
+            ssh: None,
+            ssh_secret: None,
+            ssh_host_key: None,
+            group: Some(group.into()),
+        };
+        let profile = create(&storage, &secrets, input("  Clients ")).expect("created");
+        assert_eq!(profile.group.as_deref(), Some("Clients"));
+        let copy = duplicate(&storage, &secrets, profile.id, "Tenant B").expect("copied");
+        assert_eq!(copy.group.as_deref(), Some("Clients"));
+        let cleared = update(&storage, &secrets, profile.id, input("   ")).expect("cleared");
+        assert_eq!(cleared.group, None);
+
+        let shared = export_profiles(&storage, &[copy.id]).expect("exported");
+        let other = Storage::open_in_memory().expect("storage");
+        let imported = import_profiles(&other, &secrets, &shared).expect("imported");
+        assert_eq!(imported.created[0].group.as_deref(), Some("Clients"));
     }
 
     #[test]
@@ -742,6 +795,7 @@ mod tests {
                 ssh: None,
                 ssh_secret: None,
                 ssh_host_key: None,
+                group: None,
             },
         )
         .expect("created");
@@ -780,6 +834,7 @@ mod tests {
             ssh: None,
             ssh_secret: None,
             ssh_host_key: None,
+            group: None,
         };
         let profile = create(&storage, &secrets, input(Some("first"))).expect("created");
 

@@ -61,6 +61,8 @@ const MIGRATIONS: &[M<'static>] = &[
         "ALTER TABLE connection_profiles ADD COLUMN ssh TEXT;
         ALTER TABLE connection_profiles ADD COLUMN ssh_host_key TEXT;",
     ),
+    // The folder a profile is listed under in the sidebar.
+    M::up("ALTER TABLE connection_profiles ADD COLUMN group_name TEXT;"),
 ];
 
 #[derive(Debug)]
@@ -98,7 +100,7 @@ impl Storage {
     pub(crate) fn list_profiles(&self) -> Result<Vec<StoredProfile>, CoreError> {
         let connection = self.lock();
         let mut statement = connection.prepare(
-            "SELECT id, name, connection_string, read_only, color, ssh, ssh_host_key
+            "SELECT id, name, connection_string, read_only, color, ssh, ssh_host_key, group_name
              FROM connection_profiles ORDER BY name COLLATE NOCASE, created_at",
         )?;
         let rows = statement.query_map([], read_profile_row)?;
@@ -109,7 +111,7 @@ impl Storage {
         let row = self
             .lock()
             .query_row(
-                "SELECT id, name, connection_string, read_only, color, ssh, ssh_host_key
+                "SELECT id, name, connection_string, read_only, color, ssh, ssh_host_key, group_name
                  FROM connection_profiles WHERE id = ?1",
                 params![id.to_string()],
                 read_profile_row,
@@ -122,8 +124,8 @@ impl Storage {
     pub(crate) fn insert_profile(&self, profile: &StoredProfile) -> Result<(), CoreError> {
         self.lock().execute(
             "INSERT INTO connection_profiles
-                 (id, name, connection_string, read_only, color, ssh, ssh_host_key)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                 (id, name, connection_string, read_only, color, ssh, ssh_host_key, group_name)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
                 profile.id.to_string(),
                 profile.name,
@@ -132,6 +134,7 @@ impl Storage {
                 profile.color.map(ProfileColor::as_str),
                 ssh_json(profile.ssh.as_ref())?,
                 profile.ssh_host_key,
+                profile.group,
             ],
         )?;
         Ok(())
@@ -141,7 +144,7 @@ impl Storage {
         let changed = self.lock().execute(
             "UPDATE connection_profiles
              SET name = ?2, connection_string = ?3, read_only = ?4, color = ?5,
-                 ssh = ?6, ssh_host_key = ?7, updated_at = unixepoch()
+                 ssh = ?6, ssh_host_key = ?7, group_name = ?8, updated_at = unixepoch()
              WHERE id = ?1",
             params![
                 profile.id.to_string(),
@@ -151,6 +154,7 @@ impl Storage {
                 profile.color.map(ProfileColor::as_str),
                 ssh_json(profile.ssh.as_ref())?,
                 profile.ssh_host_key,
+                profile.group,
             ],
         )?;
         if changed == 0 {
@@ -479,6 +483,7 @@ type ProfileRow = (
     Option<String>,
     Option<String>,
     Option<String>,
+    Option<String>,
 );
 
 fn read_profile_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProfileRow> {
@@ -490,11 +495,12 @@ fn read_profile_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProfileRow> {
         row.get(4)?,
         row.get(5)?,
         row.get(6)?,
+        row.get(7)?,
     ))
 }
 
 fn to_profile(
-    (id, name, connection_string, read_only, color, ssh, ssh_host_key): ProfileRow,
+    (id, name, connection_string, read_only, color, ssh, ssh_host_key, group): ProfileRow,
 ) -> Result<StoredProfile, CoreError> {
     Ok(StoredProfile {
         id: ProfileId::parse(&id)?,
@@ -508,6 +514,7 @@ fn to_profile(
             .transpose()
             .map_err(|error| CoreError::Storage(format!("corrupt SSH settings: {error}")))?,
         ssh_host_key,
+        group,
     })
 }
 
