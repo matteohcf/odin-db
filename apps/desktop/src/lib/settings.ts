@@ -23,7 +23,19 @@ export interface Settings {
   queryCodeLanguage: CodeLanguage;
   /** Sidebar width in pixels, set by dragging its edge. */
   sidebarWidth: number;
+  /** The color of selection, focus and primary actions. */
+  accent: Accent;
+  /** Dark mode surfaces: graphite, or pure black for OLED screens and dark rooms. */
+  darkStyle: "graphite" | "black";
+  /** Height of result rows. */
+  rowDensity: RowDensity;
 }
+
+export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
+export type Accent = (typeof ACCENTS)[number];
+
+export const ROW_HEIGHTS = { compact: 24, normal: 30, comfortable: 36 } as const;
+export type RowDensity = keyof typeof ROW_HEIGHTS;
 
 export const DEFAULT_SETTINGS: Settings = {
   language: "system",
@@ -36,6 +48,9 @@ export const DEFAULT_SETTINGS: Settings = {
   queryHistorySize: 50,
   queryCodeLanguage: "javascript",
   sidebarWidth: 256,
+  accent: "indigo",
+  darkStyle: "graphite",
+  rowDensity: "normal",
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

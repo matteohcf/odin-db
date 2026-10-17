@@ -21,7 +21,22 @@
     "theme": "Tema",
     "themeHint": "Sistema segue la modalità chiara o scura del sistema operativo.",
     "zoom": "Zoom",
-    "zoomHint": "Ridimensiona tutta l'interfaccia. {{zoomOut}} riduce, {{reset}} ripristina le dimensioni reali."
+    "zoomHint": "Ridimensiona tutta l'interfaccia. {{zoomOut}} riduce, {{reset}} ripristina le dimensioni reali.",
+    "accent": "Colore di accento",
+    "accentHint": "Usato per selezione, focus e azioni principali.",
+    "accents": {
+      "indigo": "Indaco",
+      "blue": "Blu",
+      "teal": "Verde acqua",
+      "green": "Verde",
+      "orange": "Arancione",
+      "rose": "Rosa",
+      "violet": "Viola"
+    },
+    "darkStyle": "Superfici in modalità scura",
+    "darkStyleHint": "Il nero puro è adatto a schermi OLED e stanze buie.",
+    "graphite": "Grafite",
+    "black": "Nero"
   },
   "editor": {
     "title": "Editor",
@@ -51,7 +66,14 @@
     "maxRowsHint": "Oltre questo limite il risultato smette di caricarsi e indica che è stato troncato.",
     "documents_one": "{{count, number}} documento",
     "documents_other": "{{count, number}} documenti",
-    "json": "JSON"
+    "json": "JSON",
+    "density": "Densità delle righe",
+    "densityHint": "L'altezza delle righe della tabella: compatta mostra più documenti.",
+    "densities": {
+      "compact": "Compatta",
+      "normal": "Normale",
+      "comfortable": "Ampia"
+    }
   },
   "data": {
     "title": "Cronologia query",

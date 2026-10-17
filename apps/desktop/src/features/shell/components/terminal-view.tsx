@@ -160,11 +160,17 @@ export function TerminalView({ connectionId }: { connectionId: ConnectionId }) {
     };
   }, [connectionId, generation]);
 
-  // Follow light/dark switches without restarting the session.
+  // Follow theme and accent switches without restarting the session.
+  const accent = useSettings((s) => s.accent);
+  const darkStyle = useSettings((s) => s.darkStyle);
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-read tokens when the theme changes.
   useEffect(() => {
-    if (terminal.current) terminal.current.options.theme = terminalTheme();
-  }, [theme]);
+    // The app applies the new tokens in its own effect, which runs after this one.
+    const frame = requestAnimationFrame(() => {
+      if (terminal.current) terminal.current.options.theme = terminalTheme();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [theme, accent, darkStyle]);
 
   useEffect(() => {
     if (!terminal.current) return;

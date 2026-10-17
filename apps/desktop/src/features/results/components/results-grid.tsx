@@ -44,6 +44,7 @@ import { toast } from "sonner";
 import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
 import { compactEJson, type JsonObject } from "@/lib/ejson-display";
+import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
@@ -51,7 +52,6 @@ import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
 import { RowMenuItems } from "./row-menu-items";
 
-const ROW_HEIGHT = 30;
 const INDEX_WIDTH = 56;
 /** Start fetching the next page this many rows before the end. */
 const PREFETCH_ROWS = 40;
@@ -192,12 +192,15 @@ export function ResultsGrid({
   const totalWidth = INDEX_WIDTH + table.getTotalSize();
   const resizing = headers.some((header) => header.column.getIsResizing());
 
+  const rowHeight = ROW_HEIGHTS[useSettings((s) => s.rowDensity)];
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeight,
     overscan: 12,
   });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new density re-measures the rows.
+  useEffect(() => virtualizer.measure(), [rowHeight, virtualizer]);
   const items = virtualizer.getVirtualItems();
 
   // Wide documents have hundreds of fields: only the columns in view are rendered.
@@ -255,7 +258,7 @@ export function ResultsGrid({
   function onKeyDown(event: KeyboardEvent) {
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
-    const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / ROW_HEIGHT) - 1;
+    const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / rowHeight) - 1;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "c" && selected) {
       event.preventDefault();
       void navigator.clipboard.writeText(toShellSyntax(multiple ? markedRows : selected));
@@ -446,7 +449,7 @@ export function ResultsGrid({
                       "absolute left-0 flex w-full border-b border-border/60",
                       isSelected ? "bg-selection" : "hover:bg-accent/50",
                     )}
-                    style={{ height: ROW_HEIGHT, transform: `translateY(${item.start}px)` }}
+                    style={{ height: rowHeight, transform: `translateY(${item.start}px)` }}
                   >
                     <th
                       scope="row"

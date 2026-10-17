@@ -3,7 +3,7 @@ import { Braces, List, Table2 } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsView } from "@/features/results";
-import { useSettings } from "@/lib/settings";
+import { ROW_HEIGHTS, type RowDensity, useSettings } from "@/lib/settings";
 import { OptionSelect } from "./option-select";
 import { SettingRow } from "./setting-row";
 import { SettingsSection } from "./settings-section";
@@ -15,6 +15,7 @@ export function ResultsSection() {
   const setView = useResultsView((s) => s.setView);
   const batchSize = useSettings((s) => s.resultsBatchSize);
   const maxRows = useSettings((s) => s.resultsMaxRows);
+  const rowDensity = useSettings((s) => s.rowDensity);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("results.title")} description={t("results.description")}>
@@ -39,6 +40,22 @@ export function ResultsSection() {
             <Braces className="size-3.5" />
             {t("results.json")}
           </ToggleGroupItem>
+        </ToggleGroup>
+      </SettingRow>
+      <SettingRow label={t("results.density")} description={t("results.densityHint")}>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={rowDensity}
+          onValueChange={(value) => value && update({ rowDensity: value as RowDensity })}
+          aria-label={t("results.density")}
+        >
+          {(Object.keys(ROW_HEIGHTS) as RowDensity[]).map((value) => (
+            <ToggleGroupItem key={value} value={value} className="px-3">
+              {t(`results.densities.${value}`)}
+            </ToggleGroupItem>
+          ))}
         </ToggleGroup>
       </SettingRow>
       <SettingRow

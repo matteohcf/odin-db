@@ -13,6 +13,8 @@ export function useApplySettings() {
   const zoom = useSettings((s) => s.zoom);
   const editorFontSize = useSettings((s) => s.editorFontSize);
   const update = useSettings((s) => s.update);
+  const accent = useSettings((s) => s.accent);
+  const darkStyle = useSettings((s) => s.darkStyle);
 
   useEffect(() => {
     const resolved = resolveLanguage(language);
@@ -30,6 +32,12 @@ export function useApplySettings() {
   useEffect(() => {
     document.documentElement.style.setProperty("--editor-font-size", `${editorFontSize}px`);
   }, [editorFontSize]);
+
+  useEffect(() => {
+    // Read by the accent and dark style rules of the design tokens.
+    document.documentElement.dataset.accent = accent;
+    document.documentElement.dataset.darkStyle = darkStyle;
+  }, [accent, darkStyle]);
 
   const zoomIn = () => update({ zoom: stepZoom(useSettings.getState().zoom, 1) });
   useShortcut("zoomIn", zoomIn);

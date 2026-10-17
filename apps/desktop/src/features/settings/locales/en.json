@@ -21,7 +21,22 @@
     "theme": "Theme",
     "themeHint": "System follows your operating system's light or dark mode.",
     "zoom": "Zoom",
-    "zoomHint": "Scales the whole interface. {{zoomOut}} zooms out, {{reset}} restores the actual size."
+    "zoomHint": "Scales the whole interface. {{zoomOut}} zooms out, {{reset}} restores the actual size.",
+    "accent": "Accent color",
+    "accentHint": "Used for selection, focus and primary actions.",
+    "accents": {
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "teal": "Teal",
+      "green": "Green",
+      "orange": "Orange",
+      "rose": "Rose",
+      "violet": "Violet"
+    },
+    "darkStyle": "Dark mode surfaces",
+    "darkStyleHint": "Pure black suits OLED screens and dark rooms.",
+    "graphite": "Graphite",
+    "black": "Black"
   },
   "editor": {
     "title": "Editors",
@@ -51,7 +66,14 @@
     "maxRowsHint": "Beyond this, a result stops loading and shows that it was truncated.",
     "documents_one": "{{count, number}} document",
     "documents_other": "{{count, number}} documents",
-    "json": "JSON"
+    "json": "JSON",
+    "density": "Row density",
+    "densityHint": "How tall table rows are: compact fits more documents on screen.",
+    "densities": {
+      "compact": "Compact",
+      "normal": "Normal",
+      "comfortable": "Comfortable"
+    }
   },
   "data": {
     "title": "Query history",

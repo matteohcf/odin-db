@@ -80,6 +80,102 @@
   --type-structure: #9a9aab;
 }
 
+/*
+ * Accent colors (Settings > Appearance). Indigo is the default above; each accent
+ * swaps only the primary color and what derives from it. Rules also match
+ * descendants, so settings swatches preview each accent.
+ */
+[data-accent="indigo"] {
+  --primary: #4f46e5;
+  --selection: #4f46e51a;
+  --ring: #4f46e580;
+}
+.dark[data-accent="indigo"],
+.dark [data-accent="indigo"] {
+  --primary: #8b85ff;
+  --selection: #8b85ff24;
+  --ring: #8b85ff80;
+}
+[data-accent="blue"] {
+  --primary: #2563eb;
+  --selection: #2563eb1a;
+  --ring: #2563eb80;
+}
+.dark[data-accent="blue"],
+.dark [data-accent="blue"] {
+  --primary: #6aa3ff;
+  --selection: #6aa3ff24;
+  --ring: #6aa3ff80;
+}
+[data-accent="teal"] {
+  --primary: #0f766e;
+  --selection: #0f766e1a;
+  --ring: #0f766e80;
+}
+.dark[data-accent="teal"],
+.dark [data-accent="teal"] {
+  --primary: #4fd1c5;
+  --selection: #4fd1c524;
+  --ring: #4fd1c580;
+}
+[data-accent="green"] {
+  --primary: #15803d;
+  --selection: #15803d1a;
+  --ring: #15803d80;
+}
+.dark[data-accent="green"],
+.dark [data-accent="green"] {
+  --primary: #6fd394;
+  --selection: #6fd39424;
+  --ring: #6fd39480;
+}
+[data-accent="orange"] {
+  --primary: #c2410c;
+  --selection: #c2410c1a;
+  --ring: #c2410c80;
+}
+.dark[data-accent="orange"],
+.dark [data-accent="orange"] {
+  --primary: #ff9a5c;
+  --selection: #ff9a5c24;
+  --ring: #ff9a5c80;
+}
+[data-accent="rose"] {
+  --primary: #e11d48;
+  --selection: #e11d481a;
+  --ring: #e11d4880;
+}
+.dark[data-accent="rose"],
+.dark [data-accent="rose"] {
+  --primary: #ff7a93;
+  --selection: #ff7a9324;
+  --ring: #ff7a9380;
+}
+[data-accent="violet"] {
+  --primary: #7c3aed;
+  --selection: #7c3aed1a;
+  --ring: #7c3aed80;
+}
+.dark[data-accent="violet"],
+.dark [data-accent="violet"] {
+  --primary: #b48cff;
+  --selection: #b48cff24;
+  --ring: #b48cff80;
+}
+
+/* Pure black dark mode, for OLED screens and dark rooms. */
+.dark[data-dark-style="black"] {
+  --background: #000000;
+  --sidebar: #0a0a0c;
+  --card: #0d0d10;
+  --popover: #121216;
+  --muted: #111114;
+  --secondary: #17171b;
+  --accent: #1c1c21;
+  --border: #222228;
+  --input: #2b2b32;
+}
+
 @theme inline {
   --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
