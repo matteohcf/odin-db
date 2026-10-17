@@ -12,14 +12,18 @@ interface HistoryEntry {
 interface QueryHistoryState {
   /** Most recent first, keyed by `historyKey`. */
   entries: Record<string, HistoryEntry[]>;
+  /** Queries the user chose to keep, newest first; never trimmed. */
+  saved: Record<string, HistoryEntry[]>;
   record: (key: string, form: QueryForm) => void;
   clear: (key: string) => void;
+  /** Saves the query, or removes it if it is already saved. */
+  toggleSaved: (key: string, form: QueryForm) => void;
 }
 
 export const historyKey = (profileId: string, database: string, collection: string) =>
   JSON.stringify([profileId, database, collection]);
 
-const sameForm = (a: QueryForm, b: QueryForm) =>
+export const sameForm = (a: QueryForm, b: QueryForm) =>
   (Object.keys(a) as (keyof QueryForm)[]).every((field) => a[field].trim() === b[field].trim());
 
 const isEmpty = (form: QueryForm) => Object.values(form).every((value) => value.trim() === "");
@@ -29,6 +33,7 @@ export const useQueryHistory = create<QueryHistoryState>()(
   persist(
     (set) => ({
       entries: {},
+      saved: {},
       record: (key, form) => {
         if (isEmpty(form)) return;
         set((state) => {
@@ -44,7 +49,20 @@ export const useQueryHistory = create<QueryHistoryState>()(
           const { [key]: _, ...rest } = state.entries;
           return { entries: rest };
         }),
+      toggleSaved: (key, form) =>
+        set((state) => {
+          const current = state.saved[key] ?? [];
+          const without = current.filter((entry) => !sameForm(entry.form, form));
+          const saved =
+            without.length < current.length ? without : [{ form, ranAt: Date.now() }, ...current];
+          return { saved: { ...state.saved, [key]: saved } };
+        }),
     }),
-    { name: "odin-query-history", version: 1 },
+    {
+      name: "odin-query-history",
+      version: 2,
+      // Version 1 had no saved queries.
+      migrate: (persisted) => ({ saved: {}, ...(persisted as object) }) as QueryHistoryState,
+    },
   ),
 );

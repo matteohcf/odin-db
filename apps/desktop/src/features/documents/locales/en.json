@@ -42,13 +42,17 @@
     "deleted": "Document deleted"
   },
   "history": {
-    "open": "Recent queries",
+    "open": "Saved and recent queries",
     "title": "Recent queries",
     "empty": "Queries you run on this collection appear here.",
     "clear": "Clear",
     "matchAll": "All documents",
-    "search": "Search recent queries",
-    "noMatch": "No query matches."
+    "search": "Search queries",
+    "noMatch": "No query matches.",
+    "saved": "Saved",
+    "recent": "Recent",
+    "save": "Save query",
+    "unsave": "Remove from saved"
   },
   "explain": {
     "open": "Explain query",
