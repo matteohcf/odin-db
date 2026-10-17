@@ -56,6 +56,7 @@ docs/adr/                Architecture Decision Records
 - **Results paginate via server-side cursors** held in core, fetched in batches on scroll (ADR-0009). Never emulate with hidden skip/limit.
 - **Result paging is pull-based** (ADR-0025): `find_documents` → `fetch_more_documents` → `close_cursor`, driven by `createResultsController`. Never stream query results over a channel.
 - **The grid renders cells from data** (ADR-0026); TanStack Table owns columns only.
+- **Query bar fields are single-line CodeMirror editors** with context-aware suggestions from sampled field paths (ADR-0031): `queryContext` decides where the cursor is, `queryCompletionSource` what to offer.
 - **Editable text is mongosh syntax** (`toShellSyntax` / `parseShellDocument`); display text is `describeEJson` / `compactEJson`. Never round-trip edits through the display format.
 - **Frontend state** (ADR-0010): TanStack Query for backend request/response data, Zustand for UI-only state. Streaming results live in per-tab stores, flushed once per animation frame. Never copy backend data into Zustand.
 - **Read-only mode and all safety checks are enforced in Rust**, never only in the UI (ADR-0017).

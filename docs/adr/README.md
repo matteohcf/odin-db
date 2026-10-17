@@ -34,3 +34,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0028](0028-aggregation-builder.md) | Aggregation builder | Accepted |
 | [0029](0029-database-tools-resolution.md) | Database Tools resolution and process safety | Accepted |
 | [0030](0030-shell-flow-control.md) | Shell sessions and flow control | Accepted |
+| [0031](0031-query-bar-assistance.md) | Query bar assistance | Accepted |
