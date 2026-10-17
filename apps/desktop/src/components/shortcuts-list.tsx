@@ -37,6 +37,7 @@ const GROUPS = [
       ["focusFilter", [label(SHORTCUTS.focusFilter)]],
       ["run", ["↵", `${mod} ↵`]],
       ["rerun", [label(SHORTCUTS.rerun)]],
+      ["recall", ["↑", "↓"]],
       ["suggest", ["Ctrl Space"]],
       ["accept", ["Tab", "↵"]],
       ["dismiss", ["Esc"]],

@@ -170,6 +170,7 @@
       "revealInSidebar": "Reveal the collection in the sidebar",
       "treeKeys": "Move through the sidebar tree",
       "rerun": "Run the query or pipeline again",
+      "recall": "Previous and next recent query",
       "inlineEdit": "Edit a value in place",
       "preview": "Preview the selected document",
       "nextField": "Save and edit the next value",

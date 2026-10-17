@@ -64,6 +64,8 @@ export interface QueryEditorProps {
   ariaLabel: string;
   invalid?: boolean;
   autoFocus?: boolean;
+  /** Up (1, older) and Down (-1) with no suggestion open; returns whether it moved. */
+  onHistory?: (step: 1 | -1) => boolean;
   /** Focuses the editor, selecting its text, each time this number changes. */
   focusSignal?: number;
   className?: string;
@@ -74,6 +76,7 @@ export default function QueryEditorView({
   value,
   onChange,
   onSubmit,
+  onHistory,
   completions,
   placeholder: placeholderText = "",
   ariaLabel,
@@ -84,8 +87,8 @@ export default function QueryEditorView({
 }: QueryEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const callbacks = useRef({ onChange, onSubmit });
-  callbacks.current = { onChange, onSubmit };
+  const callbacks = useRef({ onChange, onSubmit, onHistory });
+  callbacks.current = { onChange, onSubmit, onHistory };
   const initial = useRef({ value, completions, placeholderText, ariaLabel, autoFocus });
 
   useEffect(() => {
@@ -115,6 +118,9 @@ export default function QueryEditorView({
               // Enter runs the query unless a suggestion is open (the completion keymap wins then).
               { key: "Enter", run: submit },
               { key: "Mod-Enter", run: submit },
+              // Like a shell; the suggestion list keeps the arrows while it is open.
+              { key: "ArrowUp", run: () => callbacks.current.onHistory?.(1) ?? false },
+              { key: "ArrowDown", run: () => callbacks.current.onHistory?.(-1) ?? false },
             ]),
           ),
           keymap.of([...closeBracketsKeymap, ...historyKeymap, ...defaultKeymap]),

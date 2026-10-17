@@ -4,11 +4,12 @@ import { Kbd } from "@odin-db/ui/components/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronDown, Gauge, Loader2, Play } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useEffect, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
+import { useQueryHistory } from "../store/query-history-store";
 import { QueryFieldFrame } from "./query-field-frame";
 import { QueryHistoryMenu } from "./query-history-menu";
 import { VisualQueryBuilder } from "./visual-query-builder";
@@ -24,6 +25,8 @@ interface QueryBarProps {
   onRun: () => void;
   /** Replaces the whole form and runs it (history, reset). */
   onRunForm: (form: QueryForm) => void;
+  /** Replaces the whole form without running it (arrow-key history). */
+  onSetForm: (form: QueryForm) => void;
   onExplain: () => void;
   explaining: boolean;
   /** View actions shown after Run, e.g. Insert document. */
@@ -33,6 +36,8 @@ interface QueryBarProps {
 }
 
 const isMac = navigator.userAgent.includes("Mac");
+// Stable, so the store selector does not return a new array on every render.
+const NO_ENTRIES: never[] = [];
 const hasOptionsIn = (form: QueryForm) =>
   form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
 
@@ -45,6 +50,7 @@ export function QueryBar({
   onChange,
   onRun,
   onRunForm,
+  onSetForm,
   onExplain,
   explaining,
   actions,
@@ -61,6 +67,22 @@ export function QueryBar({
   const showOptions = expanded || errors.sort || errors.projection || errors.skip || errors.limit;
 
   const completionsFor = useQueryCompletions(fields);
+
+  // Up and Down walk through recent queries; the form being typed comes back at the end.
+  const entries = useQueryHistory((state) => state.entries[historyKey] ?? NO_ENTRIES);
+  const recall = useRef<{ index: number; draft: QueryForm }>({ index: -1, draft: form });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new collection or run starts over.
+  useEffect(() => {
+    recall.current.index = -1;
+  }, [historyKey, entries]);
+  const onHistory = (step: 1 | -1) => {
+    const next = recall.current.index + step;
+    if (next < -1 || next >= entries.length) return false;
+    if (recall.current.index === -1) recall.current.draft = form;
+    recall.current.index = next;
+    onSetForm(next === -1 ? recall.current.draft : (entries[next]?.form ?? form));
+    return true;
+  };
 
   const onNumberKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter") {
@@ -83,6 +105,7 @@ export function QueryBar({
             value={form.filter}
             onChange={(value) => onChange("filter", value)}
             onSubmit={onRun}
+            onHistory={onHistory}
             completions={completionsFor("filter")}
             placeholder={t("query.filterPlaceholder")}
             ariaLabel={t("query.filter")}

@@ -170,6 +170,7 @@
       "revealInSidebar": "Mostra la collezione nella barra laterale",
       "treeKeys": "Muoversi nell'albero della barra laterale",
       "rerun": "Esegui di nuovo la query o la pipeline",
+      "recall": "Query recente precedente e successiva",
       "inlineEdit": "Modifica un valore in linea",
       "preview": "Anteprima del documento selezionato",
       "nextField": "Salva e modifica il valore successivo",

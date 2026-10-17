@@ -350,6 +350,7 @@ export function DocumentsView({
         onChange={(field, value) => setForm((current) => ({ ...current, [field]: value }))}
         onRun={() => void runForm()}
         onRunForm={(next) => void runForm(next)}
+        onSetForm={setForm}
         onExplain={() => void explain()}
         explaining={explainFind.isPending}
         fields={fields.data ?? NO_FIELDS}
