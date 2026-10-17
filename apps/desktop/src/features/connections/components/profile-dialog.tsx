@@ -93,10 +93,16 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
     save.mutate(
       { ...(profile ? { id: profile.id } : {}), input: toInput(form) },
       {
-        onSuccess: (saved) => {
+        onSuccess: async (saved) => {
           onClose();
           if (!profile) {
-            connect.mutate(saved.id, { onSuccess: () => setExpanded(saved.id, true) });
+            // The dialog has unmounted by now; its per-call callbacks would never run.
+            // A failure is already reported by the app-wide mutation error toast.
+            const connected = await connect.mutateAsync(saved.id).then(
+              () => true,
+              () => false,
+            );
+            if (connected) setExpanded(saved.id, true);
           }
         },
       },
