@@ -15,6 +15,7 @@ import type {
   JsonValue,
   ProfileInput,
 } from "@odin-db/bindings";
+import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { fieldPathsOf } from "@/lib/ejson-fields";
 
@@ -1097,10 +1098,24 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
 };
 
 export function installMockBackend() {
-  mockIPC(async (command, payload) => {
-    const handler =
-      handlers[command] ?? fail("internal", `mock backend: unknown command ${command}`);
-    await sleep(command === "connect" ? 450 : 90 + Math.random() * 120);
-    return handler((payload ?? {}) as Record<string, unknown>);
+  mockIPC(
+    async (command, payload) => {
+      const handler =
+        handlers[command] ?? fail("internal", `mock backend: unknown command ${command}`);
+      await sleep(command === "connect" ? 450 : 90 + Math.random() * 120);
+      return handler((payload ?? {}) as Record<string, unknown>);
+    },
+    { shouldMockEvents: true },
+  );
+  // UI reviews and browser tests simulate a server going down or coming back.
+  Object.assign(window, {
+    odinMock: {
+      setReachable: (profileName: string, reachable: boolean) => {
+        const profile = profiles.find((p) => p.name === profileName);
+        const connection = [...connections.values()].find((c) => c.profileId === profile?.id);
+        if (connection)
+          void emit("connection-health-changed", { connectionId: connection.id, reachable });
+      },
+    },
   });
 }

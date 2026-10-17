@@ -24,6 +24,7 @@ import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
+import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DatabaseList } from "./database-list";
 import { NodeMenu } from "./node-menu";
@@ -38,6 +39,9 @@ interface ProfileNodeProps {
 export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   const { t } = useTranslation("connections");
   const connection = useConnectionOf(profile.id);
+  const unreachable = useConnectionHealth((s) =>
+    connection ? s.unreachable[connection.id] === true : false,
+  );
   const connect = useConnect();
   const disconnect = useDisconnect();
   const [expanded, setExpanded] = useExpanded(profile.id);
@@ -75,16 +79,23 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
         loading={connect.isPending}
         onActivate={open}
         title={
-          connection
-            ? t("profile.connected", { version: connection.serverVersion })
-            : profile.connectionString
+          unreachable
+            ? t("health.unreachable")
+            : connection
+              ? t("profile.connected", { version: connection.serverVersion })
+              : profile.connectionString
         }
         icon={
           <span className="relative flex">
+            {unreachable && <span className="sr-only">{t("health.unreachable")}</span>}
             <span
               className={cn(
                 "size-2 rounded-full",
-                connection ? "bg-success" : "border border-muted-foreground/50",
+                unreachable
+                  ? "animate-pulse bg-warning"
+                  : connection
+                    ? "bg-success"
+                    : "border border-muted-foreground/50",
               )}
             />
           </span>

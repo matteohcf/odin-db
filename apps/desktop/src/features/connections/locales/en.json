@@ -110,5 +110,10 @@
       "system": "Use system theme"
     },
     "hint": "Search"
+  },
+  "health": {
+    "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",
+    "restored": "{{name}} is reachable again",
+    "unreachable": "Server unreachable, retrying…"
   }
 }

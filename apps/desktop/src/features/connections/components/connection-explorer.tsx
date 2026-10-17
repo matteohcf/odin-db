@@ -6,6 +6,7 @@ import { Plus, Search, Server } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProfiles } from "../api/queries";
+import { useHealthEvents } from "../hooks/use-health-events";
 import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { ProfileDialog } from "./profile-dialog";
@@ -26,6 +27,7 @@ export function ConnectionExplorer() {
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
   const closeDialog = () => setDialog({ type: "closed" });
   const [paletteOpen, setPaletteOpen] = useState(false);
+  useHealthEvents();
 
   return (
     <aside className="flex h-full flex-col bg-sidebar" aria-label={t("explorer.label")}>
