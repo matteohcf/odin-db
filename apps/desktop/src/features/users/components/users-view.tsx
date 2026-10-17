@@ -97,7 +97,9 @@ export function UsersView({
                 <th className="px-3 py-2 font-medium">{t("table.user")}</th>
                 <th className="px-3 py-2 font-medium">{t("table.database")}</th>
                 <th className="px-3 py-2 font-medium">{t("table.roles")}</th>
-                <th className="px-3 py-2" />
+                <th className="px-3 py-2">
+                  <span className="sr-only">{t("columns.actions")}</span>
+                </th>
               </tr>
             </thead>
             <tbody>

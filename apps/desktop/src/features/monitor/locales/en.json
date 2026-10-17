@@ -34,7 +34,8 @@
     "update": "update",
     "delete": "delete",
     "getmore": "getmore",
-    "commandColumn": "Command"
+    "commandColumn": "Command",
+    "actions": "Actions"
   },
   "kill": {
     "button": "Kill",

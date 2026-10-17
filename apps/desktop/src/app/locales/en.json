@@ -15,6 +15,7 @@
   },
   "sidebar": {
     "resize": "Resize the sidebar",
-    "resizeHint": "Drag to resize. Double-click to restore the default width."
+    "resizeHint": "Drag to resize. Double-click to restore the default width.",
+    "label": "Sidebar"
   }
 }

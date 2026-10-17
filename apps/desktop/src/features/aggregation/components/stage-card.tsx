@@ -225,7 +225,14 @@ function StagePreview({
         ) : null}
         {preview.isFetching && <Loader2 className="ml-auto size-3 animate-spin" />}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+      <section
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable to scroll from the keyboard (WCAG 2.1.1).
+        tabIndex={0}
+        aria-label={t("preview.label")}
+        className="min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      >
+        {body}
+      </section>
     </div>
   );
 }

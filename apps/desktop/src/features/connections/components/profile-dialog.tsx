@@ -178,9 +178,15 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
 
       <Tabs defaultValue="string" className="gap-3">
         <TabsList className="w-full">
-          <TabsTrigger value="string">{t("form.tabString")}</TabsTrigger>
-          <TabsTrigger value="form">{t("form.tabForm")}</TabsTrigger>
-          <TabsTrigger value="ssh">{t("ssh.tab")}</TabsTrigger>
+          <TabsTrigger value="string" className="text-muted-foreground">
+            {t("form.tabString")}
+          </TabsTrigger>
+          <TabsTrigger value="form" className="text-muted-foreground">
+            {t("form.tabForm")}
+          </TabsTrigger>
+          <TabsTrigger value="ssh" className="text-muted-foreground">
+            {t("ssh.tab")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="string">
           <Field

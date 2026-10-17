@@ -216,7 +216,9 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
                     <th className="px-3 py-2 text-right font-medium">{t("ops.running")}</th>
                     <th className="px-3 py-2 font-medium">{t("ops.client")}</th>
                     <th className="px-3 py-2 font-medium">{t("ops.commandColumn")}</th>
-                    <th className="px-3 py-2" />
+                    <th className="px-3 py-2">
+                      <span className="sr-only">{t("ops.actions")}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

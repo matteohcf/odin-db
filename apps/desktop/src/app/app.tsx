@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import { ThemeMenu } from "@/components/theme-menu";
 import { BackupsTabLabel, BackupsView } from "@/features/backups";
@@ -27,6 +28,7 @@ const PerfLab = lazy(() =>
 
 /** Composition root: the only place that wires features together. */
 export function App() {
+  const { t } = useTranslation("app");
   const { data: perfAutorun } = useAutorunEnabled();
   useApplySettings();
   const sidebarWidth = useSettings((s) => s.sidebarWidth);
@@ -43,7 +45,8 @@ export function App() {
 
   return (
     <div className="flex h-full">
-      <div
+      <section
+        aria-label={t("sidebar.label")}
         className="relative flex shrink-0 flex-col border-r bg-sidebar"
         style={{ width: sidebarWidth }}
       >
@@ -56,7 +59,7 @@ export function App() {
           <BackupsButton />
           <SettingsButton />
         </footer>
-      </div>
+      </section>
       <main className="min-w-0 flex-1">
         <WorkspaceTabs renderTab={renderTab} renderLabel={renderLabel} emptyState={<Welcome />} />
       </main>

@@ -27,7 +27,8 @@
     "empty": "No documents at this stage.",
     "writeStage": "Not previewed: this stage writes to the database. Run the pipeline to execute it.",
     "fixStage": "Fix the syntax of stage {{number}} to preview this one.",
-    "failed": "Preview failed: {{message}}"
+    "failed": "Preview failed: {{message}}",
+    "label": "Stage preview"
   },
   "results": {
     "title": "Pipeline results",

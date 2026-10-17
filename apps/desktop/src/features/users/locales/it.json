@@ -56,5 +56,8 @@
     "body": "Le applicazioni che usano questo utente non potranno più connettersi. L'operazione non si può annullare.",
     "confirm": "Elimina utente",
     "done": "Utente {{name}} eliminato."
+  },
+  "columns": {
+    "actions": "Azioni"
   }
 }

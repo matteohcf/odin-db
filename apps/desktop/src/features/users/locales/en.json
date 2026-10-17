@@ -56,5 +56,8 @@
     "body": "Applications using this user can no longer connect. This cannot be undone.",
     "confirm": "Delete user",
     "done": "User {{name}} deleted."
+  },
+  "columns": {
+    "actions": "Actions"
   }
 }

@@ -169,8 +169,12 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                       {renderLabel(tab, context)}
                     </button>
                     {isPinned ? (
+                      // Pointer shortcuts: the tab menu and Cmd+W do the same from the keyboard,
+                      // and a tab list may only hold tabs for assistive technology.
                       <button
                         type="button"
+                        tabIndex={-1}
+                        aria-hidden
                         aria-label={t("tabs.unpinNamed", { name })}
                         title={t("tabs.menu.unpin")}
                         onClick={() => togglePin(tab.id)}
@@ -181,6 +185,8 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                     ) : (
                       <button
                         type="button"
+                        tabIndex={-1}
+                        aria-hidden
                         aria-label={t("tabs.close", { name })}
                         onClick={() => close(tab.id)}
                         className={cn(

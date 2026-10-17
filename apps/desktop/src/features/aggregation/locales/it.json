@@ -27,7 +27,8 @@
     "empty": "Nessun documento in questo stage.",
     "writeStage": "Nessuna anteprima: questo stage scrive nel database. Esegui la pipeline per applicarlo.",
     "fixStage": "Correggi la sintassi dello stage {{number}} per vedere l'anteprima di questo.",
-    "failed": "Anteprima non riuscita: {{message}}"
+    "failed": "Anteprima non riuscita: {{message}}",
+    "label": "Anteprima dello stage"
   },
   "results": {
     "title": "Risultati della pipeline",

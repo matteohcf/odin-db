@@ -48,7 +48,7 @@ const theme = EditorView.theme({
   ".cm-content": { padding: "0", caretColor: "var(--primary)" },
   ".cm-line": { padding: "0 10px 0 0" },
   ".cm-cursor": { borderLeftColor: "var(--primary)" },
-  ".cm-placeholder": { color: "var(--muted-foreground)", opacity: "0.6" },
+  ".cm-placeholder": { color: "var(--muted-foreground)" },
   "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
     backgroundColor: "var(--selection) !important",
   },

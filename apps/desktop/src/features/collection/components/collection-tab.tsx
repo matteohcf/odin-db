@@ -167,7 +167,12 @@ function CollectionWorkspace({
           {VIEWS.filter((value) => value !== "validation" || !isView).map((value) => {
             const Icon = viewIcon[value];
             return (
-              <TabsTrigger key={value} value={value} className="px-2.5 text-xs">
+              <TabsTrigger
+                key={value}
+                value={value}
+                // shadcn's 60% foreground misses WCAG contrast on the muted list.
+                className="px-2.5 text-muted-foreground text-xs"
+              >
                 <Icon />
                 {t(`views.${value}`)}
               </TabsTrigger>
