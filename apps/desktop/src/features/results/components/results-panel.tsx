@@ -1,4 +1,4 @@
-import { CircleAlert, Loader2 } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,6 +21,9 @@ interface ResultsPanelProps {
   actions: RowActions;
   columnActions?: ColumnActions | undefined;
 }
+
+const SKELETON_ROWS = Array.from({ length: 14 }, (_, index) => index);
+const SKELETON_COLUMNS = [150, 110, 170, 60, 90, 120];
 
 /** Results area: loading, error, empty and grid states for one controller. */
 export function ResultsPanel({
@@ -56,10 +59,32 @@ export function ResultsPanel({
     );
   }
   if (status === "loading" && rows.length === 0) {
+    // Placeholder rows, shown only if the first page is slow, so fast queries do not flash.
     return (
-      <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" />
-        {t("loading")}
+      <div
+        role="status"
+        aria-label={t("loading")}
+        className="flex flex-1 flex-col overflow-hidden fade-in animate-in fill-mode-both delay-200 duration-300"
+      >
+        <div className="h-8 shrink-0 border-b bg-sidebar" />
+        {SKELETON_ROWS.map((row) => (
+          <div
+            key={row}
+            className="flex h-[30px] shrink-0 items-center gap-6 border-b border-border/60 px-4"
+          >
+            <div className="h-2.5 w-6 animate-pulse rounded bg-muted" />
+            {SKELETON_COLUMNS.map((width, column) => (
+              <div
+                key={width}
+                className="h-2.5 animate-pulse rounded bg-muted"
+                style={{
+                  width: width - ((row * 7 + column * 13) % 40),
+                  animationDelay: `${row * 40}ms`,
+                }}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     );
   }

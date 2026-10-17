@@ -31,7 +31,16 @@ export function ResultsStatusBar({
 
   return (
     <footer className="flex h-8 shrink-0 items-center gap-3 border-t bg-sidebar px-3 text-muted-foreground text-xs">
-      <span className="text-foreground tabular-nums">{t("status.loaded", { count: loaded })}</span>
+      {status === "loading" && loaded === 0 ? (
+        <span className="flex items-center gap-1.5">
+          <Loader2 className="size-3 animate-spin" />
+          {t("loading")}
+        </span>
+      ) : (
+        <span className="text-foreground tabular-nums">
+          {t("status.loaded", { count: loaded })}
+        </span>
+      )}
       {loadingMore && <Loader2 className="size-3 animate-spin" />}
       {hasMore && !loadingMore && <span>{t("status.more")}</span>}
       {truncated && (
