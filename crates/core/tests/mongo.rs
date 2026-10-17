@@ -715,12 +715,9 @@ async fn backs_up_and_restores_a_database_with_the_tools() {
     let summary = backup(
         &tools,
         connection(),
-        &BackupRequest {
-            scope: BackupScope::Database {
-                database: "odin_test".into(),
-            },
-            gzip: true,
-        },
+        &BackupRequest::of(BackupScope::Database {
+            database: "odin_test".into(),
+        }),
         &archive,
         events.clone(),
         CancellationToken::new(),
@@ -741,6 +738,8 @@ async fn backs_up_and_restores_a_database_with_the_tools() {
             drop: false,
             database: Some("odin_test".into()),
             rename_to: Some("odin_copy".into()),
+            namespaces: Vec::new(),
+            oplog_replay: false,
         },
         &archive,
         events,
@@ -772,6 +771,8 @@ async fn backs_up_and_restores_a_database_with_the_tools() {
             drop: true,
             database: None,
             rename_to: None,
+            namespaces: Vec::new(),
+            oplog_replay: false,
         },
         &archive,
         tokio::sync::mpsc::channel(1).0,
@@ -1291,10 +1292,7 @@ async fn scheduled_backups_are_recorded_and_pruned() {
                 password: None,
                 read_only: false,
             },
-            &BackupRequest {
-                scope: scope.clone(),
-                gzip: true,
-            },
+            &BackupRequest::of(scope.clone()),
             &archive,
             events,
             CancellationToken::new(),
@@ -1316,4 +1314,110 @@ async fn scheduled_backups_are_recorded_and_pruned() {
     let files = std::fs::read_dir(&folder).expect("folder").count();
     assert_eq!(files, 2, "pruned archives are deleted from disk");
     std::fs::remove_dir_all(folder).expect("cleanup");
+}
+
+#[tokio::test]
+#[ignore = "requires Docker and MongoDB Database Tools"]
+async fn backup_options_contents_and_selective_restore() {
+    use odin_core::backup::archive_contents;
+
+    let dir = std::env::var_os("ODIN_TOOLS_DIR").map(std::path::PathBuf::from);
+    let tools = locate_tools(dir.as_deref()).expect("database tools");
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    for name in ["orders", "users", "logs"] {
+        fx.seed(&handle, &namespace(name), 20).await;
+    }
+    let connection = || ToolConnection {
+        uri: &fx.uri,
+        password: None,
+        read_only: false,
+    };
+    let quiet = || {
+        let (events, mut drain) = tokio::sync::mpsc::channel(256);
+        tokio::spawn(async move { while drain.recv().await.is_some() {} });
+        events
+    };
+
+    // A database backup without `logs`.
+    let archive = temp_path("options.archive.gz");
+    let mut request = BackupRequest::of(BackupScope::Database {
+        database: "odin_test".into(),
+    });
+    request.exclude_collections = vec!["logs".into()];
+    backup(
+        &tools,
+        connection(),
+        &request,
+        &archive,
+        quiet(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("backup");
+    let mut contents = archive_contents(&tools, connection(), RestoreSource::Archive, &archive)
+        .await
+        .expect("contents");
+    contents.sort();
+    assert_eq!(contents, ["odin_test.orders", "odin_test.users"]);
+
+    // Restore only `users`, into another database.
+    let summary = restore(
+        &tools,
+        connection(),
+        &RestoreRequest {
+            source: RestoreSource::Archive,
+            drop: false,
+            database: Some("odin_test".into()),
+            rename_to: Some("odin_selected".into()),
+            namespaces: vec!["odin_test.users".into()],
+            oplog_replay: false,
+        },
+        &archive,
+        quiet(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("restore");
+    assert!((summary.documents - 20.0).abs() < f64::EPSILON);
+    let restored = browse::list_collections(&handle, "odin_selected")
+        .await
+        .expect("collections");
+    assert_eq!(
+        restored.iter().map(|c| c.name.as_str()).collect::<Vec<_>>(),
+        ["users"]
+    );
+
+    // A filtered collection backup keeps only matching documents.
+    let filtered = temp_path("filtered.archive.gz");
+    let mut request = BackupRequest::of(BackupScope::Collection {
+        database: "odin_test".into(),
+        collection: "orders".into(),
+    });
+    request.query = Some(EJsonDocument::from(doc! { "n": { "$lt": 5 } }));
+    let summary = backup(
+        &tools,
+        connection(),
+        &request,
+        &filtered,
+        quiet(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("filtered backup");
+    assert!((summary.documents - 5.0).abs() < f64::EPSILON);
+
+    // Reading contents is allowed on read-only connections: it writes nothing.
+    let read_only = ToolConnection {
+        uri: &fx.uri,
+        password: None,
+        read_only: true,
+    };
+    assert!(
+        archive_contents(&tools, read_only, RestoreSource::Archive, &archive)
+            .await
+            .is_ok()
+    );
+    let _ = std::fs::remove_file(archive);
+    let _ = std::fs::remove_file(filtered);
 }

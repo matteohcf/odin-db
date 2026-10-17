@@ -18,6 +18,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::CoreError;
+use crate::ejson::EJsonDocument;
 use crate::secrets::Secret;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -93,6 +94,30 @@ pub enum BackupScope {
 pub struct BackupRequest {
     pub scope: BackupScope,
     pub gzip: bool,
+    /// Database backups only: collections to leave out.
+    #[serde(default)]
+    pub exclude_collections: Vec<String>,
+    /// Collection backups only: back up just the documents matching this filter.
+    #[serde(default)]
+    pub query: Option<EJsonDocument>,
+    /// Whole-server backups of a replica set only: include the oplog for a
+    /// point-in-time snapshot (`--oplog`).
+    #[serde(default)]
+    pub oplog: bool,
+}
+
+impl BackupRequest {
+    /// A plain gzipped backup of `scope`, as schedules run it.
+    #[must_use]
+    pub fn of(scope: BackupScope) -> Self {
+        Self {
+            scope,
+            gzip: true,
+            exclude_collections: Vec::new(),
+            query: None,
+            oplog: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -115,6 +140,13 @@ pub struct RestoreRequest {
     /// Restore only this database, optionally under a new name.
     pub database: Option<String>,
     pub rename_to: Option<String>,
+    /// Restore only these namespaces (`db.collection`), as listed by
+    /// `archive_contents`. Empty means everything (or the whole `database`).
+    #[serde(default)]
+    pub namespaces: Vec<String>,
+    /// Replay the oplog of a `--oplog` backup for a point-in-time restore.
+    #[serde(default)]
+    pub oplog_replay: bool,
 }
 
 /// A line of tool output, classified for the UI.
@@ -158,21 +190,7 @@ pub async fn backup(
     events: mpsc::Sender<ToolEvent>,
     cancel: CancellationToken,
 ) -> Result<ToolSummary, CoreError> {
-    let mut args = vec![format!("--archive={}", archive.display())];
-    if request.gzip {
-        args.push("--gzip".into());
-    }
-    match &request.scope {
-        BackupScope::Deployment => {}
-        BackupScope::Database { database } => args.push(format!("--db={database}")),
-        BackupScope::Collection {
-            database,
-            collection,
-        } => {
-            args.push(format!("--db={database}"));
-            args.push(format!("--collection={collection}"));
-        }
-    }
+    let args = backup_args(request, archive)?;
     let result = run_tool(&tools.mongodump, connection, args, events, cancel).await;
     if result.is_err() {
         // Never leave a truncated archive that looks like a valid backup.
@@ -202,6 +220,50 @@ pub async fn restore(
     .await
 }
 
+fn backup_args(request: &BackupRequest, archive: &Path) -> Result<Vec<String>, CoreError> {
+    let mut args = vec![format!("--archive={}", archive.display())];
+    if request.gzip {
+        args.push("--gzip".into());
+    }
+    let only = |what: &str| CoreError::Validation(format!("{what} only apply to some backups"));
+    match &request.scope {
+        BackupScope::Deployment => {
+            if request.oplog {
+                args.push("--oplog".into());
+            }
+        }
+        BackupScope::Database { database } => {
+            args.push(format!("--db={database}"));
+            for collection in &request.exclude_collections {
+                args.push(format!("--excludeCollection={collection}"));
+            }
+        }
+        BackupScope::Collection {
+            database,
+            collection,
+        } => {
+            args.push(format!("--db={database}"));
+            args.push(format!("--collection={collection}"));
+            if let Some(query) = &request.query {
+                let json = serde_json::to_string(query)
+                    .map_err(|error| CoreError::Internal(error.to_string()))?;
+                args.push(format!("--query={json}"));
+            }
+        }
+    }
+    let scope_allows = match &request.scope {
+        BackupScope::Deployment => {
+            request.exclude_collections.is_empty() && request.query.is_none()
+        }
+        BackupScope::Database { .. } => !request.oplog && request.query.is_none(),
+        BackupScope::Collection { .. } => !request.oplog && request.exclude_collections.is_empty(),
+    };
+    if !scope_allows {
+        return Err(only("these options"));
+    }
+    Ok(args)
+}
+
 fn restore_args(request: &RestoreRequest, source: &Path) -> Vec<String> {
     let mut args = match request.source {
         RestoreSource::Archive => {
@@ -216,8 +278,16 @@ fn restore_args(request: &RestoreRequest, source: &Path) -> Vec<String> {
     if request.drop {
         args.push("--drop".into());
     }
+    if request.oplog_replay {
+        args.push("--oplogReplay".into());
+    }
+    for namespace in &request.namespaces {
+        args.push(format!("--nsInclude={namespace}"));
+    }
     if let Some(database) = request.database.as_deref().filter(|d| !d.is_empty()) {
-        args.push(format!("--nsInclude={database}.*"));
+        if request.namespaces.is_empty() {
+            args.push(format!("--nsInclude={database}.*"));
+        }
         if let Some(target) = request
             .rename_to
             .as_deref()
@@ -246,18 +316,7 @@ async fn run_tool(
     events: mpsc::Sender<ToolEvent>,
     cancel: CancellationToken,
 ) -> Result<ToolSummary, CoreError> {
-    let config = connection.password.map(PasswordFile::create).transpose()?;
-    let mut command = Command::new(program);
-    command
-        .arg(format!("--uri={}", connection.uri))
-        .args(&args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true);
-    if let Some(config) = &config {
-        command.arg(format!("--config={}", config.path.display()));
-    }
+    let (mut command, config) = tool_command(program, &connection, &args)?;
     let mut child = command.spawn().map_err(|error| {
         CoreError::Internal(format!("cannot start {}: {error}", program.display()))
     })?;
@@ -311,6 +370,82 @@ async fn run_tool(
             format!("the tool exited with {status}")
         })))
     }
+}
+
+/// The tool invocation; the returned file holds the password and must outlive the process.
+fn tool_command(
+    program: &Path,
+    connection: &ToolConnection<'_>,
+    args: &[String],
+) -> Result<(Command, Option<PasswordFile>), CoreError> {
+    let config = connection.password.map(PasswordFile::create).transpose()?;
+    let mut command = Command::new(program);
+    command
+        .arg(format!("--uri={}", connection.uri))
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    if let Some(config) = &config {
+        command.arg(format!("--config={}", config.path.display()));
+    }
+    Ok((command, config))
+}
+
+/// The namespaces (`db.collection`) in a backup, read with a `mongorestore`
+/// dry run, which writes nothing. System namespaces are left out.
+pub async fn archive_contents(
+    tools: &DatabaseTools,
+    connection: ToolConnection<'_>,
+    source: RestoreSource,
+    path: &Path,
+) -> Result<Vec<String>, CoreError> {
+    let request = RestoreRequest {
+        source,
+        drop: false,
+        database: None,
+        rename_to: None,
+        namespaces: Vec::new(),
+        oplog_replay: false,
+    };
+    let mut args = restore_args(&request, path);
+    args.extend(["--dryRun".into(), "--verbose".into()]);
+    let (mut command, config) = tool_command(&tools.mongorestore, &connection, &args)?;
+    let output = command
+        .output()
+        .await
+        .map_err(|error| CoreError::Internal(format!("cannot read the backup: {error}")))?;
+    drop(config);
+    let text = String::from_utf8_lossy(&output.stderr);
+    if !output.status.success() {
+        let reason = text
+            .lines()
+            .map(strip_timestamp)
+            .find_map(|line| line.strip_prefix("Failed: "))
+            .unwrap_or("the backup could not be read");
+        return Err(CoreError::Validation(reason.to_owned()));
+    }
+    Ok(namespaces_in(&text))
+}
+
+/// Namespaces named by a verbose dry run, in order, without duplicates.
+fn namespaces_in(output: &str) -> Vec<String> {
+    let mut namespaces: Vec<String> = Vec::new();
+    for line in output.lines().map(strip_timestamp) {
+        let named = line.starts_with("archive prelude") || line.starts_with("found collection `");
+        let Some(namespace) = line.split('`').nth(1).filter(|_| named) else {
+            continue;
+        };
+        let system = namespace.starts_with("admin.")
+            || namespace.starts_with("config.")
+            || namespace.starts_with("local.")
+            || namespace.contains(".system.");
+        if !system && !namespaces.iter().any(|known| known == namespace) {
+            namespaces.push(namespace.to_owned());
+        }
+    }
+    namespaces
 }
 
 /// Tool lines start with an RFC 3339 timestamp and a tab.
@@ -379,6 +514,44 @@ impl Drop for PasswordFile {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn reads_namespaces_from_a_dry_run() {
+        let output = "2026-10-17T18:40:39.207+0200\tarchive prelude `crm.leads`\n\
+            2026-10-17T18:40:39.207+0200\tarchive prelude `admin.system.version`\n\
+            2026-10-17T18:40:39.207+0200\tfound collection `shop.users` bson to restore to `shop.users`\n\
+            2026-10-17T18:40:39.207+0200\tfound collection metadata from `shop.users` to restore to `shop.users`\n\
+            2026-10-17T18:40:39.207+0200\tarchive prelude `crm.leads`\n";
+        assert_eq!(super::namespaces_in(output), ["crm.leads", "shop.users"]);
+    }
+
+    #[test]
+    fn backup_options_map_to_tool_flags() {
+        use super::{BackupRequest, BackupScope, backup_args};
+        let path = std::path::Path::new("/tmp/a.gz");
+        let mut request = BackupRequest::of(BackupScope::Database {
+            database: "shop".into(),
+        });
+        request.exclude_collections = vec!["logs".into()];
+        let args = backup_args(&request, path).unwrap();
+        assert!(args.contains(&"--excludeCollection=logs".to_owned()));
+
+        let mut request = BackupRequest::of(BackupScope::Collection {
+            database: "shop".into(),
+            collection: "orders".into(),
+        });
+        request.query = Some(crate::ejson::EJsonDocument::from(
+            bson::doc! { "paid": true },
+        ));
+        let args = backup_args(&request, path).unwrap();
+        assert!(args.contains(&r#"--query={"paid":true}"#.to_owned()));
+
+        request.oplog = true;
+        assert!(
+            backup_args(&request, path).is_err(),
+            "--oplog needs a whole-server backup"
+        );
+    }
+
     use super::*;
 
     #[test]
@@ -417,6 +590,8 @@ mod tests {
             drop: true,
             database: Some("shop".into()),
             rename_to: Some("shop_copy".into()),
+            namespaces: Vec::new(),
+            oplog_replay: false,
         };
         assert_eq!(
             restore_args(&request, Path::new("/dumps/x")),
@@ -447,5 +622,22 @@ mod tests {
         let path = file.path.clone();
         drop(file);
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn selected_namespaces_replace_the_database_filter() {
+        let request = RestoreRequest {
+            source: RestoreSource::Archive,
+            drop: false,
+            database: Some("shop".into()),
+            rename_to: Some("shop_copy".into()),
+            namespaces: vec!["shop.orders".into()],
+            oplog_replay: true,
+        };
+        let args = restore_args(&request, Path::new("/dumps/x.archive"));
+        assert!(args.contains(&"--nsInclude=shop.orders".to_owned()));
+        assert!(!args.contains(&"--nsInclude=shop.*".to_owned()));
+        assert!(args.contains(&"--nsFrom=shop.*".to_owned()));
+        assert!(args.contains(&"--oplogReplay".to_owned()));
     }
 }
