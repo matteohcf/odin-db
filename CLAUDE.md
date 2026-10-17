@@ -105,7 +105,10 @@ pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, cli
 pnpm format           apply Biome fixes and formatting
 pnpm test:integration core integration tests against real MongoDB (requires Docker)
 pnpm build            production build of the desktop app
+scripts/build-database-tools.sh <target>   build the bundled mongodump/mongorestore (needs Go)
 ```
+
+Releases: see `docs/releasing.md`.
 
 ## Git and contributions
 
