@@ -4,6 +4,7 @@ use odin_core::connection::ConnectionId;
 use odin_core::documents;
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::query::{self, AggregateRequest, CursorId, DocumentPage, FindRequest, Namespace};
+use odin_core::schema::{self, FieldSummary};
 use tauri::State;
 
 use crate::ipc::IpcError;
@@ -47,6 +48,19 @@ pub async fn count_documents(
 ) -> Result<f64, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(query::count_documents(&handle, &namespace, filter).await?)
+}
+
+/// Field paths of a sample of the collection, for query autocompletion.
+#[tauri::command]
+#[specta::specta]
+pub async fn sample_fields(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    size: u32,
+) -> Result<Vec<FieldSummary>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(schema::sample_fields(&handle, &namespace, size).await?)
 }
 
 #[tauri::command]

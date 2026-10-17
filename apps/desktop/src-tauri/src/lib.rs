@@ -31,6 +31,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
         commands::documents::fetch_more_documents,
         commands::documents::close_cursor,
         commands::documents::count_documents,
+        commands::documents::sample_fields,
         commands::documents::insert_document,
         commands::documents::replace_document,
         commands::documents::delete_document,

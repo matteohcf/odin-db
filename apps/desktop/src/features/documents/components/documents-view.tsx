@@ -1,4 +1,10 @@
-import type { ConnectionInfo, EJsonDocument, EJsonValue, Namespace } from "@odin-db/bindings";
+import type {
+  ConnectionInfo,
+  EJsonDocument,
+  EJsonValue,
+  FieldSummary,
+  Namespace,
+} from "@odin-db/bindings";
 import { commands } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import {
@@ -29,6 +35,7 @@ import {
   useInsertDocument,
   useReplaceDocument,
 } from "../api/mutations";
+import { useSampleFields } from "../api/use-sample-fields";
 import {
   emptyQueryForm,
   type FindQuery,
@@ -36,6 +43,7 @@ import {
   type QueryField,
   type QueryForm,
 } from "../lib/query-form";
+import { historyKey, useQueryHistory } from "../store/query-history-store";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { QueryBar } from "./query-bar";
 
@@ -53,6 +61,7 @@ interface DocumentsViewProps {
 
 const matchAll: FindQuery = { filter: {}, sort: null, projection: null, skip: null, limit: null };
 const NEW_DOCUMENT = "{\n  \n}";
+const NO_FIELDS: FieldSummary[] = [];
 
 /** Query, browse and edit the documents of one collection. */
 export function DocumentsView({ connection, namespace, editable, isView }: DocumentsViewProps) {
@@ -69,6 +78,14 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
   const [editor, setEditor] = useState<EditorState>({ open: false });
   const [toDelete, setToDelete] = useState<JsonObject | undefined>();
   const lastQuery = useRef<FindQuery>(matchAll);
+
+  const fields = useSampleFields(connection.id, namespace);
+  const recordQuery = useQueryHistory((state) => state.record);
+  const queryHistoryKey = historyKey(
+    connection.profileId,
+    namespace.database,
+    namespace.collection,
+  );
 
   const insert = useInsertDocument();
   const replace = useReplaceDocument();
@@ -92,13 +109,15 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
     [results, count.reset, connection.id, namespace],
   );
 
-  async function runForm() {
-    const parsed = await parseQueryForm(form, { invalidNumber: t("query.invalidNumber") });
+  async function runForm(toRun: QueryForm = form) {
+    setForm(toRun);
+    const parsed = await parseQueryForm(toRun, { invalidNumber: t("query.invalidNumber") });
     if (!parsed.ok) {
       setFormErrors(parsed.errors);
       return;
     }
     setFormErrors({});
+    recordQuery(queryHistoryKey, toRun);
     await execute(parsed.query);
   }
 
@@ -153,6 +172,9 @@ export function DocumentsView({ connection, namespace, editable, isView }: Docum
         running={running}
         onChange={(field, value) => setForm((current) => ({ ...current, [field]: value }))}
         onRun={() => void runForm()}
+        onRunForm={(next) => void runForm(next)}
+        fields={fields.data ?? NO_FIELDS}
+        historyKey={queryHistoryKey}
         actions={
           <>
             {editable && (

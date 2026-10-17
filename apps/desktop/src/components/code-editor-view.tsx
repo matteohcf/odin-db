@@ -1,11 +1,11 @@
 import { javascript } from "@codemirror/lang-javascript";
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { syntaxHighlighting } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
-import { tags } from "@lezer/highlight";
 import { cn } from "@odin-db/ui/lib/utils";
 import { basicSetup } from "codemirror";
 import { useEffect, useRef } from "react";
+import { highlight } from "@/lib/codemirror-highlight";
 
 // Colors come from the design tokens, so the editor follows light/dark automatically.
 const theme = EditorView.theme({
@@ -34,17 +34,6 @@ const theme = EditorView.theme({
     backgroundColor: "var(--selection) !important",
   },
 });
-
-// The same hues as grid cells: a string, a number or an id looks alike everywhere.
-const highlight = HighlightStyle.define([
-  { tag: [tags.string, tags.special(tags.string), tags.regexp], color: "var(--type-string)" },
-  { tag: [tags.number], color: "var(--type-number)" },
-  { tag: [tags.bool, tags.null, tags.keyword], color: "var(--type-boolean)" },
-  { tag: [tags.function(tags.variableName)], color: "var(--type-object-id)" },
-  { tag: [tags.propertyName, tags.definition(tags.propertyName)], color: "var(--foreground)" },
-  { tag: [tags.comment], color: "var(--muted-foreground)", fontStyle: "italic" },
-  { tag: [tags.punctuation, tags.bracket, tags.separator], color: "var(--muted-foreground)" },
-]);
 
 export interface CodeEditorProps {
   initialValue: string;

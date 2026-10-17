@@ -34,9 +34,11 @@ export async function parseQueryForm(
   const errors: Partial<Record<QueryField, string>> = {};
 
   const document = async (field: "filter" | "sort" | "projection") => {
-    if (form[field].trim() === "") return null;
+    const text = form[field].trim();
+    if (text === "") return null;
     try {
-      return await parseShellDocument(form[field]);
+      // Braces are optional, as in Compass: `status: "active"` is a document body.
+      return await parseShellDocument(text.startsWith("{") ? text : `{ ${text} }`);
     } catch (error) {
       errors[field] = error instanceof Error ? error.message : String(error);
       return null;

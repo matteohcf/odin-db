@@ -30,6 +30,14 @@ describe("parseQueryForm", () => {
     });
   });
 
+  it("accepts documents without their braces", async () => {
+    const result = await parseQueryForm(
+      { ...emptyQueryForm, filter: 'status: "active"' },
+      messages,
+    );
+    expect(result).toMatchObject({ ok: true, query: { filter: { status: "active" } } });
+  });
+
   it("reports every invalid field at once", async () => {
     const result = await parseQueryForm(
       { ...emptyQueryForm, filter: "{ a: ", skip: "-1", limit: "1.5" },

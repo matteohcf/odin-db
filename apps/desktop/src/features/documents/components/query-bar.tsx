@@ -1,31 +1,74 @@
+import type { FieldSummary } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronDown, Play } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useId, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { QueryField, QueryForm } from "../lib/query-form";
+import { QueryEditor } from "@/components/query-editor";
+import { type QueryKind, queryCompletionSource } from "@/lib/query-completion";
+import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
+import locale from "../locales/en.json";
+import { QueryFieldFrame } from "./query-field-frame";
+import { QueryHistoryMenu } from "./query-history-menu";
 
 interface QueryBarProps {
   form: QueryForm;
   errors: Partial<Record<QueryField, string>>;
   running: boolean;
+  /** Sampled field paths, for autocompletion. */
+  fields: readonly FieldSummary[];
+  historyKey: string;
   onChange: (field: QueryField, value: string) => void;
   onRun: () => void;
+  /** Replaces the whole form and runs it (history, reset). */
+  onRunForm: (form: QueryForm) => void;
   /** View actions shown after Run, e.g. Insert document. */
   actions?: ReactNode;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
+type HelpKey = keyof typeof locale.query.help;
 
-export function QueryBar({ form, errors, running, onChange, onRun, actions }: QueryBarProps) {
+const hasOptionsIn = (form: QueryForm) =>
+  form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
+
+export function QueryBar({
+  form,
+  errors,
+  running,
+  fields,
+  historyKey,
+  onChange,
+  onRun,
+  onRunForm,
+  actions,
+}: QueryBarProps) {
   const { t } = useTranslation("documents");
-  const hasOptions =
-    form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
+  const hasOptions = hasOptionsIn(form);
+  const isEmpty = !hasOptions && form.filter.trim() === "";
   const [expanded, setExpanded] = useState(hasOptions);
   const showOptions = expanded || errors.sort || errors.projection || errors.skip || errors.limit;
 
-  const onKeyDown = (event: KeyboardEvent) => {
+  // Completion sources live as long as their editors; they read the latest sample.
+  const fieldsRef = useRef(fields);
+  fieldsRef.current = fields;
+  const completions = useMemo(() => {
+    const describe = (label: string) => {
+      const key = label.replace(/^\$/, "");
+      return key in locale.query.help ? t(`query.help.${key as HelpKey}`) : undefined;
+    };
+    const labels = {
+      fields: t("query.sections.fields"),
+      operators: t("query.sections.operators"),
+      values: t("query.sections.values"),
+    };
+    const source = (kind: QueryKind) =>
+      queryCompletionSource({ kind, fields: () => fieldsRef.current, describe, labels });
+    return { filter: source("filter"), sort: source("sort"), projection: source("projection") };
+  }, [t]);
+
+  const onNumberKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter") {
       event.preventDefault();
       onRun();
@@ -37,16 +80,28 @@ export function QueryBar({ form, errors, running, onChange, onRun, actions }: Qu
   return (
     <div className="flex flex-col gap-2 border-b px-3 py-2.5">
       <div className="flex items-center gap-2">
-        <QueryInput
-          field="filter"
+        <QueryFieldFrame
           label={t("query.filter")}
-          value={form.filter}
-          placeholder={t("query.filterPlaceholder")}
-          error={errors.filter}
-          onChange={onChange}
-          onKeyDown={onKeyDown}
+          invalid={Boolean(errors.filter)}
           className="flex-1"
-          autoFocus
+        >
+          <QueryEditor
+            value={form.filter}
+            onChange={(value) => onChange("filter", value)}
+            onSubmit={onRun}
+            completions={completions.filter}
+            placeholder={t("query.filterPlaceholder")}
+            ariaLabel={t("query.filter")}
+            invalid={Boolean(errors.filter)}
+            autoFocus
+          />
+        </QueryFieldFrame>
+        <QueryHistoryMenu
+          historyKey={historyKey}
+          onSelect={(entry) => {
+            if (hasOptionsIn(entry)) setExpanded(true);
+            onRunForm(entry);
+          }}
         />
         <Button
           variant="ghost"
@@ -58,6 +113,19 @@ export function QueryBar({ form, errors, running, onChange, onRun, actions }: Qu
           {t("query.options")}
           <ChevronDown className={cn("transition-transform", showOptions && "rotate-180")} />
         </Button>
+        {!isEmpty && (
+          <Button
+            variant="ghost"
+            size="sm"
+            title={t("query.resetHint")}
+            onClick={() => {
+              setExpanded(false);
+              onRunForm(emptyQueryForm);
+            }}
+          >
+            {t("query.reset")}
+          </Button>
+        )}
         <Button size="sm" onClick={onRun} disabled={running} title={t("query.runShortcut")}>
           <Play className="fill-current" />
           {t("query.run")}
@@ -75,48 +143,56 @@ export function QueryBar({ form, errors, running, onChange, onRun, actions }: Qu
 
       {showOptions && (
         <div className="flex items-center gap-2">
-          <QueryInput
-            field="sort"
+          <QueryFieldFrame
             label={t("query.sort")}
-            value={form.sort}
-            placeholder={t("query.sortPlaceholder")}
-            error={errors.sort}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
+            invalid={Boolean(errors.sort)}
             className="flex-1"
-          />
-          <QueryInput
-            field="projection"
+          >
+            <QueryEditor
+              value={form.sort}
+              onChange={(value) => onChange("sort", value)}
+              onSubmit={onRun}
+              completions={completions.sort}
+              placeholder={t("query.sortPlaceholder")}
+              ariaLabel={t("query.sort")}
+              invalid={Boolean(errors.sort)}
+            />
+          </QueryFieldFrame>
+          <QueryFieldFrame
             label={t("query.projection")}
-            value={form.projection}
-            placeholder={t("query.projectionPlaceholder")}
-            error={errors.projection}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
+            invalid={Boolean(errors.projection)}
             className="flex-1"
-          />
-          <QueryInput
-            field="skip"
-            label={t("query.skip")}
-            value={form.skip}
-            placeholder={t("query.numberPlaceholder")}
-            error={errors.skip}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
-            className="w-28"
-            inputMode="numeric"
-          />
-          <QueryInput
-            field="limit"
-            label={t("query.limit")}
-            value={form.limit}
-            placeholder={t("query.numberPlaceholder")}
-            error={errors.limit}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
-            className="w-28"
-            inputMode="numeric"
-          />
+          >
+            <QueryEditor
+              value={form.projection}
+              onChange={(value) => onChange("projection", value)}
+              onSubmit={onRun}
+              completions={completions.projection}
+              placeholder={t("query.projectionPlaceholder")}
+              ariaLabel={t("query.projection")}
+              invalid={Boolean(errors.projection)}
+            />
+          </QueryFieldFrame>
+          {(["skip", "limit"] as const).map((field) => (
+            <QueryFieldFrame
+              key={field}
+              label={t(`query.${field}`)}
+              invalid={Boolean(errors[field])}
+              className="w-28"
+            >
+              <input
+                value={form[field]}
+                placeholder={t("query.numberPlaceholder")}
+                onChange={(event) => onChange(field, event.target.value)}
+                onKeyDown={onNumberKeyDown}
+                aria-label={t(`query.${field}`)}
+                aria-invalid={errors[field] !== undefined}
+                inputMode="numeric"
+                autoComplete="off"
+                className="h-full min-w-0 flex-1 bg-transparent pr-2.5 font-mono text-xs outline-none placeholder:text-muted-foreground/60"
+              />
+            </QueryFieldFrame>
+          ))}
         </div>
       )}
 
@@ -129,64 +205,6 @@ export function QueryBar({ form, errors, running, onChange, onRun, actions }: Qu
           ))}
         </ul>
       )}
-    </div>
-  );
-}
-
-interface QueryInputProps {
-  field: QueryField;
-  label: string;
-  value: string;
-  placeholder: string;
-  error: string | undefined;
-  onChange: (field: QueryField, value: string) => void;
-  onKeyDown: (event: KeyboardEvent) => void;
-  className?: string;
-  autoFocus?: boolean;
-  inputMode?: "numeric";
-}
-
-/** An input with its label inside the frame, like a terminal prompt. */
-function QueryInput({
-  field,
-  label,
-  value,
-  placeholder,
-  error,
-  onChange,
-  onKeyDown,
-  className,
-  autoFocus,
-  inputMode,
-}: QueryInputProps) {
-  const id = useId();
-  return (
-    <div
-      className={cn(
-        "flex h-8 min-w-0 items-center rounded-md border bg-background shadow-xs transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40",
-        error &&
-          "border-destructive focus-within:border-destructive focus-within:ring-destructive/20",
-        className,
-      )}
-    >
-      <label htmlFor={id} className="shrink-0 pr-2 pl-2.5 text-muted-foreground text-xs">
-        {label}
-      </label>
-      <input
-        id={id}
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(field, event.target.value)}
-        onKeyDown={onKeyDown}
-        spellCheck={false}
-        autoComplete="off"
-        autoCapitalize="off"
-        // biome-ignore lint/a11y/noAutofocus: the filter is the primary action of a new collection tab.
-        autoFocus={autoFocus}
-        inputMode={inputMode}
-        aria-invalid={error !== undefined}
-        className="h-full min-w-0 flex-1 bg-transparent pr-2.5 font-mono text-xs outline-none placeholder:text-muted-foreground/60"
-      />
     </div>
   );
 }

@@ -155,6 +155,64 @@ function serverOf(connectionId: string) {
   return { connection, databases: servers.local ?? {} };
 }
 
+const EJSON_TYPES: Record<string, string> = {
+  $oid: "objectId",
+  $date: "date",
+  $numberInt: "int",
+  $numberLong: "long",
+  $numberDouble: "double",
+  $numberDecimal: "decimal",
+  $binary: "binData",
+  $timestamp: "timestamp",
+  $regularExpression: "regex",
+};
+
+/** Field paths of canonical EJSON documents, like core's `schema::sample_fields`. */
+function sampleFields(docs: Doc[]) {
+  const stats = new Map<string, { count: number; types: Set<string> }>();
+  const visit = (value: unknown, path: string, seen: Map<string, Set<string>>) => {
+    const wrapper =
+      value && typeof value === "object" && !Array.isArray(value)
+        ? Object.keys(value).find((key) => key in EJSON_TYPES)
+        : undefined;
+    const type = Array.isArray(value)
+      ? "array"
+      : value === null
+        ? "null"
+        : wrapper
+          ? (EJSON_TYPES[wrapper] as string)
+          : typeof value === "object"
+            ? "object"
+            : typeof value === "boolean"
+              ? "bool"
+              : "string";
+    seen.set(path, (seen.get(path) ?? new Set()).add(type));
+    const children = Array.isArray(value) ? value : type === "object" ? [value] : [];
+    for (const child of children) {
+      if (child && typeof child === "object" && !Array.isArray(child) && !wrapper) {
+        for (const [key, inner] of Object.entries(child)) visit(inner, `${path}.${key}`, seen);
+      }
+    }
+  };
+  for (const doc of docs) {
+    const seen = new Map<string, Set<string>>();
+    for (const [key, value] of Object.entries(doc)) visit(value, key, seen);
+    for (const [path, types] of seen) {
+      const entry = stats.get(path) ?? { count: 0, types: new Set<string>() };
+      entry.count += 1;
+      for (const type of types) entry.types.add(type);
+      stats.set(path, entry);
+    }
+  }
+  return [...stats]
+    .map(([path, { count, types }]) => ({
+      path,
+      types: [...types],
+      frequency: count / Math.max(docs.length, 1),
+    }))
+    .sort((a, b) => b.frequency - a.frequency || a.path.localeCompare(b.path));
+}
+
 function collectionOf(connectionId: string, database: string, collection: string) {
   const { connection, databases } = serverOf(connectionId);
   databases[database] ??= {};
@@ -827,6 +885,11 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   close_shell: (args) => {
     shells.delete(id("id", args));
     return null;
+  },
+  sample_fields: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    return sampleFields(coll.docs.slice(0, args.size as number));
   },
   find_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };

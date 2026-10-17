@@ -21,6 +21,8 @@ export const commands = {
 	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
 	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
 	countDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("count_documents", { connectionId, namespace, filter })),
+	/**  Field paths of a sample of the collection, for query autocompletion. */
+	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size })),
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
 	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
@@ -189,6 +191,18 @@ export type ExportRequest = {
 };
 
 export type ExportSource = { kind: "find"; request: FindRequest } | { kind: "aggregate"; pipeline: EJsonDocument[] };
+
+export type FieldSummary = {
+	/**
+	 *  Dot notation, as used in queries: fields of documents inside arrays
+	 *  share the array's path (`items.sku`).
+	 */
+	path: string,
+	/**  BSON type names seen for this path, most frequent first. */
+	types: string[],
+	/**  Share of sampled documents that contain the path, from 0 to 1. */
+	frequency: number | null,
+};
 
 export type FilePreview = { kind: "json"; documents: EJsonDocument[] } | { kind: "csv"; headers: string[]; rows: string[][]; suggested: CsvType[] };
 
