@@ -93,5 +93,5 @@ jobs:
           args: --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json
           tagName: ${{ needs.release-please.outputs.tag_name }}
           uploadWorkflowArtifacts: ${{ github.event_name == 'workflow_dispatch' }}
-          workflowArtifactNamePattern: odin-db-[platform]-[arch]
+          workflowArtifactNamePattern: odin-db-[platform]-[arch]-[bundle]
           retryAttempts: 1
