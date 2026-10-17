@@ -14,6 +14,8 @@ import {
   EyeOff,
   ListChecks,
   MoveHorizontal,
+  Pin,
+  PinOff,
   SquareCheck,
   SquareDashed,
 } from "lucide-react";
@@ -27,6 +29,9 @@ interface ColumnMenuProps {
   onOpenChange: (open: boolean) => void;
   columnActions: ColumnActions | undefined;
   onFit: () => void;
+  pinned: boolean;
+  /** Absent for `_id`, which is always pinned. */
+  onTogglePin: (() => void) | undefined;
   /** Absent when this is the last visible column. */
   onHide: (() => void) | undefined;
 }
@@ -38,6 +43,8 @@ export function ColumnMenu({
   onOpenChange,
   columnActions,
   onFit,
+  pinned,
+  onTogglePin,
   onHide,
 }: ColumnMenuProps) {
   const { t } = useTranslation("results");
@@ -88,6 +95,12 @@ export function ColumnMenu({
             )}
             <DropdownMenuSeparator />
           </>
+        )}
+        {onTogglePin && (
+          <DropdownMenuItem onSelect={onTogglePin}>
+            {pinned ? <PinOff /> : <Pin />}
+            {pinned ? t("column.unpin") : t("column.pin")}
+          </DropdownMenuItem>
         )}
         <DropdownMenuItem onSelect={onFit}>
           <MoveHorizontal />

@@ -91,3 +91,33 @@ export function columnSlots(widths: readonly number[], rendered: Iterable<number
   if (total > end) slots.push({ gap: total - end, key: "gap-end" });
   return slots;
 }
+
+/** `_id` first, then pinned columns in the order they were pinned, then the rest. */
+export function pinnedFirst<T extends { id: string }>(
+  columns: readonly T[],
+  pinned: readonly string[],
+): T[] {
+  const sticky = ["_id", ...pinned.filter((id) => id !== "_id")];
+  const rank = (id: string) => {
+    const index = sticky.indexOf(id);
+    return index < 0 ? sticky.length : index;
+  };
+  // Array.sort is stable, so unpinned columns keep their order.
+  return [...columns].sort((a, b) => rank(a.id) - rank(b.id));
+}
+
+/** Left offsets of the columns that stay in view, each after the ones before it. */
+export function stickyOffsets(
+  columns: readonly { id: string; width: number }[],
+  pinned: readonly string[],
+  start: number,
+): Map<string, number> {
+  const offsets = new Map<string, number>();
+  let left = start;
+  for (const column of columns) {
+    if (column.id !== "_id" && !pinned.includes(column.id)) break;
+    offsets.set(column.id, left);
+    left += column.width;
+  }
+  return offsets;
+}

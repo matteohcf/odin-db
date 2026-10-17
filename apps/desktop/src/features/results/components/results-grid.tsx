@@ -38,6 +38,7 @@ import {
   GitCompareArrows,
   ListChecks,
   PencilLine,
+  Pin,
   Trash2,
 } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -50,7 +51,14 @@ import { call, errorMessage } from "@/lib/ipc";
 import { linkOf } from "@/lib/links";
 import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
-import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns";
+import {
+  columnSlots,
+  columnWidth,
+  dominantKind,
+  fitWidth,
+  pinnedFirst,
+  stickyOffsets,
+} from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { useResultsView } from "../store/results-view-store";
 import { ColumnMenu } from "./column-menu";
@@ -199,7 +207,9 @@ export function ResultsGrid({
     data: rows as JsonObject[],
     columnResizeMode: "onChange",
   });
-  const headers = table.getHeaderGroups()[0]?.headers ?? [];
+  // Pinned fields survive new runs, like widths: they are kept by name.
+  const [pinned, setPinned] = useState<readonly string[]>([]);
+  const headers = pinnedFirst(table.getHeaderGroups()[0]?.headers ?? [], pinned);
   const totalWidth = INDEX_WIDTH + table.getTotalSize();
   const resizing = headers.some((header) => header.column.getIsResizing());
 
@@ -227,11 +237,16 @@ export function ResultsGrid({
   const widthsKey = widths.join();
   // biome-ignore lint/correctness/useExhaustiveDependencies: `widthsKey` stands for the sizes.
   useEffect(() => columnVirtualizer.measure(), [widthsKey, columnVirtualizer]);
-  const idIndex = headers.findIndex((header) => header.id === "_id");
+  // `_id` and pinned columns stay in view while wide documents scroll sideways.
+  const sticky = stickyOffsets(
+    headers.map((header, index) => ({ id: header.id, width: widths[index] ?? 0 })),
+    pinned,
+    INDEX_WIDTH,
+  );
   const slots = columnSlots(widths, [
     ...columnVirtualizer.getVirtualItems().map((column) => column.index),
-    // `_id` is pinned, and a cell being edited must stay mounted.
-    idIndex,
+    // Sticky columns, and a cell being edited, must stay mounted.
+    ...headers.flatMap((header, index) => (sticky.has(header.id) ? [index] : [])),
     headers.findIndex((header) => header.id === editingCell?.field),
   ]);
   const lastVisible = items.at(-1)?.index ?? 0;
@@ -363,6 +378,12 @@ export function ResultsGrid({
                     <>
                       {meta?.kind && <TypeIcon kind={meta.kind} />}
                       <span className="truncate text-foreground">{header.id}</span>
+                      {pinned.includes(header.id) && (
+                        <Pin
+                          className="size-3 shrink-0 text-muted-foreground"
+                          aria-label={t("column.pinned")}
+                        />
+                      )}
                       {sorted === 1 && <ArrowUp className="size-3 shrink-0 text-primary" />}
                       {sorted === -1 && <ArrowDown className="size-3 shrink-0 text-primary" />}
                       {sorted !== null && multiSort && (
@@ -380,13 +401,9 @@ export function ResultsGrid({
                       }
                       className={cn(
                         "group/header relative flex shrink-0 items-center border-r text-left font-medium",
-                        // _id stays in view while wide documents scroll sideways.
-                        header.id === "_id" && "sticky z-20 bg-sidebar",
+                        sticky.has(header.id) && "sticky z-20 bg-sidebar",
                       )}
-                      style={{
-                        width: header.getSize(),
-                        ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
-                      }}
+                      style={{ width: header.getSize(), left: sticky.get(header.id) }}
                       title={header.id}
                       onContextMenu={(event) => {
                         // The header has its own menu, not the selected row's.
@@ -420,6 +437,17 @@ export function ResultsGrid({
                             ...sizes,
                             [header.id]: fitWidth(rows, header.id),
                           }))
+                        }
+                        pinned={pinned.includes(header.id)}
+                        onTogglePin={
+                          header.id === "_id"
+                            ? undefined
+                            : () =>
+                                setPinned((current) =>
+                                  current.includes(header.id)
+                                    ? current.filter((id) => id !== header.id)
+                                    : [...current, header.id],
+                                )
                         }
                         onHide={
                           headers.length > 1
@@ -533,15 +561,12 @@ export function ResultsGrid({
                           }}
                           className={cn(
                             "flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
-                            header.id === "_id" &&
+                            sticky.has(header.id) &&
                               (isSelected
                                 ? "sticky z-[5] bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"
                                 : "sticky z-[5] bg-background"),
                           )}
-                          style={{
-                            width: header.getSize(),
-                            ...(header.id === "_id" ? { left: INDEX_WIDTH } : {}),
-                          }}
+                          style={{ width: header.getSize(), left: sticky.get(header.id) }}
                         >
                           {editingCell?.index === item.index && editingCell.field === header.id ? (
                             <InlineCellEditor

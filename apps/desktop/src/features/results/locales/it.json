@@ -69,7 +69,10 @@
     "fit": "Adatta la larghezza al contenuto",
     "hide": "Nascondi colonna",
     "copyName": "Copia nome del campo",
-    "copied": "Copiato {{field}}"
+    "copied": "Copiato {{field}}",
+    "pin": "Fissa a sinistra",
+    "unpin": "Sblocca",
+    "pinned": "Fissata"
   },
   "rows": {
     "copy_one": "Copia {{count}} documento",

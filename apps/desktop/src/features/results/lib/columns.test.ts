@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { columnSlots, fitWidth } from "./columns";
+import { columnSlots, fitWidth, pinnedFirst, stickyOffsets } from "./columns";
 
 describe("fitWidth", () => {
   it("fits the longest value, within limits", () => {
@@ -32,5 +32,38 @@ describe("columnSlots", () => {
 
   it("ignores out-of-range and duplicate indexes", () => {
     expect(columnSlots([10, 20], [-1, 1, 1, 5])).toEqual([{ gap: 10, key: "gap-1" }, { index: 1 }]);
+  });
+});
+
+describe("pinned columns", () => {
+  const columns = ["name", "_id", "age", "plan", "email"].map((id) => ({ id }));
+
+  it("puts _id first, then pinned columns, keeping the rest in order", () => {
+    expect(pinnedFirst(columns, ["plan", "age"]).map((c) => c.id)).toEqual([
+      "_id",
+      "plan",
+      "age",
+      "name",
+      "email",
+    ]);
+    expect(pinnedFirst(columns, []).map((c) => c.id)).toEqual([
+      "_id",
+      "name",
+      "age",
+      "plan",
+      "email",
+    ]);
+  });
+
+  it("stacks sticky columns from the left", () => {
+    const sized = [
+      { id: "_id", width: 200 },
+      { id: "plan", width: 80 },
+      { id: "name", width: 120 },
+    ];
+    expect([...stickyOffsets(sized, ["plan"], 56)]).toEqual([
+      ["_id", 56],
+      ["plan", 256],
+    ]);
   });
 });

@@ -69,7 +69,10 @@
     "fit": "Fit width to content",
     "hide": "Hide column",
     "copyName": "Copy field name",
-    "copied": "Copied {{field}}"
+    "copied": "Copied {{field}}",
+    "pin": "Pin to the left",
+    "unpin": "Unpin",
+    "pinned": "Pinned"
   },
   "rows": {
     "copy_one": "Copy {{count}} document",
