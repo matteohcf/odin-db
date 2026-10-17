@@ -21,6 +21,8 @@ export interface Settings {
   queryHistorySize: number;
   /** Last language picked in the query code dialog. */
   queryCodeLanguage: CodeLanguage;
+  /** Sidebar width in pixels, set by dragging its edge. */
+  sidebarWidth: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -33,7 +35,13 @@ export const DEFAULT_SETTINGS: Settings = {
   shellScrollback: 10_000,
   queryHistorySize: 50,
   queryCodeLanguage: "javascript",
+  sidebarWidth: 256,
 };
+
+export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;
+
+export const clampSidebarWidth = (width: number) =>
+  Math.round(Math.min(SIDEBAR_WIDTH.max, Math.max(SIDEBAR_WIDTH.min, width)));
 
 export const ZOOM_LEVELS = [80, 90, 100, 110, 125, 150] as const;
 

@@ -163,7 +163,8 @@
       "resetZoom": "Actual size",
       "reopenTab": "Reopen the closed tab",
       "goToTab": "Go to tab 1–8",
-      "lastTab": "Go to the last tab"
+      "lastTab": "Go to the last tab",
+      "filterSidebar": "Filter the sidebar"
     }
   },
   "queryCode": {

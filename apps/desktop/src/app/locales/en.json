@@ -11,5 +11,9 @@
     "description": "Running backups, restores, imports, exports and copies are cancelled first. Backups interrupted this way are marked as such in the history.",
     "keep": "Keep working",
     "confirm": "Quit anyway"
+  },
+  "sidebar": {
+    "resize": "Resize the sidebar",
+    "resizeHint": "Drag to resize. Double-click to restore the default width."
   }
 }

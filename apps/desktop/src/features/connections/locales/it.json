@@ -7,7 +7,11 @@
     "emptyBody": "Aggiungi un server MongoDB con la sua stringa di connessione. Le password sono salvate nel portachiavi di sistema.",
     "loadFailed": "Impossibile caricare le connessioni: {{message}}",
     "localhost": "Connetti a localhost:27017",
-    "localhostMissing": "Nessun server MongoDB ha risposto su localhost:27017."
+    "localhostMissing": "Nessun server MongoDB ha risposto su localhost:27017.",
+    "collapseAll": "Comprimi tutto",
+    "filter": "Filtra database e collezioni ({{shortcut}})",
+    "filterLabel": "Filtra database e collezioni",
+    "clearFilter": "Cancella il filtro"
   },
   "profile": {
     "connect": "Connetti",

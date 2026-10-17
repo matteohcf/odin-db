@@ -11,5 +11,9 @@
     "description": "Backup, ripristini, importazioni, esportazioni e copie in corso vengono prima annullati. I backup interrotti così vengono segnalati nella cronologia.",
     "keep": "Continua a lavorare",
     "confirm": "Esci comunque"
+  },
+  "sidebar": {
+    "resize": "Ridimensiona la barra laterale",
+    "resizeHint": "Trascina per ridimensionare. Doppio clic per tornare alla larghezza predefinita."
   }
 }

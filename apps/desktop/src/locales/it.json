@@ -163,7 +163,8 @@
       "resetZoom": "Dimensioni reali",
       "reopenTab": "Riapri la scheda chiusa",
       "goToTab": "Vai alla scheda 1–8",
-      "lastTab": "Vai all'ultima scheda"
+      "lastTab": "Vai all'ultima scheda",
+      "filterSidebar": "Filtra la barra laterale"
     }
   },
   "queryCode": {

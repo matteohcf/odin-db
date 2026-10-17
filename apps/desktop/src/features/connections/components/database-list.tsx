@@ -24,9 +24,10 @@ import { formatBytes } from "@/lib/format";
 import { connectionKeys } from "../api/keys";
 import { useCollections, useDatabases, useProfile } from "../api/queries";
 import { useCopyTargets } from "../hooks/use-copy-targets";
-import { useExpanded } from "../store/explorer-store";
+import { useExpanded, useTreeFilter } from "../store/explorer-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
+import { HighlightMatch } from "./highlight-match";
 import { NodeMenu } from "./node-menu";
 import { RenameCollectionDialog } from "./rename-collection-dialog";
 import { TreeMessage, TreeRow } from "./tree-row";
@@ -34,12 +35,14 @@ import { TreeMessage, TreeRow } from "./tree-row";
 export function DatabaseList({ connection }: { connection: ConnectionInfo }) {
   const { t } = useTranslation("connections");
   const { data, error, isPending } = useDatabases(connection.id);
+  const filter = useTreeFilter();
 
   if (isPending) return <TreeMessage depth={1}>{t("tree.loading")}</TreeMessage>;
   if (error) {
     return <TreeMessage depth={1}>{t("tree.failed", { message: error.message })}</TreeMessage>;
   }
   if (data.length === 0) return <TreeMessage depth={1}>{t("tree.noDatabases")}</TreeMessage>;
+  if (filter && data.every((database) => SYSTEM_DATABASES.has(database.name))) return null;
 
   return (
     <ul className="flex flex-col gap-px">
@@ -64,24 +67,34 @@ function DatabaseNode({
   const [toolDialog, setToolDialog] = useState<
     "backup" | "restore" | "export" | "import" | "copy" | "createCollection" | "drop" | null
   >(null);
+  const filter = useTreeFilter();
+  const nameMatches = filter !== "" && database.name.toLowerCase().includes(filter);
   const collections = useCollections(
     connection.id,
     database.name,
-    expanded || toolDialog === "export",
+    expanded || toolDialog === "export" || filter !== "",
   );
+  // A matching database shows all its collections; otherwise only matching ones.
+  const shownCollections =
+    filter && !nameMatches
+      ? collections.data?.filter((collection) => collection.name.toLowerCase().includes(filter))
+      : collections.data;
+  const open = filter && !nameMatches ? true : expanded;
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const queryClient = useQueryClient();
   const writable = !connection.readOnly;
+
+  if (filter && !nameMatches && !shownCollections?.length && toolDialog === null) return null;
 
   return (
     <>
       <TreeRow
         depth={1}
-        expanded={expanded}
-        loading={expanded && collections.isPending}
+        expanded={open}
+        loading={open && collections.isPending}
         onActivate={() => setExpanded(!expanded)}
         icon={<Database className="size-3.5" />}
-        label={database.name}
+        label={<HighlightMatch text={database.name} query={filter} />}
         trailing={database.empty ? undefined : formatBytes(database.sizeOnDisk ?? 0)}
         actions={
           <NodeMenu label={t("tree.actions", { name: database.name })}>
@@ -198,7 +211,7 @@ function DatabaseNode({
           onClose={() => setToolDialog(null)}
         />
       )}
-      {expanded &&
+      {open &&
         (collections.error ? (
           <TreeMessage depth={2}>
             {t("tree.failed", { message: collections.error.message })}
@@ -207,7 +220,7 @@ function DatabaseNode({
           <TreeMessage depth={2}>{t("tree.noCollections")}</TreeMessage>
         ) : (
           <ul className="flex flex-col gap-px">
-            {sortSystemLast(collections.data ?? []).map((collection) => (
+            {sortSystemLast(shownCollections ?? []).map((collection) => (
               <li key={collection.name}>
                 <CollectionNode
                   connection={connection}
@@ -234,6 +247,7 @@ function CollectionNode({
   collection: CollectionInfo;
 }) {
   const { t } = useTranslation("connections");
+  const filter = useTreeFilter();
   const openCollection = useTabs((s) => s.openCollection);
   const Icon = kindIcon[collection.kind];
   const [dialog, setDialog] = useState<"backup" | "copy" | "rename" | "drop" | null>(null);
@@ -254,7 +268,7 @@ function CollectionNode({
           })
         }
         icon={<Icon className="size-3.5" />}
-        label={collection.name}
+        label={<HighlightMatch text={collection.name} query={filter} />}
         muted={isSystem(collection)}
         trailing={collection.kind === "collection" ? undefined : t(`tree.${collection.kind}`)}
         actions={

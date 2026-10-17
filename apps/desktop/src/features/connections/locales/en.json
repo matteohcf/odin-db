@@ -7,7 +7,11 @@
     "emptyBody": "Add a MongoDB server with its connection string. Passwords are stored in your system keychain.",
     "loadFailed": "Couldn't load connections: {{message}}",
     "localhost": "Connect to localhost:27017",
-    "localhostMissing": "No MongoDB server answered on localhost:27017."
+    "localhostMissing": "No MongoDB server answered on localhost:27017.",
+    "collapseAll": "Collapse all",
+    "filter": "Filter databases and collections ({{shortcut}})",
+    "filterLabel": "Filter databases and collections",
+    "clearFilter": "Clear the filter"
   },
   "profile": {
     "connect": "Connect",

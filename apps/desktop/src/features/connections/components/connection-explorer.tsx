@@ -2,11 +2,14 @@ import type { ConnectionProfile } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
-import { Plus, Search, Server } from "lucide-react";
-import { useState } from "react";
+import { ChevronsDownUp, ListFilter, Plus, Search, Server, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useShortcut } from "@/hooks/use-shortcut";
+import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { useProfiles } from "../api/queries";
 import { useHealthEvents } from "../hooks/use-health-events";
+import { useExplorer } from "../store/explorer-store";
 import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { ProfileDialog } from "./profile-dialog";
@@ -28,6 +31,11 @@ export function ConnectionExplorer() {
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
   const closeDialog = () => setDialog({ type: "closed" });
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const filter = useExplorer((s) => s.filter);
+  const setFilter = useExplorer((s) => s.setFilter);
+  const collapseAll = useExplorer((s) => s.collapseAll);
+  const filterInput = useRef<HTMLInputElement>(null);
+  useShortcut("filterSidebar", () => filterInput.current?.focus());
   useHealthEvents();
 
   return (
@@ -35,6 +43,20 @@ export function ConnectionExplorer() {
       <div className="flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">
         <h2 className="font-medium text-muted-foreground text-xs">{t("explorer.title")}</h2>
         <div className="flex items-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                aria-label={t("explorer.collapseAll")}
+                onClick={collapseAll}
+              >
+                <ChevronsDownUp className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("explorer.collapseAll")}</TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -73,6 +95,38 @@ export function ConnectionExplorer() {
         onOpenChange={setPaletteOpen}
         onNewConnection={() => setDialog({ type: "create" })}
       />
+
+      {profiles && profiles.length > 0 && (
+        <div className="relative shrink-0 px-1.5 pt-1.5">
+          <ListFilter className="pointer-events-none absolute top-1/2 left-3.5 mt-[3px] size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            ref={filterInput}
+            type="search"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setFilter("");
+                event.currentTarget.blur();
+              }
+            }}
+            placeholder={t("explorer.filter", { shortcut: label(SHORTCUTS.filterSidebar) })}
+            aria-label={t("explorer.filterLabel")}
+            spellCheck={false}
+            className="h-7 w-full rounded-md border bg-background pr-7 pl-7 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
+          />
+          {filter && (
+            <button
+              type="button"
+              aria-label={t("explorer.clearFilter")}
+              onClick={() => setFilter("")}
+              className="absolute top-1/2 right-3 mt-[3px] -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3" />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {error ? (

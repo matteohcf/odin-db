@@ -25,7 +25,7 @@ import { errorMessage } from "@/lib/ipc";
 import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect } from "../api/mutations";
 import { useConnectionOf } from "../api/queries";
-import { useExpanded } from "../store/explorer-store";
+import { useExpanded, useTreeFilter } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DatabaseList } from "./database-list";
@@ -47,6 +47,8 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   const connect = useConnect();
   const disconnect = useDisconnect();
   const [expanded, setExpanded] = useExpanded(profile.id);
+  // A filter searches every open connection, whether expanded or not.
+  const filtering = useTreeFilter() !== "";
   const [toolDialog, setToolDialog] = useState<"backup" | "restore" | "createDatabase" | null>(
     null,
   );
@@ -177,7 +179,7 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
           </NodeMenu>
         }
       />
-      {connection && expanded && <DatabaseList connection={connection} />}
+      {connection && (expanded || filtering) && <DatabaseList connection={connection} />}
       {connection && toolDialog === "createDatabase" && (
         <CreateCollectionDialog connection={connection} onClose={() => setToolDialog(null)} />
       )}

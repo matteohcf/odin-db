@@ -8,9 +8,11 @@ import { useAutorunEnabled } from "@/features/perf-lab";
 import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
 import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
+import { useSettings } from "@/lib/settings";
 import { BackupsButton } from "./backups-button";
 import { QuitDialog } from "./quit-dialog";
 import { SettingsButton } from "./settings-button";
+import { SidebarResizer } from "./sidebar-resizer";
 import { usePruneRestoredTabs } from "./use-prune-restored-tabs";
 import { Welcome } from "./welcome";
 
@@ -23,6 +25,7 @@ const PerfLab = lazy(() =>
 export function App() {
   const { data: perfAutorun } = useAutorunEnabled();
   useApplySettings();
+  const sidebarWidth = useSettings((s) => s.sidebarWidth);
   usePruneRestoredTabs();
   if (perfAutorun) {
     return (
@@ -34,10 +37,14 @@ export function App() {
 
   return (
     <div className="flex h-full">
-      <div className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
+      <div
+        className="relative flex shrink-0 flex-col border-r bg-sidebar"
+        style={{ width: sidebarWidth }}
+      >
         <div className="min-h-0 flex-1">
           <ConnectionExplorer />
         </div>
+        <SidebarResizer />
         <footer className="flex h-9 shrink-0 items-center gap-1 border-t px-1.5">
           <ThemeMenu />
           <BackupsButton />
