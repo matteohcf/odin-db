@@ -32,3 +32,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0026](0026-result-grid-rendering.md) | Result grid rendering | Accepted |
 | [0027](0027-ui-development-harness.md) | UI development harness | Accepted |
 | [0028](0028-aggregation-builder.md) | Aggregation builder | Accepted |
+| [0029](0029-database-tools-resolution.md) | Database Tools resolution and process safety | Accepted |

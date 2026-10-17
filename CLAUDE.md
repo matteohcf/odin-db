@@ -41,7 +41,7 @@ docs/adr/                Architecture Decision Records
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
   - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `indexes` stands alone;
   - `collection` (the collection tab) composes `documents`, `aggregation` and `indexes` with `connections`;
-  - `connections` may use `workspace` to open tabs; only `src/app` wires the top level together.
+  - `connections` may use `workspace` to open tabs and `backup` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
 ## Core concepts
@@ -60,6 +60,7 @@ docs/adr/                Architecture Decision Records
 - **Read-only mode and all safety checks are enforced in Rust**, never only in the UI (ADR-0017).
 - **File dialogs open from Rust** (`tauri-plugin-dialog`); the webview never sends a file path. Imports use an opaque token returned by `choose_import_file`.
 - **Transfers write atomically**: exports go to `<file>.partial` and are renamed when complete.
+- **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions
 
