@@ -225,6 +225,27 @@ pub fn update(
     get(storage, secrets, id)
 }
 
+/// A copy of the profile under a new name, password included.
+pub fn duplicate(
+    storage: &Storage,
+    secrets: &dyn SecretStore,
+    id: ProfileId,
+    name: &str,
+) -> Result<ConnectionProfile, CoreError> {
+    let source = storage.get_profile(id)?;
+    create(
+        storage,
+        secrets,
+        ProfileInput {
+            name: name.to_owned(),
+            connection_string: source.connection_string,
+            password: secrets.password(id)?,
+            read_only: source.read_only,
+            color: source.color,
+        },
+    )
+}
+
 pub fn delete(
     storage: &Storage,
     secrets: &dyn SecretStore,
@@ -297,6 +318,38 @@ mod tests {
         let (sanitized, password) = split_password("mongodb://carol@localhost").expect("valid");
         assert_eq!(sanitized, "mongodb://carol@localhost");
         assert!(password.is_none());
+    }
+
+    #[test]
+    fn duplicates_keep_everything_but_the_name() {
+        let storage = Storage::open_in_memory().expect("storage");
+        let secrets = MemoryStore::default();
+        let source = create(
+            &storage,
+            &secrets,
+            ProfileInput {
+                name: "Prod".into(),
+                connection_string: "mongodb://admin:pw@db.example.com".into(),
+                password: None,
+                read_only: true,
+                color: Some(ProfileColor::Red),
+            },
+        )
+        .expect("created");
+        let copy = duplicate(&storage, &secrets, source.id, "Prod (copy)").expect("duplicated");
+        assert_ne!(copy.id, source.id);
+        assert_eq!(copy.name, "Prod (copy)");
+        assert_eq!(copy.connection_string, source.connection_string);
+        assert!(copy.read_only && copy.has_password);
+        assert_eq!(copy.color, Some(ProfileColor::Red));
+        assert_eq!(
+            secrets
+                .password(copy.id)
+                .expect("read")
+                .as_ref()
+                .map(Secret::expose),
+            Some("pw")
+        );
     }
 
     #[test]
