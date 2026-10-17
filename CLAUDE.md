@@ -42,6 +42,7 @@ docs/adr/                Architecture Decision Records
   - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `indexes` stands alone;
   - `collection` (the collection tab) composes `documents`, `aggregation`, `schema` and `indexes` with `connections`;
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
+  - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
   - `connections` may use `workspace` to open tabs and `backup` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
@@ -63,6 +64,7 @@ docs/adr/                Architecture Decision Records
 - **File dialogs open from Rust** (`tauri-plugin-dialog`); the webview never sends a file path. Imports use an opaque token returned by `choose_import_file`.
 - **Transfers write atomically**: exports go to `<file>.partial` and are renamed when complete.
 - **The shell is mongosh in a PTY** (ADR-0030), with credit-based flow control: the UI acknowledges output after xterm.js renders it, and sends input one write at a time. Read-only cannot be enforced inside mongosh, so the tab warns instead.
+- **Backups are recorded and schedulable** (ADR-0034): every mongodump goes through `src-tauri/src/backups.rs::run_backup`, which records it in the history before anything can fail; the scheduler lives there too.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions
