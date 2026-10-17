@@ -2,6 +2,12 @@
   "tabs": {
     "close": "Close {{name}}",
     "label": "Open collections",
-    "shell": "Shell"
+    "shell": "Shell",
+    "menu": {
+      "close": "Close",
+      "closeOthers": "Close other tabs",
+      "closeToTheRight": "Close tabs to the right",
+      "closeAll": "Close all tabs"
+    }
   }
 }

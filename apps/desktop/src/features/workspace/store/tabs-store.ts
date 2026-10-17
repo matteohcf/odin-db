@@ -28,6 +28,9 @@ interface TabsState {
   openShell: (profileId: ProfileId) => void;
   activate: (id: string) => void;
   close: (id: string) => void;
+  closeOthers: (id: string) => void;
+  closeToTheRight: (id: string) => void;
+  closeAll: () => void;
   closeForProfile: (profileId: ProfileId) => void;
   /** Closes the tabs of a dropped collection, or of every collection of a dropped database. */
   closeCollections: (profileId: ProfileId, database: string, collection?: string) => void;
@@ -63,6 +66,15 @@ export const useTabs = create<TabsState>()((set) => ({
       const tabs = state.tabs.filter((tab) => tab.id !== id);
       return { tabs, activeTabId: nextActive(state, tabs) };
     }),
+  closeOthers: (id) =>
+    set((state) => ({ tabs: state.tabs.filter((tab) => tab.id === id), activeTabId: id })),
+  closeToTheRight: (id) =>
+    set((state) => {
+      const index = state.tabs.findIndex((tab) => tab.id === id);
+      const tabs = state.tabs.slice(0, index + 1);
+      return { tabs, activeTabId: nextActive(state, tabs) };
+    }),
+  closeAll: () => set({ tabs: [], activeTabId: null }),
   closeForProfile: (profileId) =>
     set((state) => {
       const tabs = state.tabs.filter((tab) => tab.profileId !== profileId);

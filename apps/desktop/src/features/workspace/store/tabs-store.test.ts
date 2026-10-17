@@ -74,4 +74,17 @@ describe("tabs store", () => {
     expect(activeTabId).toBe("p1/shop/orders_2026");
     expect(tabs[0]).toMatchObject({ id: "p1/shop/orders_2026", collection: "orders_2026" });
   });
+
+  it("closes other tabs, tabs to the right, or all", () => {
+    const { openCollection } = useTabs.getState();
+    for (const name of ["a", "b", "c", "d"]) openCollection(target(name));
+    useTabs.getState().activate("p1/shop/d");
+    useTabs.getState().closeToTheRight("p1/shop/b");
+    expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["p1/shop/a", "p1/shop/b"]);
+    expect(useTabs.getState().activeTabId).toBe("p1/shop/b");
+    useTabs.getState().closeOthers("p1/shop/a");
+    expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["p1/shop/a"]);
+    useTabs.getState().closeAll();
+    expect(useTabs.getState()).toMatchObject({ tabs: [], activeTabId: null });
+  });
 });
