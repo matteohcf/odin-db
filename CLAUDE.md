@@ -48,7 +48,7 @@ docs/adr/                Architecture Decision Records
 ## Core concepts
 
 - **Rust is the source of truth** for every type crossing IPC (ADR-0005).
-- **IPC** (ADR-0006): request/response = command. Long operation = command + `Channel<T>` + `OperationId`, cancellable via `cancel_operation`. App-wide notifications (connection state) = typed events.
+- **IPC** (ADR-0006): request/response = command. Long operation = command + `Channel<T>` + `OperationId`, cancellable via `cancel_operation`. App-wide notifications = typed tauri-specta events (`src-tauri/src/events.rs`), e.g. `ConnectionHealthChanged` from the driver's topology events.
 - **Streaming in core**: core APIs take a `tokio::sync::mpsc::Sender<T>` and a `CancellationToken`. `src-tauri` bridges them with `ipc::spawn_streaming_operation`, which registers the operation, forwards data as `StreamEvent::Data` and ends with exactly one terminal event. On the UI side always use `startStream` (`src/lib/streaming.ts`) and `createFrameBatcher` (`src/lib/frame-batcher.ts`). Core never knows about Channels.
 - A Tauri `Channel` has no consumer acknowledgement: fast producers must be pull-based (fetch on demand) or flow-controlled, never fire-and-forget.
 - **BSON over IPC is canonical Extended JSON v2** (ADR-0007). Never relaxed EJSON, never plain JS numbers for BSON numeric types. Type changes on round-trip are data corruption.

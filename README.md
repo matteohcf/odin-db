@@ -2,11 +2,18 @@
 
 Open source desktop client for MongoDB. A free alternative to Studio 3T, built with Tauri 2 (Rust) and React.
 
-> **Status: pre-release.** The v1 feature set works: connections, browsing, queries with autocompletion, document editing, indexes, aggregation builder, import/export, backup/restore and an integrated mongosh shell. Not ready for production data yet.
+> **Status: pre-release.** The v1 feature set works; it has not been through real-world use yet. Not ready for production data.
 
-## Planned for v1
+## Features
 
-Document CRUD, query editor, index management, aggregation builder, backup/restore (mongodump/mongorestore), JSON/CSV import and export, integrated mongosh shell. Windows, macOS and Linux.
+- **Connections**: connection string or form (SRV, TLS, auth, replica sets), passwords in the OS keychain, read-only profiles enforced in the backend, live status when a server stops answering.
+- **Queries**: filter, sort and projection editors that suggest the collection's fields, operators, BSON constructors and the values of enum-like fields; saved and recent queries; Explain with index suggestions.
+- **Results**: a fast virtualized table (resize, hide and sort columns, edit or filter by a single value) or a list of expandable document trees; documents edited in mongosh syntax that keeps every BSON type.
+- **Aggregation builder**: stages with live previews and suggestions based on the previous stage's output; saved pipelines.
+- **Collections**: schema analysis, storage stats, indexes, and creating, renaming and dropping databases and collections.
+- **Data movement**: JSON and CSV import and export, backup and restore with the bundled mongodump and mongorestore.
+- **Shell**: the real mongosh in a tab, downloaded and verified on request.
+- **Everywhere**: command palette (⌘K / Ctrl+K), keyboard shortcuts (⌘/ / Ctrl+/), light and dark themes, Windows, macOS and Linux.
 
 ## Installing
 
