@@ -2,6 +2,7 @@
 #![allow(clippy::needless_pass_by_value)]
 
 pub mod app;
+pub mod backup;
 pub mod connections;
 pub mod documents;
 pub mod indexes;

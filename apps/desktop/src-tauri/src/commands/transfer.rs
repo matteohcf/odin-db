@@ -109,7 +109,7 @@ pub async fn choose_import_file(
     let preview = blocking(&state, move |_| transfer::preview_file(&preview_path)).await?;
     let token = uuid::Uuid::now_v7();
     state
-        .import_files
+        .picked_files
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
         .insert(token, path);
@@ -135,7 +135,7 @@ pub async fn import_documents(
     handle.ensure_writable()?;
     let token = uuid::Uuid::parse_str(&token).map_err(|_| CoreError::NotFound("import file"))?;
     let path = state
-        .import_files
+        .picked_files
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
         .remove(&token)

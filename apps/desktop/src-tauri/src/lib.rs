@@ -42,6 +42,10 @@ fn specta_builder() -> Builder<tauri::Wry> {
         commands::transfer::export_documents,
         commands::transfer::choose_import_file,
         commands::transfer::import_documents,
+        commands::backup::database_tools_status,
+        commands::backup::backup_database,
+        commands::backup::choose_restore_source,
+        commands::backup::restore_database,
         commands::operations::cancel_operation,
         commands::perf_lab::stream_sample_documents,
         commands::perf_lab::stream_terminal_output,
@@ -74,7 +78,7 @@ pub fn run() {
                 secrets: Box::new(KeyringStore),
                 connections: ConnectionManager::default(),
                 cursors: CursorRegistry::default(),
-                import_files: std::sync::Mutex::default(),
+                picked_files: std::sync::Mutex::default(),
             }));
 
             // Webviews throttle animation frames in occluded windows, which would

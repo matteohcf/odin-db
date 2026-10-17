@@ -41,6 +41,16 @@ export const commands = {
 	preview: FilePreview,
 } | null, IpcError>(__TAURI_INVOKE("choose_import_file")),
 	importDocuments: (connectionId: ConnectionId, namespace: Namespace, token: string, options: ImportOptions, channel: Channel<StreamEvent<TransferEvent<ImportSummary>>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_documents", { connectionId, namespace, token, options, channel })),
+	databaseToolsStatus: () => typedError<ToolsStatus, IpcError>(__TAURI_INVOKE("database_tools_status")),
+	/**  Asks where to save the archive, then runs mongodump. `None` if the user cancels. */
+	backupDatabase: (connectionId: ConnectionId, request: BackupRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("backup_database", { connectionId, request, channel })),
+	/**  Asks for an archive file or a dump directory. `None` if the user cancels. */
+	chooseRestoreSource: (source: RestoreSource) => typedError<{
+	/**  Opaque handle for `restore_database`; the path stays in the backend. */
+	token: string,
+	name: string,
+} | null, IpcError>(__TAURI_INVOKE("choose_restore_source", { source })),
+	restoreDatabase: (connectionId: ConnectionId, token: string, request: RestoreRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("restore_database", { connectionId, token, request, channel })),
 	/**  Returns `false` if the operation already finished. */
 	cancelOperation: (id: OperationId) => __TAURI_INVOKE<boolean>("cancel_operation", { id }),
 	streamSampleDocuments: (options: DocumentStreamOptions, channel: Channel<StreamEvent<EJsonDocument[]>>) => __TAURI_INVOKE<OperationId>("stream_sample_documents", { options, channel }),
@@ -69,6 +79,16 @@ export type AppInfo = {
 	os: string,
 	arch: string,
 };
+
+/**  Tool output, then exactly one `finished` with the totals. */
+export type BackupEvent = { kind: "output"; value: ToolEvent } | { kind: "finished"; value: ToolSummary };
+
+export type BackupRequest = {
+	scope: BackupScope,
+	gzip: boolean,
+};
+
+export type BackupScope = { kind: "deployment" } | { kind: "database"; database: string } | { kind: "collection"; database: string; collection: string };
 
 export type CollectionInfo = {
 	name: string,
@@ -241,6 +261,12 @@ export type Namespace = {
 /**  Identifies a long-running, cancellable operation (ADR-0006). */
 export type OperationId = string;
 
+export type PickedFile = {
+	/**  Opaque handle for `restore_database`; the path stays in the backend. */
+	token: string,
+	name: string,
+};
+
 export type ProfileId = string;
 
 export type ProfileInput = {
@@ -261,6 +287,21 @@ export type RecordError = {
 	message: string,
 };
 
+export type RestoreRequest = {
+	source: RestoreSource,
+	/**  Drop each collection before restoring it. Destructive: confirmed in the UI. */
+	drop: boolean,
+	/**  Restore only this database, optionally under a new name. */
+	database: string | null,
+	renameTo: string | null,
+};
+
+export type RestoreSource = 
+/**  A single file written by `mongodump --archive`, gzipped or not. */
+"archive" | 
+/**  A directory written by `mongodump --out`. */
+"directory";
+
 /**
  *  A secret value whose `Debug` output is redacted, so it cannot leak through logs.
  *  Deliberately not `Serialize`: secrets flow from the UI to the backend, never back.
@@ -277,6 +318,22 @@ export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" }
 export type TerminalStreamOptions = {
 	totalBytes: number,
 	chunkBytes: number,
+};
+
+/**  A line of tool output, classified for the UI. */
+export type ToolEvent = 
+/**  A collection finished, with its document count. */
+{ kind: "collection"; namespace: string; documents: number | null; failures: number | null } | { kind: "log"; line: string };
+
+export type ToolSummary = {
+	collections: number | null,
+	documents: number | null,
+	failures: number | null,
+};
+
+export type ToolsStatus = {
+	available: boolean,
+	version: string | null,
 };
 
 /**  Progress of a transfer, then exactly one `finished` with its result. */

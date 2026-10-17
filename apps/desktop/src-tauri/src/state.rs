@@ -14,8 +14,8 @@ pub struct AppState {
     pub secrets: Box<dyn SecretStore>,
     pub connections: ConnectionManager,
     pub cursors: CursorRegistry,
-    /// Files the user picked for import, by opaque token: paths never reach the webview.
-    pub import_files: Mutex<HashMap<uuid::Uuid, PathBuf>>,
+    /// Files the user picked (imports, restores), by opaque token: paths never reach the webview.
+    pub picked_files: Mutex<HashMap<uuid::Uuid, PathBuf>>,
 }
 
 /// SQLite and the OS keyring block (the keyring may even show a system prompt),
