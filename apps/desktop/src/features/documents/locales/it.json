@@ -83,7 +83,8 @@
     "save": "Salva",
     "remove": "Rimuovi campo",
     "saved": "{{field}} aggiornato",
-    "removed": "{{field}} rimosso"
+    "removed": "{{field}} rimosso",
+    "restored": "{{field}} ripristinato"
   },
   "bulk": {
     "menuUpdate": "Aggiorna i documenti corrispondenti…",

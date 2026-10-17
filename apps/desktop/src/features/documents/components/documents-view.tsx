@@ -297,15 +297,45 @@ export function DocumentsView({
     );
   }
 
-  async function saveField(value: JsonValue | null) {
+  async function saveField(value: JsonValue | undefined) {
     if (!fieldEdit) return;
-    const id = fieldEdit.row._id;
+    const { row, field } = fieldEdit;
+    const id = row._id;
     if (id === undefined) return;
+    const previous = row[field];
     // Errors are shown inside the dialog, which re-throws them from here.
-    await setField.mutateAsync({ ...target, id, field: fieldEdit.field, value });
-    toast.success(t(value === null ? "field.removed" : "field.saved", { field: fieldEdit.field }));
+    await setField.mutateAsync({ ...target, id, field, value });
+    offerFieldUndo(
+      id,
+      field,
+      previous,
+      t(value === undefined ? "field.removed" : "field.saved", { field }),
+    );
     setFieldEdit(null);
     refresh(true);
+  }
+
+  /** Confirms a field change with an Undo that writes the previous value back. */
+  function offerFieldUndo(
+    id: JsonValue,
+    field: string,
+    previous: JsonValue | undefined,
+    message: string,
+  ) {
+    toast.success(message, {
+      duration: 10_000,
+      action: {
+        label: t("undo.action"),
+        onClick: () =>
+          void setField
+            .mutateAsync({ ...target, id, field, value: previous })
+            .then(() => {
+              toast.success(t("field.restored", { field }));
+              refresh(true);
+            })
+            .catch((error: unknown) => toast.error(errorMessage(error))),
+      },
+    });
   }
 
   const hasFilter = form.filter.trim() !== "";
@@ -480,13 +510,14 @@ export function DocumentsView({
             ? async (row, field, value) => {
                 const id = row._id;
                 if (id === undefined) return;
+                const previous = row[field];
                 try {
                   await setField.mutateAsync({ ...target, id, field, value });
                 } catch (error) {
                   toast.error(errorMessage(error));
                   throw error;
                 }
-                toast.success(t("field.saved", { field }));
+                offerFieldUndo(id, field, previous, t("field.saved", { field }));
                 refresh(true);
               }
             : undefined,

@@ -83,7 +83,8 @@
     "save": "Save",
     "remove": "Remove field",
     "saved": "{{field}} updated",
-    "removed": "{{field}} removed"
+    "removed": "{{field}} removed",
+    "restored": "{{field}} restored"
   },
   "bulk": {
     "menuUpdate": "Update matching documents…",
