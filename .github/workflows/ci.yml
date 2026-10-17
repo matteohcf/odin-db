@@ -42,7 +42,7 @@ jobs:
       - run: pnpm knip
       - run: pnpm test
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace
       - name: Bindings are up to date
         run: |

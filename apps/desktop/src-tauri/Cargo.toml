@@ -14,6 +14,14 @@ name = "odin_desktop_lib"
 # Desktop only: staticlib/cdylib are for Tauri mobile targets, which odin-db does not ship.
 crate-type = ["rlib"]
 
+[[bin]]
+name = "gen-bindings"
+# Development tool: kept out of default builds so installers never ship it.
+required-features = ["bindings"]
+
+[features]
+bindings = []
+
 [build-dependencies]
 tauri-build.workspace = true
 

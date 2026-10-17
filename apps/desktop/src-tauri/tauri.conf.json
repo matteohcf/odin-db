@@ -1,6 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "odin-db",
+  "mainBinaryName": "odin-db",
   "identifier": "io.github.matteohcf.odin-db",
   "build": {
     "beforeDevCommand": "pnpm dev:web",

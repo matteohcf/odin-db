@@ -10,14 +10,14 @@
   "scripts": {
     "dev": "pnpm --filter @odin-db/desktop tauri dev",
     "build": "pnpm --filter @odin-db/desktop tauri build",
-    "bindings": "cargo run --quiet -p odin-desktop --bin gen-bindings",
+    "bindings": "cargo run --quiet -p odin-desktop --features bindings --bin gen-bindings",
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "knip": "knip",
     "check": "pnpm lint && pnpm typecheck && pnpm knip && pnpm test && pnpm check:rust",
-    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
+    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
     "test:integration": "cargo test --workspace -- --ignored",
     "prepare": "lefthook install"
   },
