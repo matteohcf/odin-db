@@ -33,7 +33,7 @@
   "dialog": {
     "createTitle": "New connection",
     "editTitle": "Edit connection",
-    "description": "Paste the connection string from your provider or write one by hand.",
+    "description": "Paste the connection string from your provider, or fill in the form.",
     "name": "Name",
     "namePlaceholder": "Local development",
     "connectionString": "Connection string",
@@ -115,5 +115,27 @@
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",
     "restored": "{{name}} is reachable again",
     "unreachable": "Server unreachable, retrying…"
+  },
+  "form": {
+    "tabString": "Connection string",
+    "tabForm": "Form",
+    "unsupported": "This connection string can't be shown as a form. Edit it in the Connection string tab.",
+    "srv": "DNS seed list (mongodb+srv)",
+    "srvHint": "For Atlas and other clusters published through DNS.",
+    "srvHost": "Cluster host",
+    "hosts": "Hosts",
+    "username": "Username",
+    "authSource": "Authentication database",
+    "authMechanism": "Authentication method",
+    "readPreference": "Read preference",
+    "replicaSet": "Replica set",
+    "database": "Default database",
+    "automatic": "Automatic",
+    "optional": "Optional",
+    "tls": "Use TLS",
+    "allowInvalid": "Allow invalid certificates",
+    "allowInvalidWarning": "Anyone on the network could intercept this connection. Use only for local testing.",
+    "directConnection": "Direct connection",
+    "directConnectionHint": "Connect to this host only, without discovering the rest of a replica set."
   }
 }

@@ -11,12 +11,14 @@ import {
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { Switch } from "@odin-db/ui/components/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorMessage } from "@/lib/ipc";
 import { useConnect, useSaveProfile, useTestConnection } from "../api/mutations";
 import { useExplorer } from "../store/explorer-store";
+import { ConnectionFormFields } from "./connection-form-fields";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -54,7 +56,7 @@ function toInput(form: FormState): ProfileInput {
 export function ProfileDialog({ open, profile, onClose }: ProfileDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[calc(100vh-3rem)] overflow-y-auto sm:max-w-lg">
         {/* Radix unmounts closed content, so the form starts fresh on every open. */}
         <ProfileForm profile={profile} onClose={onClose} />
       </DialogContent>
@@ -127,21 +129,35 @@ function ProfileForm({ profile, onClose }: Omit<ProfileDialogProps, "open">) {
         />
       </Field>
 
-      <Field
-        id={`${id}-uri`}
-        label={t("dialog.connectionString")}
-        hint={t("dialog.connectionStringHint")}
-        error={submitted ? errors.connectionString : undefined}
-      >
-        <Input
-          id={`${id}-uri`}
-          value={form.connectionString}
-          onChange={(event) => update("connectionString", event.target.value)}
-          className="font-mono text-xs"
-          spellCheck={false}
-          autoComplete="off"
-        />
-      </Field>
+      <Tabs defaultValue="string" className="gap-3">
+        <TabsList className="w-full">
+          <TabsTrigger value="string">{t("form.tabString")}</TabsTrigger>
+          <TabsTrigger value="form">{t("form.tabForm")}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="string">
+          <Field
+            id={`${id}-uri`}
+            label={t("dialog.connectionString")}
+            hint={t("dialog.connectionStringHint")}
+            error={submitted ? errors.connectionString : undefined}
+          >
+            <Input
+              id={`${id}-uri`}
+              value={form.connectionString}
+              onChange={(event) => update("connectionString", event.target.value)}
+              className="font-mono text-xs"
+              spellCheck={false}
+              autoComplete="off"
+            />
+          </Field>
+        </TabsContent>
+        <TabsContent value="form">
+          <ConnectionFormFields
+            connectionString={form.connectionString}
+            onChange={(value) => update("connectionString", value)}
+          />
+        </TabsContent>
+      </Tabs>
 
       <Field
         id={`${id}-password`}
