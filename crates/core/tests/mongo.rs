@@ -72,6 +72,7 @@ impl Fixture {
                 connection_string: self.uri.clone(),
                 password: None,
                 read_only,
+                color: None,
             },
         )
         .expect("profile created")
@@ -1223,6 +1224,7 @@ async fn reports_a_server_that_stops_answering() {
             connection_string: format!("{}&heartbeatFrequencyMS=500", fx.uri),
             password: None,
             read_only: false,
+            color: None,
         },
     )
     .expect("profile");

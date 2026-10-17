@@ -319,6 +319,7 @@ mod tests {
                 connection_string: "mongodb://localhost:27017".into(),
                 password: None,
                 read_only: false,
+                color: None,
             },
         )
         .unwrap();

@@ -34,6 +34,55 @@ impl fmt::Display for ProfileId {
     }
 }
 
+/// A label color, like Compass's, so production never looks like development.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub enum ProfileColor {
+    Red,
+    Orange,
+    Yellow,
+    Green,
+    Teal,
+    Blue,
+    Purple,
+    Pink,
+    Gray,
+}
+
+impl ProfileColor {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Red => "red",
+            Self::Orange => "orange",
+            Self::Yellow => "yellow",
+            Self::Green => "green",
+            Self::Teal => "teal",
+            Self::Blue => "blue",
+            Self::Purple => "purple",
+            Self::Pink => "pink",
+            Self::Gray => "gray",
+        }
+    }
+
+    /// Unknown values (from a newer version) read as no color.
+    pub(crate) fn parse(value: &str) -> Option<Self> {
+        [
+            Self::Red,
+            Self::Orange,
+            Self::Yellow,
+            Self::Green,
+            Self::Teal,
+            Self::Blue,
+            Self::Purple,
+            Self::Pink,
+            Self::Gray,
+        ]
+        .into_iter()
+        .find(|color| color.as_str() == value)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +93,7 @@ pub struct ConnectionProfile {
     pub connection_string: String,
     pub read_only: bool,
     pub has_password: bool,
+    pub color: Option<ProfileColor>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -57,6 +107,8 @@ pub struct ProfileInput {
     /// On update, `None` keeps the stored password.
     pub password: Option<Secret>,
     pub read_only: bool,
+    #[serde(default)]
+    pub color: Option<ProfileColor>,
 }
 
 /// Validates a connection string and removes the password from it.
@@ -138,6 +190,7 @@ pub fn create(
         name,
         connection_string,
         read_only: input.read_only,
+        color: input.color,
     };
     storage.insert_profile(&row)?;
 
@@ -164,6 +217,7 @@ pub fn update(
         name,
         connection_string,
         read_only: input.read_only,
+        color: input.color,
     })?;
     if let Some(password) = input.password.or(embedded) {
         secrets.set_password(id, &password)?;
@@ -194,6 +248,7 @@ fn with_password_flag(
         name: row.name,
         connection_string: row.connection_string,
         read_only: row.read_only,
+        color: row.color,
     })
 }
 
@@ -204,6 +259,7 @@ pub(crate) struct StoredProfile {
     pub name: String,
     pub connection_string: String,
     pub read_only: bool,
+    pub color: Option<ProfileColor>,
 }
 
 #[cfg(test)]
@@ -244,6 +300,32 @@ mod tests {
     }
 
     #[test]
+    fn colors_are_stored_changed_and_cleared() {
+        let storage = Storage::open_in_memory().expect("storage");
+        let secrets = MemoryStore::default();
+        let input = |color| ProfileInput {
+            name: "Prod".into(),
+            connection_string: "mongodb://localhost".into(),
+            password: None,
+            read_only: false,
+            color,
+        };
+        let profile = create(&storage, &secrets, input(Some(ProfileColor::Red))).expect("created");
+        assert_eq!(profile.color, Some(ProfileColor::Red));
+        let updated = update(
+            &storage,
+            &secrets,
+            profile.id,
+            input(Some(ProfileColor::Teal)),
+        )
+        .expect("updated");
+        assert_eq!(updated.color, Some(ProfileColor::Teal));
+        let cleared = update(&storage, &secrets, profile.id, input(None)).expect("cleared");
+        assert_eq!(cleared.color, None);
+        assert_eq!(ProfileColor::parse("ultraviolet"), None);
+    }
+
+    #[test]
     fn split_password_rejects_invalid_strings() {
         assert!(matches!(
             split_password("http://localhost"),
@@ -263,6 +345,7 @@ mod tests {
                 connection_string: "mongodb://admin:pw@localhost".into(),
                 password: None,
                 read_only: true,
+                color: None,
             },
         )
         .expect("created");
@@ -297,6 +380,7 @@ mod tests {
             connection_string: "mongodb://admin@localhost".into(),
             password: password.map(Secret::new),
             read_only: false,
+            color: None,
         };
         let profile = create(&storage, &secrets, input(Some("first"))).expect("created");
 

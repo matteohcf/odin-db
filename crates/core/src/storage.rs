@@ -10,7 +10,7 @@ use crate::CoreError;
 use crate::backup::BackupScope;
 use crate::backup::history::{RunId, RunStatus, StoredRun};
 use crate::backup::schedule::{Frequency, ScheduleId, StoredSchedule, Timing};
-use crate::profiles::{ProfileId, StoredProfile};
+use crate::profiles::{ProfileColor, ProfileId, StoredProfile};
 
 const MIGRATIONS: &[M<'static>] = &[
     M::up(
@@ -54,6 +54,7 @@ const MIGRATIONS: &[M<'static>] = &[
         ) STRICT;
         CREATE INDEX backup_runs_started ON backup_runs(started_at DESC);",
     ),
+    M::up("ALTER TABLE connection_profiles ADD COLUMN color TEXT;"),
 ];
 
 #[derive(Debug)]
@@ -91,7 +92,7 @@ impl Storage {
     pub(crate) fn list_profiles(&self) -> Result<Vec<StoredProfile>, CoreError> {
         let connection = self.lock();
         let mut statement = connection.prepare(
-            "SELECT id, name, connection_string, read_only
+            "SELECT id, name, connection_string, read_only, color
              FROM connection_profiles ORDER BY name COLLATE NOCASE, created_at",
         )?;
         let rows = statement.query_map([], read_profile_row)?;
@@ -102,7 +103,7 @@ impl Storage {
         let row = self
             .lock()
             .query_row(
-                "SELECT id, name, connection_string, read_only
+                "SELECT id, name, connection_string, read_only, color
                  FROM connection_profiles WHERE id = ?1",
                 params![id.to_string()],
                 read_profile_row,
@@ -114,13 +115,14 @@ impl Storage {
 
     pub(crate) fn insert_profile(&self, profile: &StoredProfile) -> Result<(), CoreError> {
         self.lock().execute(
-            "INSERT INTO connection_profiles (id, name, connection_string, read_only)
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO connection_profiles (id, name, connection_string, read_only, color)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
             params![
                 profile.id.to_string(),
                 profile.name,
                 profile.connection_string,
-                profile.read_only
+                profile.read_only,
+                profile.color.map(ProfileColor::as_str)
             ],
         )?;
         Ok(())
@@ -129,13 +131,15 @@ impl Storage {
     pub(crate) fn update_profile(&self, profile: &StoredProfile) -> Result<(), CoreError> {
         let changed = self.lock().execute(
             "UPDATE connection_profiles
-             SET name = ?2, connection_string = ?3, read_only = ?4, updated_at = unixepoch()
+             SET name = ?2, connection_string = ?3, read_only = ?4, color = ?5,
+                 updated_at = unixepoch()
              WHERE id = ?1",
             params![
                 profile.id.to_string(),
                 profile.name,
                 profile.connection_string,
-                profile.read_only
+                profile.read_only,
+                profile.color.map(ProfileColor::as_str)
             ],
         )?;
         if changed == 0 {
@@ -456,20 +460,27 @@ fn parse_scope(text: &str) -> Result<BackupScope, CoreError> {
         .map_err(|error| CoreError::Storage(format!("corrupt scope: {error}")))
 }
 
-type ProfileRow = (String, String, String, bool);
+type ProfileRow = (String, String, String, bool, Option<String>);
 
 fn read_profile_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProfileRow> {
-    Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+    Ok((
+        row.get(0)?,
+        row.get(1)?,
+        row.get(2)?,
+        row.get(3)?,
+        row.get(4)?,
+    ))
 }
 
 fn to_profile(
-    (id, name, connection_string, read_only): ProfileRow,
+    (id, name, connection_string, read_only, color): ProfileRow,
 ) -> Result<StoredProfile, CoreError> {
     Ok(StoredProfile {
         id: ProfileId::parse(&id)?,
         name,
         connection_string,
         read_only,
+        color: color.as_deref().and_then(ProfileColor::parse),
     })
 }
 
