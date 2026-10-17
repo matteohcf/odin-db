@@ -1,0 +1,110 @@
+{
+  "title": "Backups",
+  "subtitle": "Every backup odin-db made, and the ones it makes on a schedule while it is open.",
+  "schedules": "Schedules",
+  "history": "History",
+  "noSchedules": "No scheduled backups",
+  "noSchedulesBody": "Back up a server, a database or a collection every hour, day or week, keeping only the latest copies.",
+  "noBackups": "No backups yet",
+  "noBackupsBody": "Backups made from the connection tree or by a schedule appear here, ready to restore.",
+  "filterConnection": "Filter by connection",
+  "allConnections": "All connections",
+  "deletedConnection": "Deleted connection",
+  "scope": {
+    "deployment": "Whole server",
+    "database": "Database {{database}}",
+    "collection": "Collection {{namespace}}",
+    "deploymentShort": "Whole server",
+    "databaseShort": "Database",
+    "collectionShort": "Collection"
+  },
+  "frequency": {
+    "hourly": "Hourly",
+    "daily": "Daily",
+    "weekly": "Weekly"
+  },
+  "timing": {
+    "hourly": "Every hour at :{{minute}}",
+    "daily": "Every day at {{time}}",
+    "weekly": "Every {{day}} at {{time}}"
+  },
+  "card": {
+    "when": "Runs",
+    "next": "Next",
+    "paused": "Paused",
+    "keeps": "Keeps",
+    "keepsValue_one": "The latest backup",
+    "keepsValue_other": "The latest {{count}} backups",
+    "folder": "Folder"
+  },
+  "schedule": {
+    "new": "New schedule",
+    "createTitle": "New backup schedule",
+    "editTitle": "Edit backup schedule",
+    "description": "odin-db runs it in the background while the app is open, and catches up on missed runs at the next launch.",
+    "connection": "Connection",
+    "what": "What to back up",
+    "database": "Database",
+    "collection": "Collection",
+    "when": "When",
+    "weekday": "Day of the week",
+    "at": "at",
+    "atMinute": "at minute",
+    "minute": "Minute of the hour",
+    "time": "Time",
+    "folder": "Save backups to",
+    "noFolder": "No folder chosen",
+    "chooseFolder": "Choose…",
+    "keep": "Backups to keep",
+    "keepHint": "Older backups of this schedule are deleted once a new one succeeds.",
+    "enabled": "Enabled",
+    "pause": "Pause this schedule",
+    "resume": "Resume this schedule",
+    "create": "Create schedule",
+    "save": "Save",
+    "created": "Schedule created",
+    "updated": "Schedule saved",
+    "scopeRequired": "Enter the database (and collection) to back up.",
+    "folderRequired": "Choose where to save the backups.",
+    "runNow": "Run now",
+    "started": "Backup started; follow it in the history.",
+    "edit": "Edit",
+    "delete": "Delete schedule",
+    "deleteTitle": "Delete this schedule?",
+    "deleteBody": "No more backups will run on it. The backups it already made stay where they are."
+  },
+  "columns": {
+    "when": "Started",
+    "what": "Backup",
+    "status": "Status",
+    "size": "Size",
+    "documents": "Documents",
+    "duration": "Duration"
+  },
+  "trigger": {
+    "manual": "Manual",
+    "scheduled": "Scheduled"
+  },
+  "status": {
+    "running": "Running",
+    "completed": "Completed",
+    "fileMissing": "File moved or deleted",
+    "cancelled": "Cancelled",
+    "failed": "Failed"
+  },
+  "run": {
+    "actions": "Backup actions",
+    "restore": "Restore…",
+    "reveal": "Show in folder",
+    "delete": "Delete",
+    "deleteTitle": "Delete this backup?",
+    "deleteBody": "It disappears from the history.",
+    "deleteArchive": "Also delete the archive file"
+  },
+  "restore": {
+    "title": "Restore into…",
+    "choose": "Pick the connection to restore this backup into. You can still choose what to restore and how.",
+    "noConnection": "Connect to a server that is not read-only first.",
+    "original": "Where it came from"
+  }
+}

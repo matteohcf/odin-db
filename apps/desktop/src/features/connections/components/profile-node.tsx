@@ -3,6 +3,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/
 import { cn } from "@odin-db/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarClock,
   DatabaseZap,
   HardDriveDownload,
   HardDriveUpload,
@@ -50,6 +51,7 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
   );
   const queryClient = useQueryClient();
   const openShell = useTabs((s) => s.openShell);
+  const openBackups = useTabs((s) => s.openBackups);
 
   function open() {
     if (connection) {
@@ -144,6 +146,10 @@ export function ProfileNode({ profile, onEdit, onDelete }: ProfileNodeProps) {
                 <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
                   <HardDriveDownload />
                   {t("menu.backupAll", { ns: "backup" })}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={openBackups}>
+                  <CalendarClock />
+                  {t("profile.backups")}
                 </DropdownMenuItem>
                 {!connection.readOnly && (
                   <DropdownMenuItem onSelect={() => setToolDialog("restore")}>

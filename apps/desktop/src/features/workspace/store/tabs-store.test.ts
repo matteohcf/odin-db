@@ -49,7 +49,7 @@ describe("tabs store", () => {
     openCollection(target("a", "p1"));
     openCollection(target("b", "p2"));
     useTabs.getState().closeForProfile("p1");
-    expect(useTabs.getState().tabs.map((tab) => tab.profileId)).toEqual(["p2"]);
+    expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["p2/shop/b"]);
     expect(useTabs.getState().activeTabId).toBe("p2/shop/b");
   });
 
@@ -86,5 +86,15 @@ describe("tabs store", () => {
     expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["p1/shop/a"]);
     useTabs.getState().closeAll();
     expect(useTabs.getState()).toMatchObject({ tabs: [], activeTabId: null });
+  });
+
+  it("keeps a single backups tab, untouched by profile closing", () => {
+    useTabs.getState().openBackups();
+    useTabs.getState().openCollection(target("a"));
+    useTabs.getState().openBackups();
+    expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["backups", "p1/shop/a"]);
+    expect(useTabs.getState().activeTabId).toBe("backups");
+    useTabs.getState().closeForProfile("p1");
+    expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["backups"]);
   });
 });

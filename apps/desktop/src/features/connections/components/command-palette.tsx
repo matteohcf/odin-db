@@ -20,6 +20,7 @@ import { useQueries } from "@tanstack/react-query";
 import {
   Clock,
   Eye,
+  HardDriveDownload,
   Keyboard,
   Monitor,
   Moon,
@@ -126,6 +127,7 @@ function PaletteResults({
   const activate = useTabs((s) => s.activate);
   const openCollection = useTabs((s) => s.openCollection);
   const openShell = useTabs((s) => s.openShell);
+  const openBackups = useTabs((s) => s.openBackups);
   const connect = useConnect();
   const { setTheme } = useTheme();
   const openShortcuts = useShortcutsDialog((s) => s.setOpen);
@@ -177,7 +179,9 @@ function PaletteResults({
     label:
       tab.kind === "collection"
         ? `${tab.collection} · ${tab.database}`
-        : t("palette.shellTab", { name: nameOf(tab.profileId) }),
+        : tab.kind === "shell"
+          ? t("palette.shellTab", { name: nameOf(tab.profileId) })
+          : t("palette.backupsTab"),
     kind: tab.kind,
   }));
   const matchedTabs = rankMatches(tabEntries, query, (tab) => tab.label, 8);
@@ -199,6 +203,7 @@ function PaletteResults({
       run: () => openShell(connection.profileId),
     })),
     { id: "new", label: t("palette.newConnection"), icon: Plus, run: onNewConnection },
+    { id: "backups", label: t("palette.backups"), icon: HardDriveDownload, run: openBackups },
     {
       id: "shortcuts",
       label: t("palette.shortcuts"),

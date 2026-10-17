@@ -21,7 +21,8 @@
     "connectFailed": "Couldn't connect to {{name}}",
     "openShell": "Open shell",
     "refresh": "Refresh",
-    "createDatabase": "Create database…"
+    "createDatabase": "Create database…",
+    "backups": "Backups and schedules"
   },
   "tree": {
     "loading": "Loading…",
@@ -112,7 +113,9 @@
       "system": "Use system theme"
     },
     "hint": "Search",
-    "shortcuts": "Keyboard shortcuts"
+    "shortcuts": "Keyboard shortcuts",
+    "backupsTab": "Backups",
+    "backups": "Backups and schedules"
   },
   "health": {
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",

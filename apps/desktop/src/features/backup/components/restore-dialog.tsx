@@ -26,6 +26,8 @@ interface RestoreDialogProps {
   readOnly: boolean;
   /** Pre-fills "Only this database" when opened from a database. */
   database?: string | undefined;
+  /** An archive already chosen, e.g. a backup from the history. */
+  initialSource?: { token: string; name: string } | undefined;
   /** Called after a restore that ran, e.g. to refresh the tree. */
   onRestored: () => void;
   onClose: () => void;
@@ -36,13 +38,16 @@ export function RestoreDialog({
   profileName,
   readOnly,
   database,
+  initialSource,
   onRestored,
   onClose,
 }: RestoreDialogProps) {
   const { t } = useTranslation("backup");
   const id = useId();
   const [source, setSource] = useState<RestoreSource>("archive");
-  const [picked, setPicked] = useState<{ token: string; name: string } | null>(null);
+  const [picked, setPicked] = useState<{ token: string; name: string } | null>(
+    initialSource ?? null,
+  );
   const [onlyDatabase, setOnlyDatabase] = useState(database ?? "");
   const [renameTo, setRenameTo] = useState("");
   const [drop, setDrop] = useState(false);

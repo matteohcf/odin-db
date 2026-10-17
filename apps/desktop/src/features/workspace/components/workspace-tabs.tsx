@@ -49,7 +49,8 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
 
   if (tabs.length === 0) return <>{emptyState}</>;
   const context: TabLabelContext = {
-    showsSeveralConnections: new Set(tabs.map((tab) => tab.profileId)).size > 1,
+    showsSeveralConnections:
+      new Set(tabs.flatMap((tab) => ("profileId" in tab ? [tab.profileId] : []))).size > 1,
   };
 
   return (
@@ -85,7 +86,12 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
                   <button
                     type="button"
                     aria-label={t("tabs.close", {
-                      name: tab.kind === "collection" ? tab.collection : t("tabs.shell"),
+                      name:
+                        tab.kind === "collection"
+                          ? tab.collection
+                          : tab.kind === "shell"
+                            ? t("tabs.shell")
+                            : t("tabs.backups"),
                     })}
                     onClick={() => close(tab.id)}
                     className={cn(

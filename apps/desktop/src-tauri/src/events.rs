@@ -18,6 +18,10 @@ pub struct ConnectionHealthChanged {
     pub reachable: bool,
 }
 
+/// The backup history or schedules changed (a backup started or finished).
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
+pub struct BackupsChanged {}
+
 /// Forwards core's health changes to the webview for the app's lifetime.
 pub fn forward_health_changes(app: AppHandle, state: &Arc<AppState>) {
     let mut changes = state.connections.health_changes();

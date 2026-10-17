@@ -8,6 +8,7 @@
       "closeOthers": "Close other tabs",
       "closeToTheRight": "Close tabs to the right",
       "closeAll": "Close all tabs"
-    }
+    },
+    "backups": "Backups"
   }
 }

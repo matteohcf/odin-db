@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use odin_core::CoreError;
 use odin_core::connection::{ConnectionId, ConnectionManager};
+use odin_core::profiles::ProfileId;
 use odin_core::query::CursorRegistry;
 use odin_core::secrets::SecretStore;
 use odin_core::shell::ShellSession;
@@ -56,6 +57,7 @@ where
 /// What external tools (mongodump, mongosh) need to connect as a profile:
 /// the sanitized URI and the password from the keyring.
 pub struct Credentials {
+    pub profile_id: ProfileId,
     pub uri: String,
     pub password: Option<odin_core::secrets::Secret>,
     pub read_only: bool,
@@ -66,14 +68,22 @@ pub async fn profile_credentials(
     connection_id: ConnectionId,
 ) -> Result<Credentials, CoreError> {
     let handle = state.connections.get(connection_id).await?;
-    let profile_id = handle.info.profile_id;
-    let read_only = handle.info.read_only;
+    credentials_for_profile(state, handle.info.profile_id).await
+}
+
+/// Credentials straight from the stored profile and keychain, without a live
+/// connection (scheduled backups run while the profile may be disconnected).
+pub async fn credentials_for_profile(
+    state: &Arc<AppState>,
+    profile_id: ProfileId,
+) -> Result<Credentials, CoreError> {
     blocking(state, move |s| {
         let profile = odin_core::profiles::get(&s.storage, s.secrets.as_ref(), profile_id)?;
         Ok(Credentials {
+            profile_id,
             uri: profile.connection_string,
             password: s.secrets.password(profile_id)?,
-            read_only,
+            read_only: profile.read_only,
         })
     })
     .await

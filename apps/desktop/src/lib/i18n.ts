@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 import app from "@/app/locales/en.json";
 import aggregation from "@/features/aggregation/locales/en.json";
 import backup from "@/features/backup/locales/en.json";
+import backups from "@/features/backups/locales/en.json";
 import collection from "@/features/collection/locales/en.json";
 import connections from "@/features/connections/locales/en.json";
 import documents from "@/features/documents/locales/en.json";
@@ -20,6 +21,7 @@ export const resources = {
     aggregation,
     app,
     backup,
+    backups,
     collection,
     common,
     connections,

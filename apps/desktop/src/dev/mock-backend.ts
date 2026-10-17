@@ -550,6 +550,106 @@ function evaluateShell(id: string, line: string) {
   shellOutput(id, `${answer ? `${answer}\r\n` : ""}${PROMPT}`);
 }
 
+const LOCAL = "0192f000-0000-7000-8000-000000000001";
+const ATLAS = "0192f000-0000-7000-8000-000000000002";
+const hour = 3_600_000;
+type MockRun = Record<string, unknown> & { id: string; status: string; startedAt: number };
+type MockSchedule = Record<string, unknown> & { id: string; enabled: boolean };
+const backupRuns: MockRun[] = [
+  {
+    id: crypto.randomUUID(),
+    profileId: LOCAL,
+    scheduleId: null,
+    scope: { kind: "database", database: "shop" },
+    archive: "/Users/ada/Backups/Local_shop_2026-10-17_090000.archive.gz",
+    archiveExists: true,
+    startedAt: Date.now() - 3 * hour,
+    finishedAt: Date.now() - 3 * hour + 4_200,
+    status: "completed",
+    bytes: 182_000,
+    collections: 3,
+    documents: 1_590,
+    error: null,
+  },
+  {
+    id: crypto.randomUUID(),
+    profileId: ATLAS,
+    scheduleId: "s-1",
+    scope: { kind: "deployment" },
+    archive: "/Users/ada/Backups/Production-Atlas_all_2026-10-17_020000.archive.gz",
+    archiveExists: true,
+    startedAt: Date.now() - 10 * hour,
+    finishedAt: Date.now() - 10 * hour + 65_000,
+    status: "completed",
+    bytes: 48_200_000,
+    collections: 41,
+    documents: 1_204_330,
+    error: null,
+  },
+  {
+    id: crypto.randomUUID(),
+    profileId: ATLAS,
+    scheduleId: "s-1",
+    scope: { kind: "deployment" },
+    archive: "/Users/ada/Backups/Production-Atlas_all_2026-10-16_020000.archive.gz",
+    archiveExists: false,
+    startedAt: Date.now() - 34 * hour,
+    finishedAt: Date.now() - 34 * hour + 2_000,
+    status: "failed",
+    bytes: 0,
+    collections: 0,
+    documents: 0,
+    error: "cannot reach the server: Server selection timeout",
+  },
+];
+const backupSchedules: MockSchedule[] = [
+  {
+    id: "s-1",
+    profileId: ATLAS,
+    scope: { kind: "deployment" },
+    folder: "/Users/ada/Backups",
+    timing: { frequency: "daily", minute: 120, weekday: null },
+    keep: 7,
+    enabled: true,
+    createdAt: Date.now() - 100 * hour,
+    lastRunAt: Date.now() - 10 * hour,
+    nextRunAt: Date.now() + 14 * hour,
+  },
+];
+const backupsChanged = () => void emit("backups-changed", {});
+
+/** A scheduled run: running for a moment, then completed. */
+function simulateScheduledRun(schedule: MockSchedule) {
+  const run: MockRun = {
+    id: crypto.randomUUID(),
+    profileId: schedule.profileId,
+    scheduleId: schedule.id,
+    scope: schedule.scope,
+    archive: `${schedule.folder}/backup_${Date.now()}.archive.gz`,
+    archiveExists: true,
+    startedAt: Date.now(),
+    finishedAt: null,
+    status: "running",
+    bytes: 0,
+    collections: 0,
+    documents: 0,
+    error: null,
+  };
+  backupRuns.unshift(run);
+  schedule.lastRunAt = run.startedAt;
+  backupsChanged();
+  setTimeout(() => {
+    Object.assign(run, {
+      status: "completed",
+      finishedAt: Date.now(),
+      bytes: 2_400_000,
+      collections: 5,
+      documents: 12_400,
+    });
+    backupsChanged();
+  }, 1500);
+}
+
 /** `localStorage["odin-mock-no-tools"] = "1"` simulates a machine without Database Tools. */
 const toolsInstalled = () => localStorage.getItem("odin-mock-no-tools") !== "1";
 
@@ -894,6 +994,51 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       documents,
       failures: 0,
     });
+  },
+  // Copies, like a real backend: handing out the mutated arrays hides changes from caching.
+  list_backup_runs: () => backupRuns.map((run) => ({ ...run })),
+  list_backup_schedules: () => backupSchedules.map((schedule) => ({ ...schedule })),
+  choose_backup_folder: () => ({ token: crypto.randomUUID(), path: "/Users/ada/Backups" }),
+  save_backup_schedule: (args) => {
+    const input = args.input as Record<string, unknown> & { enabled: boolean };
+    const existing = backupSchedules.find((s) => s.id === args.id);
+    if (!existing && !args.folderToken)
+      fail("validation", "invalid input: choose a folder for the backups");
+    const schedule: MockSchedule =
+      existing ??
+      ({
+        id: crypto.randomUUID(),
+        enabled: input.enabled,
+        folder: "/Users/ada/Backups",
+        createdAt: Date.now(),
+        lastRunAt: null,
+      } satisfies MockSchedule);
+    Object.assign(schedule, input, { nextRunAt: input.enabled ? Date.now() + 6 * hour : null });
+    if (!existing) backupSchedules.push(schedule);
+    backupsChanged();
+    return schedule;
+  },
+  delete_backup_schedule: (args) => {
+    const index = backupSchedules.findIndex((s) => s.id === args.id);
+    if (index >= 0) backupSchedules.splice(index, 1);
+    return null;
+  },
+  run_backup_schedule_now: (args) => {
+    const schedule =
+      backupSchedules.find((s) => s.id === args.id) ??
+      fail("notFound", "backup schedule not found");
+    simulateScheduledRun(schedule);
+    return null;
+  },
+  delete_backup_run: (args) => {
+    const index = backupRuns.findIndex((r) => r.id === args.id);
+    if (index >= 0) backupRuns.splice(index, 1);
+    return null;
+  },
+  reveal_backup: () => null,
+  restore_source_from_backup: (args) => {
+    const run = backupRuns.find((r) => r.id === args.id) ?? fail("notFound", "backup not found");
+    return { token: crypto.randomUUID(), name: String(run.archive).split("/").at(-1) };
   },
   choose_restore_source: (args) => {
     const token = crypto.randomUUID();

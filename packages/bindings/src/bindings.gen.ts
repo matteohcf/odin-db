@@ -63,6 +63,29 @@ export const commands = {
 	name: string,
 } | null, IpcError>(__TAURI_INVOKE("choose_restore_source", { source })),
 	restoreDatabase: (connectionId: ConnectionId, token: string, request: RestoreRequest, channel: Channel<StreamEvent<BackupEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("restore_database", { connectionId, token, request, channel })),
+	listBackupRuns: () => typedError<BackupRun[], IpcError>(__TAURI_INVOKE("list_backup_runs")),
+	/**  Forgets a backup; with `delete_archive` its file is deleted too. */
+	deleteBackupRun: (id: RunId, deleteArchive: boolean) => typedError<null, IpcError>(__TAURI_INVOKE("delete_backup_run", { id, deleteArchive })),
+	/**  Shows the backup's archive in the system file manager. */
+	revealBackup: (id: RunId) => typedError<null, IpcError>(__TAURI_INVOKE("reveal_backup", { id })),
+	/**  Picks a backup from the history as the source of a restore. */
+	restoreSourceFromBackup: (id: RunId) => typedError<PickedFile, IpcError>(__TAURI_INVOKE("restore_source_from_backup", { id })),
+	listBackupSchedules: () => typedError<BackupSchedule[], IpcError>(__TAURI_INVOKE("list_backup_schedules")),
+	/**  Asks for the folder scheduled backups go to. `None` if the user cancels. */
+	chooseBackupFolder: () => typedError<{
+	/**  Opaque handle for `save_backup_schedule`; the path stays in the backend. */
+	token: string,
+	/**  For display only. */
+	path: string,
+} | null, IpcError>(__TAURI_INVOKE("choose_backup_folder")),
+	/**
+	 *  Creates a schedule (`id: None`) or updates one. A new schedule needs a
+	 *  folder token; an update without one keeps its folder.
+	 */
+	saveBackupSchedule: (id: string | null, input: ScheduleInput, folderToken: string | null) => typedError<BackupSchedule, IpcError>(__TAURI_INVOKE("save_backup_schedule", { id, input, folderToken })),
+	deleteBackupSchedule: (id: ScheduleId) => typedError<null, IpcError>(__TAURI_INVOKE("delete_backup_schedule", { id })),
+	/**  Starts a schedule's backup now, in the background; progress shows in the history. */
+	runBackupScheduleNow: (id: ScheduleId) => typedError<null, IpcError>(__TAURI_INVOKE("run_backup_schedule_now", { id })),
 	mongoshStatus: () => typedError<MongoshStatus, IpcError>(__TAURI_INVOKE("mongosh_status")),
 	/**  Downloads and installs the pinned mongosh into the app's data directory (ADR-0014). */
 	downloadMongosh: (channel: Channel<StreamEvent<DownloadProgress>>) => __TAURI_INVOKE<OperationId>("download_mongosh", { channel }),
@@ -90,6 +113,7 @@ export const commands = {
 
 /** Events */
 export const events = {
+	backupsChanged: makeEvent<BackupsChanged>("backups-changed"),
 	connectionHealthChanged: makeEvent<ConnectionHealthChanged>("connection-health-changed"),
 };
 
@@ -115,7 +139,45 @@ export type BackupRequest = {
 	gzip: boolean,
 };
 
+export type BackupRun = {
+	id: RunId,
+	profileId: ProfileId,
+	scheduleId: ScheduleId | null,
+	scope: BackupScope,
+	/**  Shown to the user; actions refer to the run by id (ADR-0017). */
+	archive: string,
+	/**  Whether the archive is still on disk. */
+	archiveExists: boolean,
+	/**  Unix milliseconds. */
+	startedAt: number | null,
+	finishedAt: number | null,
+	status: RunStatus,
+	bytes: number | null,
+	collections: number | null,
+	documents: number | null,
+	error: string | null,
+};
+
+export type BackupSchedule = {
+	id: ScheduleId,
+	profileId: ProfileId,
+	scope: BackupScope,
+	/**  Shown to the user; the webview never sends paths back (ADR-0017). */
+	folder: string,
+	timing: Timing,
+	keep: number,
+	enabled: boolean,
+	/**  Unix milliseconds. */
+	createdAt: number | null,
+	lastRunAt: number | null,
+	/**  `None` when disabled. */
+	nextRunAt: number | null,
+};
+
 export type BackupScope = { kind: "deployment" } | { kind: "database"; database: string } | { kind: "collection"; database: string; collection: string };
+
+/**  The backup history or schedules changed (a backup started or finished). */
+export type BackupsChanged = Record<string, never>;
 
 export type CollectionInfo = {
 	name: string,
@@ -269,6 +331,8 @@ export type FindRequest = {
 	batchSize: number,
 };
 
+export type Frequency = "hourly" | "daily" | "weekly";
+
 export type ImportFile = {
 	/**  Opaque handle for `import_documents`; the path stays in the backend. */
 	token: string,
@@ -350,6 +414,13 @@ export type PickedFile = {
 	name: string,
 };
 
+export type PickedFolder = {
+	/**  Opaque handle for `save_backup_schedule`; the path stays in the backend. */
+	token: string,
+	/**  For display only. */
+	path: string,
+};
+
 export type ProfileId = string;
 
 export type ProfileInput = {
@@ -400,6 +471,21 @@ export type RestoreSource =
 /**  A directory written by `mongodump --out`. */
 "directory";
 
+export type RunId = string;
+
+export type RunStatus = "running" | "completed" | "failed" | "cancelled";
+
+export type ScheduleId = string;
+
+export type ScheduleInput = {
+	profileId: ProfileId,
+	scope: BackupScope,
+	timing: Timing,
+	/**  How many of this schedule's backups to keep; older ones are deleted. */
+	keep: number,
+	enabled: boolean,
+};
+
 /**
  *  A secret value whose `Debug` output is redacted, so it cannot leak through logs.
  *  Deliberately not `Serialize`: secrets flow from the UI to the backend, never back.
@@ -420,6 +506,17 @@ export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" }
 export type TerminalStreamOptions = {
 	totalBytes: number,
 	chunkBytes: number,
+};
+
+/**
+ *  When a schedule runs: `minute` is the minute of the hour for hourly
+ *  schedules and the minute of the day otherwise; `weekday` (1 = Monday …
+ *  7 = Sunday) is for weekly schedules.
+ */
+export type Timing = {
+	frequency: Frequency,
+	minute: number,
+	weekday: number | null,
 };
 
 /**  A line of tool output, classified for the UI. */

@@ -10,6 +10,7 @@ use specta_typescript::Typescript;
 use tauri::Manager;
 use tauri_specta::{Builder, collect_commands, collect_events};
 
+mod backups;
 mod commands;
 mod events;
 mod ipc;
@@ -56,6 +57,15 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::backup::backup_database,
             commands::backup::choose_restore_source,
             commands::backup::restore_database,
+            commands::backups::list_backup_runs,
+            commands::backups::delete_backup_run,
+            commands::backups::reveal_backup,
+            commands::backups::restore_source_from_backup,
+            commands::backups::list_backup_schedules,
+            commands::backups::choose_backup_folder,
+            commands::backups::save_backup_schedule,
+            commands::backups::delete_backup_schedule,
+            commands::backups::run_backup_schedule_now,
             commands::shell::mongosh_status,
             commands::shell::download_mongosh,
             commands::shell::open_shell,
@@ -70,7 +80,10 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::perf_lab::perf_autorun_finish,
             commands::perf_lab::perf_autorun_log,
         ])
-        .events(collect_events![events::ConnectionHealthChanged])
+        .events(collect_events![
+            events::ConnectionHealthChanged,
+            events::BackupsChanged
+        ])
 }
 
 pub fn export_bindings(path: &Path) -> Result<(), String> {
@@ -101,6 +114,11 @@ pub fn run() {
                 tools_dir: data_dir.join("tools"),
             });
             events::forward_health_changes(app.handle().clone(), &state);
+            backups::spawn_scheduler(
+                app.handle().clone(),
+                Arc::clone(&state),
+                commands::backup::tools,
+            );
             app.manage(state);
 
             // Webviews throttle animation frames in occluded windows, which would

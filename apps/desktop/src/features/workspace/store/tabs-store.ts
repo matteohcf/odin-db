@@ -19,13 +19,20 @@ export interface ShellTab {
   profileId: ProfileId;
 }
 
-export type WorkspaceTab = CollectionTab | ShellTab;
+/** Backup history and schedules of every connection; at most one is open. */
+interface BackupsTab {
+  kind: "backups";
+  id: "backups";
+}
+
+export type WorkspaceTab = CollectionTab | ShellTab | BackupsTab;
 
 interface TabsState {
   tabs: WorkspaceTab[];
   activeTabId: string | null;
   openCollection: (target: Omit<CollectionTab, "kind" | "id">) => void;
   openShell: (profileId: ProfileId) => void;
+  openBackups: () => void;
   activate: (id: string) => void;
   close: (id: string) => void;
   closeOthers: (id: string) => void;
@@ -60,6 +67,12 @@ export const useTabs = create<TabsState>()((set) => ({
       const id = `shell:${crypto.randomUUID()}`;
       return { tabs: [...state.tabs, { kind: "shell", id, profileId }], activeTabId: id };
     }),
+  openBackups: () =>
+    set((state) =>
+      state.tabs.some((tab) => tab.id === "backups")
+        ? { activeTabId: "backups" }
+        : { tabs: [...state.tabs, { kind: "backups", id: "backups" }], activeTabId: "backups" },
+    ),
   activate: (id) => set({ activeTabId: id }),
   close: (id) =>
     set((state) => {
@@ -77,7 +90,7 @@ export const useTabs = create<TabsState>()((set) => ({
   closeAll: () => set({ tabs: [], activeTabId: null }),
   closeForProfile: (profileId) =>
     set((state) => {
-      const tabs = state.tabs.filter((tab) => tab.profileId !== profileId);
+      const tabs = state.tabs.filter((tab) => !("profileId" in tab) || tab.profileId !== profileId);
       return { tabs, activeTabId: nextActive(state, tabs) };
     }),
   closeCollections: (profileId, database, collection) =>

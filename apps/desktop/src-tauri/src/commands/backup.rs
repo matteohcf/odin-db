@@ -15,6 +15,7 @@ use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
+use crate::backups::{BackupJob, run_backup};
 use crate::ipc::{IpcError, StreamEvent, spawn_streaming_operation};
 use crate::state::{AppState, Credentials, profile_credentials};
 
@@ -35,14 +36,14 @@ pub struct PickedFile {
 }
 
 /// Bundled sidecars live next to the executable; otherwise the user's `PATH` is used.
-fn tools() -> Option<DatabaseTools> {
+pub(crate) fn tools() -> Option<DatabaseTools> {
     let bundled = std::env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(PathBuf::from));
     backup::locate_tools(bundled.as_deref())
 }
 
-fn require_tools() -> Result<DatabaseTools, CoreError> {
+pub(crate) fn require_tools() -> Result<DatabaseTools, CoreError> {
     tools().ok_or(CoreError::NotFound(
         "MongoDB Database Tools (mongodump and mongorestore)",
     ))
@@ -104,14 +105,19 @@ pub async fn backup_database(
         .into_path()
         .map_err(|error| CoreError::Validation(error.to_string()))?;
 
+    let job = BackupJob {
+        profile_id: credentials.profile_id,
+        schedule: None,
+        request,
+        archive: path,
+    };
+    let state = Arc::clone(&state);
     Ok(Some(spawn_streaming_operation(
         &registry,
         channel,
         move |tx, cancel| async move {
             let output = forward_output(tx.clone());
-            let connection = tool_connection(&credentials);
-            let summary =
-                backup::backup(&tools, connection, &request, &path, output, cancel).await?;
+            let summary = run_backup(&app, &state, &tools, job, output, cancel).await?;
             let _ = tx.send(BackupEvent::Finished(summary)).await;
             Ok(())
         },
@@ -143,16 +149,21 @@ pub async fn choose_restore_source(
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
+    Ok(Some(PickedFile {
+        token: remember_path(&state, path),
+        name,
+    }))
+}
+
+/// Keeps a path in the backend and returns the opaque token the UI uses for it.
+pub(crate) fn remember_path(state: &AppState, path: PathBuf) -> String {
     let token = uuid::Uuid::now_v7();
     state
         .picked_files
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
         .insert(token, path);
-    Ok(Some(PickedFile {
-        token: token.to_string(),
-        name,
-    }))
+    token.to_string()
 }
 
 #[tauri::command]
