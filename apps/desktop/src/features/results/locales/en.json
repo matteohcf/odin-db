@@ -91,5 +91,15 @@
     "relaxedHint": "Readable, keeps ids and dates typed",
     "canonical": "Extended JSON (canonical)",
     "canonicalHint": "Every type exact, for other tools"
+  },
+  "preview": {
+    "label": "Document preview",
+    "title": "No document selected",
+    "empty": "Select a document to see all its fields here.",
+    "expand": "Expand all",
+    "collapse": "Collapse all",
+    "close": "Close the preview",
+    "toggle": "Document preview",
+    "toggleHint": "Show the selected document beside the table (Space)"
   }
 }

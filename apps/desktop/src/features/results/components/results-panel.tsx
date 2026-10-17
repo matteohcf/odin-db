@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useResultsState } from "../hooks/use-results";
 import type { ResultsController } from "../lib/results-controller";
 import { useResultsView } from "../store/results-view-store";
+import { DocumentPreview } from "./document-preview";
 import { type ColumnActions, ResultsGrid, type RowActions } from "./results-grid";
 import { ResultsList } from "./results-list";
 
@@ -40,6 +41,7 @@ export function ResultsPanel({
   const hasMore = useResultsState(controller, (s) => s.hasMore);
   const loadMore = useCallback(() => void controller.loadMore(), [controller]);
   const view = useResultsView((s) => s.view);
+  const preview = useResultsView((s) => s.preview);
 
   if (status === "idle") return <div className="flex-1">{idle}</div>;
   if (status === "error") {
@@ -82,7 +84,7 @@ export function ResultsPanel({
       />
     );
   }
-  return (
+  const grid = (
     <ResultsGrid
       label={label}
       rows={rows}
@@ -94,5 +96,14 @@ export function ResultsPanel({
       actions={actions}
       columnActions={columnActions}
     />
+  );
+  // The same wrapper with or without the preview, so toggling it keeps the grid mounted.
+  return (
+    <div className="flex min-h-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">{grid}</div>
+      {preview && (
+        <DocumentPreview document={selectedIndex === null ? undefined : rows[selectedIndex]} />
+      )}
+    </div>
   );
 }

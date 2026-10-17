@@ -47,6 +47,7 @@ const GROUPS = [
       ["move", ["↑", "↓"]],
       ["jump", ["Home", "End"]],
       ["open", ["↵"]],
+      ["preview", ["Space"]],
       ["inlineEdit", ["t:shortcuts.keys.doubleClick", "F2"]],
       ["nextField", ["Tab", "⇧ Tab"]],
       ["copyRows", [`${mod} C`]],

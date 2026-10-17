@@ -91,5 +91,15 @@
     "relaxedHint": "Leggibile, mantiene il tipo di id e date",
     "canonical": "Extended JSON (canonical)",
     "canonicalHint": "Ogni tipo esatto, per altri strumenti"
+  },
+  "preview": {
+    "label": "Anteprima del documento",
+    "title": "Nessun documento selezionato",
+    "empty": "Seleziona un documento per vederne qui tutti i campi.",
+    "expand": "Espandi tutto",
+    "collapse": "Comprimi tutto",
+    "close": "Chiudi l'anteprima",
+    "toggle": "Anteprima del documento",
+    "toggleHint": "Mostra il documento selezionato accanto alla tabella (Spazio)"
   }
 }

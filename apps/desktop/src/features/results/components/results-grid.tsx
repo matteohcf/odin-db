@@ -48,6 +48,7 @@ import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { columnSlots, columnWidth, dominantKind, fitWidth } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
+import { useResultsView } from "../store/results-view-store";
 import { ColumnMenu } from "./column-menu";
 import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
@@ -288,6 +289,8 @@ export function ResultsGrid({
       Home: () => move(0),
       End: () => move(rows.length - 1),
       Enter: () => selected && onOpen(selected),
+      // Like Quick Look: Space shows the selected document beside the table.
+      " ": () => useResultsView.getState().togglePreview(),
       F2: () => selectedIndex !== null && moveEditing(selectedIndex, "", 1),
       Delete: () =>
         multiple ? actions.onDeleteMany?.(markedRows) : selected && onDelete?.(selected),

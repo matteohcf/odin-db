@@ -170,6 +170,7 @@
       "revealInSidebar": "Mostra la collezione nella barra laterale",
       "rerun": "Esegui di nuovo la query o la pipeline",
       "inlineEdit": "Modifica un valore in linea",
+      "preview": "Anteprima del documento selezionato",
       "nextField": "Salva e modifica il valore successivo",
       "copyRows": "Copia i documenti selezionati",
       "focusFilter": "Vai al filtro"

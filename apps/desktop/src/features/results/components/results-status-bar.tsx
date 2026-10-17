@@ -1,5 +1,6 @@
+import { Toggle } from "@odin-db/ui/components/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
-import { Braces, CircleAlert, List, Loader2, Table2 } from "lucide-react";
+import { Braces, CircleAlert, List, Loader2, PanelRight, Table2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { formatCount } from "@/lib/format";
@@ -25,6 +26,8 @@ export function ResultsStatusBar({
   const durationMs = useResultsState(controller, (s) => s.durationMs);
   const view = useResultsView((s) => s.view);
   const setView = useResultsView((s) => s.setView);
+  const preview = useResultsView((s) => s.preview);
+  const togglePreview = useResultsView((s) => s.togglePreview);
 
   return (
     <footer className="flex h-8 shrink-0 items-center gap-3 border-t bg-sidebar px-3 text-muted-foreground text-xs">
@@ -49,6 +52,18 @@ export function ResultsStatusBar({
           <span className="tabular-nums">
             {t("status.duration", { ms: Math.round(durationMs) })}
           </span>
+        )}
+        {view === "table" && (
+          <Toggle
+            size="sm"
+            pressed={preview}
+            onPressedChange={togglePreview}
+            aria-label={t("preview.toggle")}
+            title={t("preview.toggleHint")}
+            className="h-6 px-1.5"
+          >
+            <PanelRight className="size-3.5" />
+          </Toggle>
         )}
         <ToggleGroup
           type="single"
