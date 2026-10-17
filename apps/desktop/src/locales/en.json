@@ -169,6 +169,8 @@
       "filterSidebar": "Filter the sidebar",
       "rerun": "Run the query or pipeline again",
       "inlineEdit": "Edit a value in place",
+      "nextField": "Save and edit the next value",
+      "copyRows": "Copy the selected documents",
       "focusFilter": "Focus the filter"
     },
     "keys": {

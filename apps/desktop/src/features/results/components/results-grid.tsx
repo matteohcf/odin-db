@@ -212,6 +212,23 @@ export function ResultsGrid({
 
   const selected = selectedIndex === null ? undefined : rows[selectedIndex];
 
+  // Tab walks the editable cells of the row, like a spreadsheet; past the last one it stops.
+  // An unknown field starts from the first column.
+  function moveEditing(index: number, field: string, step: 1 | -1) {
+    const row = rows[index];
+    const fields = headers.map((header) => header.id);
+    let at = fields.indexOf(field) + step;
+    while (row && at >= 0 && at < fields.length) {
+      const next = fields[at];
+      if (next !== undefined && inlineEditable(row, next)) {
+        setEditingCell({ index, field: next });
+        return;
+      }
+      at += step;
+    }
+    setEditingCell(null);
+  }
+
   function onKeyDown(event: KeyboardEvent) {
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
@@ -241,6 +258,7 @@ export function ResultsGrid({
       Home: () => move(0),
       End: () => move(rows.length - 1),
       Enter: () => selected && onOpen(selected),
+      F2: () => selectedIndex !== null && moveEditing(selectedIndex, "", 1),
       Delete: () =>
         multiple ? actions.onDeleteMany?.(markedRows) : selected && onDelete?.(selected),
       Backspace: () =>
@@ -438,6 +456,7 @@ export function ResultsGrid({
                               setEditingCell(null);
                             }}
                             onCancel={() => setEditingCell(null)}
+                            onMove={(step) => moveEditing(item.index, header.id, step)}
                           />
                         ) : (
                           <EJsonCell value={row[header.id]} />

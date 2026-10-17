@@ -1,6 +1,6 @@
 import type { JsonValue } from "@odin-db/bindings";
 import { cn } from "@odin-db/ui/lib/utils";
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
@@ -9,24 +9,40 @@ interface InlineCellEditorProps {
   value: JsonValue | undefined;
   onSave: (value: JsonValue) => Promise<void>;
   onCancel: () => void;
+  /** Tab and Shift+Tab move to the next or previous cell once the value is saved. */
+  onMove: (step: 1 | -1) => void;
 }
 
 /**
  * A value edited in place, in mongosh syntax so types survive: `"text"`, `42`,
- * `Double(4)`, `ISODate("…")`. Enter or Tab saves; Escape or leaving cancels,
- * so nothing is written to the database by accident.
+ * `Double(4)`, `ISODate("…")`. Enter saves, Tab saves and moves on; Escape or
+ * leaving cancels, so nothing is written to the database by accident.
  */
-export function InlineCellEditor({ value, onSave, onCancel }: InlineCellEditorProps) {
+export function InlineCellEditor({ value, onSave, onCancel, onMove }: InlineCellEditorProps) {
   const { t } = useTranslation("results");
-  const [text, setText] = useState(() => (value === undefined ? "" : toShellSyntax(value, 0)));
+  const [initial] = useState(() => (value === undefined ? "" : toShellSyntax(value, 0)));
+  const [text, setText] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  // Keyboard editing hands focus back to the grid so its arrows and shortcuts work again.
+  const gridOf = () => input.current?.closest<HTMLElement>("[role=grid]");
 
-  async function save() {
+  async function save(step?: 1 | -1) {
+    // Saving unmounts the input, so find the grid first.
+    const grid = gridOf();
+    // An untouched value is not rewritten, so tabbing through cells writes nothing.
+    if (text === initial) {
+      if (step) onMove(step);
+      else grid?.focus();
+      return;
+    }
     setSaving(true);
     try {
       const parsed = await parseShellDocument(`{ value: ${text.trim() || '""'} }`);
       await onSave((parsed as { value: JsonValue }).value);
+      if (step) onMove(step);
+      else grid?.focus();
     } catch (cause) {
       setError(errorMessage(cause));
       setSaving(false);
@@ -36,12 +52,16 @@ export function InlineCellEditor({ value, onSave, onCancel }: InlineCellEditorPr
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     // The grid's own shortcuts (arrows, Delete, Enter) must not fire while typing.
     event.stopPropagation();
-    if (event.key === "Enter" || event.key === "Tab") {
+    if (event.key === "Enter") {
       event.preventDefault();
       void save();
+    } else if (event.key === "Tab") {
+      event.preventDefault();
+      void save(event.shiftKey ? -1 : 1);
     } else if (event.key === "Escape") {
       event.preventDefault();
-      onCancel();
+      // Leaving the input cancels the edit.
+      gridOf()?.focus();
     }
   }
 
@@ -49,6 +69,7 @@ export function InlineCellEditor({ value, onSave, onCancel }: InlineCellEditorPr
     <input
       // biome-ignore lint/a11y/noAutofocus: editing starts on a double click, where the user looks.
       autoFocus
+      ref={input}
       aria-label={t("cell.inline")}
       title={error ?? t("cell.inlineHint")}
       value={text}
