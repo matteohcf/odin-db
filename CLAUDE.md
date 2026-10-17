@@ -39,7 +39,7 @@ docs/adr/                Architecture Decision Records
 - `packages/bindings` is generated. Never edit it by hand. Regenerate with `pnpm bindings`.
 - Features import other features only through their `index.ts`, and dependencies point one way:
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
-  - `documents` and `aggregation` build on `results`; `indexes` stands alone;
+  - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `indexes` stands alone;
   - `collection` (the collection tab) composes `documents`, `aggregation` and `indexes` with `connections`;
   - `connections` may use `workspace` to open tabs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
@@ -58,6 +58,8 @@ docs/adr/                Architecture Decision Records
 - **Editable text is mongosh syntax** (`toShellSyntax` / `parseShellDocument`); display text is `describeEJson` / `compactEJson`. Never round-trip edits through the display format.
 - **Frontend state** (ADR-0010): TanStack Query for backend request/response data, Zustand for UI-only state. Streaming results live in per-tab stores, flushed once per animation frame. Never copy backend data into Zustand.
 - **Read-only mode and all safety checks are enforced in Rust**, never only in the UI (ADR-0017).
+- **File dialogs open from Rust** (`tauri-plugin-dialog`); the webview never sends a file path. Imports use an opaque token returned by `choose_import_file`.
+- **Transfers write atomically**: exports go to `<file>.partial` and are renamed when complete.
 
 ## Rust conventions
 
