@@ -50,6 +50,14 @@ module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 
+# Line tables keep backtraces useful; full debug info for every dependency
+# multiplies target/ size (it filled CI runners' disks).
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 [profile.release]
 codegen-units = 1
 lto = true

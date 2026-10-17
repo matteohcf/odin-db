@@ -11,7 +11,8 @@ default-run = "odin-desktop"
 
 [lib]
 name = "odin_desktop_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Desktop only: staticlib/cdylib are for Tauri mobile targets, which odin-db does not ship.
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build.workspace = true

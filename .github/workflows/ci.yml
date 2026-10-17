@@ -14,6 +14,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # Incremental artifacts are useless on fresh runners and cost disk space.
+  CARGO_INCREMENTAL: 0
   LEFTHOOK: 0
 
 jobs:
