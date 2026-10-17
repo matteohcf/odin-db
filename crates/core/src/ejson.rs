@@ -71,6 +71,17 @@ impl TryFrom<EJsonDocument> for Document {
     }
 }
 
+/// Any BSON number as `f64` (what crosses IPC); `0` for other types.
+#[allow(clippy::cast_precision_loss)]
+pub(crate) fn number_of(value: &Bson) -> f64 {
+    match value {
+        Bson::Int32(n) => f64::from(*n),
+        Bson::Int64(n) => *n as f64,
+        Bson::Double(n) => *n,
+        _ => 0.0,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;

@@ -1,10 +1,13 @@
 //! Database and collection listing for the connection tree.
 
+use bson::doc;
 use mongodb::results::CollectionType;
 use serde::Serialize;
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
+use crate::ejson::number_of;
+use crate::query::Namespace;
 
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -77,4 +80,46 @@ pub async fn list_collections(
     }
     collections.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(collections)
+}
+
+/// Sizes in bytes; `f64` because TypeScript numbers cannot hold every `u64`.
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionStats {
+    pub documents: f64,
+    pub size: f64,
+    pub average_document_size: f64,
+    pub storage_size: f64,
+    pub indexes: f64,
+    pub index_size: f64,
+}
+
+/// Storage statistics of a collection, summed over shards. Views have none.
+pub async fn collection_stats(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+) -> Result<CollectionStats, CoreError> {
+    let mut cursor = namespace
+        .collection(handle)?
+        .aggregate([doc! { "$collStats": { "storageStats": {} } }])
+        .await?;
+    let mut stats = CollectionStats::default();
+    while cursor.advance().await? {
+        let shard = cursor.deserialize_current()?;
+        let Ok(storage) = shard.get_document("storageStats") else {
+            continue;
+        };
+        let number = |key: &str| storage.get(key).map_or(0.0, number_of);
+        stats.documents += number("count");
+        stats.size += number("size");
+        stats.storage_size += number("storageSize");
+        stats.index_size += number("totalIndexSize");
+        // Every shard has the same indexes.
+        stats.indexes = stats.indexes.max(number("nindexes"));
+    }
+    if stats.documents > 0.0 {
+        stats.average_document_size = stats.size / stats.documents;
+    }
+    Ok(stats)
 }

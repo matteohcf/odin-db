@@ -1229,3 +1229,16 @@ async fn reports_a_server_that_stops_answering() {
         "closing a connection is not reported as a health change"
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn reports_collection_storage_stats() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(true).await;
+    let ns = namespace("stats");
+    fx.seed(&handle, &ns, 120).await;
+    let stats = browse::collection_stats(&handle, &ns).await.expect("stats");
+    assert!((stats.documents - 120.0).abs() < f64::EPSILON);
+    assert!(stats.size > 0.0 && stats.average_document_size > 0.0);
+    assert!((stats.indexes - 1.0).abs() < f64::EPSILON, "the _id index");
+}

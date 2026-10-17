@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
-use crate::ejson::EJsonDocument;
+use crate::ejson::{EJsonDocument, number_of};
 use crate::query::Namespace;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -86,7 +86,7 @@ fn summarize(raw: Document) -> QueryPlan {
     stages.reverse();
 
     let stats = raw.get_document("executionStats").ok();
-    let number = |key: &str| stats.and_then(|s| s.get(key)).map_or(0.0, as_f64);
+    let number = |key: &str| stats.and_then(|s| s.get(key)).map_or(0.0, number_of);
     QueryPlan {
         collection_scan: stages.iter().any(|stage| stage == "COLLSCAN"),
         stages,
@@ -117,16 +117,6 @@ fn walk(plan: &Document, stages: &mut Vec<String>, indexes: &mut Vec<String>) {
                 walk(input, stages, indexes);
             }
         }
-    }
-}
-
-#[allow(clippy::cast_precision_loss)]
-fn as_f64(value: &Bson) -> f64 {
-    match value {
-        Bson::Int32(n) => f64::from(*n),
-        Bson::Int64(n) => *n as f64,
-        Bson::Double(n) => *n,
-        _ => 0.0,
     }
 }
 
