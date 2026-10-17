@@ -1,4 +1,7 @@
-import { useTranslation } from "react-i18next";
+import { Kbd } from "@odin-db/ui/components/kbd";
+import { Trans, useTranslation } from "react-i18next";
+
+const isMac = navigator.userAgent.includes("Mac");
 
 export function Welcome() {
   const { t } = useTranslation("app");
@@ -18,6 +21,14 @@ export function Welcome() {
         <h1 className="font-semibold text-base">{t("welcome.title")}</h1>
         <p className="text-muted-foreground text-xs leading-relaxed">{t("welcome.body")}</p>
       </div>
+      <p className="text-muted-foreground text-xs">
+        <Trans
+          t={t}
+          i18nKey="welcome.palette"
+          values={{ shortcut: isMac ? "⌘K" : "Ctrl K" }}
+          components={{ kbd: <Kbd /> }}
+        />
+      </p>
     </div>
   );
 }

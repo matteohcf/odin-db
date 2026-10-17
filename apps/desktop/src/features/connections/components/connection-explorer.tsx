@@ -1,13 +1,17 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
+import { Kbd } from "@odin-db/ui/components/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
-import { Plus, Server } from "lucide-react";
+import { Plus, Search, Server } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProfiles } from "../api/queries";
+import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { ProfileDialog } from "./profile-dialog";
 import { ProfileNode } from "./profile-node";
+
+const isMac = navigator.userAgent.includes("Mac");
 
 type DialogState =
   | { type: "closed" }
@@ -21,26 +25,51 @@ export function ConnectionExplorer() {
   const { data: profiles, error, isPending } = useProfiles();
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
   const closeDialog = () => setDialog({ type: "closed" });
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   return (
     <aside className="flex h-full flex-col bg-sidebar" aria-label={t("explorer.label")}>
       <div className="flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">
         <h2 className="font-medium text-muted-foreground text-xs">{t("explorer.title")}</h2>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-7"
-              aria-label={t("explorer.new")}
-              onClick={() => setDialog({ type: "create" })}
-            >
-              <Plus className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("explorer.new")}</TooltipContent>
-        </Tooltip>
+        <div className="flex items-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                aria-label={t("palette.title")}
+                onClick={() => setPaletteOpen(true)}
+              >
+                <Search className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              {t("palette.hint")}
+              <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                aria-label={t("explorer.new")}
+                onClick={() => setDialog({ type: "create" })}
+              >
+                <Plus className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("explorer.new")}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        onNewConnection={() => setDialog({ type: "create" })}
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {error ? (

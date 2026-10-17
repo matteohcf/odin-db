@@ -91,5 +91,24 @@
       "submit": "Drop",
       "dropped": "Dropped {{name}}"
     }
+  },
+  "palette": {
+    "title": "Command palette",
+    "description": "Search collections, tabs and actions.",
+    "placeholder": "Search collections, tabs and actions…",
+    "empty": "Nothing matches.",
+    "collections": "Collections",
+    "tabs": "Open tabs",
+    "actions": "Actions",
+    "shellTab": "Shell · {{name}}",
+    "connect": "Connect to {{name}}",
+    "openShell": "Open shell on {{name}}",
+    "newConnection": "New connection…",
+    "theme": {
+      "light": "Use light theme",
+      "dark": "Use dark theme",
+      "system": "Use system theme"
+    },
+    "hint": "Search"
   }
 }
