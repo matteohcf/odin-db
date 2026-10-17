@@ -15,10 +15,12 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useConnect, useConnectionOf, useProfile } from "@/features/connections";
+import { useConnect, useConnectionOf, useExplorer, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
 import { type CollectionTab as CollectionTabModel, useTabs } from "@/features/workspace";
+import { useShortcut } from "@/hooks/use-shortcut";
 import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
+import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { CollectionStats } from "./collection-stats";
 
 // Secondary views load on first visit to keep startup light.
@@ -106,6 +108,9 @@ function CollectionWorkspace({
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
 
   const clearIndexDraft = useCallback(() => setIndexDraft(null), []);
+  const revealInTree = useExplorer((s) => s.reveal);
+  const reveal = () => revealInTree(tab.profileId, tab.database, tab.collection);
+  useShortcut("revealInSidebar", reveal, tabActive);
 
   function select(value: string) {
     const next = VIEWS.find((candidate) => candidate === value);
@@ -131,7 +136,16 @@ function CollectionWorkspace({
           <span className="text-muted-foreground/50">/</span>
           <span className="truncate text-muted-foreground">{tab.database}</span>
           <span className="text-muted-foreground/50">/</span>
-          <h1 className="truncate font-semibold text-base">{tab.collection}</h1>
+          <h1 className="truncate font-semibold text-base">
+            <button
+              type="button"
+              onClick={reveal}
+              title={`${t("header.reveal")} (${label(SHORTCUTS.revealInSidebar)})`}
+              className="max-w-full truncate rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {tab.collection}
+            </button>
+          </h1>
         </nav>
         {(connection.readOnly || isView) && (
           <Tooltip>

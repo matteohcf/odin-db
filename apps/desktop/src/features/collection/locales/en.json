@@ -11,7 +11,8 @@
     "readOnly": "Read-only",
     "readOnlyHint": "This connection is read-only. Data can be viewed but not changed.",
     "view": "View",
-    "viewHint": "Views are read-only. Change documents in the source collection instead."
+    "viewHint": "Views are read-only. Change documents in the source collection instead.",
+    "reveal": "Reveal in the sidebar"
   },
   "disconnected": {
     "title": "{{name}} is disconnected",

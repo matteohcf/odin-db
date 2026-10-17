@@ -11,7 +11,8 @@
     "readOnly": "Sola lettura",
     "readOnlyHint": "Questa connessione è di sola lettura. I dati possono essere visualizzati ma non modificati.",
     "view": "Vista",
-    "viewHint": "Le viste sono di sola lettura. Modifica invece i documenti nella collezione di origine."
+    "viewHint": "Le viste sono di sola lettura. Modifica invece i documenti nella collezione di origine.",
+    "reveal": "Mostra nella barra laterale"
   },
   "disconnected": {
     "title": "{{name}} è disconnesso",

@@ -13,6 +13,7 @@ const GROUPS = [
       ["shortcuts", [label(SHORTCUTS.shortcuts)]],
       ["settings", [label(SHORTCUTS.settings)]],
       ["filterSidebar", [label(SHORTCUTS.filterSidebar)]],
+      ["revealInSidebar", [label(SHORTCUTS.revealInSidebar)]],
       ["closeTab", [label(SHORTCUTS.closeTab)]],
       ["nextTab", [label(SHORTCUTS.nextTab)]],
       ["previousTab", [label(SHORTCUTS.previousTab)]],

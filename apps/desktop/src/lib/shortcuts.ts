@@ -9,6 +9,8 @@ export const SHORTCUTS = {
   rerun: { key: "r", mod: true },
   focusFilter: { key: "f", mod: true },
   filterSidebar: { key: "f", mod: true, shift: true },
+  // Like VS Code's "Reveal in Explorer".
+  revealInSidebar: { key: "e", mod: true, shift: true },
   reopenTab: { key: "t", mod: true, shift: true },
   goToTab1: { key: "1", mod: true },
   goToTab2: { key: "2", mod: true },

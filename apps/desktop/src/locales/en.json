@@ -167,6 +167,7 @@
       "goToTab": "Go to tab 1–8",
       "lastTab": "Go to the last tab",
       "filterSidebar": "Filter the sidebar",
+      "revealInSidebar": "Reveal the collection in the sidebar",
       "rerun": "Run the query or pipeline again",
       "inlineEdit": "Edit a value in place",
       "nextField": "Save and edit the next value",

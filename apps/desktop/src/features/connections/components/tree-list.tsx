@@ -1,9 +1,10 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { type RefObject, useLayoutEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTreeRows } from "../hooks/use-tree-rows";
 import type { TreeItem } from "../lib/tree-rows";
+import { useExplorer } from "../store/explorer-store";
 import { CollectionNode, DatabaseNode } from "./catalog-nodes";
 import { ProfileNode } from "./profile-node";
 import { TreeMessage } from "./tree-row";
@@ -39,6 +40,8 @@ export function TreeList({ profiles, scrollRef, onEdit, onDelete, onExport }: Tr
     return () => observer.disconnect();
   }, [scrollRef]);
 
+  const revealing = useExplorer((s) => s.revealing);
+  const revealed = useExplorer((s) => s.revealed);
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
@@ -47,6 +50,15 @@ export function TreeList({ profiles, scrollRef, onEdit, onDelete, onExport }: Tr
     scrollMargin: offset,
     overscan: 16,
   });
+
+  // Waits for the catalog to load: the row appears in a later render.
+  useEffect(() => {
+    if (!revealing) return;
+    const index = rows.findIndex((row) => row.key === revealing);
+    if (index < 0) return;
+    virtualizer.scrollToIndex(index, { align: "center" });
+    revealed();
+  }, [revealing, rows, virtualizer, revealed]);
 
   return (
     <ul ref={list} className="relative" style={{ height: virtualizer.getTotalSize() }}>

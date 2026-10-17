@@ -214,6 +214,15 @@ export function CollectionNode({
   const toggleFavorite = useFavorites((s) => s.toggle);
   const filter = useTreeFilter();
   const openCollection = useTabs((s) => s.openCollection);
+  const active = useTabs((s) => {
+    const tab = s.tabs.find((candidate) => candidate.id === s.activeTabId);
+    return (
+      tab?.kind === "collection" &&
+      tab.profileId === connection.profileId &&
+      tab.database === database &&
+      tab.collection === collection.name
+    );
+  });
   const Icon = kindIcon[collection.kind];
   const [dialog, setDialog] = useState<"backup" | "copy" | "rename" | "drop" | null>(null);
   const profileName = useProfile(connection.profileId)?.name ?? "";
@@ -235,6 +244,7 @@ export function CollectionNode({
         icon={<Icon className="size-3.5" />}
         label={<HighlightMatch text={collection.name} query={filter} />}
         muted={isSystem(collection)}
+        active={active}
         trailing={
           favorite || collection.kind !== "collection" || count !== undefined ? (
             <span className="flex items-center gap-1.5">

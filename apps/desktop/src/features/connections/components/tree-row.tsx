@@ -12,6 +12,8 @@ interface TreeRowProps {
   trailing?: ReactNode;
   actions?: ReactNode;
   muted?: boolean;
+  /** The row of what the active tab shows. */
+  active?: boolean;
   onActivate: () => void;
   title?: string;
 }
@@ -26,6 +28,7 @@ export function TreeRow({
   trailing,
   actions,
   muted,
+  active,
   onActivate,
   title,
 }: TreeRowProps) {
@@ -34,12 +37,14 @@ export function TreeRow({
       className={cn(
         "group relative flex h-7 items-center rounded-md pr-1 text-[13px] hover:bg-accent",
         muted ? "text-muted-foreground" : "text-foreground",
+        active && "bg-accent font-medium",
       )}
     >
       <button
         type="button"
         onClick={onActivate}
         aria-expanded={expanded}
+        aria-current={active ? "page" : undefined}
         title={title}
         className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ paddingLeft: `${depth * 14 + 6}px` }}
