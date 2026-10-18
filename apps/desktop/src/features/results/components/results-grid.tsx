@@ -294,7 +294,12 @@ export function ResultsGrid({
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
     const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / rowHeight) - 1;
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "c" && selected) {
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      event.key.toLowerCase() === "c" &&
+      selected &&
+      !textSelectedIn(scrollRef.current)
+    ) {
       event.preventDefault();
       void navigator.clipboard.writeText(toShellSyntax(multiple ? markedRows : selected));
       toast.success(multiple ? t("rows.copied", { count: markedRows.length }) : t("row.copied"));
@@ -549,6 +554,10 @@ export function ResultsGrid({
                       if (event.button !== 0) return;
                       // Shift-click selects rows, not the text between them.
                       if (event.shiftKey) event.preventDefault();
+                      // The row number is not selectable, so pressing it would keep old text selected.
+                      else if (!(event.target as HTMLElement).closest("td")) {
+                        window.getSelection()?.removeAllRanges();
+                      }
                       pick(item.index, modeOf(event));
                     }}
                     onContextMenu={(event) => {
@@ -610,7 +619,7 @@ export function ResultsGrid({
                             setEditingCell({ index: item.index, field: header.id });
                           }}
                           className={cn(
-                            "flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
+                            "selectable flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
                             sticky.has(header.id) &&
                               (isSelected
                                 ? "sticky z-[5] bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"
@@ -677,4 +686,10 @@ export function ResultsGrid({
       )}
     </ContextMenu>
   );
+}
+
+// Text dragged over in the grid copies as text, not as the selected rows.
+function textSelectedIn(container: HTMLElement | null) {
+  const selection = window.getSelection();
+  return !!selection && !selection.isCollapsed && !!container?.contains(selection.anchorNode);
 }

@@ -142,10 +142,9 @@ function Field({
               onSave && "cursor-text rounded-sm hover:bg-accent/60",
             )}
             onDoubleClick={(event) => {
-              if (!onSave) return;
-              // Edits this value instead of opening the whole document.
+              // Selects or edits this value instead of opening the whole document.
               event.stopPropagation();
-              setEditing(true);
+              if (onSave) setEditing(true);
             }}
           >
             {text}

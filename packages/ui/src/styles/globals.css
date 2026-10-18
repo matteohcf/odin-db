@@ -239,6 +239,9 @@
   .selectable {
     user-select: text;
   }
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 35%, transparent);
+  }
 }
 
 /* The system's "reduce motion" setting turns off animations and transitions. */
