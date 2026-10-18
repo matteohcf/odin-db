@@ -65,7 +65,8 @@
     "choose": "Scegli colonne",
     "label": "{{visible}} di {{total}} colonne",
     "showAll": "Mostra tutte le colonne",
-    "reset": "Ripristina colonne"
+    "reset": "Ripristina colonne",
+    "fitAll": "Adatta tutte le colonne al contenuto"
   },
   "column": {
     "sortHint": "Ordina per {{field}}. Maiusc-clic per aggiungerlo all'ordinamento attuale.",

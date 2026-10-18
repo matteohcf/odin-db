@@ -65,7 +65,8 @@
     "choose": "Choose columns",
     "label": "{{visible}} of {{total}} columns",
     "showAll": "Show all columns",
-    "reset": "Reset columns"
+    "reset": "Reset columns",
+    "fitAll": "Fit all columns to content"
   },
   "column": {
     "sortHint": "Sort by {{field}}. Shift-click to add it to the current sort.",

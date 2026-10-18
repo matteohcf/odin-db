@@ -393,6 +393,14 @@ export function ResultsGrid({
                   <ColumnsMenu
                     columns={table.getAllLeafColumns()}
                     onShowAll={() => table.toggleAllColumnsVisible(true)}
+                    onFitAll={() =>
+                      table.setColumnSizing((sizes) => ({
+                        ...sizes,
+                        ...Object.fromEntries(
+                          headers.map((header) => [header.id, fitWidth(rows, header.id)]),
+                        ),
+                      }))
+                    }
                     onReset={() => {
                       setOrder([]);
                       setPinned([]);
@@ -816,10 +824,12 @@ interface ToggleableColumn {
 function ColumnsMenu({
   columns,
   onShowAll,
+  onFitAll,
   onReset,
 }: {
   columns: readonly ToggleableColumn[];
   onShowAll: () => void;
+  onFitAll: () => void;
   /** Back to the natural order, widths and visibility, with nothing pinned. */
   onReset: () => void;
 }) {
@@ -861,6 +871,7 @@ function ColumnsMenu({
         {visible < columns.length && (
           <DropdownMenuItem onSelect={onShowAll}>{t("columns.showAll")}</DropdownMenuItem>
         )}
+        <DropdownMenuItem onSelect={onFitAll}>{t("columns.fitAll")}</DropdownMenuItem>
         <DropdownMenuItem onSelect={onReset}>{t("columns.reset")}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
