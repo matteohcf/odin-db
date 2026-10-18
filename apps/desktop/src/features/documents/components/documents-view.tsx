@@ -65,6 +65,7 @@ import {
   type QueryField,
   type QueryForm,
 } from "../lib/query-form";
+import { schemaTemplate } from "../lib/schema-template";
 import { historyKey, useQueryHistory } from "../store/query-history-store";
 import { BulkWriteDialog } from "./bulk-write-dialog";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
@@ -569,6 +570,7 @@ export function DocumentsView({
           initialText={editor.text}
           onSave={saveDocument}
           completions={completionsFor("document")}
+          template={fields.data?.length ? schemaTemplate(fields.data) : undefined}
           onClose={() => setEditor({ open: false })}
         />
       )}

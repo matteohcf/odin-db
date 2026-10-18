@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { cn } from "@odin-db/ui/lib/utils";
-import { CircleAlert, CircleCheck, Copy, WandSparkles } from "lucide-react";
+import { CircleAlert, CircleCheck, Copy, LayoutTemplate, WandSparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -43,6 +43,8 @@ interface DocumentEditorDialogProps {
   onClose: () => void;
   /** Field-aware suggestions while writing the document. */
   completions?: CompletionSource | undefined;
+  /** A new document shaped like the collection's, offered by "Fill from schema". */
+  template?: string | undefined;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
@@ -100,6 +102,7 @@ function DocumentEditor({
   onClose,
   onDirtyChange,
   completions,
+  template,
 }: DocumentEditorDialogProps & { onDirtyChange: (dirty: boolean) => void }) {
   const { t } = useTranslation("results");
   const [text, setText] = useState(initialText);
@@ -155,11 +158,14 @@ function DocumentEditor({
     }
   }
 
+  function replace(next: string) {
+    setText(next);
+    setEditor((current) => ({ key: current.key + 1, text: next }));
+  }
+
   async function format() {
     try {
-      const formatted = toShellSyntax(await parseShellDocument(text));
-      setText(formatted);
-      setEditor((current) => ({ key: current.key + 1, text: formatted }));
+      replace(toShellSyntax(await parseShellDocument(text)));
     } catch (cause) {
       setError(errorMessage(cause));
     }
@@ -186,6 +192,12 @@ function DocumentEditor({
           <Button variant="ghost" size="sm" className="h-7" onClick={() => void format()}>
             <WandSparkles />
             {t("editor.format")}
+          </Button>
+        )}
+        {mode === "insert" && template && (
+          <Button variant="ghost" size="sm" className="h-7" onClick={() => replace(template)}>
+            <LayoutTemplate />
+            {t("editor.fromSchema")}
           </Button>
         )}
         <Button

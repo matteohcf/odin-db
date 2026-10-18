@@ -34,7 +34,8 @@
     "keepEditing": "Continua a modificare",
     "discard": "Scarta",
     "changed_one": "Valido · modifica {{fields}}",
-    "changed_other": "Valido · {{count}} modifiche: {{fields}}"
+    "changed_other": "Valido · {{count}} modifiche: {{fields}}",
+    "fromSchema": "Compila dallo schema"
   },
   "cell": {
     "copy": "Copia valore di {{field}}",
