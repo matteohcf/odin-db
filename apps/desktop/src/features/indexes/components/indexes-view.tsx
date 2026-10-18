@@ -12,13 +12,23 @@ import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
-import { CircleAlert, Eye, EyeOff, Loader2, Plus, RotateCw, Trash2 } from "lucide-react";
+import {
+  CircleAlert,
+  ClipboardCopy,
+  Eye,
+  EyeOff,
+  Loader2,
+  Plus,
+  RotateCw,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { describeEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { useDropIndex, useIndexes, useSetIndexHidden } from "../api/indexes";
+import { createIndexCommand } from "../lib/create-index-command";
 import { CreateIndexDialog } from "./create-index-dialog";
 
 interface IndexesViewProps {
@@ -143,7 +153,22 @@ export function IndexesView({
                               : "",
                           })}
                   </td>
-                  <td className="px-3 text-right">
+                  <td className="px-3 text-right whitespace-nowrap">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                      aria-label={t("table.copyCommand", { name: index.name })}
+                      title={t("table.copyCommandHint")}
+                      onClick={() => {
+                        void navigator.clipboard.writeText(
+                          createIndexCommand(namespace.collection, index),
+                        );
+                        toast.success(t("table.commandCopied", { name: index.name }));
+                      }}
+                    >
+                      <ClipboardCopy />
+                    </Button>
                     {editable && index.name !== "_id_" && (
                       <Button
                         variant="ghost"

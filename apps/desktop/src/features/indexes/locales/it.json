@@ -21,7 +21,10 @@
     "hideHint": "Nascondi al query planner. L'indice resta aggiornato, quindi mostrarlo di nuovo è immediato: prova questo prima di eliminarlo.",
     "unhideHint": "Permetti di nuovo al query planner di usare questo indice.",
     "hidden": "{{name}} è nascosto al query planner.",
-    "unhidden": "{{name}} è di nuovo usato dal query planner."
+    "unhidden": "{{name}} è di nuovo usato dal query planner.",
+    "copyCommand": "Copia il comando che crea {{name}}",
+    "copyCommandHint": "Copia come createIndex, per ricreare l'indice altrove",
+    "commandCopied": "createIndex di {{name}} copiato"
   },
   "badge": {
     "unique": "Univoco",
