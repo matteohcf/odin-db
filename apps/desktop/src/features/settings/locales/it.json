@@ -148,7 +148,6 @@
     },
     "models": "Modelli",
     "modelsHint": "Questo computer ha {{memory}} GB di memoria. Modelli su disco: {{used}}.",
-    "modelDetails": "{{publisher}} · {{size}} · {{license}}",
     "tiers": {
       "fast": "Veloce",
       "balanced": "Bilanciato",
@@ -172,6 +171,26 @@
       "found_one": "Ollama è attivo con {{count}} modello.",
       "found_other": "Ollama è attivo con {{count}} modelli.",
       "pullHint": "Scarica prima un modello in Ollama, es. ollama pull qwen2.5-coder:1.5b."
+    },
+    "notes": {
+      "qwen2.5-coder-0.5b": "Il più piccolo e veloce; adatto a filtri semplici su computer datati.",
+      "qwen2.5-coder-1.5b": "Addestrato sul codice: il miglior equilibrio tra precisione e velocità per le query.",
+      "qwen3.5-2b": "Un modello generalista più recente; meno preciso dei modelli coder sulle query.",
+      "qwen3.5-4b": "Il più preciso, circa due volte più lento dell'1.5B.",
+      "llama-3.2-3b": "Il modello generalista di Meta; discreto, ma più lento e meno preciso di Qwen Coder 1.5B.",
+      "gemma-3-4b": "Il modello generalista di Google, forte nel linguaggio; download più grande.",
+      "phi-4-mini": "Il piccolo modello di Microsoft orientato al ragionamento; download più grande."
+    },
+    "table": {
+      "model": "Modello",
+      "accuracy": "Precisione",
+      "speed": "Per query",
+      "size": "Download",
+      "actions": "Azioni",
+      "seconds": "{{seconds}} s",
+      "notMeasured": "Non ancora misurato",
+      "needsMemory": "richiede {{memory}} GB di memoria",
+      "guide": "La precisione è la quota di 105 richieste di prova a cui il modello risponde con la query esatta; il tempo per query è misurato su un Apple M3 e cresce sui computer più lenti. I modelli più grandi sono più precisi ma più lenti: quello consigliato è il miglior equilibrio per questo computer."
     }
   }
 }

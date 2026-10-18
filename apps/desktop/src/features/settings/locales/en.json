@@ -148,7 +148,6 @@
     },
     "models": "Models",
     "modelsHint": "This computer has {{memory}} GB of memory. Models on disk: {{used}}.",
-    "modelDetails": "{{publisher}} · {{size}} · {{license}}",
     "tiers": {
       "fast": "Fast",
       "balanced": "Balanced",
@@ -172,6 +171,26 @@
       "found_one": "Ollama is running with {{count}} model.",
       "found_other": "Ollama is running with {{count}} models.",
       "pullHint": "Pull a model in Ollama first, e.g. ollama pull qwen2.5-coder:1.5b."
+    },
+    "notes": {
+      "qwen2.5-coder-0.5b": "The smallest and quickest; fine for simple filters on older machines.",
+      "qwen2.5-coder-1.5b": "Trained on code: the best balance of accuracy and speed for queries.",
+      "qwen3.5-2b": "A newer general model; less precise than the coder models on queries.",
+      "qwen3.5-4b": "The most accurate here, about twice as slow as the 1.5B.",
+      "llama-3.2-3b": "Meta's general model; decent, but slower than Qwen Coder 1.5B and less precise.",
+      "gemma-3-4b": "Google's general model, strong at language; larger download.",
+      "phi-4-mini": "Microsoft's reasoning-oriented small model; larger download."
+    },
+    "table": {
+      "model": "Model",
+      "accuracy": "Accuracy",
+      "speed": "Per query",
+      "size": "Download",
+      "actions": "Actions",
+      "seconds": "{{seconds}} s",
+      "notMeasured": "Not measured yet",
+      "needsMemory": "needs {{memory}} GB of memory",
+      "guide": "Accuracy is the share of 105 test requests answered with exactly the right query; time per query was measured on an Apple M3 and grows on slower machines. Larger models are more accurate but slower: the recommended one is the best balance for this computer."
     }
   }
 }

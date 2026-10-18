@@ -302,6 +302,13 @@ export type BackupScope = { kind: "deployment" } | { kind: "database"; database:
 /**  The backup history or schedules changed (a backup started or finished). */
 export type BackupsChanged = Record<string, never>;
 
+/**  How the model did on `tests/eval` (105 requests over five schemas) on an Apple M3. */
+export type Benchmark = {
+	/**  Share of requests answered with exactly the expected query, from 0 to 1. */
+	accuracy: number | null,
+	secondsPerQuery: number | null,
+};
+
 export type CollectionCount = {
 	name: string,
 	count: number | null,
@@ -693,6 +700,8 @@ export type ModelSpec = {
 	size: number | null,
 	/**  Memory below which the model is not recommended, in GiB. */
 	minMemoryGib: number,
+	/**  `None` until the model has been through the eval. */
+	benchmark: Benchmark | null,
 };
 
 export type ModelState = { state: "absent" } | 

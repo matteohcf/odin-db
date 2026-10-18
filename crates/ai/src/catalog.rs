@@ -16,6 +16,16 @@ pub enum Tier {
     Accurate,
 }
 
+/// How the model did on `tests/eval` (105 requests over five schemas) on an Apple M3.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct Benchmark {
+    /// Share of requests answered with exactly the expected query, from 0 to 1.
+    pub accuracy: f64,
+    pub seconds_per_query: f64,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
@@ -30,6 +40,8 @@ pub struct ModelSpec {
     pub size: u64,
     /// Memory below which the model is not recommended, in GiB.
     pub min_memory_gib: u32,
+    /// `None` until the model has been through the eval.
+    pub benchmark: Option<Benchmark>,
     #[serde(skip)]
     pub url: &'static str,
     #[serde(skip)]
@@ -46,6 +58,10 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Fast,
         size: 491_400_064,
         min_memory_gib: 4,
+        benchmark: Some(Benchmark {
+            accuracy: 0.55,
+            seconds_per_query: 1.1,
+        }),
         url: "https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-0.5b-instruct-q4_k_m.gguf",
         sha256: "1d9614638d18024d0fbb36575a15f1302a3adf044df10345688ec4f6e1c4ff32",
     },
@@ -58,6 +74,10 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Balanced,
         size: 1_117_320_768,
         min_memory_gib: 8,
+        benchmark: Some(Benchmark {
+            accuracy: 0.85,
+            seconds_per_query: 2.9,
+        }),
         url: "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
         sha256: "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
     },
@@ -70,6 +90,10 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Balanced,
         size: 1_280_835_840,
         min_memory_gib: 8,
+        benchmark: Some(Benchmark {
+            accuracy: 0.65,
+            seconds_per_query: 3.3,
+        }),
         url: "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf",
         sha256: "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
     },
@@ -82,6 +106,10 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Accurate,
         size: 2_740_937_888,
         min_memory_gib: 16,
+        benchmark: Some(Benchmark {
+            accuracy: 0.9,
+            seconds_per_query: 7.1,
+        }),
         url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
         sha256: "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
     },
@@ -94,6 +122,10 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Accurate,
         size: 2_019_377_696,
         min_memory_gib: 12,
+        benchmark: Some(Benchmark {
+            accuracy: 0.69,
+            seconds_per_query: 4.9,
+        }),
         url: "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
         sha256: "6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff",
     },
@@ -106,6 +138,7 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Accurate,
         size: 2_489_757_856,
         min_memory_gib: 16,
+        benchmark: None,
         url: "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf",
         sha256: "882e8d2db44dc554fb0ea5077cb7e4bc49e7342a1f0da57901c0802ea21a0863",
     },
@@ -118,6 +151,7 @@ pub const CATALOG: &[ModelSpec] = &[
         tier: Tier::Accurate,
         size: 2_491_874_688,
         min_memory_gib: 16,
+        benchmark: None,
         url: "https://huggingface.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF/resolve/main/microsoft_Phi-4-mini-instruct-Q4_K_M.gguf",
         sha256: "01999f17c39cc3074afae5e9c539bc82d45f2dd7faa3917c66cbef76fce8c0c2",
     },
@@ -162,6 +196,17 @@ mod tests {
                 spec.id
             );
         }
+    }
+
+    #[test]
+    fn benchmarks_are_shares_and_durations() {
+        for spec in CATALOG {
+            if let Some(benchmark) = spec.benchmark {
+                assert!((0.0..=1.0).contains(&benchmark.accuracy), "{}", spec.id);
+                assert!(benchmark.seconds_per_query > 0.0, "{}", spec.id);
+            }
+        }
+        assert!(recommended(16).benchmark.is_some());
     }
 
     #[test]

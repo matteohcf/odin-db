@@ -670,6 +670,7 @@ const MOCK_MODELS = [
     tier: "fast",
     size: 491_400_064,
     minMemoryGib: 4,
+    benchmark: { accuracy: 0.55, secondsPerQuery: 1.1 },
   },
   {
     id: "qwen2.5-coder-1.5b",
@@ -680,6 +681,7 @@ const MOCK_MODELS = [
     tier: "balanced",
     size: 1_117_320_768,
     minMemoryGib: 8,
+    benchmark: { accuracy: 0.85, secondsPerQuery: 2.9 },
   },
   {
     id: "qwen3.5-4b",
@@ -690,6 +692,7 @@ const MOCK_MODELS = [
     tier: "accurate",
     size: 2_740_937_888,
     minMemoryGib: 16,
+    benchmark: { accuracy: 0.9, secondsPerQuery: 7.1 },
   },
 ];
 const mockAi = { installed: new Set<string>(), partial: new Map<string, number>() };
@@ -965,7 +968,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
           ? { state: "partial", received: mockAi.partial.get(spec.id) ?? 0 }
           : { state: "absent" },
     })),
-    hardware: { memoryGib: 16, gpu: true },
+    hardware: { memoryGib: 8, gpu: true },
     recommended: "qwen2.5-coder-1.5b",
     usedBytes: MOCK_MODELS.filter((spec) => mockAi.installed.has(spec.id)).reduce(
       (sum, spec) => sum + spec.size,
