@@ -18,6 +18,18 @@ export const commands = {
 	notifyIfUnfocused: (title: string, body: string) => __TAURI_INVOKE<void>("notify_if_unfocused", { title, body }),
 	/**  Opens a link found in a document in the default browser or mail app. */
 	openLink: (url: string) => typedError<null, IpcError>(__TAURI_INVOKE("open_link", { url })),
+	/**  Asks the release server for a newer, signed version. `None` when up to date. */
+	checkForUpdate: () => typedError<{
+	version: string,
+	currentVersion: string,
+	notes: string | null,
+	date: string | null,
+} | null, IpcError>(__TAURI_INVOKE("check_for_update")),
+	/**
+	 *  Downloads the update, verifies its signature, installs it and restarts the app.
+	 *  A long operation: progress is streamed and it can be cancelled until installing.
+	 */
+	installUpdate: (channel: Channel<StreamEvent<UpdateProgress>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("install_update", { channel })),
 	listProfiles: () => typedError<ConnectionProfile[], IpcError>(__TAURI_INVOKE("list_profiles")),
 	createProfile: (input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("create_profile", { input })),
 	updateProfile: (id: ProfileId, input: ProfileInput) => typedError<ConnectionProfile, IpcError>(__TAURI_INVOKE("update_profile", { id, input })),
@@ -848,9 +860,23 @@ export type TransferSummary = {
 	bytes: number | null,
 };
 
+/**  A newer release than the running one. */
+export type UpdateInfo = {
+	version: string,
+	currentVersion: string,
+	notes: string | null,
+	date: string | null,
+};
+
 export type UpdateManyResult = {
 	matched: number | null,
 	modified: number | null,
+};
+
+/**  Bytes of the update downloaded so far; `total` is unknown for some servers. */
+export type UpdateProgress = {
+	done: number | null,
+	total: number | null,
 };
 
 export type UserInfo = {

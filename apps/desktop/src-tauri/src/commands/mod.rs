@@ -15,4 +15,5 @@ pub mod perf_lab;
 pub mod profiles;
 pub mod shell;
 pub mod transfer;
+pub mod updates;
 pub mod users;

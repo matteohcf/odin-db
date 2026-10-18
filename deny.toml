@@ -11,6 +11,12 @@ yanked = "deny"
 ignore = [
   { id = "RUSTSEC-2024-0436", reason = "paste: pulled in by specta/tauri" },
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error: pulled in by the Linux GTK stack used by Tauri" },
+  # zip 4.x in tauri-plugin-updater: compiled only for Windows, and it extracts an update
+  # only after its minisign signature is verified, so the archive is never attacker-controlled.
+  # The issues are Unix permission bits and symlinks. Drop once the updater moves to zip 9.
+  { id = "RUSTSEC-2026-0367", reason = "zip: Windows-only, signed archives (tauri-plugin-updater)" },
+  { id = "RUSTSEC-2026-0368", reason = "zip: Windows-only, signed archives (tauri-plugin-updater)" },
+  { id = "RUSTSEC-2026-0369", reason = "zip: Windows-only, signed archives (tauri-plugin-updater)" },
   # Unmaintained notices, not vulnerabilities: merged into zbus 6, which secret-service
   # (keyring's Linux backend) has not adopted yet. Drop once keyring moves to zbus 6.
   { id = "RUSTSEC-2026-0370", reason = "zvariant: via keyring -> secret-service -> zbus 5" },

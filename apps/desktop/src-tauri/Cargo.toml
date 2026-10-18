@@ -28,12 +28,15 @@ tauri-build.workspace = true
 [dependencies]
 odin-core = { workspace = true, features = ["specta"] }
 serde.workspace = true
+# tauri::generate_context! embeds plugin configuration (the updater) as JSON values.
+serde_json.workspace = true
 specta.workspace = true
 specta-typescript.workspace = true
 tauri.workspace = true
 tauri-plugin-dialog.workspace = true
 tauri-plugin-notification.workspace = true
 tauri-plugin-opener.workspace = true
+tauri-plugin-updater.workspace = true
 tauri-plugin-window-state.workspace = true
 tauri-specta.workspace = true
 jiff.workspace = true
