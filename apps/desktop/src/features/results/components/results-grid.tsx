@@ -56,6 +56,8 @@ import {
   columnWidth,
   dominantKind,
   fitWidth,
+  inUserOrder,
+  moveColumn,
   pinnedFirst,
   stickyOffsets,
 } from "../lib/columns";
@@ -209,7 +211,13 @@ export function ResultsGrid({
   });
   // Pinned fields survive new runs, like widths: they are kept by name.
   const [pinned, setPinned] = useState<readonly string[]>([]);
-  const headers = pinnedFirst(table.getHeaderGroups()[0]?.headers ?? [], pinned);
+  // Headers dragged onto another: kept by name too.
+  const [order, setOrder] = useState<readonly string[]>([]);
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const headers = pinnedFirst(
+    inUserOrder(table.getHeaderGroups()[0]?.headers ?? [], order),
+    pinned,
+  );
   const totalWidth = INDEX_WIDTH + table.getTotalSize();
   const resizing = headers.some((header) => header.column.getIsResizing());
 
@@ -402,9 +410,31 @@ export function ResultsGrid({
                       className={cn(
                         "group/header relative flex shrink-0 items-center border-r text-left font-medium",
                         sticky.has(header.id) && "sticky z-20 bg-sidebar",
+                        draggedColumn === header.id && "opacity-50",
                       )}
                       style={{ width: header.getSize(), left: sticky.get(header.id) }}
                       title={header.id}
+                      draggable={!resizing}
+                      onDragStart={(event) => {
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", header.id);
+                        setDraggedColumn(header.id);
+                      }}
+                      onDragEnd={() => setDraggedColumn(null)}
+                      onDragOver={(event) => draggedColumn && event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        if (draggedColumn) {
+                          setOrder(
+                            moveColumn(
+                              headers.map((h) => h.id),
+                              draggedColumn,
+                              header.id,
+                            ),
+                          );
+                        }
+                        setDraggedColumn(null);
+                      }}
                       onContextMenu={(event) => {
                         // The header has its own menu, not the selected row's.
                         event.preventDefault();

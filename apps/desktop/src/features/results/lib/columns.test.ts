@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { columnSlots, fitWidth, pinnedFirst, stickyOffsets } from "./columns";
+import {
+  columnSlots,
+  fitWidth,
+  inUserOrder,
+  moveColumn,
+  pinnedFirst,
+  stickyOffsets,
+} from "./columns";
 
 describe("fitWidth", () => {
   it("fits the longest value, within limits", () => {
@@ -64,6 +71,27 @@ describe("pinned columns", () => {
     expect([...stickyOffsets(sized, ["plan"], 56)]).toEqual([
       ["_id", 56],
       ["plan", 256],
+    ]);
+  });
+});
+
+describe("column order", () => {
+  const ids = ["_id", "name", "age", "plan"];
+
+  it("moves a column onto another's place, either way", () => {
+    expect(moveColumn(ids, "plan", "name")).toEqual(["_id", "plan", "name", "age"]);
+    expect(moveColumn(ids, "name", "plan")).toEqual(["_id", "age", "plan", "name"]);
+    expect(moveColumn(ids, "age", "age")).toEqual(ids);
+  });
+
+  it("applies a saved order, new columns last", () => {
+    const columns = [...ids, "email"].map((id) => ({ id }));
+    expect(inUserOrder(columns, ["plan", "_id", "name", "age"]).map((c) => c.id)).toEqual([
+      "plan",
+      "_id",
+      "name",
+      "age",
+      "email",
     ]);
   });
 });

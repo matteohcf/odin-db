@@ -121,3 +121,26 @@ export function stickyOffsets(
   }
   return offsets;
 }
+
+/** Columns in the user's order: moved ones where they were dropped, new ones at the end. */
+export function inUserOrder<T extends { id: string }>(
+  columns: readonly T[],
+  order: readonly string[],
+): T[] {
+  if (order.length === 0) return [...columns];
+  const rank = new Map(order.map((id, index) => [id, index]));
+  return [...columns].sort(
+    (a, b) =>
+      (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+  );
+}
+
+/** The order after dropping `moved` onto `target`: it takes the target's place. */
+export function moveColumn(ids: readonly string[], moved: string, target: string): string[] {
+  const next = ids.filter((id) => id !== moved);
+  const at = next.indexOf(target);
+  if (at < 0 || moved === target) return [...ids];
+  const before = ids.indexOf(moved) > ids.indexOf(target);
+  next.splice(before ? at : at + 1, 0, moved);
+  return next;
+}
