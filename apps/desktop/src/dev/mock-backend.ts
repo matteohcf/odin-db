@@ -1000,6 +1000,13 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     Object.entries(serverOf(id("connectionId", args)).databases[id("database", args)] ?? {})
       .map(([name, coll]): CollectionInfo => ({ name, kind: coll.kind }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+  list_catalog: (args) =>
+    Object.entries(serverOf(id("connectionId", args)).databases).map(([database, colls]) => ({
+      database,
+      collections: Object.entries(colls)
+        .map(([name, coll]): CollectionInfo => ({ name, kind: coll.kind }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    })),
   collection_counts: (args) => {
     const { databases } = serverOf(id("connectionId", args));
     const collections = databases[args.database as string] ?? {};

@@ -16,7 +16,6 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { useTheme } from "@odin-db/ui/components/theme-provider";
-import { useQueries } from "@tanstack/react-query";
 import {
   Activity,
   Clock,
@@ -39,7 +38,7 @@ import { useTabs } from "@/features/workspace";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { useShortcutsDialog } from "@/hooks/use-shortcuts-dialog";
 import { useConnect } from "../api/mutations";
-import { collectionsQuery, databasesQuery, useConnections, useProfiles } from "../api/queries";
+import { useCatalogs, useConnections, useProfiles } from "../api/queries";
 import { rankMatches } from "../lib/palette-search";
 
 const MAX_COLLECTIONS = 50;
@@ -51,7 +50,6 @@ const tabIcon = {
   backups: HardDriveDownload,
   settings: Settings,
 } as const;
-const MAX_DATABASES = 1000;
 const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 
 interface CollectionEntry {
@@ -146,32 +144,20 @@ function PaletteResults({
   const nameOf = (profileId: ProfileId) =>
     profiles.find((profile) => profile.id === profileId)?.name ?? "";
 
-  // The same queries as the tree, so the palette reuses whatever is already loaded.
-  const databaseLists = useQueries({
-    queries: connections.map((connection) => databasesQuery(connection.id)),
-  });
-  const targets = connections
-    .flatMap((connection, index) =>
-      (databaseLists[index]?.data ?? []).map((database) => ({
-        connection,
-        database: database.name,
-      })),
-    )
-    .slice(0, MAX_DATABASES);
-  const collectionLists = useQueries({
-    queries: targets.map(({ connection, database }) => collectionsQuery(connection.id, database)),
-  });
-
-  const collections: CollectionEntry[] = targets.flatMap(({ connection, database }, index) =>
-    (collectionLists[index]?.data ?? [])
-      .filter((collection) => !collection.name.startsWith("system."))
-      .map((collection) => ({
-        connection,
-        profileName: nameOf(connection.profileId),
-        database,
-        collection: collection.name,
-        kind: collection.kind,
-      })),
+  // One catalog request per connection, shared with the tree's filter.
+  const catalogs = useCatalogs(connections.map((connection) => connection.id));
+  const collections: CollectionEntry[] = connections.flatMap((connection, index) =>
+    (catalogs[index]?.data ?? []).flatMap(({ database, collections: listed }) =>
+      listed
+        .filter((collection) => !collection.name.startsWith("system."))
+        .map((collection) => ({
+          connection,
+          profileName: nameOf(connection.profileId),
+          database,
+          collection: collection.name,
+          kind: collection.kind,
+        })),
+    ),
   );
   const severalConnections = connections.length > 1;
 

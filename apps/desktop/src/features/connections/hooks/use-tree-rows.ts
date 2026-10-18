@@ -1,7 +1,7 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { collectionsQuery, databasesQuery, useConnections } from "../api/queries";
+import { collectionsQuery, databasesQuery, useCatalogs, useConnections } from "../api/queries";
 import { buildTreeRows, listedConnections, listsCollections } from "../lib/tree-rows";
 import { useExplorer, useTreeFilter } from "../store/explorer-store";
 
@@ -25,8 +25,13 @@ export function useTreeRows(profiles: readonly ConnectionProfile[]) {
       .filter((database) => listsCollections(base, connection, database.name))
       .map((database) => ({ connection, database: database.name })),
   );
+  // While filtering, one catalog request per connection fills every list below.
+  useCatalogs(filter ? listed.map((connection) => connection.id) : []);
   const collections = useQueries({
-    queries: catalogs.map(({ connection, database }) => collectionsQuery(connection.id, database)),
+    queries: catalogs.map(({ connection, database }) => ({
+      ...collectionsQuery(connection.id, database),
+      enabled: !filter || expanded.has(`${connection.profileId}/${database}`),
+    })),
   });
   const collectionsOf = new Map(
     catalogs.map(({ connection, database }, i) => [`${connection.id}/${database}`, collections[i]]),

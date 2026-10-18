@@ -1,5 +1,5 @@
 import { type ConnectionId, commands, type ProfileId } from "@odin-db/bindings";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { call } from "@/lib/ipc";
 import { connectionKeys } from "./keys";
 
@@ -54,6 +54,28 @@ export function useCollectionCounts(
     },
     enabled,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * Every collection of each connection, in one request per connection: searching a
+ * deployment with hundreds of databases does not fire hundreds of requests. The result
+ * also fills each database's collection list.
+ */
+export function useCatalogs(connectionIds: readonly ConnectionId[]) {
+  const queryClient = useQueryClient();
+  return useQueries({
+    queries: connectionIds.map((connectionId) => ({
+      queryKey: connectionKeys.catalog(connectionId),
+      queryFn: async () => {
+        const catalog = await call(commands.listCatalog(connectionId));
+        for (const { database, collections } of catalog) {
+          queryClient.setQueryData(collectionsQuery(connectionId, database).queryKey, collections);
+        }
+        return catalog;
+      },
+      staleTime: 30_000,
+    })),
   });
 }
 
