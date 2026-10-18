@@ -128,6 +128,9 @@ export const commands = {
 	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
 	setIndexHidden: (connectionId: ConnectionId, namespace: Namespace, name: string, hidden: boolean) => typedError<null, IpcError>(__TAURI_INVOKE("set_index_hidden", { connectionId, namespace, name, hidden })),
 	serverStatus: (connectionId: ConnectionId) => typedError<ServerStatus, IpcError>(__TAURI_INVOKE("server_status", { connectionId })),
+	profilingStatus: (connectionId: ConnectionId, database: string) => typedError<ProfilingStatus, IpcError>(__TAURI_INVOKE("profiling_status", { connectionId, database })),
+	setProfilingStatus: (connectionId: ConnectionId, database: string, status: ProfilingStatus) => typedError<null, IpcError>(__TAURI_INVOKE("set_profiling_status", { connectionId, database, status })),
+	profileEntries: (connectionId: ConnectionId, query: ProfileQuery) => typedError<ProfileEntry[], IpcError>(__TAURI_INVOKE("profile_entries", { connectionId, query })),
 	currentOps: (connectionId: ConnectionId) => typedError<CurrentOp[], IpcError>(__TAURI_INVOKE("current_ops", { connectionId })),
 	killOp: (connectionId: ConnectionId, opid: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("kill_op", { connectionId, opid })),
 	listUsers: (connectionId: ConnectionId) => typedError<UserInfo[], IpcError>(__TAURI_INVOKE("list_users", { connectionId })),
@@ -794,6 +797,22 @@ export type PickedFolder = {
 /**  A label color, like Compass's, so production never looks like development. */
 export type ProfileColor = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink" | "gray";
 
+/**  One recorded operation, with what tells whether it needs an index. */
+export type ProfileEntry = {
+	/**  Milliseconds since the epoch. */
+	at: number | null,
+	op: string,
+	ns: string,
+	millis: number | null,
+	docsExamined: number | null,
+	keysExamined: number | null,
+	returned: number | null,
+	/**  `COLLSCAN` or `IXSCAN { field: 1 }`, as the server summarises the plan. */
+	planSummary: string | null,
+	appName: string | null,
+	command: EJsonDocument | null,
+};
+
 export type ProfileId = string;
 
 export type ProfileInput = {
@@ -813,6 +832,24 @@ export type ProfileInput = {
 	/**  A host key fingerprint the user confirmed while testing, to trust it. */
 	sshHostKey?: string | null,
 	group?: string | null,
+};
+
+export type ProfileQuery = {
+	database: string,
+	/**  Only operations on this collection. */
+	collection: string | null,
+	/**  Only operations at least this long, in milliseconds. */
+	minMillis: number | null,
+};
+
+export type ProfilingLevel = "off" | 
+/**  Operations slower than the threshold. */
+"slow" | "all";
+
+export type ProfilingStatus = {
+	level: ProfilingLevel,
+	/**  Operations at least this long count as slow, in milliseconds. */
+	slowMs: number | null,
 };
 
 export type QueryPlan = {

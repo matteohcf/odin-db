@@ -14,6 +14,7 @@ pub mod indexes;
 pub mod links;
 pub mod monitor;
 pub mod operations;
+pub mod profiler;
 pub mod profiles;
 pub mod query;
 pub mod schema;

@@ -2718,3 +2718,73 @@ async fn syncs_one_collection_into_another() {
         (2500.0, 0.0, 0.0, 0.0)
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn profiles_slow_operations() {
+    use odin_core::profiler::{self, ProfileQuery, ProfilingLevel, ProfilingStatus};
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("people");
+    fx.seed(&handle, &ns, 50).await;
+
+    let before = profiler::status(&handle, "odin_test")
+        .await
+        .expect("status");
+    assert_eq!(before.level, ProfilingLevel::Off);
+    let read_only = fx.connect(true).await;
+    let all = ProfilingStatus {
+        level: ProfilingLevel::All,
+        slow_ms: 0.0,
+    };
+    assert!(matches!(
+        profiler::set_status(&read_only, "odin_test", all.clone()).await,
+        Err(CoreError::ReadOnly)
+    ));
+    profiler::set_status(&handle, "odin_test", all)
+        .await
+        .expect("turns profiling on");
+    assert_eq!(
+        profiler::status(&handle, "odin_test")
+            .await
+            .expect("status")
+            .level,
+        ProfilingLevel::All
+    );
+
+    let people = handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("people");
+    people.find_one(doc! { "n": 42 }).await.expect("query");
+    let entries = profiler::entries(
+        &handle,
+        ProfileQuery {
+            database: "odin_test".into(),
+            collection: Some("people".into()),
+            min_millis: None,
+        },
+    )
+    .await
+    .expect("entries");
+    let find = entries
+        .iter()
+        .find(|entry| entry.op == "query")
+        .expect("the find was recorded");
+    assert_eq!(find.ns, "odin_test.people");
+    assert_eq!(find.plan_summary.as_deref(), Some("COLLSCAN"));
+    // A collection scan up to the first match (n = 42).
+    assert_eq!(find.docs_examined, Some(43.0));
+
+    profiler::set_status(
+        &handle,
+        "odin_test",
+        ProfilingStatus {
+            level: ProfilingLevel::Off,
+            slow_ms: 100.0,
+        },
+    )
+    .await
+    .expect("turns profiling off");
+}
