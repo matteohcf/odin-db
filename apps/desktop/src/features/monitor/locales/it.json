@@ -44,5 +44,34 @@
     "done": "Operazione terminata.",
     "failed": "Impossibile terminare l'operazione: {{message}}",
     "readOnly": "Le connessioni in sola lettura non possono terminare operazioni."
+  },
+  "profiler": {
+    "title": "Query lente (profiler)",
+    "database": "Database",
+    "level": "Livello del profiler",
+    "threshold": "Soglia di lentezza in millisecondi",
+    "refresh": "Aggiorna",
+    "levels": {
+      "off": "Spento",
+      "slow": "Operazioni lente",
+      "all": "Tutte le operazioni"
+    },
+    "readOnly": "Le connessioni in sola lettura non possono cambiare il profiler.",
+    "unavailable": "Il profiler non è disponibile qui: {{message}}",
+    "off": "Il profiler è spento per questo database. Scegli “Operazioni lente” per registrare le query più lente della soglia.",
+    "empty": "Ancora nulla di registrato. Le operazioni lente compaiono qui man mano.",
+    "when": "Ora",
+    "duration": "Durata",
+    "examined": "Letti / restituiti",
+    "plan": "Piano",
+    "docsExamined": "Documenti letti",
+    "keysExamined": "Chiavi d'indice lette",
+    "returned": "Restituiti",
+    "app": "Applicazione",
+    "hints": {
+      "collscan": "nessun indice usato",
+      "wasteful": "legge molto più di quanto restituisce"
+    },
+    "detailsHint": "Come registrato dal profiler. Un piano senza IXSCAN, o molti più documenti letti che restituiti, di solito indica un indice mancante."
   }
 }

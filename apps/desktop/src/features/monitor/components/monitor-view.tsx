@@ -31,6 +31,7 @@ import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { call, errorMessage } from "@/lib/ipc";
 import { type Rates, rates } from "../lib/rates";
+import { ProfilerSection } from "./profiler-section";
 import { Sparkline } from "./sparkline";
 
 const HISTORY = 60;
@@ -266,6 +267,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
             </div>
           )}
         </section>
+        <ProfilerSection connection={connection} polling={polling} />
       </div>
 
       <AlertDialog open={toKill !== null} onOpenChange={(open) => !open && setToKill(null)}>

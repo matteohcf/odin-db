@@ -696,6 +696,7 @@ const MOCK_MODELS = [
   },
 ];
 const mockCompare = { synced: false };
+const mockProfiling = new Map<string, { level: string; slowMs: number }>();
 const mockAi = { installed: new Set<string>(), partial: new Map<string, number>() };
 
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
@@ -1998,6 +1999,48 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       ...op,
       secsRunning: Math.floor((Date.now() - op.startedAt) / 1000),
     }));
+  },
+  profiling_status: (args) => {
+    serverOf(id("connectionId", args));
+    return mockProfiling.get(String(args.database)) ?? { level: "off", slowMs: 100 };
+  },
+  set_profiling_status: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    mockProfiling.set(String(args.database), args.status as { level: string; slowMs: number });
+    return null;
+  },
+  profile_entries: (args) => {
+    serverOf(id("connectionId", args));
+    const { database } = args.query as { database: string };
+    if ((mockProfiling.get(database)?.level ?? "off") === "off") return [];
+    const now = Date.now();
+    return [
+      {
+        at: now - 4_000,
+        op: "query",
+        ns: `${database}.users`,
+        millis: 412,
+        docsExamined: 120_000,
+        keysExamined: 0,
+        returned: 3,
+        planSummary: "COLLSCAN",
+        appName: "orders-api",
+        command: { find: "users", filter: { email: "ada@example.com" } },
+      },
+      {
+        at: now - 9_000,
+        op: "update",
+        ns: `${database}.orders`,
+        millis: 130,
+        docsExamined: 1,
+        keysExamined: 1,
+        returned: null,
+        planSummary: "IXSCAN { _id: 1 }",
+        appName: null,
+        command: { q: { _id: { $numberInt: "7" } }, u: { $set: { paid: true } } },
+      },
+    ];
   },
   kill_op: (args) => {
     const { connection } = serverOf(id("connectionId", args));

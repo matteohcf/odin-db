@@ -44,5 +44,34 @@
     "done": "Operation killed.",
     "failed": "Could not kill the operation: {{message}}",
     "readOnly": "Read-only connections cannot kill operations."
+  },
+  "profiler": {
+    "title": "Slow queries (profiler)",
+    "database": "Database",
+    "level": "Profiling level",
+    "threshold": "Slow threshold in milliseconds",
+    "refresh": "Refresh",
+    "levels": {
+      "off": "Off",
+      "slow": "Slow operations",
+      "all": "All operations"
+    },
+    "readOnly": "Read-only connections cannot change the profiler.",
+    "unavailable": "The profiler is not available here: {{message}}",
+    "off": "The profiler is off for this database. Choose “Slow operations” to record queries slower than the threshold.",
+    "empty": "Nothing recorded yet. Slow operations appear here as they happen.",
+    "when": "Time",
+    "duration": "Duration",
+    "examined": "Read / returned",
+    "plan": "Plan",
+    "docsExamined": "Documents read",
+    "keysExamined": "Index keys read",
+    "returned": "Returned",
+    "app": "Application",
+    "hints": {
+      "collscan": "no index used",
+      "wasteful": "reads far more than it returns"
+    },
+    "detailsHint": "As recorded by the profiler. A plan without IXSCAN, or many more documents read than returned, usually means a missing index."
   }
 }
