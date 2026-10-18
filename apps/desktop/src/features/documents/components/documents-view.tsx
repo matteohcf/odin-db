@@ -282,22 +282,28 @@ export function DocumentsView({
   async function downloadFile(row: JsonObject) {
     if (row._id === undefined) return;
     const name = typeof row.filename === "string" ? row.filename : "file";
+    const progress = toast.loading(t("gridfs.downloading", { name }));
     try {
       const path = await call(commands.downloadGridfsFile(connection.id, namespace, row._id, name));
-      if (path) toast.success(t("gridfs.downloaded", { path }));
+      if (path) toast.success(t("gridfs.downloaded", { path }), { id: progress });
+      else toast.dismiss(progress);
     } catch (error) {
-      toast.error(errorMessage(error));
+      toast.error(errorMessage(error), { id: progress });
     }
   }
 
   async function uploadFile() {
+    const progress = toast.loading(t("gridfs.uploading"));
     try {
       const id = await call(commands.uploadGridfsFile(connection.id, namespace));
-      if (id === null) return;
-      toast.success(t("gridfs.uploaded"));
+      if (id === null) {
+        toast.dismiss(progress);
+        return;
+      }
+      toast.success(t("gridfs.uploaded"), { id: progress });
       refresh(true);
     } catch (error) {
-      toast.error(errorMessage(error));
+      toast.error(errorMessage(error), { id: progress });
     }
   }
 

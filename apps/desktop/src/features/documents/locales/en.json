@@ -189,6 +189,8 @@
   "gridfs": {
     "upload": "Upload file",
     "downloaded": "Saved to {{path}}",
-    "uploaded": "File uploaded"
+    "uploaded": "File uploaded",
+    "downloading": "Saving {{name}}…",
+    "uploading": "Uploading a file…"
   }
 }
