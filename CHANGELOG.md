@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/matteohcf/odin-db/compare/v1.0.0...v1.0.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **core:** link compiler-rt so the apple silicon release build links ([4600d28](https://github.com/matteohcf/odin-db/commit/4600d28cdf9bb4e401cb8e6e7ab8ab3b52bf4652))
+* **desktop:** target macos 11 so llama.cpp builds for release ([1a09667](https://github.com/matteohcf/odin-db/commit/1a09667390d1a48657a0d280a0279fc054788092))
+
 ## 1.0.0 (2026-10-18)
 
 
