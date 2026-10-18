@@ -1,7 +1,10 @@
 {
   "toolbar": {
     "create": "Crea indice",
-    "refresh": "Aggiorna"
+    "refresh": "Aggiorna",
+    "copyAll": "Copia tutti come createIndex",
+    "allCopied_one": "{{count}} comando createIndex copiato",
+    "allCopied_other": "{{count}} comandi createIndex copiati"
   },
   "table": {
     "label": "Indici di {{collection}}",

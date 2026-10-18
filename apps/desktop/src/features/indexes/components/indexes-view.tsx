@@ -77,6 +77,22 @@ export function IndexesView({
           variant="ghost"
           size="sm"
           className="ml-auto"
+          disabled={!indexes.data?.length}
+          onClick={() => {
+            // `_id_` exists in every collection: recreating it is an error.
+            const commands = (indexes.data ?? [])
+              .filter((index) => index.name !== "_id_")
+              .map((index) => createIndexCommand(namespace.collection, index));
+            void navigator.clipboard.writeText(commands.join("\n"));
+            toast.success(t("toolbar.allCopied", { count: commands.length }));
+          }}
+        >
+          <ClipboardCopy />
+          {t("toolbar.copyAll")}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => void indexes.refetch()}
           disabled={indexes.isFetching}
         >
