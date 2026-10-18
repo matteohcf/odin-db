@@ -20,6 +20,8 @@ interface ResultsPanelProps {
   onSelect: (index: number | null) => void;
   actions: RowActions;
   columnActions?: ColumnActions | undefined;
+  /** Remembers the table's column arrangement under this key. */
+  layoutKey?: string | undefined;
 }
 
 const SKELETON_ROWS = Array.from({ length: 14 }, (_, index) => index);
@@ -35,6 +37,7 @@ export function ResultsPanel({
   onSelect,
   actions,
   columnActions,
+  layoutKey,
 }: ResultsPanelProps) {
   const { t } = useTranslation("results");
   const rows = useResultsState(controller, (s) => s.rows);
@@ -112,6 +115,7 @@ export function ResultsPanel({
   const grid = (
     <ResultsGrid
       label={label}
+      layoutKey={layoutKey}
       rows={rows}
       columns={columns}
       hasMore={hasMore}

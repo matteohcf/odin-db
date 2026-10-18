@@ -425,6 +425,7 @@ export function DocumentsView({
 
       <ResultsPanel
         controller={results}
+        layoutKey={queryHistoryKey}
         columnActions={{
           sort: simpleSort(form.sort) ?? [],
           onSort: (field, append) =>

@@ -60,7 +60,8 @@
   "columns": {
     "choose": "Scegli colonne",
     "label": "{{visible}} di {{total}} colonne",
-    "showAll": "Mostra tutte le colonne"
+    "showAll": "Mostra tutte le colonne",
+    "reset": "Ripristina colonne"
   },
   "column": {
     "sortHint": "Ordina per {{field}}. Maiusc-clic per aggiungerlo all'ordinamento attuale.",

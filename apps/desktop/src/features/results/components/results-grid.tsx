@@ -62,6 +62,7 @@ import {
   stickyOffsets,
 } from "../lib/columns";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
+import { useColumnLayouts } from "../store/column-layout-store";
 import { useResultsView } from "../store/results-view-store";
 import { ColumnMenu } from "./column-menu";
 import { CompareDialog } from "./compare-dialog";
@@ -121,6 +122,8 @@ export interface ColumnActions {
 
 interface ResultsGridProps {
   label: string;
+  /** Remembers the column arrangement under this key (one per collection). */
+  layoutKey?: string | undefined;
   rows: readonly JsonObject[];
   columns: readonly string[];
   hasMore: boolean;
@@ -140,6 +143,7 @@ interface ResultsGridProps {
  */
 export function ResultsGrid({
   label,
+  layoutKey,
   rows,
   columns,
   hasMore,
@@ -203,16 +207,24 @@ export function ResultsGrid({
   }, [columns, hasRows]);
 
   // Widths the user sets survive new runs of the query: sizing state is keyed by field.
+  // Read once: the grid owns the layout while it is open and saves it back.
+  const [savedLayout] = useState(() =>
+    layoutKey ? useColumnLayouts.getState().layouts[layoutKey] : undefined,
+  );
   const table = useTable({
     features,
     columns: columnDefs,
     data: rows as JsonObject[],
     columnResizeMode: "onChange",
+    initialState: {
+      columnSizing: { ...savedLayout?.widths },
+      columnVisibility: { ...savedLayout?.hidden },
+    },
   });
   // Pinned fields survive new runs, like widths: they are kept by name.
-  const [pinned, setPinned] = useState<readonly string[]>([]);
+  const [pinned, setPinned] = useState<readonly string[]>(savedLayout?.pinned ?? []);
   // Headers dragged onto another: kept by name too.
-  const [order, setOrder] = useState<readonly string[]>([]);
+  const [order, setOrder] = useState<readonly string[]>(savedLayout?.order ?? []);
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   const headers = pinnedFirst(
     inUserOrder(table.getHeaderGroups()[0]?.headers ?? [], order),
@@ -243,6 +255,18 @@ export function ResultsGrid({
     overscan: 3,
   });
   const widthsKey = widths.join();
+  const visibleKey = headers.map((header) => header.id).join();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the keys stand for sizing and visibility.
+  useEffect(() => {
+    if (!layoutKey) return;
+    const { columnSizing, columnVisibility } = table.store.state;
+    const hidden = Object.fromEntries(
+      Object.entries(columnVisibility ?? {}).filter(([, visible]) => visible === false),
+    ) as Record<string, false>;
+    useColumnLayouts
+      .getState()
+      .save(layoutKey, { order, pinned, widths: { ...columnSizing }, hidden });
+  }, [layoutKey, order, pinned, widthsKey, visibleKey]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `widthsKey` stands for the sizes.
   useEffect(() => columnVirtualizer.measure(), [widthsKey, columnVirtualizer]);
   // `_id` and pinned columns stay in view while wide documents scroll sideways.
@@ -362,6 +386,12 @@ export function ResultsGrid({
                   <ColumnsMenu
                     columns={table.getAllLeafColumns()}
                     onShowAll={() => table.toggleAllColumnsVisible(true)}
+                    onReset={() => {
+                      setOrder([]);
+                      setPinned([]);
+                      table.setColumnSizing({});
+                      table.toggleAllColumnsVisible(true);
+                    }}
                   />
                 </th>
                 {slots.map((slot) => {
@@ -766,9 +796,12 @@ interface ToggleableColumn {
 function ColumnsMenu({
   columns,
   onShowAll,
+  onReset,
 }: {
   columns: readonly ToggleableColumn[];
   onShowAll: () => void;
+  /** Back to the natural order, widths and visibility, with nothing pinned. */
+  onReset: () => void;
 }) {
   const { t } = useTranslation("results");
   const visible = columns.filter((column) => column.getIsVisible()).length;
@@ -804,12 +837,11 @@ function ColumnsMenu({
             <span className="truncate">{column.id}</span>
           </DropdownMenuCheckboxItem>
         ))}
+        <DropdownMenuSeparator />
         {visible < columns.length && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onShowAll}>{t("columns.showAll")}</DropdownMenuItem>
-          </>
+          <DropdownMenuItem onSelect={onShowAll}>{t("columns.showAll")}</DropdownMenuItem>
         )}
+        <DropdownMenuItem onSelect={onReset}>{t("columns.reset")}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
