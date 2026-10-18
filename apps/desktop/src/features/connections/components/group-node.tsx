@@ -3,7 +3,7 @@ import { Folder, FolderInput, FolderOpen, PencilLine, Plus } from "lucide-react"
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSetGroup } from "../api/mutations";
-import { useProfiles } from "../api/queries";
+import { useConnections, useProfiles } from "../api/queries";
 import { collapsedGroupKey } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
 import { NodeMenu } from "./node-menu";
@@ -25,6 +25,11 @@ export function GroupNode({
   const { t } = useTranslation("connections");
   const setExpanded = useExplorer((s) => s.setExpanded);
   const members = (useProfiles().data ?? []).filter((profile) => profile.group === name);
+  const connections = useConnections().data ?? [];
+  // Visible while collapsed: which folders hold open connections.
+  const open = members.filter((profile) =>
+    connections.some((connection) => connection.profileId === profile.id),
+  ).length;
   const setGroup = useSetGroup();
   const [renaming, setRenaming] = useState(false);
   const Icon = collapsed ? Folder : FolderOpen;
@@ -36,7 +41,18 @@ export function GroupNode({
         onActivate={() => setExpanded(collapsedGroupKey(name), !collapsed)}
         icon={<Icon className="size-3.5" />}
         label={<span className="font-medium">{name}</span>}
-        trailing={count}
+        trailing={
+          <span className="flex items-center gap-1.5">
+            {open > 0 && (
+              <span className="flex items-center gap-1" title={t("group.open", { count: open })}>
+                <span className="size-1.5 rounded-full bg-success" />
+                <span className="sr-only">{t("group.open", { count: open })}</span>
+                <span aria-hidden>{open}</span>
+              </span>
+            )}
+            <span>{count}</span>
+          </span>
+        }
         actions={
           <NodeMenu label={t("group.actions", { name })}>
             <DropdownMenuItem onSelect={() => onNewConnection(name)}>

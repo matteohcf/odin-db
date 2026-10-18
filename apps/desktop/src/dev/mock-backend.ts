@@ -4,6 +4,7 @@
  * profiles) so the UI can be developed and reviewed in a plain browser.
  * Query support is deliberately shallow: simple filters, projections and common stages.
  */
+
 import type {
   CollectionInfo,
   ConnectionInfo,
@@ -18,6 +19,7 @@ import type {
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { fieldPathsOf } from "@/lib/ejson-fields";
+import { PROFILE_COLORS } from "@/lib/profile-colors";
 
 type Doc = { [key: string]: JsonValue };
 type Collections = Record<
@@ -1844,6 +1846,23 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
 export function installMockBackend() {
   // `localStorage["odin-mock-empty"] = "1"` shows the first-run state.
   if (localStorage.getItem("odin-mock-empty") === "1") profiles.splice(0);
+  // `localStorage["odin-mock-many"] = "1"` adds 100 connections in 10 groups.
+  if (localStorage.getItem("odin-mock-many") === "1") {
+    for (let i = 0; i < 100; i++) {
+      profiles.push({
+        id: `0192f000-0000-7000-8000-${String(1000 + i).padStart(12, "0")}`,
+        name: `Customer ${String(i + 1).padStart(3, "0")}`,
+        connectionString: `mongodb://customer-${i + 1}.example.net:27017`,
+        readOnly: i % 3 === 0,
+        hasPassword: true,
+        color: PROFILE_COLORS[i % PROFILE_COLORS.length] ?? null,
+        ssh: null,
+        hasSshSecret: false,
+        sshHostKey: null,
+        group: `Region ${(i % 10) + 1}`,
+      });
+    }
+  }
   mockIPC(
     async (command, payload) => {
       const handler =

@@ -240,6 +240,8 @@
     "renameDescription_other": "Moves its {{count}} connections to the new name. An existing group name merges the two.",
     "name": "Group name",
     "ungroup": "Ungroup",
-    "renameSubmit": "Rename"
+    "renameSubmit": "Rename",
+    "open_one": "{{count}} open connection",
+    "open_other": "{{count}} open connections"
   }
 }

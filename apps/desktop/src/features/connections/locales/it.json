@@ -240,6 +240,8 @@
     "renameDescription_other": "Sposta le sue {{count}} connessioni sotto il nuovo nome. Un nome di gruppo esistente unisce i due.",
     "name": "Nome del gruppo",
     "ungroup": "Separa",
-    "renameSubmit": "Rinomina"
+    "renameSubmit": "Rinomina",
+    "open_one": "{{count}} connessione aperta",
+    "open_other": "{{count}} connessioni aperte"
   }
 }
