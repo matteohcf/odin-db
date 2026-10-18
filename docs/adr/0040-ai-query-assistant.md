@@ -30,8 +30,18 @@ anywhere, and the feature must stay optional: some will never want it.
   rejects `$where`, `$function`, `$accumulator`, `$out` and `$merge` anywhere. The query fills
   the query bar after review and runs only on request.
 - **Quality.** `crates/ai/tests/eval.rs` scores catalog models on about 100 requests over five
-  schemas (ignored by default; it downloads models). At the time of writing Qwen2.5 Coder 1.5B
-  answered 85% correctly in about 2 s on an M3, Qwen2.5 Coder 0.5B 55%, Qwen3.5 2B 65%.
+  schemas (ignored by default; it downloads models). On an M3 at the time of writing:
+
+  | Model | Correct | Per query |
+  |---|---|---|
+  | Qwen3.5 4B | 90% | 7.1 s |
+  | Qwen2.5 Coder 1.5B | 85% | 2.9 s |
+  | Llama 3.2 3B | 69% | 4.9 s |
+  | Qwen3.5 2B | 65% | 3.3 s |
+  | Qwen2.5 Coder 0.5B | 55% | 1.1 s |
+
+  Qwen2.5 Coder 1.5B is recommended from 8 GB of memory, the 0.5B below; the larger models stay
+  available for those who prefer accuracy to speed.
 
 ## Alternatives considered
 

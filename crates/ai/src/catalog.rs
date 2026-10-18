@@ -128,13 +128,11 @@ pub fn find(id: &str) -> Option<&'static ModelSpec> {
     CATALOG.iter().find(|spec| spec.id == id)
 }
 
-/// The most capable model that fits comfortably in `memory_gib`, preferring the
-/// balanced default over larger ones that only fit.
+/// The model to suggest for a machine with `memory_gib`. Larger models answer slightly
+/// better but take several seconds per query (ADR-0040), so they are never the default.
 #[must_use]
 pub fn recommended(memory_gib: u32) -> &'static ModelSpec {
-    let pick = if memory_gib >= 16 {
-        "qwen3.5-4b"
-    } else if memory_gib >= 8 {
+    let pick = if memory_gib >= 8 {
         "qwen2.5-coder-1.5b"
     } else {
         "qwen2.5-coder-0.5b"
@@ -170,6 +168,6 @@ mod tests {
     fn recommends_by_memory() {
         assert_eq!(recommended(4).id, "qwen2.5-coder-0.5b");
         assert_eq!(recommended(8).id, "qwen2.5-coder-1.5b");
-        assert_eq!(recommended(32).id, "qwen3.5-4b");
+        assert_eq!(recommended(32).id, "qwen2.5-coder-1.5b");
     }
 }
