@@ -97,7 +97,8 @@ pub async fn export_database(
 
     let mut summary = DatabaseTransferSummary::new();
     let total = collections.len();
-    for (index, collection) in collections.into_iter().enumerate() {
+    let stems = unique_stems(&collections);
+    for (index, (collection, stem)) in collections.into_iter().zip(stems).enumerate() {
         let namespace = Namespace {
             database: database.to_owned(),
             collection: collection.clone(),
@@ -121,7 +122,7 @@ pub async fn export_database(
                 json_mode: request.json_mode,
                 csv_fields: Vec::new(),
             },
-            &folder.join(format!("{}.{extension}", file_stem(&collection))),
+            &folder.join(format!("{stem}.{extension}")),
             forward,
             // A child token per file: each transfer cancels its own when it ends.
             cancel.child_token(),
@@ -250,6 +251,26 @@ fn file_stem(collection: &str) -> String {
         .collect()
 }
 
+/// One file name per collection, never the same twice: `Users` and `users`, or `a/b` and
+/// `a_b`, would otherwise share a file on case-insensitive disks and one export would
+/// overwrite the other.
+fn unique_stems(collections: &[String]) -> Vec<String> {
+    let mut taken = std::collections::HashSet::new();
+    collections
+        .iter()
+        .map(|collection| {
+            let stem = file_stem(collection);
+            let mut candidate = stem.clone();
+            let mut n = 2;
+            while !taken.insert(candidate.to_lowercase()) {
+                candidate = format!("{stem} ({n})");
+                n += 1;
+            }
+            candidate
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -265,6 +286,15 @@ mod tests {
         let names: Vec<_> = files.iter().map(|(name, _)| name.as_str()).collect();
         assert_eq!(names, ["Events", "orders", "users"]);
         std::fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn file_names_never_collide() {
+        let names = ["users", "Users", "a/b", "a_b", "orders"].map(String::from);
+        assert_eq!(
+            unique_stems(&names),
+            ["users", "Users (2)", "a_b", "a_b (2)", "orders"]
+        );
     }
 
     #[test]
