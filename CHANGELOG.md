@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/matteohcf/odin-db/compare/v1.0.1...v1.0.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* **core:** accept connection strings with socketTimeoutMS ([c531d21](https://github.com/matteohcf/odin-db/commit/c531d21a78aab79739dadfd315aa3bf7c983ea0a))
+* **core:** let cancellation win over a ready stream ([6fdb8df](https://github.com/matteohcf/odin-db/commit/6fdb8dfb9966c44e6f2af1560a790fc079882c77))
+
 ## [1.0.1](https://github.com/matteohcf/odin-db/compare/v1.0.0...v1.0.1) (2026-10-18)
 
 
