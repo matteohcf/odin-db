@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
 import { Kbd } from "@odin-db/ui/components/kbd";
@@ -17,6 +18,7 @@ import {
   Plus,
   Search,
   Server,
+  Unplug,
   X,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -25,8 +27,8 @@ import { toast } from "sonner";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { errorMessage } from "@/lib/ipc";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
-import { useExportConnections, useImportConnections } from "../api/mutations";
-import { useProfiles } from "../api/queries";
+import { useDisconnectAll, useExportConnections, useImportConnections } from "../api/mutations";
+import { useConnections, useProfiles } from "../api/queries";
 import { useHealthEvents } from "../hooks/use-health-events";
 import { collapsedGroupKey } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
@@ -61,6 +63,8 @@ export function ConnectionExplorer() {
   useShortcut("filterSidebar", () => filterInput.current?.focus());
   useHealthEvents();
   const importMutation = useImportConnections();
+  const { data: connections } = useConnections();
+  const disconnectAll = useDisconnectAll();
   const exportMutation = useExportConnections();
 
   async function importConnections() {
@@ -148,6 +152,16 @@ export function ConnectionExplorer() {
               >
                 <FileDown />
                 {t("explorer.exportAll")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={!connections?.length}
+                onSelect={() =>
+                  disconnectAll.mutate((connections ?? []).map((connection) => connection.id))
+                }
+              >
+                <Unplug />
+                {t("explorer.disconnectAll")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

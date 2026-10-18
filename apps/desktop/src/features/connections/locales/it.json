@@ -20,7 +20,8 @@
     "importFailed": "Importazione non riuscita: {{message}}",
     "exported": "Salvato in {{path}}. Le password non sono incluse.",
     "exportFailed": "Esportazione non riuscita: {{message}}",
-    "noMatch": "Nessun risultato per “{{filter}}”."
+    "noMatch": "Nessun risultato per “{{filter}}”.",
+    "disconnectAll": "Disconnetti tutte"
   },
   "profile": {
     "connect": "Connetti",
@@ -242,6 +243,7 @@
     "ungroup": "Separa",
     "renameSubmit": "Rinomina",
     "open_one": "{{count}} connessione aperta",
-    "open_other": "{{count}} connessioni aperte"
+    "open_other": "{{count}} connessioni aperte",
+    "disconnectAll": "Disconnetti tutte le connessioni del gruppo"
   }
 }

@@ -1,8 +1,8 @@
 import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
-import { Folder, FolderInput, FolderOpen, PencilLine, Plus } from "lucide-react";
+import { Folder, FolderInput, FolderOpen, PencilLine, Plus, Unplug } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSetGroup } from "../api/mutations";
+import { useDisconnectAll, useSetGroup } from "../api/mutations";
 import { useConnections, useProfiles } from "../api/queries";
 import { collapsedGroupKey } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
@@ -31,6 +31,7 @@ export function GroupNode({
     connections.some((connection) => connection.profileId === profile.id),
   ).length;
   const setGroup = useSetGroup();
+  const disconnectAll = useDisconnectAll();
   const [renaming, setRenaming] = useState(false);
   const Icon = collapsed ? Folder : FolderOpen;
   return (
@@ -62,6 +63,19 @@ export function GroupNode({
             <DropdownMenuItem onSelect={() => setRenaming(true)}>
               <PencilLine />
               {t("group.rename")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={open === 0}
+              onSelect={() =>
+                disconnectAll.mutate(
+                  connections
+                    .filter((connection) => members.some((p) => p.id === connection.profileId))
+                    .map((connection) => connection.id),
+                )
+              }
+            >
+              <Unplug />
+              {t("group.disconnectAll")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => setGroup.mutate({ profiles: members, group: null })}>

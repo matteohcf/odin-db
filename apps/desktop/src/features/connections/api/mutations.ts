@@ -126,6 +126,21 @@ export function useTrustHostKey() {
   });
 }
 
+/** Closes several connections at once, e.g. at the end of a session. */
+export function useDisconnectAll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (connectionIds: readonly ConnectionId[]) =>
+      Promise.all(connectionIds.map((id) => call(commands.disconnect(id)))),
+    onSettled: (_, __, connectionIds) => {
+      for (const id of connectionIds) {
+        queryClient.removeQueries({ queryKey: connectionKeys.connection(id) });
+      }
+      void queryClient.invalidateQueries({ queryKey: connectionKeys.connections, exact: true });
+    },
+  });
+}
+
 export function useDisconnect() {
   const queryClient = useQueryClient();
   return useMutation({

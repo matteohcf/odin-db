@@ -20,7 +20,8 @@
     "importFailed": "Import failed: {{message}}",
     "exported": "Saved to {{path}}. Passwords are not included.",
     "exportFailed": "Export failed: {{message}}",
-    "noMatch": "Nothing matches “{{filter}}”."
+    "noMatch": "Nothing matches “{{filter}}”.",
+    "disconnectAll": "Disconnect all"
   },
   "profile": {
     "connect": "Connect",
@@ -242,6 +243,7 @@
     "ungroup": "Ungroup",
     "renameSubmit": "Rename",
     "open_one": "{{count}} open connection",
-    "open_other": "{{count}} open connections"
+    "open_other": "{{count}} open connections",
+    "disconnectAll": "Disconnect all in this group"
   }
 }
