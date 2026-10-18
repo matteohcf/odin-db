@@ -16,7 +16,7 @@ export interface CollectionTab {
 }
 
 /** Query bar text (mongosh syntax) handed to a collection tab. */
-export interface TabQuery {
+interface TabQuery {
   filter: string;
   sort: string;
   nonce: string;
