@@ -16,7 +16,9 @@
     "languageHint": "The language of the interface.",
     "systemLanguage": "System ({{language}})",
     "reconnect": "Reconnect on launch",
-    "reconnectHint": "Tabs from the last session come back connected, ready to query."
+    "reconnectHint": "Tabs from the last session come back connected, ready to query.",
+    "updates": "Check for updates at launch",
+    "updatesHint": "Updates are signed and verified before they install; nothing installs without your click."
   },
   "appearance": {
     "title": "Appearance",
@@ -115,7 +117,8 @@
     "tagline": "An open source desktop client for MongoDB.",
     "license": "License",
     "source": "Source code",
-    "platform": "Platform"
+    "platform": "Platform",
+    "updates": "Updates"
   },
   "reset": {
     "title": "Reset",

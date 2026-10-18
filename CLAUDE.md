@@ -44,7 +44,7 @@ docs/adr/                Architecture Decision Records
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
   - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection;
-  - `settings` (the settings tab) reads `results` and `documents` stores; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
+  - `settings` (the settings tab) reads `results` and `documents` stores and uses `updates` for its update row; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `connections` may use `workspace` to open tabs, and `backup` and `transfer` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
@@ -72,6 +72,7 @@ docs/adr/                Architecture Decision Records
 - **SSH tunnels** (ADR-0036): `ssh::open_tunnel` with host keys pinned per profile; `connection::route` rewrites the URI to the tunnel. Tools get `ConnectionHandle::uri`, never the profile's string. A host key error carries its fingerprint in `IpcError.detail`.
 - **Large deployments** (ADR-0037): the connection tree is one flat, virtualized list: `buildTreeRows` (`features/connections/lib/tree-rows.ts`) turns profiles, databases and collections into rows, so a cluster with thousands of collections renders only what is in view. A row component never renders its children. Grid columns are virtualized too; catalog-wide reads use `browse::catalog` (bounded concurrency), never one request per database.
 - **GridFS** (ADR-0038): a `<bucket>.files` collection gets download and upload; dialogs open from Rust.
+- **Automatic updates** (ADR-0039): `check_for_update` at launch (setting `checkForUpdates`), `install_update` as a registered long operation; nothing installs without a click.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 
 ## Rust conventions

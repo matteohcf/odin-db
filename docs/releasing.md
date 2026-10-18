@@ -17,7 +17,19 @@ Releases are driven by Conventional Commits (ADR-0022) and built by `.github/wor
 
 Run the **Release** workflow manually (*Actions → Release → Run workflow*). It builds every installer and attaches them to the run as artifacts.
 
+## Automatic updates
+
+Builds are signed for `tauri-plugin-updater` (ADR-0039): the release job creates the update
+archives and their signatures, and tauri-action uploads `latest.json` to the release. The app
+checks `releases/latest/download/latest.json`, so updates reach users only while the repository
+is public (or the endpoint in `tauri.conf.json` points to a public mirror).
+
+- Private key: repository secrets `TAURI_SIGNING_PRIVATE_KEY` and
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; the maintainer keeps a copy offline.
+- Public key: `plugins.updater.pubkey` in `apps/desktop/src-tauri/tauri.conf.json`.
+- Losing the private key means existing installs can never update again; rotating it needs one
+  release signed with the old key that ships the new public key.
+
 ## Not yet in place
 
 - **Code signing**: builds are unsigned until the company Apple Developer account and a Windows signing service are set up (ADR-0022).
-- **Automatic updates**: `tauri-plugin-updater` needs an update-signing key pair. The private key belongs in a repository secret, so generating it is a maintainer step.

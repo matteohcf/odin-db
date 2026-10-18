@@ -42,3 +42,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0036](0036-ssh-tunnels.md) | SSH tunnels | Accepted |
 | [0037](0037-large-deployments.md) | Large deployments | Accepted |
 | [0038](0038-gridfs.md) | GridFS files | Accepted |
+| [0039](0039-automatic-updates.md) | Automatic updates | Accepted |

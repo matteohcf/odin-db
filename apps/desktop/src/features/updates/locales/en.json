@@ -1,0 +1,13 @@
+{
+  "available": "odin-db {{version}} is available",
+  "availableHint": "You have {{current}}. Installing restarts the app.",
+  "install": "Install and restart",
+  "installing": "Installing odin-db {{version}}…",
+  "installingPercent": "Installing odin-db {{version}}… {{percent}}%",
+  "cancel": "Cancel",
+  "cancelled": "Update cancelled",
+  "upToDate": "odin-db is up to date",
+  "check": "Check now",
+  "checking": "Checking…",
+  "checkFailed": "Couldn't check for updates: {{message}}"
+}

@@ -1,0 +1,13 @@
+{
+  "available": "È disponibile odin-db {{version}}",
+  "availableHint": "Hai la {{current}}. L'installazione riavvia l'app.",
+  "install": "Installa e riavvia",
+  "installing": "Installazione di odin-db {{version}}…",
+  "installingPercent": "Installazione di odin-db {{version}}… {{percent}}%",
+  "cancel": "Annulla",
+  "cancelled": "Aggiornamento annullato",
+  "upToDate": "odin-db è aggiornato",
+  "check": "Controlla ora",
+  "checking": "Controllo…",
+  "checkFailed": "Impossibile controllare gli aggiornamenti: {{message}}"
+}

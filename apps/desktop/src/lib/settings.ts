@@ -39,6 +39,8 @@ export interface Settings {
   dateDisplay: "utc" | "local";
   /** Height of sidebar rows. */
   sidebarDensity: "normal" | "compact";
+  /** Look for a newer release at launch. */
+  checkForUpdates: boolean;
 }
 
 /** Sidebar row heights in pixels; the tree adds a 1px gap between rows. */
@@ -69,6 +71,7 @@ export const DEFAULT_SETTINGS: Settings = {
   monoFont: "",
   dateDisplay: "utc",
   sidebarDensity: "normal",
+  checkForUpdates: true,
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

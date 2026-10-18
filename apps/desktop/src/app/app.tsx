@@ -9,6 +9,7 @@ import { MonitorTab, MonitorTabLabel } from "@/features/monitor";
 import { useAutorunEnabled } from "@/features/perf-lab";
 import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
 import { ShellTab, ShellTabLabel } from "@/features/shell";
+import { useUpdateNotifier } from "@/features/updates";
 import { UsersTab, UsersTabLabel } from "@/features/users";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { useSettings } from "@/lib/settings";
@@ -35,6 +36,7 @@ export function App() {
   usePruneRestoredTabs();
   useReconnectRestoredTabs();
   useWindowTitle();
+  useUpdateNotifier();
   if (perfAutorun) {
     return (
       <Suspense fallback={null}>

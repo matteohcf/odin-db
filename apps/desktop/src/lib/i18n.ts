@@ -30,6 +30,8 @@ import shell from "@/features/shell/locales/en.json";
 import shellIt from "@/features/shell/locales/it.json";
 import transfer from "@/features/transfer/locales/en.json";
 import transferIt from "@/features/transfer/locales/it.json";
+import updates from "@/features/updates/locales/en.json";
+import updatesIt from "@/features/updates/locales/it.json";
 import users from "@/features/users/locales/en.json";
 import usersIt from "@/features/users/locales/it.json";
 import workspace from "@/features/workspace/locales/en.json";
@@ -56,6 +58,7 @@ export const resources = {
     settings,
     shell,
     transfer,
+    updates,
     users,
     workspace,
   },
@@ -76,6 +79,7 @@ export const resources = {
     settings: settingsIt,
     shell: shellIt,
     transfer: transferIt,
+    updates: updatesIt,
     users: usersIt,
     workspace: workspaceIt,
   },

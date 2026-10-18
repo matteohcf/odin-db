@@ -882,6 +882,32 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const total = 48_213;
     return simulateTransfer(args.channel, total, _id, 1, (done) => ({ done, total }));
   },
+  // `localStorage["odin-mock-update"] = "1"` offers a newer release.
+  check_for_update: () =>
+    localStorage.getItem("odin-mock-update") === "1"
+      ? { version: "0.2.0", currentVersion: "0.1.0", notes: "Faster grids.", date: null }
+      : null,
+  install_update: (args) => {
+    // Progress only, unwrapped; the real backend then restarts the app, here it just ends.
+    const send = channelSender(args.channel);
+    const operationId = crypto.randomUUID();
+    const operation = { cancelled: false };
+    operations.set(operationId, operation);
+    const total = 18_000_000;
+    let done = 0;
+    const tick = () => {
+      if (operation.cancelled) {
+        send({ event: "cancelled" });
+        return;
+      }
+      done = Math.min(total, done + total / 10);
+      send({ event: "data", data: { done, total } });
+      if (done < total) setTimeout(tick, 250);
+      else send({ event: "completed" });
+    };
+    setTimeout(tick, 250);
+    return operationId;
+  },
   open_link: (args) => {
     const url = String(args.url).trim();
     if (!/^(https?:\/\/|mailto:)\S+$/i.test(url)) {

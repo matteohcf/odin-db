@@ -16,7 +16,9 @@
     "languageHint": "La lingua dell'interfaccia.",
     "systemLanguage": "Sistema ({{language}})",
     "reconnect": "Riconnetti all'avvio",
-    "reconnectHint": "Le schede dell'ultima sessione tornano già connesse, pronte per le query."
+    "reconnectHint": "Le schede dell'ultima sessione tornano già connesse, pronte per le query.",
+    "updates": "Cerca aggiornamenti all'avvio",
+    "updatesHint": "Gli aggiornamenti sono firmati e verificati prima dell'installazione; nulla si installa senza il tuo clic."
   },
   "appearance": {
     "title": "Aspetto",
@@ -115,7 +117,8 @@
     "tagline": "Un client desktop open source per MongoDB.",
     "license": "Licenza",
     "source": "Codice sorgente",
-    "platform": "Piattaforma"
+    "platform": "Piattaforma",
+    "updates": "Aggiornamenti"
   },
   "reset": {
     "title": "Ripristino",

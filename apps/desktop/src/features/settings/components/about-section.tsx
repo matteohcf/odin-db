@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useSettings } from "@/lib/settings";
 import { SettingRow } from "./setting-row";
 import { SettingsSection } from "./settings-section";
+import { UpdateRow } from "./update-row";
 
 const REPOSITORY = "https://github.com/matteohcf/odin-db";
 
@@ -45,6 +46,7 @@ export function AboutSection() {
               : "—"}
           </span>
         </SettingRow>
+        <UpdateRow />
         <SettingRow label={t("about.license")}>
           <span className="text-muted-foreground text-sm">MIT OR Apache-2.0</span>
         </SettingRow>

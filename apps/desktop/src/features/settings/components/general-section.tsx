@@ -14,6 +14,7 @@ export function GeneralSection() {
   const id = useId();
   const language = useSettings((s) => s.language);
   const reconnect = useSettings((s) => s.reconnectOnLaunch);
+  const checkForUpdates = useSettings((s) => s.checkForUpdates);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("general.title")}>
@@ -44,6 +45,17 @@ export function GeneralSection() {
           id={`${id}-reconnect`}
           checked={reconnect}
           onCheckedChange={(checked) => update({ reconnectOnLaunch: checked })}
+        />
+      </SettingRow>
+      <SettingRow
+        id={`${id}-updates`}
+        label={t("general.updates")}
+        description={t("general.updatesHint")}
+      >
+        <Switch
+          id={`${id}-updates`}
+          checked={checkForUpdates}
+          onCheckedChange={(checked) => update({ checkForUpdates: checked })}
         />
       </SettingRow>
     </SettingsSection>
