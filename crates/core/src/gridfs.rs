@@ -29,6 +29,29 @@ pub fn bucket_of(collection: &str) -> Option<&str> {
         .filter(|name| !name.is_empty())
 }
 
+/// A file name safe to offer in a save dialog: `filename` comes from document data and
+/// may hold path separators (`../../x`) or control characters.
+#[must_use]
+pub fn safe_file_name(filename: &str) -> String {
+    let base = filename.rsplit(['/', '\\']).next().unwrap_or_default();
+    let cleaned: String = base
+        .chars()
+        .map(|c| {
+            if c.is_control() || matches!(c, ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let trimmed = cleaned.trim().trim_matches('.');
+    if trimmed.is_empty() {
+        "file".to_owned()
+    } else {
+        trimmed.to_owned()
+    }
+}
+
 /// Writes the file's bytes to `path`, through a `.partial` sibling renamed at the
 /// end, so a failed download never leaves a truncated file. Returns the byte count.
 pub async fn download(
@@ -107,6 +130,16 @@ fn partial_path(path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn offers_only_a_plain_file_name() {
+        assert_eq!(safe_file_name("report.pdf"), "report.pdf");
+        assert_eq!(safe_file_name("../../etc/passwd"), "passwd");
+        assert_eq!(safe_file_name("C:\\Windows\\evil.exe"), "evil.exe");
+        assert_eq!(safe_file_name("a\nb:c?.txt"), "a_b_c_.txt");
+        assert_eq!(safe_file_name(".."), "file");
+        assert_eq!(safe_file_name(""), "file");
+    }
 
     #[test]
     fn recognizes_bucket_files_collections() {

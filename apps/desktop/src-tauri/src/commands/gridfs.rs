@@ -30,7 +30,10 @@ pub async fn download_gridfs_file(
 ) -> Result<Option<String>, IpcError> {
     let bucket = bucket_of(&namespace)?.to_owned();
     let handle = state.connections.get(connection_id).await?;
-    let dialog = app.dialog().file().set_file_name(filename);
+    let dialog = app
+        .dialog()
+        .file()
+        .set_file_name(gridfs::safe_file_name(&filename));
     let Some(path) = blocking_dialog(move || dialog.blocking_save_file()).await? else {
         return Ok(None);
     };
