@@ -53,6 +53,7 @@ const GROUPS = [
       ["inlineEdit", ["t:shortcuts.keys.doubleClick", "F2"]],
       ["nextField", ["Tab", "⇧ Tab"]],
       ["copyRows", [`${mod} C`]],
+      ["duplicateRow", [`${mod} D`]],
       ["delete", [isMac ? "⌫" : "Delete"]],
     ],
   },

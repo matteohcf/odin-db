@@ -175,6 +175,7 @@
       "preview": "Preview the selected document",
       "nextField": "Save and edit the next value",
       "copyRows": "Copy the selected documents",
+      "duplicateRow": "Duplicate the selected document",
       "focusFilter": "Focus the filter"
     },
     "keys": {

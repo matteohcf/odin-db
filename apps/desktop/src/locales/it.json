@@ -175,6 +175,7 @@
       "preview": "Anteprima del documento selezionato",
       "nextField": "Salva e modifica il valore successivo",
       "copyRows": "Copia i documenti selezionati",
+      "duplicateRow": "Duplica il documento selezionato",
       "focusFilter": "Vai al filtro"
     },
     "keys": {

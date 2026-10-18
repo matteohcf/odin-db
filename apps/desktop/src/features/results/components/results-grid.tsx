@@ -328,6 +328,11 @@ export function ResultsGrid({
       actions.onPaste();
       return;
     }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "d" && selected) {
+      event.preventDefault();
+      actions.onDuplicate?.(selected);
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
       event.preventDefault();
       setMarked(new Set(rows.keys()));
