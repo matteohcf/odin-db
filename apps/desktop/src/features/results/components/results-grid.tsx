@@ -1,20 +1,9 @@
-import { commands, type JsonValue } from "@odin-db/bindings";
+import type { JsonValue } from "@odin-db/bindings";
 import {
   ContextMenu,
   ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@odin-db/ui/components/context-menu";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@odin-db/ui/components/dropdown-menu";
 import { cn } from "@odin-db/ui/lib/utils";
 import {
   columnResizingFeature,
@@ -25,29 +14,13 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronLeft,
-  ChevronRight,
-  Columns3,
-  Copy,
-  ExternalLink,
-  Filter,
-  FilterX,
-  GitCompareArrows,
-  ListChecks,
-  PencilLine,
-  Pin,
-  Trash2,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Pin } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { EJsonCell } from "@/components/ejson-cell";
 import { TypeIcon } from "@/components/type-icon";
 import { compactEJson, type JsonObject } from "@/lib/ejson-display";
-import { call, errorMessage } from "@/lib/ipc";
 import { linkOf } from "@/lib/links";
 import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
@@ -64,11 +37,13 @@ import {
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { useColumnLayouts } from "../store/column-layout-store";
 import { useResultsView } from "../store/results-view-store";
+import { CellMenuItems, openLink } from "./cell-menu-items";
 import { ColumnMenu } from "./column-menu";
+import { ColumnsMenu } from "./columns-menu";
 import { CompareDialog } from "./compare-dialog";
-import { CopyAsMenu } from "./copy-as-menu";
 import { InlineCellEditor } from "./inline-cell-editor";
 import { RowMenuItems } from "./row-menu-items";
+import { SelectionMenuItems } from "./selection-menu-items";
 
 const INDEX_WIDTH = 56;
 /** Start fetching the next page this many rows before the end. */
@@ -677,126 +652,16 @@ export function ResultsGrid({
       {selected && (
         <ContextMenuContent className="w-60">
           {multiple ? (
-            <>
-              <CopyAsMenu value={markedRows} label={t("rows.copy", { count: markedRows.length })} />
-              {markedRows.length === 2 && (
-                <ContextMenuItem onSelect={() => setComparing(markedRows)}>
-                  <GitCompareArrows />
-                  {t("compare.menu")}
-                </ContextMenuItem>
-              )}
-              {actions.onUpdateMany && (
-                <ContextMenuItem onSelect={() => actions.onUpdateMany?.(markedRows)}>
-                  <PencilLine />
-                  {t("rows.update", { count: markedRows.length })}
-                </ContextMenuItem>
-              )}
-              {actions.onDeleteMany && (
-                <>
-                  <ContextMenuSeparator />
-                  <ContextMenuItem
-                    variant="destructive"
-                    onSelect={() => actions.onDeleteMany?.(markedRows)}
-                  >
-                    <Trash2 />
-                    {t("rows.delete", { count: markedRows.length })}
-                  </ContextMenuItem>
-                </>
-              )}
-            </>
+            <SelectionMenuItems rows={markedRows} actions={actions} onCompare={setComparing} />
           ) : (
             <>
               {menuColumn !== null && (
-                <>
-                  {linkOf(selected[menuColumn]) && (
-                    <ContextMenuItem onSelect={() => openLink(selected[menuColumn])}>
-                      <ExternalLink />
-                      {t("cell.openLink")}
-                    </ContextMenuItem>
-                  )}
-                  <ContextMenuItem
-                    disabled={selected[menuColumn] === undefined}
-                    onSelect={() => {
-                      const value = selected[menuColumn];
-                      if (value === undefined) return;
-                      void navigator.clipboard.writeText(toShellSyntax(value));
-                      toast.success(t("row.copied"));
-                    }}
-                  >
-                    <Copy />
-                    <span className="truncate">{t("cell.copy", { field: menuColumn })}</span>
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    disabled={selected[menuColumn] === undefined}
-                    onSelect={() => {
-                      const value = selected[menuColumn];
-                      if (value === undefined) return;
-                      // A condition to paste into another query: { field: value }.
-                      void navigator.clipboard.writeText(toShellSyntax({ [menuColumn]: value }, 0));
-                      toast.success(t("row.copied"));
-                    }}
-                  >
-                    <Filter />
-                    <span className="truncate">{t("cell.copyFilter", { field: menuColumn })}</span>
-                  </ContextMenuItem>
-                  {actions.onEditField && menuColumn !== "_id" && !menuColumn.includes(".") && (
-                    <ContextMenuItem onSelect={() => actions.onEditField?.(selected, menuColumn)}>
-                      <PencilLine />
-                      <span className="truncate">{t("cell.edit", { field: menuColumn })}</span>
-                    </ContextMenuItem>
-                  )}
-                  {columnActions && (
-                    <ContextMenuItem
-                      onSelect={() => columnActions.onFilterBy(menuColumn, selected[menuColumn])}
-                    >
-                      <Filter />
-                      <span className="truncate">{t("cell.filter", { field: menuColumn })}</span>
-                    </ContextMenuItem>
-                  )}
-                  {columnActions && (
-                    <ContextMenuItem
-                      onSelect={() =>
-                        columnActions.onFilterBy(menuColumn, selected[menuColumn], "ne")
-                      }
-                    >
-                      <FilterX />
-                      <span className="truncate">{t("cell.exclude", { field: menuColumn })}</span>
-                    </ContextMenuItem>
-                  )}
-                  {columnActions &&
-                    selected[menuColumn] !== undefined &&
-                    ["number", "date"].includes(
-                      compactEJson(selected[menuColumn] ?? null).kind,
-                    ) && (
-                      <>
-                        <ContextMenuItem
-                          onSelect={() =>
-                            columnActions.onFilterBy(menuColumn, selected[menuColumn], "gt")
-                          }
-                        >
-                          <ChevronRight />
-                          <span className="truncate">
-                            {t("cell.greater", { field: menuColumn })}
-                          </span>
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          onSelect={() =>
-                            columnActions.onFilterBy(menuColumn, selected[menuColumn], "lt")
-                          }
-                        >
-                          <ChevronLeft />
-                          <span className="truncate">{t("cell.less", { field: menuColumn })}</span>
-                        </ContextMenuItem>
-                      </>
-                    )}
-                  {columnActions?.onDistinct && (
-                    <ContextMenuItem onSelect={() => columnActions.onDistinct?.(menuColumn)}>
-                      <ListChecks />
-                      <span className="truncate">{t("cell.distinct", { field: menuColumn })}</span>
-                    </ContextMenuItem>
-                  )}
-                  <ContextMenuSeparator />
-                </>
+                <CellMenuItems
+                  row={selected}
+                  field={menuColumn}
+                  actions={actions}
+                  columnActions={columnActions}
+                />
               )}
               <RowMenuItems row={selected} actions={actions} />
             </>
@@ -812,73 +677,4 @@ export function ResultsGrid({
       )}
     </ContextMenu>
   );
-}
-
-interface ToggleableColumn {
-  id: string;
-  getIsVisible: () => boolean;
-  toggleVisibility: (value?: boolean) => void;
-}
-
-/** Shows or hides columns; at least one stays visible. */
-function ColumnsMenu({
-  columns,
-  onShowAll,
-  onFitAll,
-  onReset,
-}: {
-  columns: readonly ToggleableColumn[];
-  onShowAll: () => void;
-  onFitAll: () => void;
-  /** Back to the natural order, widths and visibility, with nothing pinned. */
-  onReset: () => void;
-}) {
-  const { t } = useTranslation("results");
-  const visible = columns.filter((column) => column.getIsVisible()).length;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t("columns.choose")}
-          title={t("columns.choose")}
-          className={cn(
-            "flex size-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground",
-            visible < columns.length && "text-primary",
-          )}
-        >
-          <Columns3 className="size-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-96 w-56 overflow-y-auto">
-        <DropdownMenuLabel className="text-muted-foreground text-xs">
-          {t("columns.label", { visible, total: columns.length })}
-        </DropdownMenuLabel>
-        {columns.map((column) => (
-          <DropdownMenuCheckboxItem
-            key={column.id}
-            checked={column.getIsVisible()}
-            disabled={column.getIsVisible() && visible === 1}
-            // Stay open: several columns are usually toggled at once.
-            onSelect={(event) => event.preventDefault()}
-            onCheckedChange={(checked) => column.toggleVisibility(checked)}
-            className="font-mono text-xs"
-          >
-            <span className="truncate">{column.id}</span>
-          </DropdownMenuCheckboxItem>
-        ))}
-        <DropdownMenuSeparator />
-        {visible < columns.length && (
-          <DropdownMenuItem onSelect={onShowAll}>{t("columns.showAll")}</DropdownMenuItem>
-        )}
-        <DropdownMenuItem onSelect={onFitAll}>{t("columns.fitAll")}</DropdownMenuItem>
-        <DropdownMenuItem onSelect={onReset}>{t("columns.reset")}</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function openLink(value: JsonValue | undefined) {
-  const link = linkOf(value);
-  if (link) void call(commands.openLink(link)).catch((error) => toast.error(errorMessage(error)));
 }

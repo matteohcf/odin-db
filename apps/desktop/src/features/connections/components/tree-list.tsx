@@ -130,7 +130,6 @@ export function TreeList({
     stickyIndex >= 0 && stickyIndex < (top?.index ?? 0) ? rows[stickyIndex] : undefined;
 
   return (
-    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: the keys move focus between the row buttons inside.
     <ul
       ref={list}
       onKeyDown={onKeyDown}
