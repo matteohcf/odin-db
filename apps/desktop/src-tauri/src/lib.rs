@@ -17,6 +17,8 @@ mod ipc;
 mod quit;
 mod state;
 
+// One list of every command: long by nature, and clearer whole than split.
+#[allow(clippy::too_many_lines)]
 fn specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
@@ -62,6 +64,8 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::documents::delete_documents,
             commands::documents::set_document_field,
             commands::documents::unset_document_field,
+            commands::gridfs::download_gridfs_file,
+            commands::gridfs::upload_gridfs_file,
             commands::documents::aggregate_documents,
             commands::documents::preview_aggregation,
             commands::indexes::list_indexes,

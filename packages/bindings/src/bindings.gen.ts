@@ -79,6 +79,10 @@ export const commands = {
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
 	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
 	unsetDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string) => typedError<null, IpcError>(__TAURI_INVOKE("unset_document_field", { connectionId, namespace, id, field })),
+	/**  Asks where to save a `GridFS` file and downloads it there. `None` if the user cancels. */
+	downloadGridfsFile: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, filename: string) => typedError<string | null, IpcError>(__TAURI_INVOKE("download_gridfs_file", { connectionId, namespace, id, filename })),
+	/**  Asks for a file and stores it in the bucket. `None` if the user cancels. */
+	uploadGridfsFile: (connectionId: ConnectionId, namespace: Namespace) => typedError<JsonValue | null, IpcError>(__TAURI_INVOKE("upload_gridfs_file", { connectionId, namespace })),
 	aggregateDocuments: (connectionId: ConnectionId, namespace: Namespace, request: AggregateRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("aggregate_documents", { connectionId, namespace, request })),
 	/**  First results of a pipeline for the builder's stage previews. Never runs `$out`/`$merge`. */
 	previewAggregation: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], limit: number) => typedError<EJsonDocument[], IpcError>(__TAURI_INVOKE("preview_aggregation", { connectionId, namespace, pipeline, limit })),

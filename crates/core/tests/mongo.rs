@@ -2422,6 +2422,37 @@ async fn manages_users_and_their_roles() {
 
 #[tokio::test]
 #[ignore = "requires Docker"]
+async fn uploads_and_downloads_gridfs_files_byte_for_byte() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let dir = std::env::temp_dir().join(format!("odin-gridfs-{}", uuid::Uuid::now_v7()));
+    std::fs::create_dir_all(&dir).expect("temp dir");
+    let source = dir.join("report.bin");
+    // Bigger than one 255 kB chunk, so chunking is exercised.
+    let bytes: Vec<u8> = (0..600_000_u32).map(|i| (i % 251) as u8).collect();
+    std::fs::write(&source, &bytes).expect("written");
+
+    let id = odin_core::gridfs::upload(&handle, "odin_test", "fs", &source)
+        .await
+        .expect("uploads");
+    let target = dir.join("copy.bin");
+    let copied = odin_core::gridfs::download(&handle, "odin_test", "fs", id, &target)
+        .await
+        .expect("downloads");
+    assert_eq!(copied, bytes.len() as u64);
+    assert_eq!(std::fs::read(&target).expect("read"), bytes);
+    assert!(!dir.join("copy.bin.partial").exists());
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        odin_core::gridfs::upload(&read_only, "odin_test", "fs", &source).await,
+        Err(CoreError::ReadOnly)
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
 async fn lists_the_whole_catalog_in_one_call() {
     let fx = Fixture::start().await;
     let handle = fx.connect(false).await;

@@ -8,6 +8,7 @@ pub mod documents;
 pub mod ejson;
 pub mod error;
 pub mod explain;
+pub mod gridfs;
 pub mod indexes;
 pub mod links;
 pub mod monitor;
