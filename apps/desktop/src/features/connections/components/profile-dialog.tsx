@@ -15,8 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import { cn } from "@odin-db/ui/lib/utils";
 import { Ban, CircleAlert, CircleCheck, Loader2 } from "lucide-react";
-import { type FormEvent, type ReactNode, useId, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FormField } from "@/components/form-field";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { PROFILE_COLOR_CLASS, PROFILE_COLORS } from "@/lib/profile-colors";
 import { useConnect, useSaveProfile, useTestConnection } from "../api/mutations";
@@ -165,7 +166,11 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
         <DialogDescription>{t("dialog.description")}</DialogDescription>
       </DialogHeader>
 
-      <Field id={`${id}-name`} label={t("dialog.name")} error={submitted ? errors.name : undefined}>
+      <FormField
+        id={`${id}-name`}
+        label={t("dialog.name")}
+        error={submitted ? errors.name : undefined}
+      >
         <Input
           id={`${id}-name`}
           value={form.name}
@@ -174,7 +179,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
           autoFocus
           autoComplete="off"
         />
-      </Field>
+      </FormField>
 
       <Tabs defaultValue="string" className="gap-3">
         <TabsList className="w-full">
@@ -189,7 +194,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
           </TabsTrigger>
         </TabsList>
         <TabsContent value="string">
-          <Field
+          <FormField
             id={`${id}-uri`}
             label={t("dialog.connectionString")}
             hint={t("dialog.connectionStringHint")}
@@ -203,7 +208,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
               spellCheck={false}
               autoComplete="off"
             />
-          </Field>
+          </FormField>
         </TabsContent>
         <TabsContent value="form">
           <ConnectionFormFields
@@ -221,7 +226,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
         </TabsContent>
       </Tabs>
 
-      <Field
+      <FormField
         id={`${id}-password`}
         label={t("dialog.password")}
         hint={profile?.hasPassword ? t("dialog.passwordSaved") : undefined}
@@ -234,7 +239,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
           onChange={(event) => update("password", event.target.value)}
           autoComplete="new-password"
         />
-      </Field>
+      </FormField>
 
       <div className="flex flex-col gap-1.5">
         <Label id={`${id}-color`}>{t("dialog.color")}</Label>
@@ -270,7 +275,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
         <p className="text-muted-foreground text-xs">{t("dialog.colorHint")}</p>
       </div>
 
-      <Field id={`${id}-group`} label={t("dialog.group")} hint={t("dialog.groupHint")}>
+      <FormField id={`${id}-group`} label={t("dialog.group")} hint={t("dialog.groupHint")}>
         <Input
           id={`${id}-group`}
           value={form.group}
@@ -285,7 +290,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
             <option key={group} value={group} />
           ))}
         </datalist>
-      </Field>
+      </FormField>
 
       <div className="flex items-start justify-between gap-4 rounded-md border p-3">
         <div className="flex flex-col gap-1">
@@ -324,32 +329,6 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
         </div>
       </DialogFooter>
     </form>
-  );
-}
-
-function Field({
-  id,
-  label,
-  hint,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  hint?: string | undefined;
-  error?: string | undefined;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {error ? (
-        <p className="text-destructive text-xs">{error}</p>
-      ) : hint ? (
-        <p className="text-muted-foreground text-xs">{hint}</p>
-      ) : null}
-    </div>
   );
 }
 

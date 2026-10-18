@@ -12,9 +12,10 @@ import {
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { CircleAlert } from "lucide-react";
-import { type FormEvent, type ReactNode, useId, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { FormField } from "@/components/form-field";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument } from "@/lib/shell-syntax";
 import { useCreateIndex } from "../api/indexes";
@@ -100,7 +101,7 @@ export function CreateIndexDialog({
             <DialogDescription>{t("create.description")}</DialogDescription>
           </DialogHeader>
 
-          <Field id={`${id}-keys`} label={t("create.keys")} hint={t("create.keysHint")}>
+          <FormField id={`${id}-keys`} label={t("create.keys")} hint={t("create.keysHint")}>
             <Input
               id={`${id}-keys`}
               value={keys}
@@ -111,9 +112,9 @@ export function CreateIndexDialog({
               autoComplete="off"
               autoFocus
             />
-          </Field>
+          </FormField>
 
-          <Field id={`${id}-name`} label={t("create.name")}>
+          <FormField id={`${id}-name`} label={t("create.name")}>
             <Input
               id={`${id}-name`}
               value={name}
@@ -121,13 +122,13 @@ export function CreateIndexDialog({
               placeholder={t("create.namePlaceholder")}
               autoComplete="off"
             />
-          </Field>
+          </FormField>
 
           <div className="grid grid-cols-3 gap-2">
             {(["unique", "sparse", "hidden"] as const).map(flag)}
           </div>
 
-          <Field id={`${id}-ttl`} label={t("create.ttl")} hint={t("create.ttlHint")}>
+          <FormField id={`${id}-ttl`} label={t("create.ttl")} hint={t("create.ttlHint")}>
             <Input
               id={`${id}-ttl`}
               value={ttl}
@@ -136,9 +137,13 @@ export function CreateIndexDialog({
               placeholder="86400"
               className="w-40"
             />
-          </Field>
+          </FormField>
 
-          <Field id={`${id}-partial`} label={t("create.partial")} hint={t("create.partialHint")}>
+          <FormField
+            id={`${id}-partial`}
+            label={t("create.partial")}
+            hint={t("create.partialHint")}
+          >
             <Input
               id={`${id}-partial`}
               value={partial}
@@ -148,7 +153,7 @@ export function CreateIndexDialog({
               spellCheck={false}
               autoComplete="off"
             />
-          </Field>
+          </FormField>
 
           {error && (
             <p role="alert" className="flex items-start gap-2 text-destructive text-xs selectable">
@@ -168,25 +173,5 @@ export function CreateIndexDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({
-  id,
-  label,
-  hint,
-  children,
-}: {
-  id: string;
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
-    </div>
   );
 }

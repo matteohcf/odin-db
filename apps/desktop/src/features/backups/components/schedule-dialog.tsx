@@ -27,9 +27,10 @@ import {
 import { Switch } from "@odin-db/ui/components/switch";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import { CircleAlert, FolderOpen } from "lucide-react";
-import { type FormEvent, type ReactNode, useId, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { FormField } from "@/components/form-field";
 import { call, errorMessage } from "@/lib/ipc";
 import { useSaveSchedule } from "../api/backups";
 import { clockTime, weekdayName } from "../lib/describe";
@@ -141,7 +142,7 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
             <DialogDescription>{t("schedule.description")}</DialogDescription>
           </DialogHeader>
 
-          <Field id={`${id}-profile`} label={t("schedule.connection")}>
+          <FormField id={`${id}-profile`} label={t("schedule.connection")}>
             <Select value={profile} onValueChange={setProfile}>
               <SelectTrigger id={`${id}-profile`} className="w-full">
                 <SelectValue />
@@ -154,9 +155,9 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
                 ))}
               </SelectContent>
             </Select>
-          </Field>
+          </FormField>
 
-          <Field id={`${id}-scope`} label={t("schedule.what")}>
+          <FormField id={`${id}-scope`} label={t("schedule.what")}>
             <ToggleGroup
               id={`${id}-scope`}
               type="single"
@@ -195,9 +196,9 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
                 )}
               </div>
             )}
-          </Field>
+          </FormField>
 
-          <Field id={`${id}-frequency`} label={t("schedule.when")}>
+          <FormField id={`${id}-frequency`} label={t("schedule.when")}>
             <ToggleGroup
               id={`${id}-frequency`}
               type="single"
@@ -253,9 +254,9 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
                 </>
               )}
             </div>
-          </Field>
+          </FormField>
 
-          <Field id={`${id}-folder`} label={t("schedule.folder")}>
+          <FormField id={`${id}-folder`} label={t("schedule.folder")}>
             <div className="flex items-center gap-2">
               <p className="min-w-0 flex-1 truncate rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">
                 {folder?.path ?? (
@@ -267,10 +268,10 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
                 {t("schedule.chooseFolder")}
               </Button>
             </div>
-          </Field>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field id={`${id}-keep`} label={t("schedule.keep")}>
+            <FormField id={`${id}-keep`} label={t("schedule.keep")}>
               <Input
                 id={`${id}-keep`}
                 type="number"
@@ -279,7 +280,7 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
                 value={keep}
                 onChange={(event) => setKeep(event.target.value)}
               />
-            </Field>
+            </FormField>
             <div className="flex items-end justify-between gap-2 pb-2">
               <Label htmlFor={`${id}-enabled`}>{t("schedule.enabled")}</Label>
               <Switch id={`${id}-enabled`} checked={enabled} onCheckedChange={setEnabled} />
@@ -307,14 +308,5 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({ id, label, children }: { id: string; label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
   );
 }
