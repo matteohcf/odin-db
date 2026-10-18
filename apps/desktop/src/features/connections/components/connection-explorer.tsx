@@ -21,11 +21,12 @@ import {
   Unplug,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { type CSSProperties, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { errorMessage } from "@/lib/ipc";
+import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { useDisconnectAll, useExportConnections, useImportConnections } from "../api/mutations";
 import { useConnections, useProfiles } from "../api/queries";
@@ -60,6 +61,7 @@ export function ConnectionExplorer() {
   const collapseAll = useExplorer((s) => s.collapseAll);
   const filterInput = useRef<HTMLInputElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const density = useSettings((s) => s.sidebarDensity);
   useShortcut("filterSidebar", () => filterInput.current?.focus());
   useHealthEvents();
   const importMutation = useImportConnections();
@@ -89,7 +91,11 @@ export function ConnectionExplorer() {
   }
 
   return (
-    <aside className="flex h-full flex-col bg-sidebar" aria-label={t("explorer.label")}>
+    <aside
+      className="flex h-full flex-col bg-sidebar"
+      aria-label={t("explorer.label")}
+      style={{ "--tree-row": `${TREE_ROW_HEIGHTS[density]}px` } as CSSProperties}
+    >
       <div className="flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">
         <h2 className="font-medium text-muted-foreground text-xs">{t("explorer.title")}</h2>
         <div className="flex items-center">

@@ -38,7 +38,9 @@
     "darkStyle": "Superfici in modalità scura",
     "darkStyleHint": "Il nero puro è adatto a schermi OLED e stanze buie.",
     "graphite": "Grafite",
-    "black": "Nero"
+    "black": "Nero",
+    "sidebarDensity": "Densità della barra laterale",
+    "sidebarDensityHint": "Compatta mostra più connessioni e collezioni."
   },
   "editor": {
     "title": "Editor",

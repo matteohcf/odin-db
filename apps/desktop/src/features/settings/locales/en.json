@@ -38,7 +38,9 @@
     "darkStyle": "Dark mode surfaces",
     "darkStyleHint": "Pure black suits OLED screens and dark rooms.",
     "graphite": "Graphite",
-    "black": "Black"
+    "black": "Black",
+    "sidebarDensity": "Sidebar density",
+    "sidebarDensityHint": "Compact fits more connections and collections on screen."
   },
   "editor": {
     "title": "Editors",

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { useTreeRows } from "../hooks/use-tree-rows";
 import { collapsedGroupKey, type TreeItem } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
@@ -16,9 +17,6 @@ import { CollectionNode, DatabaseNode } from "./catalog-nodes";
 import { GroupNode } from "./group-node";
 import { ProfileNode } from "./profile-node";
 import { TreeMessage } from "./tree-row";
-
-// h-7 rows plus the 1px gap between them.
-const ROW_HEIGHT = 29;
 
 interface TreeListProps {
   profiles: readonly ConnectionProfile[];
@@ -42,6 +40,8 @@ export function TreeList({
   onNewConnection,
 }: TreeListProps) {
   const rows = useTreeRows(profiles);
+  // Rows plus the 1px gap between them.
+  const ROW_HEIGHT = TREE_ROW_HEIGHTS[useSettings((s) => s.sidebarDensity)] + 1;
   const list = useRef<HTMLUListElement>(null);
   // Where the list starts in the scroller, below the favorites.
   const [offset, setOffset] = useState(0);

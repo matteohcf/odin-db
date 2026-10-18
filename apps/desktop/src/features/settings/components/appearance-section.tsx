@@ -23,6 +23,7 @@ export function AppearanceSection() {
   const zoom = useSettings((s) => s.zoom);
   const accent = useSettings((s) => s.accent);
   const darkStyle = useSettings((s) => s.darkStyle);
+  const sidebarDensity = useSettings((s) => s.sidebarDensity);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("appearance.title")}>
@@ -83,6 +84,28 @@ export function AppearanceSection() {
           </ToggleGroupItem>
           <ToggleGroupItem value="black" className="px-3">
             {t("appearance.black")}
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </SettingRow>
+      <SettingRow
+        label={t("appearance.sidebarDensity")}
+        description={t("appearance.sidebarDensityHint")}
+      >
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={sidebarDensity}
+          onValueChange={(value) =>
+            value && update({ sidebarDensity: value as typeof sidebarDensity })
+          }
+          aria-label={t("appearance.sidebarDensity")}
+        >
+          <ToggleGroupItem value="normal" className="px-3">
+            {t("results.densities.normal")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="compact" className="px-3">
+            {t("results.densities.compact")}
           </ToggleGroupItem>
         </ToggleGroup>
       </SettingRow>

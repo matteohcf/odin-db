@@ -38,7 +38,8 @@ export function TreeRow({
   return (
     <div
       className={cn(
-        "group relative flex h-7 items-center rounded-md pr-1 text-[13px] hover:bg-accent",
+        // The sidebar sets --tree-row from the density setting.
+        "group relative flex h-(--tree-row) items-center rounded-md pr-1 text-[13px] hover:bg-accent",
         muted ? "text-muted-foreground" : "text-foreground",
         active && "bg-accent font-medium",
       )}
@@ -80,7 +81,7 @@ export function TreeRow({
 export function TreeMessage({ depth, children }: { depth: number; children: ReactNode }) {
   return (
     <div
-      className="flex h-7 items-center text-muted-foreground text-xs"
+      className="flex h-(--tree-row) items-center text-muted-foreground text-xs"
       style={{ paddingLeft: `${depth * 14 + 26}px` }}
     >
       {children}

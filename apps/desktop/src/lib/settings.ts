@@ -37,7 +37,12 @@ export interface Settings {
   monoFont: string;
   /** How results show dates; editing always uses ISODate in UTC. */
   dateDisplay: "utc" | "local";
+  /** Height of sidebar rows. */
+  sidebarDensity: "normal" | "compact";
 }
+
+/** Sidebar row heights in pixels; the tree adds a 1px gap between rows. */
+export const TREE_ROW_HEIGHTS = { normal: 28, compact: 24 } as const;
 
 export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
 type Accent = (typeof ACCENTS)[number];
@@ -63,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
   confirmDelete: true,
   monoFont: "",
   dateDisplay: "utc",
+  sidebarDensity: "normal",
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;
