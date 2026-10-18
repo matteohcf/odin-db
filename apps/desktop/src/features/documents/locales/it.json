@@ -185,5 +185,10 @@
     "partial": "Inseriti {{count}}, {{failed}} non riusciti.",
     "empty": "Gli appunti sono vuoti.",
     "invalid": "Gli appunti non contengono documenti: {{message}}"
+  },
+  "gridfs": {
+    "upload": "Carica file",
+    "downloaded": "Salvato in {{path}}",
+    "uploaded": "File caricato"
   }
 }

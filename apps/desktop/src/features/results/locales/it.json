@@ -7,7 +7,8 @@
     "duplicate": "Duplica",
     "copy": "Copia come sintassi shell",
     "copied": "Copiato negli appunti",
-    "delete": "Elimina documento"
+    "delete": "Elimina documento",
+    "downloadFile": "Scarica file…"
   },
   "status": {
     "loaded_one": "{{count, number}} documento",

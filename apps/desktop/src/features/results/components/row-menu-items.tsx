@@ -1,5 +1,5 @@
 import { ContextMenuItem, ContextMenuSeparator } from "@odin-db/ui/components/context-menu";
-import { CopyPlus, Eye, Pencil, Trash2 } from "lucide-react";
+import { CopyPlus, Download, Eye, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { JsonObject } from "@/lib/ejson-display";
 import { CopyAsMenu } from "./copy-as-menu";
@@ -19,6 +19,12 @@ export function RowMenuItems({ row, actions }: { row: JsonObject; actions: RowAc
         <ContextMenuItem onSelect={() => onDuplicate(row)}>
           <CopyPlus />
           {t("row.duplicate")}
+        </ContextMenuItem>
+      )}
+      {actions.onDownloadFile && (
+        <ContextMenuItem onSelect={() => actions.onDownloadFile?.(row)}>
+          <Download />
+          {t("row.downloadFile")}
         </ContextMenuItem>
       )}
       <CopyAsMenu value={row} label={t("copyAs.label")} />

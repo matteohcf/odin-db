@@ -168,6 +168,21 @@ const servers: Record<string, Record<string, Collections>> = {
       nested: { kind: "collection", docs: Array.from({ length: 200 }, (_, i) => nested(i)) },
     },
     admin: {},
+    // A GridFS bucket: files are described in `fs.files`, their bytes in `fs.chunks`.
+    media: {
+      "fs.files": {
+        kind: "collection",
+        docs: ["invoice-2024-001.pdf", "logo.png", "export.csv"].map((filename, i) => ({
+          _id: oid(),
+          filename,
+          length: { $numberLong: String(18_000 + i * 52_311) },
+          chunkSize: { $numberInt: "261120" },
+          uploadDate: { $date: { $numberLong: String(1_700_000_000_000 + i * 86_400_000) } },
+          metadata: { contentType: ["application/pdf", "image/png", "text/csv"][i] ?? "" },
+        })),
+      },
+      "fs.chunks": { kind: "collection", docs: [] },
+    },
   },
   // A busy multi-tenant cluster: hundreds of databases, one with thousands of collections.
   large: largeCluster(),
@@ -839,6 +854,21 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       Object.assign(window, { odinNotifications: sent });
     }
     return null;
+  },
+  download_gridfs_file: (args) => `/Users/ada/Downloads/${String(args.filename)}`,
+  upload_gridfs_file: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const _id = oid();
+    coll.docs.push({
+      _id,
+      filename: "uploaded-report.pdf",
+      length: { $numberLong: "48213" },
+      chunkSize: { $numberInt: "261120" },
+      uploadDate: { $date: { $numberLong: String(Date.now()) } },
+    });
+    return _id;
   },
   open_link: (args) => {
     const url = String(args.url).trim();

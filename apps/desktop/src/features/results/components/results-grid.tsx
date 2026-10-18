@@ -94,6 +94,8 @@ export interface RowActions {
   onPaste?: (() => void) | undefined;
   /** Saves a value edited in place (double-click a cell). Omitted for read-only results. */
   onSetField?: ((row: JsonObject, field: string, value: JsonValue) => Promise<void>) | undefined;
+  /** Saves a GridFS file's bytes to disk; only in `<bucket>.files` collections. */
+  onDownloadFile?: ((row: JsonObject) => void) | undefined;
   /** Several selected documents at once (Shift/Cmd-click in the table). */
   onUpdateMany?: ((rows: JsonObject[]) => void) | undefined;
   onDeleteMany?: ((rows: JsonObject[]) => void) | undefined;

@@ -276,6 +276,31 @@ export function DocumentsView({
     refresh(true);
   }
 
+  // `<bucket>.files` collections describe GridFS files: they can be downloaded and added.
+  const gridFsBucket = /^(.+)\.files$/.exec(namespace.collection)?.[1];
+
+  async function downloadFile(row: JsonObject) {
+    if (row._id === undefined) return;
+    const name = typeof row.filename === "string" ? row.filename : "file";
+    try {
+      const path = await call(commands.downloadGridfsFile(connection.id, namespace, row._id, name));
+      if (path) toast.success(t("gridfs.downloaded", { path }));
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
+  async function uploadFile() {
+    try {
+      const id = await call(commands.uploadGridfsFile(connection.id, namespace));
+      if (id === null) return;
+      toast.success(t("gridfs.uploaded"));
+      refresh(true);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
   function offerUndo(rows: JsonObject[], message: string) {
     toast.success(message, {
       duration: 10_000,
@@ -358,6 +383,12 @@ export function DocumentsView({
         historyKey={queryHistoryKey}
         actions={
           <>
+            {editable && gridFsBucket && (
+              <Button variant="outline" size="sm" onClick={() => void uploadFile()}>
+                <Upload />
+                {t("gridfs.upload")}
+              </Button>
+            )}
             {editable && (
               <Button variant="outline" size="sm" onClick={() => openInsert()}>
                 <Plus />
@@ -509,6 +540,7 @@ export function DocumentsView({
             : undefined,
           onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
           onPaste: editable ? () => void pasteDocuments() : undefined,
+          onDownloadFile: gridFsBucket ? (row) => void downloadFile(row) : undefined,
           onSetField: editable
             ? async (row, field, value) => {
                 const id = row._id;

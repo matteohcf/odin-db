@@ -185,5 +185,10 @@
     "partial": "Inserted {{count}}, {{failed}} failed.",
     "empty": "The clipboard is empty.",
     "invalid": "The clipboard does not hold documents: {{message}}"
+  },
+  "gridfs": {
+    "upload": "Upload file",
+    "downloaded": "Saved to {{path}}",
+    "uploaded": "File uploaded"
   }
 }
