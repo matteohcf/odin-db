@@ -90,21 +90,36 @@ pub struct CollectionCount {
     pub count: f64,
 }
 
+/// Counts run at most this many at a time, leaving pool connections for the user's queries.
+const COUNT_CONCURRENCY: usize = 4;
+/// Beyond this many collections a database gets no counts: one request per collection
+/// would take too long on a remote server, for numbers nobody reads.
+const MAX_COUNTED: usize = 1000;
+
 /// Estimated document counts of a database's collections, from metadata (no
-/// scan), fetched in parallel. Views and collections the user cannot read are left out.
+/// scan), a few at a time. Views and collections the user cannot read are left out.
 pub async fn collection_counts(
     handle: &ConnectionHandle,
     database: &str,
 ) -> Result<Vec<CollectionCount>, CoreError> {
     let collections = list_collections(handle, database).await?;
+    if collections.len() > MAX_COUNTED {
+        return Ok(Vec::new());
+    }
     let db = handle.client.database(database);
+    let permits = std::sync::Arc::new(tokio::sync::Semaphore::new(COUNT_CONCURRENCY));
     let mut tasks = tokio::task::JoinSet::new();
     for info in collections {
         if matches!(info.kind, CollectionKind::View) {
             continue;
         }
         let collection = db.collection::<bson::Document>(&info.name);
-        tasks.spawn(async move { (info.name, collection.estimated_document_count().await) });
+        let permits = std::sync::Arc::clone(&permits);
+        tasks.spawn(async move {
+            // Closed only if dropped, which never happens while tasks hold it.
+            let _permit = permits.acquire_owned().await;
+            (info.name, collection.estimated_document_count().await)
+        });
     }
     let mut counts = Vec::new();
     while let Some(joined) = tasks.join_next().await {

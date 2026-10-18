@@ -1002,7 +1002,10 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       .sort((a, b) => a.name.localeCompare(b.name)),
   collection_counts: (args) => {
     const { databases } = serverOf(id("connectionId", args));
-    return Object.entries(databases[args.database as string] ?? {})
+    const collections = databases[args.database as string] ?? {};
+    // Like core: no counts for databases with more than 1,000 collections.
+    if (Object.keys(collections).length > 1000) return [];
+    return Object.entries(collections)
       .filter(([, coll]) => coll.kind !== "view")
       .map(([name, coll]) => ({ name, count: coll.count ?? coll.docs.length }));
   },
