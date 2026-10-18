@@ -59,8 +59,14 @@ pub async fn list_collections(
     handle: &ConnectionHandle,
     database: &str,
 ) -> Result<Vec<CollectionInfo>, CoreError> {
-    let mut cursor = handle
-        .client
+    collections_of(&handle.client, database).await
+}
+
+async fn collections_of(
+    client: &mongodb::Client,
+    database: &str,
+) -> Result<Vec<CollectionInfo>, CoreError> {
+    let mut cursor = client
         .database(database)
         .list_collections()
         .authorized_collections(true)
@@ -88,6 +94,46 @@ pub async fn list_collections(
 pub struct CollectionCount {
     pub name: String,
     pub count: f64,
+}
+
+/// One database's collections, as listed by [`catalog`].
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct DatabaseCatalog {
+    pub database: String,
+    pub collections: Vec<CollectionInfo>,
+}
+
+/// Databases listed at most this many at a time, leaving pool connections for queries.
+const CATALOG_CONCURRENCY: usize = 4;
+
+/// Every collection of every database, for searching a whole deployment in one call.
+/// Databases the user cannot list are left out rather than failing the rest.
+pub async fn catalog(handle: &ConnectionHandle) -> Result<Vec<DatabaseCatalog>, CoreError> {
+    let databases = list_databases(handle).await?;
+    let permits = std::sync::Arc::new(tokio::sync::Semaphore::new(CATALOG_CONCURRENCY));
+    let mut tasks = tokio::task::JoinSet::new();
+    for database in databases {
+        let client = handle.client.clone();
+        let permits = std::sync::Arc::clone(&permits);
+        tasks.spawn(async move {
+            let _permit = permits.acquire_owned().await;
+            let collections = collections_of(&client, &database.name).await;
+            (database.name, collections)
+        });
+    }
+    let mut catalogs = Vec::new();
+    while let Some(joined) = tasks.join_next().await {
+        if let Ok((database, Ok(collections))) = joined {
+            catalogs.push(DatabaseCatalog {
+                database,
+                collections,
+            });
+        }
+    }
+    catalogs.sort_by(|a, b| a.database.cmp(&b.database));
+    Ok(catalogs)
 }
 
 /// Counts run at most this many at a time, leaving pool connections for the user's queries.

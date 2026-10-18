@@ -72,6 +72,16 @@ pub async fn list_collections(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn list_catalog(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+) -> Result<Vec<browse::DatabaseCatalog>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(browse::catalog(&handle).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn collection_stats(
     state: State<'_, Arc<AppState>>,
     connection_id: ConnectionId,

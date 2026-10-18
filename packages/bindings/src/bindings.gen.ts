@@ -53,6 +53,7 @@ export const commands = {
 	listConnections: () => typedError<ConnectionInfo[], IpcError>(__TAURI_INVOKE("list_connections")),
 	listDatabases: (connectionId: ConnectionId) => typedError<DatabaseInfo[], IpcError>(__TAURI_INVOKE("list_databases", { connectionId })),
 	listCollections: (connectionId: ConnectionId, database: string) => typedError<CollectionInfo[], IpcError>(__TAURI_INVOKE("list_collections", { connectionId, database })),
+	listCatalog: (connectionId: ConnectionId) => typedError<DatabaseCatalog[], IpcError>(__TAURI_INVOKE("list_catalog", { connectionId })),
 	collectionStats: (connectionId: ConnectionId, namespace: Namespace) => typedError<CollectionStats, IpcError>(__TAURI_INVOKE("collection_stats", { connectionId, namespace })),
 	collectionCounts: (connectionId: ConnectionId, database: string) => typedError<CollectionCount[], IpcError>(__TAURI_INVOKE("collection_counts", { connectionId, database })),
 	findDocuments: (connectionId: ConnectionId, namespace: Namespace, request: FindRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("find_documents", { connectionId, namespace, request })),
@@ -366,6 +367,12 @@ export type CurrentOp = {
 };
 
 export type CursorId = string;
+
+/**  One database's collections, as listed by [`catalog`]. */
+export type DatabaseCatalog = {
+	database: string,
+	collections: CollectionInfo[],
+};
 
 export type DatabaseExportRequest = {
 	/**  JSON array or NDJSON; CSV does not fit a whole database. */

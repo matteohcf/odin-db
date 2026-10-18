@@ -2422,6 +2422,38 @@ async fn manages_users_and_their_roles() {
 
 #[tokio::test]
 #[ignore = "requires Docker"]
+async fn lists_the_whole_catalog_in_one_call() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    fx.seed(&handle, &namespace("people"), 1).await;
+    fx.seed(
+        &handle,
+        &Namespace {
+            database: "odin_other".into(),
+            collection: "things".into(),
+        },
+        1,
+    )
+    .await;
+    let catalog = browse::catalog(&handle).await.expect("catalog");
+    let of = |name: &str| {
+        catalog
+            .iter()
+            .find(|entry| entry.database == name)
+            .map(|entry| {
+                entry
+                    .collections
+                    .iter()
+                    .map(|c| c.name.clone())
+                    .collect::<Vec<_>>()
+            })
+    };
+    assert_eq!(of("odin_test"), Some(vec!["people".to_owned()]));
+    assert_eq!(of("odin_other"), Some(vec!["things".to_owned()]));
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
 async fn estimates_every_collection_count_of_a_database() {
     let fx = Fixture::start().await;
     let handle = fx.connect(false).await;
