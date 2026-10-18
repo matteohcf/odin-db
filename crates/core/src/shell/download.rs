@@ -148,6 +148,7 @@ async fn fetch(
 
     loop {
         let chunk = tokio::select! {
+            biased;
             () = cancel.cancelled() => return Err(CoreError::Cancelled),
             chunk = response.chunk() => chunk.map_err(network)?,
         };

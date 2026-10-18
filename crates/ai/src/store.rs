@@ -172,6 +172,7 @@ async fn fetch(
     let mut reported = received;
     loop {
         let chunk = tokio::select! {
+            biased;
             () = cancel.cancelled() => {
                 file.flush().await.map_err(io_error)?;
                 return Err(CoreError::Cancelled);

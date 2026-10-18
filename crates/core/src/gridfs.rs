@@ -160,8 +160,10 @@ where
     let mut done: u64 = 0;
     loop {
         let read = tokio::select! {
-            read = reader.read(&mut buffer) => read.map_err(io)?,
+            // A ready reader would otherwise win the race and finish a cancelled copy.
+            biased;
             () = cancel.cancelled() => return Err(CoreError::Cancelled),
+            read = reader.read(&mut buffer) => read.map_err(io)?,
         };
         if read == 0 {
             return Ok(done);
@@ -202,5 +204,17 @@ mod tests {
         assert_eq!(bucket_of("fs.chunks"), None);
         assert_eq!(bucket_of(".files"), None);
         assert_eq!(bucket_of("users"), None);
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_copy_never_completes() {
+        let cancel = CancellationToken::new();
+        cancel.cancel();
+        let (progress, _seen) = mpsc::channel(1);
+        for _ in 0..64 {
+            let copied =
+                copy_reporting(&mut &b""[..], &mut Vec::new(), 0, &progress, &cancel).await;
+            assert!(matches!(copied, Err(CoreError::Cancelled)));
+        }
     }
 }

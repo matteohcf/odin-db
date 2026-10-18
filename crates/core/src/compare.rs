@@ -373,6 +373,7 @@ async fn next_document(
     cancel: &CancellationToken,
 ) -> Result<Option<Document>, CoreError> {
     let advanced = tokio::select! {
+        biased;
         () = cancel.cancelled() => return Err(CoreError::Cancelled),
         advanced = cursor.advance() => advanced?,
     };
