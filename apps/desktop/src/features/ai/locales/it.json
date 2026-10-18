@@ -1,0 +1,27 @@
+{
+  "ask": {
+    "open": "Chiedi all'AI",
+    "title": "Descrivi i documenti da trovare",
+    "placeholder": "es. utenti attivi in Italia, i più recenti prima",
+    "generate": "Genera",
+    "generating": "Generazione della query…",
+    "stop": "Ferma",
+    "again": "Riprova",
+    "apply": "Usa",
+    "applyAndRun": "Usa ed esegui",
+    "result": "Query generata",
+    "privacy": "Al modello vengono inviati solo nomi e tipi dei campi.",
+    "parts": {
+      "filter": "Filtro",
+      "sort": "Ordinamento",
+      "projection": "Proiezione",
+      "limit": "Limite"
+    }
+  },
+  "setup": {
+    "title": "Scrivi le query in linguaggio naturale",
+    "description": "Scegli un modello piccolo che gira su questo computer, oppure uno che usi in Ollama. Non viene scaricato nulla finché non ne scegli uno.",
+    "open": "Configura nelle impostazioni",
+    "hide": "Nascondi questo pulsante"
+  }
+}

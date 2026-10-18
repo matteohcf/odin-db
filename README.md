@@ -9,6 +9,7 @@ Open source desktop client for MongoDB. A free alternative to Studio 3T, built w
 - **Connections**: connection string or form (SRV, TLS, auth, replica sets), passwords in the OS keychain, SSH tunnels through a bastion (password or private key, host keys pinned), read-only profiles enforced in the backend, a color per connection shown on its tabs and collections, import and export of connections (also from MongoDB Compass), live status when a server stops answering; a resizable sidebar with a filter and favorite collections.
 - **Queries**: filter, sort and projection editors that suggest the collection's fields, operators, BSON constructors and the values of enum-like fields; saved and recent queries; Explain with index suggestions; a visual filter builder; SQL SELECT queries translated to MongoDB; Query Code turns a query or pipeline into mongosh, Node.js, Python, Java, C# or Go.
 - **Results**: a fast virtualized table (resize, hide and sort columns, Shift-click for multi-field sorts, edit or filter by a single value, distinct values with counts) a list of expandable document trees, or the documents as highlighted text (JSON view); documents edited in mongosh syntax that keeps every BSON type; update or delete every document matching a filter.
+- **AI query assistant** (optional): describe the documents in plain language and a small model writes the find query, shown for review before it runs. Models run offline inside the app (downloaded on request, with a recommendation for your machine) or in your Ollama; only field names and types reach the model, never your data.
 - **Aggregation builder**: stages with live previews and suggestions based on the previous stage's output; saved pipelines.
 - **Collections**: schema analysis, validation rules (with a $jsonSchema generated from the documents), storage stats, indexes (usage, unused ones flagged, hide before dropping), and creating, renaming and dropping databases and collections.
 - **Settings**: language (English, Italian), theme, zoom, editor and shell fonts, result paging, query history.
@@ -36,7 +37,7 @@ Early builds are not code-signed yet:
 
 ## Development
 
-Prerequisites: Node.js 22+, pnpm 10, Rust via [rustup](https://rustup.rs) (the toolchain is pinned in `rust-toolchain.toml`) and the [Tauri system dependencies](https://tauri.app/start/prerequisites/) for your OS.
+Prerequisites: Node.js 22+, pnpm 10, Rust via [rustup](https://rustup.rs) (the toolchain is pinned in `rust-toolchain.toml`) and the [Tauri system dependencies](https://tauri.app/start/prerequisites/) for your OS, plus CMake for llama.cpp.
 
 ```sh
 pnpm install

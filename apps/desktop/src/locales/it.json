@@ -176,7 +176,8 @@
       "nextField": "Salva e modifica il valore successivo",
       "copyRows": "Copia i documenti selezionati",
       "duplicateRow": "Duplica il documento selezionato",
-      "focusFilter": "Vai al filtro"
+      "focusFilter": "Vai al filtro",
+      "askAi": "Descrivi una query all'assistente AI"
     },
     "keys": {
       "doubleClick": "Doppio clic sul valore"

@@ -7,6 +7,7 @@ import { ChevronDown, Gauge, Loader2, Play } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
+import { AskAiButton } from "@/features/ai";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
 import { useQueryHistory } from "../store/query-history-store";
@@ -15,6 +16,8 @@ import { QueryHistoryMenu } from "./query-history-menu";
 import { VisualQueryBuilder } from "./visual-query-builder";
 
 interface QueryBarProps {
+  /** The collection's name, which the AI assistant is told. */
+  collection: string;
   form: QueryForm;
   errors: Partial<Record<QueryField, string>>;
   running: boolean;
@@ -33,6 +36,8 @@ interface QueryBarProps {
   actions?: ReactNode;
   /** Focuses the filter each time it changes (Mod+F). */
   focusSignal?: number;
+  /** Opens the AI assistant each time it changes (Mod+I). */
+  askSignal?: number;
 }
 
 const isMac = navigator.userAgent.includes("Mac");
@@ -42,6 +47,7 @@ const hasOptionsIn = (form: QueryForm) =>
   form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
 
 export function QueryBar({
+  collection,
   form,
   errors,
   running,
@@ -55,6 +61,7 @@ export function QueryBar({
   explaining,
   actions,
   focusSignal,
+  askSignal,
 }: QueryBarProps) {
   const { t } = useTranslation("documents");
   const hasOptions = hasOptionsIn(form);
@@ -114,6 +121,16 @@ export function QueryBar({
             {...(focusSignal ? { focusSignal } : {})}
           />
         </QueryFieldFrame>
+        <AskAiButton
+          collection={collection}
+          fields={fields}
+          onApply={(text, run) => {
+            const next = { ...form, ...text, skip: "" };
+            if (run) onRunForm(next);
+            else onSetForm(next);
+          }}
+          {...(askSignal ? { openSignal: askSignal } : {})}
+        />
         <VisualQueryBuilder
           fields={fields}
           onApply={(filter, run) =>

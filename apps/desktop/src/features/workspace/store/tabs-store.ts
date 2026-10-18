@@ -44,6 +44,8 @@ interface BackupsTab {
 interface SettingsTab {
   kind: "settings";
   id: "settings";
+  /** The page to show, when opened for one (e.g. "ai" from the query bar). */
+  page?: string;
 }
 
 export type WorkspaceTab =
@@ -76,7 +78,7 @@ interface TabsState {
   openServer: (profileId: ProfileId) => void;
   openUsers: (profileId: ProfileId) => void;
   openBackups: () => void;
-  openSettings: () => void;
+  openSettings: (page?: string) => void;
   activate: (id: string) => void;
   /** A second, independent tab on the same collection, right after this one. */
   duplicate: (id: string) => void;
@@ -204,15 +206,20 @@ export const useTabs = create<TabsState>()(
             ? { activeTabId: "backups" }
             : { tabs: [...state.tabs, { kind: "backups", id: "backups" }], activeTabId: "backups" },
         ),
-      openSettings: () =>
-        set((state) =>
-          state.tabs.some((tab) => tab.id === "settings")
-            ? { activeTabId: "settings" }
-            : {
-                tabs: [...state.tabs, { kind: "settings", id: "settings" }],
-                activeTabId: "settings",
-              },
-        ),
+      openSettings: (page) =>
+        set((state) => {
+          const tab: SettingsTab = page
+            ? { kind: "settings", id: "settings", page }
+            : { kind: "settings", id: "settings" };
+          const open = state.tabs.some((candidate) => candidate.id === "settings");
+          if (open && !page) return { activeTabId: "settings" };
+          return {
+            tabs: open
+              ? state.tabs.map((candidate) => (candidate.id === "settings" ? tab : candidate))
+              : [...state.tabs, tab],
+            activeTabId: "settings",
+          };
+        }),
       activate: (id) => set({ activeTabId: id }),
       togglePin: (id) =>
         set((state) => {

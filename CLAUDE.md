@@ -22,6 +22,7 @@ apps/desktop/            React UI (Vite)
     src/commands/<domain>.rs
     capabilities/        Tauri permission sets (minimal)
     binaries/            sidecars (fetched by script, git-ignored)
+crates/ai/               AI query assistant: model catalog, downloads, llama.cpp and Ollama engines. NO Tauri.
 crates/core/             all MongoDB/domain logic. NO Tauri dependency.
   src/<domain>/          connection, documents, query, indexes, aggregation,
                          transfer, backup, shell, storage (added as built)
@@ -32,19 +33,20 @@ docs/adr/                Architecture Decision Records
 
 ## Dependency rules (enforced in review and CI)
 
-- `crates/core` never depends on `tauri*`. It must compile and test standalone.
+- `crates/core` and `crates/ai` never depend on `tauri*`. They must compile and test standalone; `ai` may use `core`, never the reverse.
 - `src-tauri` commands are thin: deserialize → call core → map `CoreError` to `IpcError`. No business logic, no MongoDB calls.
 - `packages/ui` never imports from `apps/*` or `packages/bindings`.
 - The UI talks to the backend only through `packages/bindings`. Never call `invoke()` with string command names.
 - `packages/bindings` is generated. Never edit it by hand. Regenerate with `pnpm bindings`.
 - Features import other features only through their `index.ts`, and dependencies point one way:
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
-  - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `indexes` stands alone;
+  - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `documents` shows `ai`'s Ask button; `indexes` stands alone;
+  - `ai` (the query assistant) uses `workspace` only, to open its settings page;
   - `collection` (the collection tab) composes `documents`, `aggregation`, `schema` and `indexes` with `connections`;
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
   - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection;
-  - `settings` (the settings tab) reads `results` and `documents` stores and uses `updates` for its update row; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
+  - `settings` (the settings tab) reads `results` and `documents` stores, uses `updates` for its update row and `ai` for model downloads; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `connections` may use `workspace` to open tabs, and `backup` and `transfer` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
@@ -72,6 +74,7 @@ docs/adr/                Architecture Decision Records
 - **SSH tunnels** (ADR-0036): `ssh::open_tunnel` with host keys pinned per profile; `connection::route` rewrites the URI to the tunnel. Tools get `ConnectionHandle::uri`, never the profile's string. A host key error carries its fingerprint in `IpcError.detail`.
 - **Large deployments** (ADR-0037): the connection tree is one flat, virtualized list: `buildTreeRows` (`features/connections/lib/tree-rows.ts`) turns profiles, databases and collections into rows, so a cluster with thousands of collections renders only what is in view. A row component never renders its children. Grid columns are virtualized too; catalog-wide reads use `browse::catalog` (bounded concurrency), never one request per database.
 - **GridFS** (ADR-0038): a `<bucket>.files` collection gets download and upload; dialogs open from Rust.
+- **AI query assistant** (ADR-0040): optional; llama.cpp in-process or Ollama, chosen in settings. Only field paths and types reach a model (`fieldHints`), output is grammar-constrained and checked in Rust (`parse_answer`), and fills the query bar without running. Catalog models are pinned by SHA-256.
 - **Automatic updates** (ADR-0039): `check_for_update` at launch (setting `checkForUpdates`), `install_update` as a registered long operation; nothing installs without a click.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 

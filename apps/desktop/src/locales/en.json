@@ -176,7 +176,8 @@
       "nextField": "Save and edit the next value",
       "copyRows": "Copy the selected documents",
       "duplicateRow": "Duplicate the selected document",
-      "focusFilter": "Focus the filter"
+      "focusFilter": "Focus the filter",
+      "askAi": "Describe a query to the AI assistant"
     },
     "keys": {
       "doubleClick": "Double-click a value"

@@ -156,6 +156,17 @@ describe("tabs store", () => {
     expect(useTabs.getState().activeTabId).toBe("settings");
   });
 
+  it("opens settings on a page, reusing the tab", () => {
+    useTabs.getState().openSettings();
+    useTabs.getState().openBackups();
+    useTabs.getState().openSettings("ai");
+    expect(useTabs.getState().tabs).toEqual([
+      { kind: "settings", id: "settings", page: "ai" },
+      { kind: "backups", id: "backups" },
+    ]);
+    expect(useTabs.getState().activeTabId).toBe("settings");
+  });
+
   it("restores every tab but shells after a restart", () => {
     useTabs.getState().openCollection(target("a"));
     useTabs.getState().openSettings();

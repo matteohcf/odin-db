@@ -628,6 +628,72 @@ function simulateTransfer(
   return operationId;
 }
 
+/** Progress events from 0 to `total`, then completion; Stop cancels like a real operation. */
+function streamProgress(
+  channel: unknown,
+  total: number,
+  dataOf: (done: number, total: number) => unknown,
+  onCompleted?: () => void,
+) {
+  const send = channelSender(channel);
+  const operationId = crypto.randomUUID();
+  const operation = { cancelled: false };
+  operations.set(operationId, operation);
+  let done = 0;
+  const tick = () => {
+    if (operation.cancelled) {
+      operations.delete(operationId);
+      send({ event: "cancelled" });
+      return;
+    }
+    done = Math.min(total, done + total / 10);
+    send({ event: "data", data: dataOf(done, total) });
+    if (done < total) {
+      setTimeout(tick, 250);
+      return;
+    }
+    operations.delete(operationId);
+    onCompleted?.();
+    send({ event: "completed" });
+  };
+  setTimeout(tick, 250);
+  return operationId;
+}
+
+const MOCK_MODELS = [
+  {
+    id: "qwen2.5-coder-0.5b",
+    name: "Qwen2.5 Coder 0.5B",
+    publisher: "Alibaba Qwen",
+    parameters: "0.5B",
+    license: "Apache-2.0",
+    tier: "fast",
+    size: 491_400_064,
+    minMemoryGib: 4,
+  },
+  {
+    id: "qwen2.5-coder-1.5b",
+    name: "Qwen2.5 Coder 1.5B",
+    publisher: "Alibaba Qwen",
+    parameters: "1.5B",
+    license: "Apache-2.0",
+    tier: "balanced",
+    size: 1_117_320_768,
+    minMemoryGib: 8,
+  },
+  {
+    id: "qwen3.5-4b",
+    name: "Qwen3.5 4B",
+    publisher: "Alibaba Qwen",
+    parameters: "4B",
+    license: "Apache-2.0",
+    tier: "accurate",
+    size: 2_740_937_888,
+    minMemoryGib: 16,
+  },
+];
+const mockAi = { installed: new Set<string>(), partial: new Map<string, number>() };
+
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
 const importFolders = new Set<string>();
 
@@ -887,25 +953,80 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     localStorage.getItem("odin-mock-update") === "1"
       ? { version: "0.2.0", currentVersion: "0.1.0", notes: "Faster grids.", date: null }
       : null,
-  install_update: (args) => {
-    // Progress only, unwrapped; the real backend then restarts the app, here it just ends.
+  install_update: (args) =>
+    // The real backend then restarts the app; here it just ends.
+    streamProgress(args.channel, 18_000_000, (done, total) => ({ done, total })),
+  ai_overview: () => ({
+    models: MOCK_MODELS.map((spec) => ({
+      spec,
+      state: mockAi.installed.has(spec.id)
+        ? { state: "installed" }
+        : mockAi.partial.has(spec.id)
+          ? { state: "partial", received: mockAi.partial.get(spec.id) ?? 0 }
+          : { state: "absent" },
+    })),
+    hardware: { memoryGib: 16, gpu: true },
+    recommended: "qwen2.5-coder-1.5b",
+    usedBytes: MOCK_MODELS.filter((spec) => mockAi.installed.has(spec.id)).reduce(
+      (sum, spec) => sum + spec.size,
+      0,
+    ),
+  }),
+  download_ai_model: (args) => {
+    const spec =
+      MOCK_MODELS.find((candidate) => candidate.id === args.model) ??
+      fail("validation", `unknown model ${String(args.model)}`);
+    return streamProgress(
+      args.channel,
+      spec.size,
+      (received, total) => {
+        mockAi.partial.set(spec.id, received);
+        return { received, total };
+      },
+      () => {
+        mockAi.partial.delete(spec.id);
+        mockAi.installed.add(spec.id);
+      },
+    );
+  },
+  delete_ai_model: (args) => {
+    mockAi.installed.delete(String(args.model));
+    mockAi.partial.delete(String(args.model));
+    return null;
+  },
+  unload_ai_model: () => null,
+  list_ollama_models: (args) => {
+    if (!String(args.url).includes("11434")) fail("network", "Ollama: connection refused");
+    return [{ name: "qwen2.5-coder:3b", size: 1_900_000_000, parameterSize: "3.1B" }];
+  },
+  // A stand-in for the model: "fail" fails, "newest" sorts, a number limits.
+  generate_query: (args) => {
     const send = channelSender(args.channel);
     const operationId = crypto.randomUUID();
     const operation = { cancelled: false };
     operations.set(operationId, operation);
-    const total = 18_000_000;
-    let done = 0;
-    const tick = () => {
-      if (operation.cancelled) {
-        send({ event: "cancelled" });
-        return;
+    const prompt = String((args.request as { prompt: string }).prompt);
+    setTimeout(() => {
+      operations.delete(operationId);
+      if (operation.cancelled) return send({ event: "cancelled" });
+      if (prompt.includes("fail")) {
+        return send({
+          event: "failed",
+          data: { kind: "validation", message: "the model's answer is not a usable query" },
+        });
       }
-      done = Math.min(total, done + total / 10);
-      send({ event: "data", data: { done, total } });
-      if (done < total) setTimeout(tick, 250);
-      else send({ event: "completed" });
-    };
-    setTimeout(tick, 250);
+      const limit = /\d+/.exec(prompt)?.[0];
+      send({
+        event: "data",
+        data: {
+          filter: { status: "active", age: { $gt: { $numberInt: "30" } } },
+          sort: prompt.includes("newest") ? { createdAt: { $numberInt: "-1" } } : null,
+          projection: null,
+          limit: limit ? Number(limit) : null,
+        },
+      });
+      send({ event: "completed" });
+    }, 600);
     return operationId;
   },
   open_link: (args) => {

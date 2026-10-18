@@ -10,7 +10,7 @@ import { label, SHORTCUTS } from "@/lib/shortcuts";
 export function SettingsButton() {
   const { t } = useTranslation("settings");
   const openSettings = useTabs((s) => s.openSettings);
-  useShortcut("settings", openSettings);
+  useShortcut("settings", () => openSettings());
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -19,7 +19,7 @@ export function SettingsButton() {
           size="icon"
           className="ml-auto size-7 text-muted-foreground"
           aria-label={t("open")}
-          onClick={openSettings}
+          onClick={() => openSettings()}
         >
           <Settings className="size-3.5" />
         </Button>

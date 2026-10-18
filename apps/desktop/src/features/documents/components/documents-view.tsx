@@ -236,6 +236,8 @@ export function DocumentsView({
   useShortcut("rerun", () => void runForm(), active);
   const [focusFilter, setFocusFilter] = useState(0);
   useShortcut("focusFilter", () => setFocusFilter((value) => value + 1), active);
+  const [askAi, setAskAi] = useState(0);
+  useShortcut("askAi", () => setAskAi((value) => value + 1), active);
 
   /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
   const refresh = (keepRows = false) => void execute(lastQuery.current, { keepRows });
@@ -304,7 +306,9 @@ export function DocumentsView({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <QueryBar
+        collection={namespace.collection}
         focusSignal={focusFilter}
+        askSignal={askAi}
         form={form}
         errors={formErrors}
         running={running}

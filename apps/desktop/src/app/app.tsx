@@ -101,6 +101,6 @@ function renderTab(tab: WorkspaceTab) {
     case "backups":
       return <BackupsView />;
     case "settings":
-      return <SettingsView />;
+      return <SettingsView {...(tab.page ? { page: tab.page } : {})} />;
   }
 }

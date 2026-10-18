@@ -8,6 +8,7 @@ export const SHORTCUTS = {
   settings: { key: ",", mod: true },
   rerun: { key: "r", mod: true },
   focusFilter: { key: "f", mod: true },
+  askAi: { key: "i", mod: true },
   filterSidebar: { key: "f", mod: true, shift: true },
   // Like VS Code's "Reveal in Explorer".
   revealInSidebar: { key: "e", mod: true, shift: true },

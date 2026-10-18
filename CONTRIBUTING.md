@@ -4,7 +4,7 @@ Thanks for helping. This guide covers setup, workflow and what a PR needs to be 
 
 ## Setup
 
-1. Install Node.js 22+, pnpm 10, Rust via [rustup](https://rustup.rs) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS.
+1. Install Node.js 22+, pnpm 10, Rust via [rustup](https://rustup.rs) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS, plus CMake (the AI assistant builds llama.cpp; ADR-0040).
 2. `pnpm install` (also installs the git hooks via lefthook).
 3. `pnpm dev` to run the app.
 

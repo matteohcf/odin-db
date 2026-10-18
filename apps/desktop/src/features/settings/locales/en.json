@@ -8,7 +8,8 @@
     "results": "Results",
     "data": "Data and tools",
     "keyboard": "Keyboard",
-    "about": "About"
+    "about": "About",
+    "ai": "AI assistant"
   },
   "general": {
     "title": "General",
@@ -130,5 +131,47 @@
     "done": "Settings reset."
   },
   "search": "Search settings",
-  "noMatch": "No setting matches “{{search}}”."
+  "noMatch": "No setting matches “{{search}}”.",
+  "ai": {
+    "title": "AI assistant",
+    "description": "Describe the documents you want and a model writes the query. It sees field names and types, never your data, and the query runs only when you choose.",
+    "enabled": "Show the assistant",
+    "enabledHint": "Adds Ask AI to the query bar (⌘I or Ctrl I).",
+    "engine": "Model runs in",
+    "engines": {
+      "local": "On this computer",
+      "ollama": "Ollama"
+    },
+    "engineHint": {
+      "local": "A model downloaded below, run offline inside odin-db.",
+      "ollama": "A model you already run in Ollama."
+    },
+    "models": "Models",
+    "modelsHint": "This computer has {{memory}} GB of memory. Models on disk: {{used}}.",
+    "modelDetails": "{{publisher}} · {{size}} · {{license}}",
+    "tiers": {
+      "fast": "Fast",
+      "balanced": "Balanced",
+      "accurate": "Accurate"
+    },
+    "recommended": "Recommended",
+    "download": "Download",
+    "resume": "Resume",
+    "pause": "Pause",
+    "use": "Use",
+    "inUse": "In use",
+    "delete": "Delete {{name}}",
+    "downloading": "Downloading {{name}}",
+    "downloaded": "{{name}} is ready",
+    "progress": "{{received}} of {{total}}",
+    "ollama": {
+      "url": "Ollama address",
+      "model": "Ollama model",
+      "checking": "Looking for Ollama…",
+      "unreachable": "Ollama is not reachable: {{message}}",
+      "found_one": "Ollama is running with {{count}} model.",
+      "found_other": "Ollama is running with {{count}} models.",
+      "pullHint": "Pull a model in Ollama first, e.g. ollama pull qwen2.5-coder:1.5b."
+    }
+  }
 }

@@ -1,0 +1,27 @@
+{
+  "ask": {
+    "open": "Ask AI",
+    "title": "Describe the documents to find",
+    "placeholder": "e.g. active users from Italy, newest first",
+    "generate": "Generate",
+    "generating": "Generating the query…",
+    "stop": "Stop",
+    "again": "Try again",
+    "apply": "Use",
+    "applyAndRun": "Use and run",
+    "result": "Generated query",
+    "privacy": "Only field names and types are sent to the model.",
+    "parts": {
+      "filter": "Filter",
+      "sort": "Sort",
+      "projection": "Projection",
+      "limit": "Limit"
+    }
+  },
+  "setup": {
+    "title": "Write queries in plain language",
+    "description": "Choose a small model that runs on this computer, or one you run in Ollama. Nothing is downloaded until you pick one.",
+    "open": "Set up in settings",
+    "hide": "Hide this button"
+  }
+}

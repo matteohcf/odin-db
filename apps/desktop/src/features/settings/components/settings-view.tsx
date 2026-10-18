@@ -8,12 +8,14 @@ import {
   Rows3,
   Search,
   Settings2,
+  Sparkles,
   SquareTerminal,
 } from "lucide-react";
-import { type ComponentType, useState } from "react";
+import { type ComponentType, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsSearch } from "../hooks/use-settings-search";
 import { AboutSection } from "./about-section";
+import { AiSection } from "./ai-section";
 import { AppearanceSection } from "./appearance-section";
 import { DataSection } from "./data-section";
 import { EditorSection } from "./editor-section";
@@ -28,6 +30,7 @@ const PAGES = [
   { id: "editor", icon: SquareTerminal, Section: EditorSection },
   { id: "results", icon: Rows3, Section: ResultsSection },
   { id: "data", icon: Database, Section: DataSection },
+  { id: "ai", icon: Sparkles, Section: AiSection },
   { id: "keyboard", icon: Keyboard, Section: KeyboardSection },
   { id: "about", icon: Info, Section: AboutSection },
 ] as const satisfies readonly { id: string; icon: LucideIcon; Section: ComponentType }[];
@@ -35,9 +38,14 @@ const PAGES = [
 type PageId = (typeof PAGES)[number]["id"];
 
 /** App settings, one page per area, applied as soon as they change. */
-export function SettingsView() {
+export function SettingsView({ page: requested }: { page?: string }) {
   const { t } = useTranslation("settings");
   const [active, setActive] = useState<PageId>("general");
+  // Opened for a page (e.g. from the query bar's AI setup): show it.
+  useEffect(() => {
+    const match = PAGES.find((candidate) => candidate.id === requested);
+    if (match) setActive(match.id);
+  }, [requested]);
   const [search, setSearch] = useState("");
   const query = search.trim().toLowerCase();
   const page = PAGES.find((candidate) => candidate.id === active) ?? PAGES[0];

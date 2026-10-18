@@ -41,6 +41,13 @@ export interface Settings {
   sidebarDensity: "normal" | "compact";
   /** Look for a newer release at launch. */
   checkForUpdates: boolean;
+  /** Show the AI query assistant; it does nothing until an engine is set up. */
+  aiEnabled: boolean;
+  aiEngine: "local" | "ollama";
+  /** Catalog id of the downloaded model to use; empty when none is chosen. */
+  aiLocalModel: string;
+  aiOllamaUrl: string;
+  aiOllamaModel: string;
 }
 
 /** Sidebar row heights in pixels; the tree adds a 1px gap between rows. */
@@ -72,6 +79,11 @@ export const DEFAULT_SETTINGS: Settings = {
   dateDisplay: "utc",
   sidebarDensity: "normal",
   checkForUpdates: true,
+  aiEnabled: true,
+  aiEngine: "local",
+  aiLocalModel: "",
+  aiOllamaUrl: "http://localhost:11434",
+  aiOllamaModel: "",
 };
 
 export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;

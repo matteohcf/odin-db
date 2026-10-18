@@ -4,6 +4,8 @@ import app from "@/app/locales/en.json";
 import appIt from "@/app/locales/it.json";
 import aggregation from "@/features/aggregation/locales/en.json";
 import aggregationIt from "@/features/aggregation/locales/it.json";
+import ai from "@/features/ai/locales/en.json";
+import aiIt from "@/features/ai/locales/it.json";
 import backup from "@/features/backup/locales/en.json";
 import backupIt from "@/features/backup/locales/it.json";
 import backups from "@/features/backups/locales/en.json";
@@ -43,6 +45,7 @@ import commonIt from "@/locales/it.json";
 export const resources = {
   en: {
     aggregation,
+    ai,
     app,
     backup,
     backups,
@@ -64,6 +67,7 @@ export const resources = {
   },
   it: {
     aggregation: aggregationIt,
+    ai: aiIt,
     app: appIt,
     backup: backupIt,
     backups: backupsIt,

@@ -35,6 +35,7 @@ const GROUPS = [
     id: "query",
     shortcuts: [
       ["focusFilter", [label(SHORTCUTS.focusFilter)]],
+      ["askAi", [label(SHORTCUTS.askAi)]],
       ["run", ["↵", `${mod} ↵`]],
       ["rerun", [label(SHORTCUTS.rerun)]],
       ["recall", ["↑", "↓"]],

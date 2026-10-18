@@ -8,7 +8,8 @@
     "results": "Risultati",
     "data": "Dati e strumenti",
     "keyboard": "Tastiera",
-    "about": "Informazioni"
+    "about": "Informazioni",
+    "ai": "Assistente AI"
   },
   "general": {
     "title": "Generale",
@@ -130,5 +131,47 @@
     "done": "Impostazioni ripristinate."
   },
   "search": "Cerca nelle impostazioni",
-  "noMatch": "Nessuna impostazione corrisponde a “{{search}}”."
+  "noMatch": "Nessuna impostazione corrisponde a “{{search}}”.",
+  "ai": {
+    "title": "Assistente AI",
+    "description": "Descrivi i documenti che cerchi e un modello scrive la query. Vede nomi e tipi dei campi, mai i tuoi dati, e la query parte solo quando lo decidi tu.",
+    "enabled": "Mostra l'assistente",
+    "enabledHint": "Aggiunge Chiedi all'AI alla barra delle query (⌘I o Ctrl I).",
+    "engine": "Il modello gira in",
+    "engines": {
+      "local": "Su questo computer",
+      "ollama": "Ollama"
+    },
+    "engineHint": {
+      "local": "Un modello scaricato qui sotto, eseguito offline dentro odin-db.",
+      "ollama": "Un modello che usi già in Ollama."
+    },
+    "models": "Modelli",
+    "modelsHint": "Questo computer ha {{memory}} GB di memoria. Modelli su disco: {{used}}.",
+    "modelDetails": "{{publisher}} · {{size}} · {{license}}",
+    "tiers": {
+      "fast": "Veloce",
+      "balanced": "Bilanciato",
+      "accurate": "Preciso"
+    },
+    "recommended": "Consigliato",
+    "download": "Scarica",
+    "resume": "Riprendi",
+    "pause": "Pausa",
+    "use": "Usa",
+    "inUse": "In uso",
+    "delete": "Elimina {{name}}",
+    "downloading": "Download di {{name}}",
+    "downloaded": "{{name}} è pronto",
+    "progress": "{{received}} di {{total}}",
+    "ollama": {
+      "url": "Indirizzo di Ollama",
+      "model": "Modello di Ollama",
+      "checking": "Ricerca di Ollama…",
+      "unreachable": "Ollama non è raggiungibile: {{message}}",
+      "found_one": "Ollama è attivo con {{count}} modello.",
+      "found_other": "Ollama è attivo con {{count}} modelli.",
+      "pullHint": "Scarica prima un modello in Ollama, es. ollama pull qwen2.5-coder:1.5b."
+    }
+  }
 }

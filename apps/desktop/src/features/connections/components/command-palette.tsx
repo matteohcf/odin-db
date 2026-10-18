@@ -202,7 +202,7 @@ function PaletteResults({
     })),
     { id: "new", label: t("palette.newConnection"), icon: Plus, run: onNewConnection },
     { id: "backups", label: t("palette.backups"), icon: HardDriveDownload, run: openBackups },
-    { id: "settings", label: t("palette.settings"), icon: Settings, run: openSettings },
+    { id: "settings", label: t("palette.settings"), icon: Settings, run: () => openSettings() },
     {
       id: "shortcuts",
       label: t("palette.shortcuts"),
