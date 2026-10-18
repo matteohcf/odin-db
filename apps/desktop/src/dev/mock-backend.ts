@@ -695,6 +695,7 @@ const MOCK_MODELS = [
     benchmark: { accuracy: 0.9, secondsPerQuery: 7.1 },
   },
 ];
+const mockCompare = { synced: false };
 const mockAi = { installed: new Set<string>(), partial: new Map<string, number>() };
 
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
@@ -966,15 +967,36 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     return simulateTransfer(
       args.channel,
       2_450,
-      {
-        identical: 2_385,
-        different: 40,
-        onlyLeft: 20,
-        onlyRight: 5,
-        differentIds: range(1, 40),
-        onlyLeftIds: range(100, 20),
-        onlyRightIds: range(200, 5),
-      },
+      mockCompare.synced
+        ? {
+            identical: 2_445,
+            different: 0,
+            onlyLeft: 0,
+            onlyRight: 0,
+            differentIds: [],
+            onlyLeftIds: [],
+            onlyRightIds: [],
+          }
+        : {
+            identical: 2_385,
+            different: 40,
+            onlyLeft: 20,
+            onlyRight: 5,
+            differentIds: range(1, 40),
+            onlyLeftIds: range(100, 20),
+            onlyRightIds: range(200, 5),
+          },
+      1,
+      (compared) => ({ compared, total: 2_450 }),
+    );
+  },
+  sync_collections: (args) => {
+    const request = args.request as { deleteExtra: boolean };
+    mockCompare.synced = true;
+    return simulateTransfer(
+      args.channel,
+      2_450,
+      { identical: 2_385, inserted: 20, replaced: 40, deleted: request.deleteExtra ? 5 : 0 },
       1,
       (compared) => ({ compared, total: 2_450 }),
     );

@@ -20,8 +20,16 @@ import { isJsonObject, type JsonObject } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
 import { parseShellDocument } from "@/lib/shell-syntax";
 import { useCompare } from "../hooks/use-compare";
-import { type CompareSide, type CompareTarget, isSameCollection, percentOf } from "../lib/target";
+import { type SyncOptions, useSync } from "../hooks/use-sync";
+import {
+  type CompareSide,
+  type CompareTarget,
+  isSameCollection,
+  percentOf,
+  syncReady,
+} from "../lib/target";
 import { CompareSummary } from "./compare-summary";
+import { SyncPanel } from "./sync-panel";
 import { TargetPicker } from "./target-picker";
 
 interface CompareCollectionsDialogProps {
@@ -52,7 +60,18 @@ export function CompareCollectionsDialog({
   const [filterError, setFilterError] = useState<string | null>(null);
   const [pair, setPair] = useState<{ left: JsonObject; right: JsonObject } | null>(null);
   const compare = useCompare();
-  const running = compare.state.status === "running";
+  const sync = useSync();
+  const [mode, setMode] = useState<"compare" | "sync">("compare");
+  // The filter of the last comparison, which a sync repeats.
+  const [ranFilter, setRanFilter] = useState<JsonValue | null>(null);
+  const [syncOptions, setSyncOptions] = useState<SyncOptions>({
+    insertMissing: true,
+    replaceDifferent: true,
+    deleteExtra: false,
+  });
+  const [confirmation, setConfirmation] = useState("");
+  const running = compare.state.status === "running" || sync.state.status === "running";
+  const progress = sync.state.status === "running" ? sync.progress : compare.progress;
   const complete =
     right.connectionId !== undefined && Boolean(right.database) && Boolean(right.collection);
   const sameCollection = complete && isSameCollection(left, right as CompareSide);
@@ -70,7 +89,44 @@ export function CompareCollectionsDialog({
       setFilterError(errorMessage(error));
       return;
     }
+    setRanFilter(parsed);
+    setMode("compare");
     await compare.start(left, right as CompareSide, parsed);
+  }
+
+  const summary = compare.summary;
+  const hasDifferences =
+    summary !== null &&
+    (summary.different ?? 0) + (summary.onlyLeft ?? 0) + (summary.onlyRight ?? 0) > 0;
+  const targetReadOnly =
+    targets.find((target) => target.connectionId === right.connectionId)?.readOnly ?? false;
+  const targetLabel = `${right.connectionId ? nameOf(right.connectionId) : ""} · ${right.database}.${right.collection}`;
+
+  function openSync() {
+    if (!summary) return;
+    setSyncOptions({
+      insertMissing: (summary.onlyLeft ?? 0) > 0,
+      replaceDifferent: (summary.different ?? 0) > 0,
+      deleteExtra: false,
+    });
+    setConfirmation("");
+    setMode("sync");
+  }
+
+  async function applySync() {
+    if (!complete) return;
+    const synced = await sync.start(left, right as CompareSide, ranFilter, syncOptions);
+    if (!synced) return;
+    toast.success(
+      t("sync.done", {
+        inserted: synced.inserted ?? 0,
+        replaced: synced.replaced ?? 0,
+        deleted: synced.deleted ?? 0,
+      }),
+    );
+    // Compare again, so the counts show what is left.
+    setMode("compare");
+    await compare.start(left, right as CompareSide, ranFilter);
   }
 
   async function openDifference(documentId: EJsonValue) {
@@ -112,7 +168,13 @@ export function CompareCollectionsDialog({
               </span>
               <ArrowLeftRight className="ml-auto size-4 text-muted-foreground" />
             </div>
-            <TargetPicker targets={targets} value={right} onChange={setRight} disabled={running} />
+            <TargetPicker
+              targets={targets}
+              value={right}
+              onChange={setRight}
+              // The sync applies this comparison, so its target and filter stay put.
+              disabled={running || mode === "sync"}
+            />
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={`${id}-filter`} className="text-xs">
                 {t("filter")}
@@ -123,7 +185,7 @@ export function CompareCollectionsDialog({
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder={t("filterPlaceholder")}
                 spellCheck={false}
-                disabled={running}
+                disabled={running || mode === "sync"}
                 className="h-8 font-mono text-xs"
               />
             </div>
@@ -136,29 +198,42 @@ export function CompareCollectionsDialog({
             {running && (
               <div className="flex flex-col gap-1.5">
                 <Progress
-                  value={percentOf(
-                    compare.progress?.compared ?? null,
-                    compare.progress?.total ?? null,
-                  )}
+                  value={percentOf(progress?.compared ?? null, progress?.total ?? null)}
                   aria-label={t("comparing")}
                 />
                 <span className="text-muted-foreground text-xs tabular-nums">
                   {t("progress", {
-                    compared: (compare.progress?.compared ?? 0).toLocaleString(),
-                    total: (compare.progress?.total ?? 0).toLocaleString(),
+                    compared: (progress?.compared ?? 0).toLocaleString(),
+                    total: (progress?.total ?? 0).toLocaleString(),
                   })}
                 </span>
               </div>
             )}
-            {compare.state.status === "failed" && (
+            {(compare.state.status === "failed" || sync.state.status === "failed") && (
               <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs">
                 <CircleAlert className="mt-px size-3.5 shrink-0" />
-                {compare.state.error}
+                {compare.state.status === "failed"
+                  ? compare.state.error
+                  : sync.state.status === "failed"
+                    ? sync.state.error
+                    : null}
               </p>
             )}
-            {compare.summary && !running && (
+            {summary && mode === "sync" && (
+              <SyncPanel
+                summary={summary}
+                targetLabel={targetLabel}
+                collection={right.collection ?? ""}
+                options={syncOptions}
+                onOptionsChange={setSyncOptions}
+                confirmation={confirmation}
+                onConfirmationChange={setConfirmation}
+                disabled={running}
+              />
+            )}
+            {summary && mode === "compare" && !running && (
               <CompareSummary
-                summary={compare.summary}
+                summary={summary}
                 leftName={leftName}
                 rightName={rightName}
                 onOpenDifference={(documentId) => void openDifference(documentId)}
@@ -170,13 +245,41 @@ export function CompareCollectionsDialog({
               {t("actions.close", { ns: "common" })}
             </Button>
             {running ? (
-              <Button variant="outline" onClick={compare.cancel}>
+              <Button
+                variant="outline"
+                onClick={sync.state.status === "running" ? sync.cancel : compare.cancel}
+              >
                 {t("stop")}
               </Button>
+            ) : mode === "sync" ? (
+              <>
+                <Button variant="outline" onClick={() => setMode("compare")}>
+                  {t("sync.back")}
+                </Button>
+                <Button
+                  variant={syncOptions.deleteExtra ? "destructive" : "default"}
+                  disabled={!syncReady(syncOptions, confirmation, right.collection ?? "")}
+                  onClick={() => void applySync()}
+                >
+                  {t("sync.apply", { collection: right.collection })}
+                </Button>
+              </>
             ) : (
-              <Button onClick={() => void run()} disabled={!complete || sameCollection}>
-                {compare.summary ? t("again") : t("run")}
-              </Button>
+              <>
+                {hasDifferences && (
+                  <Button
+                    variant="outline"
+                    onClick={openSync}
+                    disabled={targetReadOnly}
+                    title={targetReadOnly ? t("sync.readOnly") : undefined}
+                  >
+                    {t("sync.open")}
+                  </Button>
+                )}
+                <Button onClick={() => void run()} disabled={!complete || sameCollection}>
+                  {summary ? t("again") : t("run")}
+                </Button>
+              </>
             )}
           </DialogFooter>
         </DialogContent>

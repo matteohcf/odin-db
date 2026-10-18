@@ -27,5 +27,21 @@
   },
   "menu": {
     "compare": "Confronta con…"
+  },
+  "sync": {
+    "open": "Sincronizza…",
+    "back": "Indietro",
+    "apply": "Applica a {{collection}}",
+    "readOnly": "La connessione di destinazione è in sola lettura.",
+    "intro": "Allinea {{target}} alla collezione confrontata:",
+    "insertMissing_one": "Inserisci {{formatted}} documento mancante",
+    "insertMissing_other": "Inserisci {{formatted}} documenti mancanti",
+    "replaceDifferent_one": "Sostituisci {{formatted}} documento diverso",
+    "replaceDifferent_other": "Sostituisci {{formatted}} documenti diversi",
+    "deleteExtra_one": "Elimina {{formatted}} documento presente solo lì",
+    "deleteExtra_other": "Elimina {{formatted}} documenti presenti solo lì",
+    "deleteWarning": "I documenti eliminati non si possono recuperare. Scrivi {{collection}} per confermare.",
+    "confirmLabel": "Nome della collezione, per confermare",
+    "done": "Sincronizzato: {{inserted}} inseriti, {{replaced}} sostituiti, {{deleted}} eliminati."
   }
 }

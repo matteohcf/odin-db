@@ -4,6 +4,8 @@ import type { ConnectionId } from "@odin-db/bindings";
 export interface CompareTarget {
   connectionId: ConnectionId;
   name: string;
+  /** Read-only targets can be compared but never synced. */
+  readOnly: boolean;
 }
 
 export interface CompareSide {
@@ -25,4 +27,14 @@ export function isSameCollection(left: CompareSide, right: CompareSide): boolean
 export function percentOf(compared: number | null, total: number | null): number {
   if (!total || compared === null) return 0;
   return Math.min(100, Math.floor((compared / total) * 100));
+}
+
+/** A sync needs something to do and, to delete, the target's name typed back. */
+export function syncReady(
+  options: { insertMissing: boolean; replaceDifferent: boolean; deleteExtra: boolean },
+  confirmation: string,
+  collection: string,
+): boolean {
+  const anything = options.insertMissing || options.replaceDifferent || options.deleteExtra;
+  return anything && (!options.deleteExtra || confirmation.trim() === collection);
 }

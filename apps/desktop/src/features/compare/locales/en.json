@@ -27,5 +27,21 @@
   },
   "menu": {
     "compare": "Compare with…"
+  },
+  "sync": {
+    "open": "Sync…",
+    "back": "Back",
+    "apply": "Apply to {{collection}}",
+    "readOnly": "The target connection is read-only.",
+    "intro": "Make {{target}} match the compared collection:",
+    "insertMissing_one": "Insert {{formatted}} missing document",
+    "insertMissing_other": "Insert {{formatted}} missing documents",
+    "replaceDifferent_one": "Replace {{formatted}} different document",
+    "replaceDifferent_other": "Replace {{formatted}} different documents",
+    "deleteExtra_one": "Delete {{formatted}} document found only there",
+    "deleteExtra_other": "Delete {{formatted}} documents found only there",
+    "deleteWarning": "Deleted documents cannot be recovered. Type {{collection}} to confirm.",
+    "confirmLabel": "Collection name, to confirm",
+    "done": "Synced: {{inserted}} inserted, {{replaced}} replaced, {{deleted}} deleted."
   }
 }

@@ -33,4 +33,8 @@ selected documents existed; comparing collections did not.
 - Each side is read once in full and the right side a second time for its `_id`s only.
 - A numeric `_id` stored as different types on the two sides (`1` and `Long(1)`) counts as
   missing on the right, since the server matches it but the documents differ in type.
-- Comparing whole collections is not yet a sync: changes are not applied.
+- **Sync** applies a comparison to the right side, choosing per kind: insert missing documents,
+  replace differing ones with the left version, delete documents only the right has. Deleting
+  is off by default and needs the target collection's name typed back; a read-only target is
+  refused in Rust. Sync reuses the compare scan (`Visitor`), then the UI compares again so the
+  counts show what is left.
