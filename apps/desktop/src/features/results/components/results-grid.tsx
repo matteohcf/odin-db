@@ -718,6 +718,19 @@ export function ResultsGrid({
                     <Copy />
                     <span className="truncate">{t("cell.copy", { field: menuColumn })}</span>
                   </ContextMenuItem>
+                  <ContextMenuItem
+                    disabled={selected[menuColumn] === undefined}
+                    onSelect={() => {
+                      const value = selected[menuColumn];
+                      if (value === undefined) return;
+                      // A condition to paste into another query: { field: value }.
+                      void navigator.clipboard.writeText(toShellSyntax({ [menuColumn]: value }, 0));
+                      toast.success(t("row.copied"));
+                    }}
+                  >
+                    <Filter />
+                    <span className="truncate">{t("cell.copyFilter", { field: menuColumn })}</span>
+                  </ContextMenuItem>
                   {actions.onEditField && menuColumn !== "_id" && !menuColumn.includes(".") && (
                     <ContextMenuItem onSelect={() => actions.onEditField?.(selected, menuColumn)}>
                       <PencilLine />

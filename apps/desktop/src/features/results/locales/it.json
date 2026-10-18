@@ -8,7 +8,9 @@
     "copy": "Copia come sintassi shell",
     "copied": "Copiato negli appunti",
     "delete": "Elimina documento",
-    "downloadFile": "Scarica file…"
+    "downloadFile": "Scarica file…",
+    "copyId": "Copia _id",
+    "idCopied": "_id copiato"
   },
   "status": {
     "loaded_one": "{{count, number}} documento",
@@ -48,7 +50,8 @@
     "exclude": "Escludi questo valore di {{field}}",
     "greater": "{{field}} maggiore di questo",
     "less": "{{field}} minore di questo",
-    "openLink": "Apri link"
+    "openLink": "Apri link",
+    "copyFilter": "Copia {{field}} come filtro"
   },
   "view": {
     "label": "Vista dei risultati",

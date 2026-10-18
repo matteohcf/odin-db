@@ -8,7 +8,9 @@
     "copy": "Copy as shell syntax",
     "copied": "Copied to clipboard",
     "delete": "Delete document",
-    "downloadFile": "Download file…"
+    "downloadFile": "Download file…",
+    "copyId": "Copy _id",
+    "idCopied": "_id copied"
   },
   "status": {
     "loaded_one": "{{count, number}} document",
@@ -48,7 +50,8 @@
     "exclude": "Exclude this {{field}}",
     "greater": "{{field}} greater than this",
     "less": "{{field}} less than this",
-    "openLink": "Open link"
+    "openLink": "Open link",
+    "copyFilter": "Copy {{field}} as a filter"
   },
   "view": {
     "label": "Results view",
