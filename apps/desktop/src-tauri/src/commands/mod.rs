@@ -6,6 +6,7 @@ pub mod app;
 pub mod backup;
 pub mod backups;
 pub mod catalog;
+pub mod compare;
 pub mod connections;
 pub mod documents;
 pub mod gridfs;

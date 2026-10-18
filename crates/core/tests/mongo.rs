@@ -2551,3 +2551,87 @@ async fn estimates_every_collection_count_of_a_database() {
         [("big", 250.0), ("small", 3.0), ("system.views", 1.0)]
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn compares_two_collections_by_id() {
+    use odin_core::compare::{self, CompareRequest};
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let db = handle.client.database("odin_test");
+    let left: Vec<Document> = (0..2500)
+        .map(|i| doc! { "_id": i, "name": format!("n{i}"), "tags": ["a", "b"] })
+        .collect();
+    db.collection::<Document>("left")
+        .insert_many(&left)
+        .await
+        .expect("seed left");
+    let right: Vec<Document> = (0..2500)
+        // 0..10 missing on the right, 10..20 changed, field order shuffled on the rest.
+        .filter(|i| *i >= 10)
+        .map(|i| {
+            if i < 20 {
+                doc! { "_id": i, "name": "changed", "tags": ["a", "b"] }
+            } else {
+                doc! { "tags": ["a", "b"], "name": format!("n{i}"), "_id": i }
+            }
+        })
+        .chain((5000..5003).map(|i| doc! { "_id": i, "name": "extra" }))
+        .collect();
+    db.collection::<Document>("right")
+        .insert_many(&right)
+        .await
+        .expect("seed right");
+
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let summary = compare::compare(
+        &handle,
+        &handle,
+        CompareRequest {
+            left: namespace("left"),
+            right: namespace("right"),
+            filter: None,
+        },
+        tx,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("compares");
+    assert_eq!(summary.identical, 2480.0);
+    assert_eq!(summary.different, 10.0);
+    assert_eq!(summary.only_left, 10.0);
+    assert_eq!(summary.only_right, 3.0);
+    assert_eq!(summary.different_ids.len(), 10);
+
+    // A filter narrows both sides.
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let filtered = compare::compare(
+        &handle,
+        &handle,
+        CompareRequest {
+            left: namespace("left"),
+            right: namespace("right"),
+            filter: Some(EJsonDocument::from(doc! { "_id": { "$lt": 15 } })),
+        },
+        tx,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("compares filtered");
+    assert_eq!(
+        (filtered.only_left, filtered.different, filtered.only_right),
+        (10.0, 5.0, 0.0)
+    );
+
+    let pair = compare::pair(
+        &handle,
+        &handle,
+        &namespace("left"),
+        &namespace("right"),
+        EJsonValue::from(Bson::Int32(3)),
+    )
+    .await
+    .expect("pair");
+    assert!(pair.left.is_some() && pair.right.is_none());
+}

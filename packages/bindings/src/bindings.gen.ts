@@ -30,6 +30,10 @@ export const commands = {
 	listOllamaModels: (url: string) => typedError<OllamaModel[], IpcError>(__TAURI_INVOKE("list_ollama_models", { url })),
 	/**  Turns a description into a find query; one `data` event with the query, then completion. */
 	generateQuery: (engine: EngineChoice, request: QueryRequest, channel: Channel<StreamEvent<GeneratedQuery>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("generate_query", { engine, request, channel })),
+	/**  Compares two collections, possibly on different connections, as a cancellable operation. */
+	compareCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: CompareRequest, channel: Channel<StreamEvent<CompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_collections", { leftConnectionId, rightConnectionId, request, channel })),
+	/**  Both versions of one compared document. */
+	comparedPair: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, left: Namespace, right: Namespace, id: EJsonValue) => typedError<ComparedPair, IpcError>(__TAURI_INVOKE("compared_pair", { leftConnectionId, rightConnectionId, left, right, id })),
 	/**  Asks the release server for a newer, signed version. `None` when up to date. */
 	checkForUpdate: () => typedError<{
 	version: string,
@@ -329,6 +333,39 @@ export type CollectionStats = {
 	storageSize: number | null,
 	indexes: number | null,
 	indexSize: number | null,
+};
+
+/**  Documents read so far, then exactly one `finished` with the counts. */
+export type CompareEvent = { kind: "progress"; value: CompareProgress } | { kind: "finished"; value: CompareSummary };
+
+export type CompareProgress = {
+	/**  Documents read so far, both sides together. */
+	compared: number | null,
+	total: number | null,
+};
+
+export type CompareRequest = {
+	left: Namespace,
+	right: Namespace,
+	/**  Limits the comparison to matching documents on both sides. */
+	filter: EJsonDocument | null,
+};
+
+export type CompareSummary = {
+	identical: number | null,
+	different: number | null,
+	onlyLeft: number | null,
+	onlyRight: number | null,
+	/**  The first ids of each kind, up to [`MAX_SAMPLES`]. */
+	differentIds: EJsonValue[],
+	onlyLeftIds: EJsonValue[],
+	onlyRightIds: EJsonValue[],
+};
+
+/**  One document from each side, `None` where it is missing. */
+export type ComparedPair = {
+	left: EJsonDocument | null,
+	right: EJsonDocument | null,
 };
 
 /**  A connection's servers stopped answering, or answer again. */
