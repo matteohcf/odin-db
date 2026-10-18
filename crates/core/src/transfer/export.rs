@@ -100,7 +100,8 @@ pub async fn export_documents(
     }
 }
 
-fn partial_path(path: &Path) -> PathBuf {
+/// Where a file is written until it is complete, then renamed into place.
+pub(crate) fn partial_path(path: &Path) -> PathBuf {
     let mut name = path
         .file_name()
         .map(std::ffi::OsStr::to_os_string)

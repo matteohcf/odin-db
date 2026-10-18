@@ -17,6 +17,7 @@ pub use database::{
     DatabaseExportRequest, DatabaseProgress, DatabaseTransferSummary, database_files,
     export_database, import_database,
 };
+pub(crate) use export::partial_path;
 pub use export::{ExportFormat, ExportRequest, ExportSource, JsonMode, export_documents};
 pub use import::{
     CsvColumn, FilePreview, ImportFormat, ImportMode, ImportOptions, ImportSummary, RecordError,

@@ -1,7 +1,7 @@
 //! Files stored in `GridFS` buckets: a `<bucket>.files` collection describes them and
 //! `<bucket>.chunks` holds their bytes.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use bson::Bson;
 use mongodb::options::GridFsBucketOptions;
@@ -12,6 +12,7 @@ use tokio_util::compat::{FuturesAsyncReadCompatExt, FuturesAsyncWriteCompatExt};
 use crate::connection::ConnectionHandle;
 use crate::ejson::EJsonValue;
 use crate::error::CoreError;
+use crate::transfer::partial_path;
 
 fn bucket(handle: &ConnectionHandle, database: &str, name: &str) -> mongodb::gridfs::GridFsBucket {
     handle.client.database(database).gridfs_bucket(
@@ -116,15 +117,6 @@ pub async fn upload(
 #[allow(clippy::needless_pass_by_value)] // Shaped for `map_err`.
 fn io(error: std::io::Error) -> CoreError {
     CoreError::Internal(format!("file error: {error}"))
-}
-
-fn partial_path(path: &Path) -> PathBuf {
-    let mut name = path
-        .file_name()
-        .map(std::ffi::OsStr::to_os_string)
-        .unwrap_or_default();
-    name.push(".partial");
-    path.with_file_name(name)
 }
 
 #[cfg(test)]
