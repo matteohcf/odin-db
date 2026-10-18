@@ -34,6 +34,8 @@ export const commands = {
 	compareCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: CompareRequest, channel: Channel<StreamEvent<CompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_collections", { leftConnectionId, rightConnectionId, request, channel })),
 	/**  Both versions of one compared document. */
 	comparedPair: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, left: Namespace, right: Namespace, id: EJsonValue) => typedError<ComparedPair, IpcError>(__TAURI_INVOKE("compared_pair", { leftConnectionId, rightConnectionId, left, right, id })),
+	/**  Changes the right collection to match the left; read-only targets are refused. */
+	syncCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: SyncRequest, channel: Channel<StreamEvent<SyncEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("sync_collections", { leftConnectionId, rightConnectionId, request, channel })),
 	/**  Asks the release server for a newer, signed version. `None` when up to date. */
 	checkForUpdate: () => typedError<{
 	version: string,
@@ -945,6 +947,27 @@ export type SshSettings = {
 
 /**  Every long operation emits data events followed by exactly one terminal event. */
 export type StreamEvent<T> = { event: "data"; data: T } | { event: "completed" } | { event: "cancelled" } | { event: "failed"; data: IpcError };
+
+/**  Documents read so far, then exactly one `finished` with what changed. */
+export type SyncEvent = { kind: "progress"; value: CompareProgress } | { kind: "finished"; value: SyncSummary };
+
+/**  Options of a sync: what to change on the right so it matches the left. */
+export type SyncRequest = {
+	compare: CompareRequest,
+	/**  Inserts documents only the left has. */
+	insertMissing: boolean,
+	/**  Replaces right documents that differ with the left version. */
+	replaceDifferent: boolean,
+	/**  Deletes documents only the right has. Destructive: confirmed in the UI. */
+	deleteExtra: boolean,
+};
+
+export type SyncSummary = {
+	identical: number | null,
+	inserted: number | null,
+	replaced: number | null,
+	deleted: number | null,
+};
 
 export type TerminalStreamOptions = {
 	totalBytes: number,

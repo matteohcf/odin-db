@@ -64,6 +64,127 @@ pub struct ComparedPair {
     pub right: Option<EJsonDocument>,
 }
 
+/// Options of a sync: what to change on the right so it matches the left.
+#[derive(Debug, Clone, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct SyncRequest {
+    pub compare: CompareRequest,
+    /// Inserts documents only the left has.
+    pub insert_missing: bool,
+    /// Replaces right documents that differ with the left version.
+    pub replace_different: bool,
+    /// Deletes documents only the right has. Destructive: confirmed in the UI.
+    pub delete_extra: bool,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct SyncSummary {
+    pub identical: f64,
+    pub inserted: f64,
+    pub replaced: f64,
+    pub deleted: f64,
+}
+
+/// What one step of the scan found.
+enum Batch {
+    /// A batch of left documents, classified against the right.
+    Left {
+        identical: usize,
+        different: Vec<Document>,
+        only_left: Vec<Document>,
+    },
+    /// `_id`s only the right has.
+    OnlyRight(Vec<Bson>),
+}
+
+/// Receives each batch of the scan: the compare counts, the sync writes.
+trait Visitor {
+    fn visit(&mut self, batch: Batch) -> impl Future<Output = Result<(), CoreError>> + Send;
+}
+
+impl Visitor for CompareSummary {
+    // Counting needs no I/O: the work happens here and the future is already done.
+    fn visit(&mut self, batch: Batch) -> impl Future<Output = Result<(), CoreError>> + Send {
+        let id_of = |document: &Document| document.get("_id").cloned();
+        match batch {
+            Batch::Left {
+                identical,
+                different,
+                only_left,
+            } => {
+                #[allow(clippy::cast_precision_loss)]
+                {
+                    self.identical += identical as f64;
+                }
+                for id in different.iter().filter_map(id_of) {
+                    record(&mut self.different, &mut self.different_ids, id);
+                }
+                for id in only_left.iter().filter_map(id_of) {
+                    record(&mut self.only_left, &mut self.only_left_ids, id);
+                }
+            }
+            Batch::OnlyRight(ids) => {
+                for id in ids {
+                    record(&mut self.only_right, &mut self.only_right_ids, id);
+                }
+            }
+        }
+        std::future::ready(Ok(()))
+    }
+}
+
+struct Syncer {
+    target: mongodb::Collection<Document>,
+    insert_missing: bool,
+    replace_different: bool,
+    delete_extra: bool,
+    summary: SyncSummary,
+}
+
+impl Visitor for Syncer {
+    #[allow(clippy::cast_precision_loss)]
+    async fn visit(&mut self, batch: Batch) -> Result<(), CoreError> {
+        match batch {
+            Batch::Left {
+                identical,
+                different,
+                only_left,
+            } => {
+                self.summary.identical += identical as f64;
+                if self.insert_missing && !only_left.is_empty() {
+                    let inserted = self.target.insert_many(only_left).ordered(false).await?;
+                    self.summary.inserted += inserted.inserted_ids.len() as f64;
+                }
+                if self.replace_different {
+                    for document in different {
+                        let Some(id) = document.get("_id").cloned() else {
+                            continue;
+                        };
+                        let replaced = self
+                            .target
+                            .replace_one(doc! { "_id": id }, document)
+                            .await?;
+                        self.summary.replaced += replaced.modified_count as f64;
+                    }
+                }
+            }
+            Batch::OnlyRight(ids) => {
+                if self.delete_extra && !ids.is_empty() {
+                    let deleted = self
+                        .target
+                        .delete_many(doc! { "_id": { "$in": ids } })
+                        .await?;
+                    self.summary.deleted += deleted.deleted_count as f64;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 pub async fn compare(
     left: &ConnectionHandle,
     right: &ConnectionHandle,
@@ -71,6 +192,48 @@ pub async fn compare(
     progress: mpsc::Sender<CompareProgress>,
     cancel: CancellationToken,
 ) -> Result<CompareSummary, CoreError> {
+    let mut summary = CompareSummary::default();
+    scan(left, right, request, &progress, &cancel, &mut summary).await?;
+    Ok(summary)
+}
+
+/// Makes the right collection match the left, as far as `request` allows.
+pub async fn sync(
+    left: &ConnectionHandle,
+    right: &ConnectionHandle,
+    request: SyncRequest,
+    progress: mpsc::Sender<CompareProgress>,
+    cancel: CancellationToken,
+) -> Result<SyncSummary, CoreError> {
+    right.ensure_writable()?;
+    let mut syncer = Syncer {
+        target: request.compare.right.collection(right)?,
+        insert_missing: request.insert_missing,
+        replace_different: request.replace_different,
+        delete_extra: request.delete_extra,
+        summary: SyncSummary::default(),
+    };
+    scan(
+        left,
+        right,
+        request.compare,
+        &progress,
+        &cancel,
+        &mut syncer,
+    )
+    .await?;
+    Ok(syncer.summary)
+}
+
+/// Reads both sides in the two bounded passes described above, handing each batch to `visit`.
+async fn scan(
+    left: &ConnectionHandle,
+    right: &ConnectionHandle,
+    request: CompareRequest,
+    progress: &mpsc::Sender<CompareProgress>,
+    cancel: &CancellationToken,
+    visitor: &mut impl Visitor,
+) -> Result<(), CoreError> {
     let filter = match request.filter {
         Some(filter) => Document::try_from(filter)?,
         None => Document::new(),
@@ -81,14 +244,13 @@ pub async fn compare(
         + right_collection.count_documents(filter.clone()).await?;
     #[allow(clippy::cast_precision_loss)]
     let total = total as f64;
-    let mut summary = CompareSummary::default();
     let mut compared = 0.0;
     let mut report = |count: usize| {
         #[allow(clippy::cast_precision_loss)]
         {
             compared += count as f64;
         }
-        // Lossy on purpose: a slow UI must not slow the comparison.
+        // Lossy on purpose: a slow UI must not slow the scan.
         let _ = progress.try_send(CompareProgress { compared, total });
     };
 
@@ -99,7 +261,7 @@ pub async fn compare(
         .await?;
     let mut batch = Vec::with_capacity(BATCH);
     loop {
-        let next = next_document(&mut cursor, &cancel).await?;
+        let next = next_document(&mut cursor, cancel).await?;
         let done = next.is_none();
         if let Some(document) = next {
             batch.push(document);
@@ -114,16 +276,7 @@ pub async fn compare(
             .filter_map(|document| Some((id_key(document.get("_id")?), document)))
             .collect();
             let count = batch.len();
-            for document in batch.drain(..) {
-                let Some(id) = document.get("_id").cloned() else {
-                    continue;
-                };
-                match found.get(&id_key(&id)) {
-                    None => record(&mut summary.only_left, &mut summary.only_left_ids, id),
-                    Some(other) if same_document(&document, other) => summary.identical += 1.0,
-                    Some(_) => record(&mut summary.different, &mut summary.different_ids, id),
-                }
-            }
+            visitor.visit(classify(batch.drain(..), &found)).await?;
             report(count);
         }
         if done {
@@ -139,7 +292,7 @@ pub async fn compare(
         .await?;
     let mut ids = Vec::with_capacity(BATCH);
     loop {
-        let next = next_document(&mut cursor, &cancel).await?;
+        let next = next_document(&mut cursor, cancel).await?;
         let done = next.is_none();
         if let Some(id) = next.and_then(|document| document.get("_id").cloned()) {
             ids.push(id);
@@ -154,11 +307,11 @@ pub async fn compare(
             .filter_map(|document| document.get("_id").map(id_key))
             .collect();
             let count = ids.len();
-            for id in ids.drain(..) {
-                if !present.contains(&id_key(&id)) {
-                    record(&mut summary.only_right, &mut summary.only_right_ids, id);
-                }
-            }
+            let extra: Vec<Bson> = ids
+                .drain(..)
+                .filter(|id| !present.contains(&id_key(id)))
+                .collect();
+            visitor.visit(Batch::OnlyRight(extra)).await?;
             report(count);
         }
         if done {
@@ -169,7 +322,7 @@ pub async fn compare(
         compared: total,
         total,
     });
-    Ok(summary)
+    Ok(())
 }
 
 /// Both sides of one compared id, for the field-by-field view.
@@ -193,6 +346,26 @@ pub async fn pair(
         left: left_document.map(Into::into),
         right: right_document.map(Into::into),
     })
+}
+
+/// Sorts left documents by what the right has under the same `_id`.
+fn classify(documents: impl Iterator<Item = Document>, found: &HashMap<String, Document>) -> Batch {
+    let (mut identical, mut different, mut only_left) = (0, Vec::new(), Vec::new());
+    for document in documents {
+        let Some(id) = document.get("_id") else {
+            continue;
+        };
+        match found.get(&id_key(id)) {
+            None => only_left.push(document),
+            Some(other) if same_document(&document, other) => identical += 1,
+            Some(_) => different.push(document),
+        }
+    }
+    Batch::Left {
+        identical,
+        different,
+        only_left,
+    }
 }
 
 async fn next_document(

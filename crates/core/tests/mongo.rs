@@ -2552,13 +2552,9 @@ async fn estimates_every_collection_count_of_a_database() {
     );
 }
 
-#[tokio::test]
-#[ignore = "requires Docker"]
-async fn compares_two_collections_by_id() {
-    use odin_core::compare::{self, CompareRequest};
-
-    let fx = Fixture::start().await;
-    let handle = fx.connect(false).await;
+/// `left` holds 0..2500; `right` lacks 0..10, changes 10..20, reorders fields on the rest
+/// and has three documents of its own.
+async fn seed_compare_pair(handle: &ConnectionHandle) {
     let db = handle.client.database("odin_test");
     let left: Vec<Document> = (0..2500)
         .map(|i| doc! { "_id": i, "name": format!("n{i}"), "tags": ["a", "b"] })
@@ -2583,7 +2579,16 @@ async fn compares_two_collections_by_id() {
         .insert_many(&right)
         .await
         .expect("seed right");
+}
 
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn compares_two_collections_by_id() {
+    use odin_core::compare::{self, CompareRequest};
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    seed_compare_pair(&handle).await;
     let (tx, _rx) = tokio::sync::mpsc::channel(64);
     let summary = compare::compare(
         &handle,
@@ -2634,4 +2639,82 @@ async fn compares_two_collections_by_id() {
     .await
     .expect("pair");
     assert!(pair.left.is_some() && pair.right.is_none());
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn syncs_one_collection_into_another() {
+    use odin_core::compare::{self, CompareRequest};
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    seed_compare_pair(&handle).await;
+    // A read-only target is refused before anything is written.
+    let read_only = fx.connect(true).await;
+    let request = |delete_extra| compare::SyncRequest {
+        compare: CompareRequest {
+            left: namespace("left"),
+            right: namespace("right"),
+            filter: None,
+        },
+        insert_missing: true,
+        replace_different: true,
+        delete_extra,
+    };
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let refused = compare::sync(
+        &handle,
+        &read_only,
+        request(true),
+        tx,
+        CancellationToken::new(),
+    )
+    .await;
+    assert!(matches!(refused, Err(CoreError::ReadOnly)));
+
+    // Without deletes, extras stay; with them, the right ends up identical to the left.
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let synced = compare::sync(
+        &handle,
+        &handle,
+        request(false),
+        tx,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("syncs");
+    assert_eq!(
+        (synced.inserted, synced.replaced, synced.deleted),
+        (10.0, 10.0, 0.0)
+    );
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let synced = compare::sync(
+        &handle,
+        &handle,
+        request(true),
+        tx,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("syncs with deletes");
+    assert_eq!((synced.identical, synced.deleted), (2500.0, 3.0));
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let after = compare::compare(
+        &handle,
+        &handle,
+        request(false).compare,
+        tx,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("compares again");
+    assert_eq!(
+        (
+            after.identical,
+            after.different,
+            after.only_left,
+            after.only_right
+        ),
+        (2500.0, 0.0, 0.0, 0.0)
+    );
 }
