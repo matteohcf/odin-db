@@ -10,7 +10,7 @@ use mongodb::Client;
 use mongodb::ServerType;
 use mongodb::event::EventHandler;
 use mongodb::event::sdam::SdamEvent;
-use mongodb::options::ClientOptions;
+use mongodb::options::{ClientOptions, ConnectionString};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{RwLock, broadcast};
 use uuid::Uuid;
@@ -271,6 +271,10 @@ async fn open_client(
     password: Option<Secret>,
     health: Option<EventHandler<SdamEvent>>,
 ) -> Result<Client, CoreError> {
+    let mut connection_string = ConnectionString::parse(connection_string)?;
+    // Common in strings copied from other drivers; the Rust driver rejects it instead of ignoring it.
+    #[allow(deprecated)]
+    connection_string.socket_timeout.take();
     let mut options = ClientOptions::parse(connection_string).await?;
     options.app_name = Some("odin-db".into());
     options.sdam_event_handler = health;
@@ -294,4 +298,20 @@ async fn server_version(client: &Client) -> Result<String, CoreError> {
         .run_command(doc! { "buildInfo": 1 })
         .await?;
     Ok(info.get_str("version").unwrap_or("unknown").to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn ignores_socket_timeout_from_other_drivers() {
+        let uri = concat!(
+            "mongodb://user@localhost/db?readPreference=primary&authSource=admin",
+            "&authMechanism=SCRAM-SHA-1&connectTimeoutMS=5000&socketTimeoutMS=5000",
+            "&maxPoolSize=10&minPoolSize=1&retryWrites=true"
+        );
+        let client = open_client(uri, None, None).await;
+        assert!(client.is_ok());
+    }
 }
