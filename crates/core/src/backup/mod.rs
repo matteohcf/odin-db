@@ -498,12 +498,32 @@ impl PasswordFile {
         let mut file = options.open(&path).map_err(|error| {
             CoreError::Internal(format!("cannot create the credentials file: {error}"))
         })?;
-        let escaped = password.expose().replace('\\', "\\\\").replace('"', "\\\"");
-        writeln!(file, "password: \"{escaped}\"").map_err(|error| {
+        writeln!(file, "password: {}", yaml_string(password.expose())).map_err(|error| {
             CoreError::Internal(format!("cannot write the credentials file: {error}"))
         })?;
         Ok(Self { path })
     }
+}
+
+/// A YAML double-quoted scalar holding exactly `text`: control characters (a newline in a
+/// password would otherwise be folded into a space) are written as escapes.
+fn yaml_string(text: &str) -> String {
+    let mut out = String::with_capacity(text.len() + 2);
+    out.push('"');
+    for c in text.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if c.is_control() => {
+                // Writing to a String cannot fail.
+                let _ =
+                    std::fmt::Write::write_fmt(&mut out, format_args!("\\u{:04x}", u32::from(c)));
+            }
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 impl Drop for PasswordFile {
@@ -514,6 +534,13 @@ impl Drop for PasswordFile {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn quotes_passwords_for_yaml_exactly() {
+        assert_eq!(super::yaml_string(r#"pa"ss\word"#), r#""pa\"ss\\word""#);
+        assert_eq!(super::yaml_string("a\nb\tc"), r#""a\u000ab\u0009c""#);
+        assert_eq!(super::yaml_string("àé漢"), "\"àé漢\"");
+    }
+
     #[test]
     fn reads_namespaces_from_a_dry_run() {
         let output = "2026-10-17T18:40:39.207+0200\tarchive prelude `crm.leads`\n\
