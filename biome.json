@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/src-tauri/gen", "!**/*.gen.ts"]
+    "includes": ["**", "!**/src-tauri/gen", "!**/*.gen.ts", "!.release-please-manifest.json"]
   },
   "formatter": {
     "indentStyle": "space",
