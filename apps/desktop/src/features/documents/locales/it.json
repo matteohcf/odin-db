@@ -191,6 +191,8 @@
     "downloaded": "Salvato in {{path}}",
     "uploaded": "File caricato",
     "downloading": "Salvataggio di {{name}}…",
-    "uploading": "Caricamento di un file…"
+    "uploading": "Caricamento di un file…",
+    "cancel": "Annulla",
+    "cancelled": "Trasferimento annullato"
   }
 }

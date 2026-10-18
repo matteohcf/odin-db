@@ -79,10 +79,16 @@ export const commands = {
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
 	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
 	unsetDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string) => typedError<null, IpcError>(__TAURI_INVOKE("unset_document_field", { connectionId, namespace, id, field })),
-	/**  Asks where to save a `GridFS` file and downloads it there. `None` if the user cancels. */
-	downloadGridfsFile: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, filename: string) => typedError<string | null, IpcError>(__TAURI_INVOKE("download_gridfs_file", { connectionId, namespace, id, filename })),
-	/**  Asks for a file and stores it in the bucket. `None` if the user cancels. */
-	uploadGridfsFile: (connectionId: ConnectionId, namespace: Namespace) => typedError<JsonValue | null, IpcError>(__TAURI_INVOKE("upload_gridfs_file", { connectionId, namespace })),
+	/**
+	 *  Asks where to save a `GridFS` file, then downloads it as a cancellable operation
+	 *  that finishes with the saved path. `None` if the user cancels the dialog.
+	 */
+	downloadGridfsFile: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, filename: string, channel: Channel<StreamEvent<FileEvent<string>>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("download_gridfs_file", { connectionId, namespace, id, filename, channel })),
+	/**
+	 *  Asks for a file, then stores it in the bucket as a cancellable operation that
+	 *  finishes with the new file's id. `None` if the user cancels the dialog.
+	 */
+	uploadGridfsFile: (connectionId: ConnectionId, namespace: Namespace, channel: Channel<StreamEvent<FileEvent<EJsonValue>>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("upload_gridfs_file", { connectionId, namespace, channel })),
 	aggregateDocuments: (connectionId: ConnectionId, namespace: Namespace, request: AggregateRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("aggregate_documents", { connectionId, namespace, request })),
 	/**  First results of a pipeline for the builder's stage previews. Never runs `$out`/`$merge`. */
 	previewAggregation: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], limit: number) => typedError<EJsonDocument[], IpcError>(__TAURI_INVOKE("preview_aggregation", { connectionId, namespace, pipeline, limit })),
@@ -498,7 +504,16 @@ export type FieldSummary = {
 	values: string[],
 };
 
+/**  Bytes moved so far, then exactly one `finished` with the result. */
+export type FileEvent<S> = { kind: "progress"; value: FileProgress } | { kind: "finished"; value: S };
+
 export type FilePreview = { kind: "json"; documents: EJsonDocument[] } | { kind: "csv"; headers: string[]; rows: string[][]; suggested: CsvType[] };
+
+/**  How far a file transfer has come, in bytes. */
+export type FileProgress = {
+	done: number | null,
+	total: number | null,
+};
 
 export type FindRequest = {
 	filter: EJsonDocument,

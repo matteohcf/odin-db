@@ -857,7 +857,16 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     }
     return null;
   },
-  download_gridfs_file: (args) => `/Users/ada/Downloads/${String(args.filename)}`,
+  download_gridfs_file: (args) => {
+    const total = 1_200_000;
+    return simulateTransfer(
+      args.channel,
+      total,
+      `/Users/ada/Downloads/${String(args.filename)}`,
+      1,
+      (done) => ({ done, total }),
+    );
+  },
   upload_gridfs_file: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
@@ -870,7 +879,8 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       chunkSize: { $numberInt: "261120" },
       uploadDate: { $date: { $numberLong: String(Date.now()) } },
     });
-    return _id;
+    const total = 48_213;
+    return simulateTransfer(args.channel, total, _id, 1, (done) => ({ done, total }));
   },
   open_link: (args) => {
     const url = String(args.url).trim();

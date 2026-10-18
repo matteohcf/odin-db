@@ -191,6 +191,8 @@
     "downloaded": "Saved to {{path}}",
     "uploaded": "File uploaded",
     "downloading": "Saving {{name}}…",
-    "uploading": "Uploading a file…"
+    "uploading": "Uploading a file…",
+    "cancel": "Cancel",
+    "cancelled": "Transfer cancelled"
   }
 }
