@@ -9,6 +9,7 @@ import {
   Database,
   Eye,
   FileDown,
+  Files,
   FileUp,
   HardDriveDownload,
   HardDriveUpload,
@@ -227,7 +228,8 @@ export function CollectionNode({
       tab.collection === collection.name
     );
   });
-  const Icon = kindIcon[collection.kind];
+  // GridFS buckets keep their files' descriptions in `<bucket>.files`.
+  const Icon = collection.name.endsWith(".files") ? Files : kindIcon[collection.kind];
   const open = (newTab: boolean) =>
     openCollection(
       {
