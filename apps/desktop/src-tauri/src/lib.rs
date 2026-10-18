@@ -26,6 +26,12 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::app::confirm_quit,
             commands::app::notify_if_unfocused,
             commands::app::open_link,
+            commands::ai::ai_overview,
+            commands::ai::download_ai_model,
+            commands::ai::delete_ai_model,
+            commands::ai::unload_ai_model,
+            commands::ai::list_ollama_models,
+            commands::ai::generate_query,
             commands::updates::check_for_update,
             commands::updates::install_update,
             commands::profiles::list_profiles,
@@ -163,6 +169,9 @@ pub fn run() {
                 shells: std::sync::Mutex::default(),
                 tools_dir: data_dir.join("tools"),
             });
+            app.manage(odin_ai::engine::Assistant::new(
+                odin_ai::store::ModelStore::new(data_dir.join("models")),
+            ));
             events::forward_health_changes(app.handle().clone(), &state);
             backups::spawn_scheduler(
                 app.handle().clone(),

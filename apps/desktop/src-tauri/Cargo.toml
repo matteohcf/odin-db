@@ -26,6 +26,7 @@ bindings = []
 tauri-build.workspace = true
 
 [dependencies]
+odin-ai = { workspace = true, features = ["specta"] }
 odin-core = { workspace = true, features = ["specta"] }
 serde.workspace = true
 # tauri::generate_context! embeds plugin configuration (the updater) as JSON values.

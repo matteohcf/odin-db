@@ -1,6 +1,7 @@
 // Tauri command signatures must take State and Channel by value.
 #![allow(clippy::needless_pass_by_value)]
 
+pub mod ai;
 pub mod app;
 pub mod backup;
 pub mod backups;

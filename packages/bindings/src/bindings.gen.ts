@@ -18,6 +18,18 @@ export const commands = {
 	notifyIfUnfocused: (title: string, body: string) => __TAURI_INVOKE<void>("notify_if_unfocused", { title, body }),
 	/**  Opens a link found in a document in the default browser or mail app. */
 	openLink: (url: string) => typedError<null, IpcError>(__TAURI_INVOKE("open_link", { url })),
+	aiOverview: () => typedError<AiOverview, IpcError>(__TAURI_INVOKE("ai_overview")),
+	/**
+	 *  Downloads a catalog model as a cancellable operation; cancelling pauses it, and
+	 *  downloading again resumes.
+	 */
+	downloadAiModel: (model: string, channel: Channel<StreamEvent<ModelDownloadProgress>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("download_ai_model", { model, channel })),
+	deleteAiModel: (model: string) => typedError<null, IpcError>(__TAURI_INVOKE("delete_ai_model", { model })),
+	/**  Frees the memory of the loaded model, e.g. when the feature is turned off. */
+	unloadAiModel: () => typedError<null, IpcError>(__TAURI_INVOKE("unload_ai_model")),
+	listOllamaModels: (url: string) => typedError<OllamaModel[], IpcError>(__TAURI_INVOKE("list_ollama_models", { url })),
+	/**  Turns a description into a find query; one `data` event with the query, then completion. */
+	generateQuery: (engine: EngineChoice, request: QueryRequest, channel: Channel<StreamEvent<GeneratedQuery>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("generate_query", { engine, request, channel })),
 	/**  Asks the release server for a newer, signed version. `None` when up to date. */
 	checkForUpdate: () => typedError<{
 	version: string,
@@ -215,6 +227,14 @@ export const events = {
 export type AggregateRequest = {
 	pipeline: EJsonDocument[],
 	batchSize: number,
+};
+
+/**  Everything the AI settings show: the catalog with what is on disk, and the machine. */
+export type AiOverview = {
+	models: ModelEntry[],
+	hardware: Hardware,
+	recommended: string,
+	usedBytes: number | null,
 };
 
 export type AppInfo = {
@@ -470,6 +490,11 @@ export type EJsonDocument = JsonValue;
 /**  Any BSON value encoded as canonical Extended JSON v2, e.g. an `_id`. */
 export type EJsonValue = JsonValue;
 
+/**  The user's choice in settings, sent with every request. */
+export type EngineChoice = 
+/**  A catalog model by id; the webview never names a file. */
+{ kind: "local"; model: string } | { kind: "ollama"; url: string; model: string };
+
 /**  Stable error classification exposed to the UI, which switches on it exhaustively. */
 export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | 
 /**  A download failed verification: damaged in transit, or altered. */
@@ -498,6 +523,12 @@ export type ExportRequest = {
 };
 
 export type ExportSource = { kind: "find"; request: FindRequest } | { kind: "aggregate"; pipeline: EJsonDocument[] };
+
+/**  Field paths and BSON type names only: no value of any document ever reaches a model. */
+export type FieldHint = {
+	path: string,
+	types: string[],
+};
 
 export type FieldSummary = {
 	/**
@@ -537,6 +568,20 @@ export type FindRequest = {
 };
 
 export type Frequency = "hourly" | "daily" | "weekly";
+
+/**  A find query, checked: it parses as BSON and uses no server-side JavaScript. */
+export type GeneratedQuery = {
+	filter: EJsonDocument,
+	sort: EJsonDocument | null,
+	projection: EJsonDocument | null,
+	limit: number | null,
+};
+
+export type Hardware = {
+	memoryGib: number,
+	/**  Apple silicon runs models on its GPU through Metal. */
+	gpu: boolean,
+};
 
 export type ImportFile = {
 	/**  Opaque handle for `import_documents`; the path stays in the backend. */
@@ -628,6 +673,32 @@ export type JsonMode = "canonical" | "relaxed";
  */
 export type JsonValue = null | boolean | number | null | string | JsonValue[] | { [key in string]: JsonValue };
 
+export type ModelDownloadProgress = {
+	received: number | null,
+	total: number | null,
+};
+
+export type ModelEntry = {
+	spec: ModelSpec,
+	state: ModelState,
+};
+
+export type ModelSpec = {
+	id: string,
+	name: string,
+	publisher: string,
+	parameters: string,
+	license: string,
+	tier: Tier,
+	size: number | null,
+	/**  Memory below which the model is not recommended, in GiB. */
+	minMemoryGib: number,
+};
+
+export type ModelState = { state: "absent" } | 
+/**  A paused or interrupted download, resumable from `received` bytes. */
+{ state: "partial"; received: number | null } | { state: "installed" };
+
 export type MongoshStatus = {
 	available: boolean,
 	version: string | null,
@@ -638,6 +709,13 @@ export type MongoshStatus = {
 export type Namespace = {
 	database: string,
 	collection: string,
+};
+
+export type OllamaModel = {
+	name: string,
+	size: number | null,
+	/**  "1.5B", as Ollama reports it. */
+	parameterSize: string | null,
 };
 
 export type Opcounters = {
@@ -702,6 +780,13 @@ export type QueryPlan = {
 	milliseconds: number | null,
 	/**  The full `explain` output, for details the summary leaves out. */
 	raw: EJsonDocument,
+};
+
+export type QueryRequest = {
+	/**  What the user typed, e.g. "active users from Italy, newest first". */
+	prompt: string,
+	collection: string,
+	fields: FieldHint[],
 };
 
 /**  The user asked to quit while operations run; the UI asks for confirmation. */
@@ -819,6 +904,12 @@ export type TerminalStreamOptions = {
 	totalBytes: number,
 	chunkBytes: number,
 };
+
+export type Tier = 
+/**  Runs anywhere, answers simple requests. */
+"fast" | "balanced" | 
+/**  Better with compound requests, needs more memory. */
+"accurate";
 
 /**
  *  When a schedule runs: `minute` is the minute of the hour for hourly

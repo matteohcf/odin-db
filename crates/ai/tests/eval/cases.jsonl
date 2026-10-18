@@ -1,0 +1,105 @@
+{"c":"users","p":"active users","e":{"filter":{"status":"active"}}}
+{"c":"users","p":"users older than 30","e":{"filter":{"age":{"$gt":30}}}}
+{"c":"users","p":"users aged 18 to 25 inclusive","e":{"filter":{"age":{"$gte":18,"$lte":25}}}}
+{"c":"users","p":"users from Italy","e":{"filter":{"country":"Italy"}}}
+{"c":"users","p":"users in Milan","e":{"filter":{"address.city":"Milan"}}}
+{"c":"users","p":"verified users on the pro plan","e":{"filter":{"verified":true,"plan":"pro"}}}
+{"c":"users","p":"users who are not verified","e":{"filter":{"verified":false}}}
+{"c":"users","p":"users whose email ends with @gmail.com","e":{"filter":{"email":{"$regex":"@gmail\\.com$","$options":"i"}}},"a":[{"filter":{"email":{"$regex":"@gmail.com$","$options":"i"}}}]}
+{"c":"users","p":"users whose name contains anna","e":{"filter":{"name":{"$regex":"anna","$options":"i"}}}}
+{"c":"users","p":"users whose name starts with Mar","e":{"filter":{"name":{"$regex":"^Mar","$options":"i"}}}}
+{"c":"users","p":"users created after January 1 2025","e":{"filter":{"createdAt":{"$gt":{"$date":"2025-01-01T00:00:00Z"}}}}}
+{"c":"users","p":"users created in 2024","e":{"filter":{"createdAt":{"$gte":{"$date":"2024-01-01T00:00:00Z"},"$lt":{"$date":"2025-01-01T00:00:00Z"}}}},"a":[{"filter":{"createdAt":{"$gte":{"$date":"2024-01-01T00:00:00Z"},"$lte":{"$date":"2024-12-31T23:59:59Z"}}}}]}
+{"c":"users","p":"users who never logged in","e":{"filter":{"lastLoginAt":null}},"a":[{"filter":{"lastLoginAt":{"$exists":false}}}]}
+{"c":"users","p":"users without a last login field","e":{"filter":{"lastLoginAt":{"$exists":false}}},"a":[{"filter":{"lastLoginAt":null}}]}
+{"c":"users","p":"users on the free or basic plan","e":{"filter":{"plan":{"$in":["free","basic"]}}}}
+{"c":"users","p":"users not from Italy or Spain","e":{"filter":{"country":{"$nin":["Italy","Spain"]}}}}
+{"c":"users","p":"users tagged vip","e":{"filter":{"tags":"vip"}},"a":[{"filter":{"tags":{"$in":["vip"]}}}]}
+{"c":"users","p":"users tagged both vip and beta","e":{"filter":{"tags":{"$all":["vip","beta"]}}}}
+{"c":"users","p":"users with no tags","e":{"filter":{"tags":{"$size":0}}}}
+{"c":"users","p":"10 newest users","e":{"filter":{},"sort":{"createdAt":-1},"limit":10}}
+{"c":"users","p":"oldest user by age","e":{"filter":{},"sort":{"age":-1},"limit":1}}
+{"c":"users","p":"youngest 5 users","e":{"filter":{},"sort":{"age":1},"limit":5}}
+{"c":"users","p":"users sorted by name","e":{"filter":{},"sort":{"name":1}}}
+{"c":"users","p":"top 3 users by score","e":{"filter":{},"sort":{"score":-1},"limit":3}}
+{"c":"users","p":"names and emails of active users","e":{"filter":{"status":"active"},"projection":{"name":1,"email":1}}}
+{"c":"users","p":"only the email of users from France","e":{"filter":{"country":"France"},"projection":{"email":1}}}
+{"c":"users","p":"users with a score above 4.5","e":{"filter":{"score":{"$gt":4.5}}}}
+{"c":"users","p":"active users or users on the pro plan","e":{"filter":{"$or":[{"status":"active"},{"plan":"pro"}]}}}
+{"c":"users","p":"users with zip code 20121","e":{"filter":{"address.zip":"20121"}}}
+{"c":"users","p":"users whose status is not banned","e":{"filter":{"status":{"$ne":"banned"}}}}
+{"c":"users","p":"the user with id 65f1a2b3c4d5e6f708192a3b","e":{"filter":{"_id":{"$oid":"65f1a2b3c4d5e6f708192a3b"}}}}
+{"c":"users","p":"users younger than 21 from Germany, newest first","e":{"filter":{"age":{"$lt":21},"country":"Germany"},"sort":{"createdAt":-1}}}
+{"c":"users","p":"20 most recently active users","e":{"filter":{},"sort":{"lastLoginAt":-1},"limit":20}}
+{"c":"orders","p":"paid orders","e":{"filter":{"paid":true}}}
+{"c":"orders","p":"orders over 100","e":{"filter":{"total":{"$gt":100}}}}
+{"c":"orders","p":"orders between 50 and 200","e":{"filter":{"total":{"$gte":50,"$lte":200}}}}
+{"c":"orders","p":"pending orders","e":{"filter":{"status":"pending"}}}
+{"c":"orders","p":"orders in USD","e":{"filter":{"currency":"USD"}}}
+{"c":"orders","p":"orders shipped to Italy","e":{"filter":{"shipping.country":"Italy"}}}
+{"c":"orders","p":"orders with express shipping","e":{"filter":{"shipping.method":"express"}}}
+{"c":"orders","p":"orders that used a coupon","e":{"filter":{"coupon":{"$ne":null}}},"a":[{"filter":{"coupon":{"$exists":true,"$ne":null}}}]}
+{"c":"orders","p":"orders containing sku ABC-123","e":{"filter":{"items.sku":"ABC-123"}}}
+{"c":"orders","p":"orders with an item quantity above 10","e":{"filter":{"items.qty":{"$gt":10}}}}
+{"c":"orders","p":"orders of user 65f1a2b3c4d5e6f708192a3b","e":{"filter":{"userId":{"$oid":"65f1a2b3c4d5e6f708192a3b"}}}}
+{"c":"orders","p":"5 largest orders","e":{"filter":{},"sort":{"total":-1},"limit":5}}
+{"c":"orders","p":"latest 10 orders","e":{"filter":{},"sort":{"createdAt":-1},"limit":10}}
+{"c":"orders","p":"unpaid orders older than 2025-06-01","e":{"filter":{"paid":false,"createdAt":{"$lt":{"$date":"2025-06-01T00:00:00Z"}}}}}
+{"c":"orders","p":"cancelled or refunded orders","e":{"filter":{"status":{"$in":["cancelled","refunded"]}}}}
+{"c":"orders","p":"orders not delivered","e":{"filter":{"status":{"$ne":"delivered"}}}}
+{"c":"orders","p":"orders with exactly 3 items","e":{"filter":{"items":{"$size":3}}}}
+{"c":"orders","p":"orders placed in March 2025","e":{"filter":{"createdAt":{"$gte":{"$date":"2025-03-01T00:00:00Z"},"$lt":{"$date":"2025-04-01T00:00:00Z"}}}},"a":[{"filter":{"createdAt":{"$gte":{"$date":"2025-03-01T00:00:00Z"},"$lte":{"$date":"2025-03-31T23:59:59Z"}}}}]}
+{"c":"orders","p":"totals and status of paid orders","e":{"filter":{"paid":true},"projection":{"total":1,"status":1}}}
+{"c":"orders","p":"paid EUR orders over 500, biggest first","e":{"filter":{"paid":true,"currency":"EUR","total":{"$gt":500}},"sort":{"total":-1}}}
+{"c":"orders","p":"orders without a coupon field","e":{"filter":{"coupon":{"$exists":false}}}}
+{"c":"orders","p":"orders shipped to Spain or Portugal","e":{"filter":{"shipping.country":{"$in":["Spain","Portugal"]}}}}
+{"c":"orders","p":"the oldest order","e":{"filter":{},"sort":{"createdAt":1},"limit":1}}
+{"c":"orders","p":"orders with an item priced over 1000","e":{"filter":{"items.price":{"$gt":1000}}}}
+{"c":"products","p":"products out of stock","e":{"filter":{"stock":0}},"a":[{"filter":{"stock":{"$lte":0}}}]}
+{"c":"products","p":"products with fewer than 5 in stock","e":{"filter":{"stock":{"$lt":5}}}}
+{"c":"products","p":"active products in the shoes category","e":{"filter":{"active":true,"category":"shoes"}}}
+{"c":"products","p":"Nike products","e":{"filter":{"brand":"Nike"}}}
+{"c":"products","p":"products cheaper than 20","e":{"filter":{"price":{"$lt":20}}}}
+{"c":"products","p":"products rated at least 4","e":{"filter":{"rating":{"$gte":4}}}}
+{"c":"products","p":"products whose name contains wireless","e":{"filter":{"name":{"$regex":"wireless","$options":"i"}}}}
+{"c":"products","p":"products tagged sale","e":{"filter":{"tags":"sale"}}}
+{"c":"products","p":"10 cheapest products","e":{"filter":{},"sort":{"price":1},"limit":10}}
+{"c":"products","p":"most expensive product","e":{"filter":{},"sort":{"price":-1},"limit":1}}
+{"c":"products","p":"top 5 rated products","e":{"filter":{},"sort":{"rating":-1},"limit":5}}
+{"c":"products","p":"recently updated products","e":{"filter":{},"sort":{"updatedAt":-1}}}
+{"c":"products","p":"name and price of electronics","e":{"filter":{"category":"electronics"},"projection":{"name":1,"price":1}}}
+{"c":"products","p":"products heavier than 2","e":{"filter":{"dimensions.weight":{"$gt":2}}}}
+{"c":"products","p":"inactive products","e":{"filter":{"active":false}}}
+{"c":"products","p":"products from Apple or Samsung","e":{"filter":{"brand":{"$in":["Apple","Samsung"]}}}}
+{"c":"products","p":"products with sku SKU-0042","e":{"filter":{"sku":"SKU-0042"}}}
+{"c":"products","p":"products without a rating","e":{"filter":{"rating":{"$exists":false}}}}
+{"c":"products","p":"products priced between 10 and 50 sorted by price","e":{"filter":{"price":{"$gte":10,"$lte":50}},"sort":{"price":1}}}
+{"c":"products","p":"products not updated since 2024-01-01","e":{"filter":{"updatedAt":{"$lt":{"$date":"2024-01-01T00:00:00Z"}}}}}
+{"c":"logs","p":"errors","e":{"filter":{"level":"error"}}}
+{"c":"logs","p":"errors and warnings","e":{"filter":{"level":{"$in":["error","warn"]}}},"a":[{"filter":{"level":{"$in":["error","warning"]}}}]}
+{"c":"logs","p":"logs from the payments service","e":{"filter":{"service":"payments"}}}
+{"c":"logs","p":"requests slower than 1000 ms","e":{"filter":{"durationMs":{"$gt":1000}}}}
+{"c":"logs","p":"server errors (status 500 or more)","e":{"filter":{"statusCode":{"$gte":500}}},"a":[{"filter":{"statusCode":{"$gte":500,"$lt":600}}}]}
+{"c":"logs","p":"404 responses","e":{"filter":{"statusCode":404}}}
+{"c":"logs","p":"logs whose message contains timeout","e":{"filter":{"message":{"$regex":"timeout","$options":"i"}}}}
+{"c":"logs","p":"logs for paths starting with /api","e":{"filter":{"path":{"$regex":"^/api","$options":"i"}}}}
+{"c":"logs","p":"latest 50 logs","e":{"filter":{},"sort":{"timestamp":-1},"limit":50}}
+{"c":"logs","p":"slowest 10 requests","e":{"filter":{},"sort":{"durationMs":-1},"limit":10}}
+{"c":"logs","p":"logs since 2026-10-01","e":{"filter":{"timestamp":{"$gte":{"$date":"2026-10-01T00:00:00Z"}}}}}
+{"c":"logs","p":"anonymous requests without a user","e":{"filter":{"userId":null}},"a":[{"filter":{"userId":{"$exists":false}}}]}
+{"c":"logs","p":"errors from host web-1, newest first","e":{"filter":{"level":"error","host":"web-1"},"sort":{"timestamp":-1}}}
+{"c":"logs","p":"only message and timestamp of errors","e":{"filter":{"level":"error"},"projection":{"message":1,"timestamp":1}}}
+{"c":"movies","p":"movies from 1999","e":{"filter":{"year":1999}}}
+{"c":"movies","p":"movies released in the 90s","e":{"filter":{"year":{"$gte":1990,"$lte":1999}}},"a":[{"filter":{"year":{"$gte":1990,"$lt":2000}}}]}
+{"c":"movies","p":"comedies","e":{"filter":{"genres":"Comedy"}},"a":[{"filter":{"genres":"comedy"}}]}
+{"c":"movies","p":"movies longer than 3 hours","e":{"filter":{"runtime":{"$gt":180}}}}
+{"c":"movies","p":"movies directed by Christopher Nolan","e":{"filter":{"directors":"Christopher Nolan"}},"a":[{"filter":{"directors":{"$in":["Christopher Nolan"]}}}]}
+{"c":"movies","p":"movies with Tom Hanks","e":{"filter":{"cast":"Tom Hanks"}}}
+{"c":"movies","p":"movies rated above 8 on imdb","e":{"filter":{"imdb.rating":{"$gt":8}}}}
+{"c":"movies","p":"top 10 movies by imdb rating","e":{"filter":{},"sort":{"imdb.rating":-1},"limit":10}}
+{"c":"movies","p":"titles of movies that won more than 5 awards","e":{"filter":{"awards.wins":{"$gt":5}},"projection":{"title":1}}}
+{"c":"movies","p":"movies whose title contains star","e":{"filter":{"title":{"$regex":"star","$options":"i"}}}}
+{"c":"movies","p":"PG-13 movies","e":{"filter":{"rated":"PG-13"}}}
+{"c":"movies","p":"movies in Italian","e":{"filter":{"languages":"Italian"}}}
+{"c":"movies","p":"dramas or thrillers after 2010","e":{"filter":{"genres":{"$in":["Drama","Thriller"]},"year":{"$gt":2010}}}}
+{"c":"movies","p":"newest movies first","e":{"filter":{},"sort":{"year":-1}}}
