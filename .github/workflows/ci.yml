@@ -79,6 +79,9 @@ jobs:
           echo "$MONGOSH_SHA256  mongosh.tgz" | sha256sum --check
           mkdir -p "$RUNNER_TEMP/mongosh" && tar -xzf mongosh.tgz -C "$RUNNER_TEMP/mongosh" --strip-components=1
           echo "ODIN_MONGOSH=$RUNNER_TEMP/mongosh/bin/mongosh" >> "$GITHUB_ENV"
+      # Parallel tests pulling the same image at once break the pull on the runner.
+      - name: Pull MongoDB image
+        run: docker pull mongo:${{ matrix.mongo }}
       - name: Core tests against a real MongoDB (testcontainers)
         run: cargo test -p odin-core --test mongo -- --ignored
         env:
