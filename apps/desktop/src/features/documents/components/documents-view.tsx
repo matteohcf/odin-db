@@ -55,6 +55,8 @@ import {
   useReplaceDocument,
   useSetDocumentField,
 } from "../api/mutations";
+import { useGridFsActions } from "../hooks/use-gridfs-actions";
+import { useUndo } from "../hooks/use-undo";
 import { parseDocuments } from "../lib/clipboard-documents";
 import { suggestIndexKeys } from "../lib/index-suggestion";
 import { addFilterCondition, nextSort, simpleSort, sortText } from "../lib/query-edits";
@@ -261,58 +263,8 @@ export function DocumentsView({
     refresh(true);
   }
 
-  /** Puts deleted documents back exactly as they were, `_id` and types included. */
-  async function restore(rows: JsonObject[]) {
-    try {
-      for (const row of rows) {
-        await call(commands.insertDocument(connection.id, namespace, row));
-      }
-    } catch (error) {
-      toast.error(t("undo.failed", { message: errorMessage(error) }));
-      refresh(true);
-      return;
-    }
-    toast.success(t("undo.restored", { count: rows.length }));
-    refresh(true);
-  }
-
-  // `<bucket>.files` collections describe GridFS files: they can be downloaded and added.
-  const gridFsBucket = /^(.+)\.files$/.exec(namespace.collection)?.[1];
-
-  async function downloadFile(row: JsonObject) {
-    if (row._id === undefined) return;
-    const name = typeof row.filename === "string" ? row.filename : "file";
-    const progress = toast.loading(t("gridfs.downloading", { name }));
-    try {
-      const path = await call(commands.downloadGridfsFile(connection.id, namespace, row._id, name));
-      if (path) toast.success(t("gridfs.downloaded", { path }), { id: progress });
-      else toast.dismiss(progress);
-    } catch (error) {
-      toast.error(errorMessage(error), { id: progress });
-    }
-  }
-
-  async function uploadFile() {
-    const progress = toast.loading(t("gridfs.uploading"));
-    try {
-      const id = await call(commands.uploadGridfsFile(connection.id, namespace));
-      if (id === null) {
-        toast.dismiss(progress);
-        return;
-      }
-      toast.success(t("gridfs.uploaded"), { id: progress });
-      refresh(true);
-    } catch (error) {
-      toast.error(errorMessage(error), { id: progress });
-    }
-  }
-
-  function offerUndo(rows: JsonObject[], message: string) {
-    toast.success(message, {
-      duration: 10_000,
-      action: { label: t("undo.action"), onClick: () => void restore(rows) },
-    });
-  }
+  const gridFs = useGridFsActions(connection.id, namespace, () => refresh(true));
+  const { offerUndo, offerFieldUndo } = useUndo(connection.id, namespace, () => refresh(true));
 
   function deleteRow(row: JsonObject | undefined) {
     const id = row?._id;
@@ -347,29 +299,6 @@ export function DocumentsView({
     refresh(true);
   }
 
-  /** Confirms a field change with an Undo that writes the previous value back. */
-  function offerFieldUndo(
-    id: JsonValue,
-    field: string,
-    previous: JsonValue | undefined,
-    message: string,
-  ) {
-    toast.success(message, {
-      duration: 10_000,
-      action: {
-        label: t("undo.action"),
-        onClick: () =>
-          void setField
-            .mutateAsync({ ...target, id, field, value: previous })
-            .then(() => {
-              toast.success(t("field.restored", { field }));
-              refresh(true);
-            })
-            .catch((error: unknown) => toast.error(errorMessage(error))),
-      },
-    });
-  }
-
   const hasFilter = form.filter.trim() !== "";
 
   return (
@@ -389,8 +318,8 @@ export function DocumentsView({
         historyKey={queryHistoryKey}
         actions={
           <>
-            {editable && gridFsBucket && (
-              <Button variant="outline" size="sm" onClick={() => void uploadFile()}>
+            {editable && gridFs.bucket && (
+              <Button variant="outline" size="sm" onClick={() => void gridFs.upload()}>
                 <Upload />
                 {t("gridfs.upload")}
               </Button>
@@ -546,7 +475,7 @@ export function DocumentsView({
             : undefined,
           onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
           onPaste: editable ? () => void pasteDocuments() : undefined,
-          onDownloadFile: gridFsBucket ? (row) => void downloadFile(row) : undefined,
+          onDownloadFile: gridFs.bucket ? (row) => void gridFs.download(row) : undefined,
           onSetField: editable
             ? async (row, field, value) => {
                 const id = row._id;
