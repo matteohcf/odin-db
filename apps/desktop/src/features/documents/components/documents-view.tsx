@@ -92,6 +92,8 @@ interface DocumentsViewProps {
   onCreateIndex?: ((keys: string) => void) | undefined;
   /** Whether this view is the one on screen, which takes the rerun shortcut. */
   active: boolean;
+  /** A query handed over from elsewhere (the profiler); runs whenever its nonce changes. */
+  pendingQuery?: { filter: string; sort: string; nonce: string } | undefined;
 }
 
 const matchAll: FindQuery = { filter: {}, sort: null, projection: null, skip: null, limit: null };
@@ -106,6 +108,7 @@ export function DocumentsView({
   isView,
   onCreateIndex,
   active,
+  pendingQuery,
 }: DocumentsViewProps) {
   const { t } = useTranslation("documents");
   const label = `${namespace.database}.${namespace.collection}`;
@@ -234,6 +237,7 @@ export function DocumentsView({
   }
 
   useShortcut("rerun", () => void runForm(), active);
+
   const [focusFilter, setFocusFilter] = useState(0);
   useShortcut("focusFilter", () => setFocusFilter((value) => value + 1), active);
   const [askAi, setAskAi] = useState(0);
@@ -242,12 +246,27 @@ export function DocumentsView({
   /** Re-runs the last query; after a write the grid stays on screen until new rows arrive. */
   const refresh = (keepRows = false) => void execute(lastQuery.current, { keepRows });
 
+  // A query handed over runs once per nonce, in place of the first load when there is one.
+  const appliedQuery = useRef<string | undefined>(undefined);
+  const runPending = useEffectEvent(() => {
+    if (!pendingQuery || appliedQuery.current === pendingQuery.nonce) return false;
+    appliedQuery.current = pendingQuery.nonce;
+    void runForm({ ...emptyQueryForm, filter: pendingQuery.filter, sort: pendingQuery.sort });
+    return true;
+  });
+
   // First load, and again after a reconnect binds the tab to a new connection.
-  const initialLoad = useEffectEvent(() => refresh());
+  const initialLoad = useEffectEvent(() => {
+    if (!runPending()) refresh();
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the tab gets a new connection.
   useEffect(() => {
     initialLoad();
   }, [connection.id]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new nonce is a new request.
+  useEffect(() => {
+    runPending();
+  }, [pendingQuery?.nonce]);
 
   const openInsert = (text = NEW_DOCUMENT) =>
     setEditor({ open: true, mode: "insert", text, id: undefined });

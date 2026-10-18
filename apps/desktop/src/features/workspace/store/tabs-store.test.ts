@@ -156,6 +156,21 @@ describe("tabs store", () => {
     expect(useTabs.getState().activeTabId).toBe("settings");
   });
 
+  it("hands a query to a new or already open collection tab, with a fresh nonce each time", () => {
+    useTabs.getState().openCollection(target("a"), false, { filter: "{ a: 1 }", sort: "" });
+    const first = useTabs.getState().tabs[0];
+    expect(first?.kind === "collection" && first.query?.filter).toBe("{ a: 1 }");
+    useTabs.getState().openCollection(target("a"), false, { filter: "{ a: 1 }", sort: "" });
+    const again = useTabs.getState().tabs[0];
+    expect(useTabs.getState().tabs).toHaveLength(1);
+    expect(again?.kind === "collection" && again.query?.nonce).not.toBe(
+      first?.kind === "collection" && first.query?.nonce,
+    );
+    // Opening without a query leaves the tab's query alone.
+    useTabs.getState().openCollection(target("a"));
+    expect(useTabs.getState().tabs[0]).toEqual(again);
+  });
+
   it("opens settings on a page, reusing the tab", () => {
     useTabs.getState().openSettings();
     useTabs.getState().openBackups();

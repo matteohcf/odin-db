@@ -11,6 +11,15 @@ export interface CollectionTab {
   collection: string;
   /** Views are read-only in MongoDB, so the tab must know what it shows. */
   collectionKind: CollectionKind;
+  /** A query to run in the tab, e.g. a slow one from the profiler; a new nonce runs it again. */
+  query?: TabQuery;
+}
+
+/** Query bar text (mongosh syntax) handed to a collection tab. */
+export interface TabQuery {
+  filter: string;
+  sort: string;
+  nonce: string;
 }
 
 /** A mongosh session for a profile. Several can be open at once. */
@@ -73,7 +82,11 @@ interface TabsState {
   /** Collections opened lately, newest first, shown on the start screen. */
   recent: RecentCollection[];
   /** Focuses the collection's tab, or opens one; `newTab` always opens another. */
-  openCollection: (target: Omit<CollectionTab, "kind" | "id">, newTab?: boolean) => void;
+  openCollection: (
+    target: Omit<CollectionTab, "kind" | "id" | "query">,
+    newTab?: boolean,
+    query?: Omit<TabQuery, "nonce">,
+  ) => void;
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
   openUsers: (profileId: ProfileId) => void;
@@ -151,8 +164,9 @@ export const useTabs = create<TabsState>()(
       pinned: [],
       closed: [],
       recent: [],
-      openCollection: (target, newTab = false) =>
+      openCollection: (target, newTab = false, query) =>
         set((state) => {
+          const withQuery = query ? { query: { ...query, nonce: crypto.randomUUID() } } : {};
           // One tab per collection: opening it again focuses the existing tab.
           const base = collectionTabId(target.profileId, target.database, target.collection);
           const taken = state.tabs.some((tab) => tab.id === base);
@@ -161,9 +175,14 @@ export const useTabs = create<TabsState>()(
             0,
             MAX_RECENT,
           );
-          if (!newTab && taken) return { activeTabId: id, recent };
+          if (!newTab && taken) {
+            const tabs = query
+              ? state.tabs.map((tab) => (tab.id === id ? { ...tab, ...withQuery } : tab))
+              : state.tabs;
+            return { tabs, activeTabId: id, recent };
+          }
           return {
-            tabs: [...state.tabs, { kind: "collection", id, ...target }],
+            tabs: [...state.tabs, { kind: "collection", id, ...target, ...withQuery }],
             activeTabId: id,
             recent,
           };

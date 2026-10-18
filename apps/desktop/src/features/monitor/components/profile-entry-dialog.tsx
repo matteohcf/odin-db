@@ -1,4 +1,5 @@
 import type { ProfileEntry } from "@odin-db/bindings";
+import { Button } from "@odin-db/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -6,15 +7,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
+import { ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toShellSyntax } from "@/lib/shell-syntax";
+import { profiledQuery } from "../lib/profile";
 
 /** One recorded operation in full: its numbers and the command as the server received it. */
 export function ProfileEntryDialog({
   entry,
+  onOpenQuery,
   onClose,
 }: {
   entry: ProfileEntry;
+  /** Reruns the operation's query in its collection, where Explain can suggest an index. */
+  onOpenQuery: (query: NonNullable<ReturnType<typeof profiledQuery>>) => void;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation("monitor");
@@ -29,6 +35,7 @@ export function ProfileEntryDialog({
     ["profiler.plan", entry.planSummary ?? "—"],
     ["profiler.app", entry.appName ?? "—"],
   ] as const;
+  const query = profiledQuery(entry);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -51,6 +58,20 @@ export function ProfileEntryDialog({
           <pre className="min-h-0 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs selectable">
             {toShellSyntax(entry.command)}
           </pre>
+        )}
+        {query && (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={() => {
+                onOpenQuery(query);
+                onClose();
+              }}
+            >
+              <ExternalLink />
+              {t("profiler.openQuery")}
+            </Button>
+          </div>
         )}
       </DialogContent>
     </Dialog>

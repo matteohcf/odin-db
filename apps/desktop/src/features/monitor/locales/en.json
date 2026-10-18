@@ -72,6 +72,7 @@
       "collscan": "no index used",
       "wasteful": "reads far more than it returns"
     },
-    "detailsHint": "As recorded by the profiler. A plan without IXSCAN, or many more documents read than returned, usually means a missing index."
+    "detailsHint": "As recorded by the profiler. A plan without IXSCAN, or many more documents read than returned, usually means a missing index: open the query in its collection and run Explain for a suggestion.",
+    "openQuery": "Open in the collection"
   }
 }

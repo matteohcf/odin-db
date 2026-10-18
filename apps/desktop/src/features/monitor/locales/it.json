@@ -72,6 +72,7 @@
       "collscan": "nessun indice usato",
       "wasteful": "legge molto più di quanto restituisce"
     },
-    "detailsHint": "Come registrato dal profiler. Un piano senza IXSCAN, o molti più documenti letti che restituiti, di solito indica un indice mancante."
+    "detailsHint": "Come registrato dal profiler. Un piano senza IXSCAN, o molti più documenti letti che restituiti, di solito indica un indice mancante: apri la query nella sua collezione ed esegui Explain per un suggerimento.",
+    "openQuery": "Apri nella collezione"
   }
 }

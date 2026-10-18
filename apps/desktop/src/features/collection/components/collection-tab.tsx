@@ -190,6 +190,7 @@ function CollectionWorkspace({
           {value === "documents" ? (
             <DocumentsView
               active={tabActive && view === "documents"}
+              pendingQuery={tab.query}
               connection={connection}
               namespace={namespace}
               editable={editable}

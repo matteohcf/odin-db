@@ -19,6 +19,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTabs } from "@/features/workspace";
 import { call, errorMessage } from "@/lib/ipc";
 import { indexHint } from "../lib/profile";
 import { ProfileEntryDialog } from "./profile-entry-dialog";
@@ -38,6 +39,7 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
   const [database, setDatabase] = useState<string>("");
   const [slowMs, setSlowMs] = useState("");
   const [selected, setSelected] = useState<ProfileEntry | null>(null);
+  const openCollection = useTabs((s) => s.openCollection);
 
   const databases = useQuery({
     queryKey: ["profiler-databases", connection.id],
@@ -210,7 +212,24 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
           </table>
         </div>
       )}
-      {selected && <ProfileEntryDialog entry={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ProfileEntryDialog
+          entry={selected}
+          onOpenQuery={(query) =>
+            openCollection(
+              {
+                profileId: connection.profileId,
+                database: query.database,
+                collection: query.collection,
+                collectionKind: "collection",
+              },
+              false,
+              { filter: query.filter, sort: query.sort },
+            )
+          }
+          onClose={() => setSelected(null)}
+        />
+      )}
     </section>
   );
 }
