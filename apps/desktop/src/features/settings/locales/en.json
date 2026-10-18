@@ -178,8 +178,7 @@
       "qwen3.5-2b": "A newer general model; less precise than the coder models on queries.",
       "qwen3.5-4b": "The most accurate here, about twice as slow as the 1.5B.",
       "llama-3.2-3b": "Meta's general model; decent, but slower than Qwen Coder 1.5B and less precise.",
-      "gemma-3-4b": "Google's general model, strong at language; larger download.",
-      "phi-4-mini": "Microsoft's reasoning-oriented small model; larger download."
+      "phi-4-mini": "Microsoft's reasoning-oriented model; accurate enough, but the slowest here."
     },
     "table": {
       "model": "Model",

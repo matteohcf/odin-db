@@ -36,12 +36,16 @@ anywhere, and the feature must stay optional: some will never want it.
   |---|---|---|
   | Qwen3.5 4B | 90% | 7.1 s |
   | Qwen2.5 Coder 1.5B | 85% | 2.9 s |
+  | Phi-4 mini | 71% | 7.5 s |
   | Llama 3.2 3B | 69% | 4.9 s |
   | Qwen3.5 2B | 65% | 3.3 s |
   | Qwen2.5 Coder 0.5B | 55% | 1.1 s |
+  | Gemma 3 4B | 46% | 6.1 s |
 
   Qwen2.5 Coder 1.5B is recommended from 8 GB of memory, the 0.5B below; the larger models stay
-  available for those who prefer accuracy to speed.
+  available for those who prefer accuracy to speed. Gemma 3 4B was dropped from the catalog:
+  slower and less accurate than every other model. The catalog shows these figures beside each
+  model, so the choice is informed.
 
 ## Alternatives considered
 

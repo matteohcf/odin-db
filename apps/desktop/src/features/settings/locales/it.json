@@ -178,8 +178,7 @@
       "qwen3.5-2b": "Un modello generalista più recente; meno preciso dei modelli coder sulle query.",
       "qwen3.5-4b": "Il più preciso, circa due volte più lento dell'1.5B.",
       "llama-3.2-3b": "Il modello generalista di Meta; discreto, ma più lento e meno preciso di Qwen Coder 1.5B.",
-      "gemma-3-4b": "Il modello generalista di Google, forte nel linguaggio; download più grande.",
-      "phi-4-mini": "Il piccolo modello di Microsoft orientato al ragionamento; download più grande."
+      "phi-4-mini": "Il modello di Microsoft orientato al ragionamento; abbastanza preciso, ma il più lento."
     },
     "table": {
       "model": "Modello",
