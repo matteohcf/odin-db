@@ -36,7 +36,10 @@
       "icons/icon.ico"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "Open source desktop client for MongoDB"
+    "shortDescription": "Open source desktop client for MongoDB",
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
   },
   "plugins": {
     "updater": {
