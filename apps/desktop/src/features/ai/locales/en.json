@@ -2,7 +2,7 @@
   "ask": {
     "open": "Ask AI",
     "title": "Describe the documents to find",
-    "placeholder": "e.g. active users from Italy, newest first",
+    "placeholder": "e.g. active users from Italy, newest first (↑ for recent requests)",
     "generate": "Generate",
     "generating": "Generating the query…",
     "stop": "Stop",

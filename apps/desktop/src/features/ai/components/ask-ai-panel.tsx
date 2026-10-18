@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useGenerateQuery } from "../hooks/use-generate-query";
 import { examplePrompts } from "../lib/example-prompts";
 import { type QueryText, toQueryText } from "../lib/query-text";
+import { usePromptHistory } from "../store/prompt-history-store";
 import { QueryPreview } from "./query-preview";
 
 interface AskAiPanelProps {
@@ -36,8 +37,15 @@ export function AskAiPanel({
   const text = query ? toQueryText(query) : null;
   const examples = useMemo(() => examplePrompts(fields), [fields]);
   const input = useRef<HTMLTextAreaElement>(null);
+  const history = usePromptHistory((s) => s.prompts);
+  const record = usePromptHistory((s) => s.record);
+  // Position in the history while recalling with Up and Down; -1 is the text being typed.
+  const recall = useRef(-1);
   const ask = () => {
-    if (prompt.trim() && !running) void generate(engine, prompt.trim(), collection, fields);
+    if (!prompt.trim() || running) return;
+    record(prompt);
+    recall.current = -1;
+    void generate(engine, prompt.trim(), collection, fields);
   };
 
   return (
@@ -50,8 +58,22 @@ export function AskAiPanel({
         ref={input}
         id={`${id}-prompt`}
         value={prompt}
-        onChange={(event) => onPromptChange(event.target.value)}
+        onChange={(event) => {
+          recall.current = -1;
+          onPromptChange(event.target.value);
+        }}
         onKeyDown={(event) => {
+          const step = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
+          // Only from an empty prompt or one recalled, so arrows still move within typed text.
+          if (step && (prompt === "" || recall.current >= 0)) {
+            const next = recall.current + step;
+            if (next >= -1 && next < history.length) {
+              event.preventDefault();
+              recall.current = next;
+              onPromptChange(next === -1 ? "" : (history[next] ?? ""));
+            }
+            return;
+          }
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             if (text && (event.metaKey || event.ctrlKey)) onApply(text, true);
