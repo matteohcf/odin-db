@@ -106,6 +106,7 @@ docs/adr/                Architecture Decision Records
 - Core: unit tests next to code. Integration tests in `crates/core/tests/` against real MongoDB via `testcontainers` (6.0, 7.0, 8.0). Run with `cargo nextest`.
 - UI logic: Vitest. Keep logic in framework-free modules (`lib/`, controllers, stores) so it is testable without React.
 - UI review: `pnpm --filter @odin-db/desktop dev:web` in a browser uses the in-memory mock backend (ADR-0027). Check light and dark themes. Update `src/dev/mock-backend.ts` whenever a command changes.
+- UI checks: `apps/desktop/e2e/*.mjs` are Playwright scripts against that mock backend; `pnpm --filter @odin-db/desktop e2e [name ...]` runs them while `dev:web` is up. A UI feature adds or extends one.
 - E2E smoke: `tauri-driver` on Linux and Windows.
 - A bug fix includes a test that fails without the fix.
 - See ADR-0020.
@@ -116,6 +117,7 @@ docs/adr/                Architecture Decision Records
 pnpm install          install JS deps
 pnpm dev              run the desktop app in dev mode
 pnpm --filter @odin-db/desktop dev:web   UI only, in a browser, with the mock backend
+pnpm --filter @odin-db/desktop e2e       Playwright UI checks (needs dev:web running)
 pnpm bindings         regenerate packages/bindings from Rust
 pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, clippy, cargo test
 pnpm format           apply Biome fixes and formatting

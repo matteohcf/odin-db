@@ -3,8 +3,9 @@
   "workspaces": {
     ".": {},
     "apps/desktop": {
-      "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["tailwindcss"]
+      "project": ["src/**/*.{ts,tsx}", "e2e/*.mjs"],
+      "ignoreDependencies": ["tailwindcss"],
+      "entry": ["e2e/*.mjs"]
     },
     "packages/ui": {
       "entry": ["src/components/*.tsx", "src/lib/*.ts"],

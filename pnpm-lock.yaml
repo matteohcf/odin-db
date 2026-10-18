@@ -111,6 +111,9 @@ catalogs:
     lucide-react:
       specifier: ^1.59.0
       version: 1.59.0
+    playwright:
+      specifier: ^1.64.1
+      version: 1.64.1
     radix-ui:
       specifier: ^1.8.1
       version: 1.8.1
@@ -279,6 +282,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.2(vite@8.3.4(@types/node@26.6.5)(jiti@2.7.0)(yaml@2.9.1))
+      playwright:
+        specifier: 'catalog:'
+        version: 1.64.1
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
@@ -2518,6 +2524,16 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
+
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.64.1:
+    resolution: {integrity: sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   postcss@8.5.30:
     resolution: {integrity: sha512-zkd+e9S1AQHhmaBKye9zlFHWjOwVgqXl1q3ECYy8561K7qxR2cREf/STLskulBFd78k6AOFeA+ff1TtEzk9bAA==}
@@ -4838,6 +4854,12 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
+
+  playwright-core@1.64.1: {}
+
+  playwright@1.64.1:
+    dependencies:
+      playwright-core: 1.64.1
 
   postcss@8.5.30:
     dependencies:

@@ -1,0 +1,76 @@
+// Aggregation builder and index management flows against the mock backend.
+import { chromium } from "playwright";
+
+const scheme = process.env.SCHEME ?? "light";
+const shot = (name) => page.screenshot({ path: `test-results/${scheme}-pipe-${name}.png` });
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: scheme });
+const errors = [];
+page.on("pageerror", (e) => errors.push(String(e)));
+page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+const results = [];
+const check = async (name, fn) => {
+  try {
+    await fn();
+    results.push(`ok   ${name}`);
+  } catch (error) {
+    results.push(`FAIL ${name}: ${String(error).split("\n")[0]}`);
+    await shot(`fail-${name.replaceAll(" ", "-")}`);
+  }
+};
+const typeInEditor = async (editor, text) => {
+  await editor.click();
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.insertText(text);
+};
+
+await page.goto("http://localhost:1420/");
+await page.evaluate(() => localStorage.removeItem("odin-saved-pipelines"));
+await page.reload();
+await page.click("text=Local development");
+await page.click("text=shop");
+await page.getByRole("button", { name: /^orders$/ }).click();
+await page.getByRole("tab", { name: "Aggregation" }).click();
+const stage1 = page.getByRole("region", { name: "Stage 1" });
+await stage1.locator(".cm-content").waitFor();
+
+await check("save a pipeline under a name", async () => {
+  await typeInEditor(stage1.locator(".cm-content"), '{ status: "paid" }');
+  await page.getByRole("button", { name: "Add stage", exact: true }).last().click();
+  await page.getByRole("button", { name: "Saved", exact: true }).click();
+  await page.getByLabel("Pipeline name").fill("Paid orders");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByText("Saved Paid orders").waitFor();
+  await page.getByText("$match → $match").waitFor();
+  await page.waitForTimeout(250);
+  await shot("saved-pipeline");
+  await page.keyboard.press("Escape");
+});
+
+await check("load replaces the current pipeline", async () => {
+  await page
+    .getByRole("region", { name: "Stage 2" })
+    .getByRole("button", { name: "Remove stage" })
+    .click();
+  await typeInEditor(stage1.locator(".cm-content"), '{ status: "refunded" }');
+  await page.getByRole("button", { name: "Saved", exact: true }).click();
+  await page.getByRole("button", { name: /^Paid orders/ }).click();
+  await page.getByText("Loaded Paid orders").waitFor();
+  await page.getByRole("region", { name: "Stage 2" }).waitFor();
+  const body = await page
+    .getByRole("region", { name: "Stage 1" })
+    .locator(".cm-content")
+    .innerText();
+  if (!body.includes('"paid"')) throw new Error(body);
+});
+
+await check("delete a saved pipeline", async () => {
+  await page.getByRole("button", { name: "Saved", exact: true }).click();
+  await page.getByRole("button", { name: "Delete Paid orders" }).click();
+  await page.getByText("Pipelines you save for this collection appear here.").waitFor();
+  await page.keyboard.press("Escape");
+});
+
+console.log(results.join("\n"));
+console.log(JSON.stringify({ errors }, null, 2));
+await browser.close();
