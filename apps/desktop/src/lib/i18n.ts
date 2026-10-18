@@ -12,6 +12,8 @@ import backups from "@/features/backups/locales/en.json";
 import backupsIt from "@/features/backups/locales/it.json";
 import collection from "@/features/collection/locales/en.json";
 import collectionIt from "@/features/collection/locales/it.json";
+import compare from "@/features/compare/locales/en.json";
+import compareIt from "@/features/compare/locales/it.json";
 import connections from "@/features/connections/locales/en.json";
 import connectionsIt from "@/features/connections/locales/it.json";
 import documents from "@/features/documents/locales/en.json";
@@ -50,6 +52,7 @@ export const resources = {
     backup,
     backups,
     collection,
+    compare,
     common,
     connections,
     documents,
@@ -72,6 +75,7 @@ export const resources = {
     backup: backupIt,
     backups: backupsIt,
     collection: collectionIt,
+    compare: compareIt,
     common: commonIt,
     connections: connectionsIt,
     documents: documentsIt,

@@ -6,6 +6,7 @@ import {
   Copy,
   Eye,
   Files,
+  GitCompareArrows,
   HardDriveDownload,
   PencilLine,
   Star,
@@ -22,6 +23,7 @@ import { copyName } from "../lib/copy-name";
 import { isSystem } from "../lib/tree-rows";
 import { useTreeFilter } from "../store/explorer-store";
 import { useFavorites, useIsFavorite } from "../store/favorites-store";
+import { CompareDialogFor } from "./compare-dialog-for";
 import { CopyDialogFor } from "./copy-dialog-for";
 import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
@@ -70,7 +72,9 @@ export function CollectionNode({
       },
       newTab,
     );
-  const [dialog, setDialog] = useState<"backup" | "copy" | "rename" | "drop" | null>(null);
+  const [dialog, setDialog] = useState<"backup" | "compare" | "copy" | "rename" | "drop" | null>(
+    null,
+  );
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const isView = collection.kind === "view";
   const writable = !connection.readOnly && !isSystem(collection);
@@ -137,6 +141,10 @@ export function CollectionNode({
                   <Copy />
                   {t("copy.menuCollection", { ns: "transfer" })}
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setDialog("compare")}>
+                  <GitCompareArrows />
+                  {t("menu.compare", { ns: "compare" })}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setDialog("backup")}>
                   <HardDriveDownload />
                   {t("menu.backup", { ns: "backup" })}
@@ -160,6 +168,14 @@ export function CollectionNode({
           connectionId={connection.id}
           profileName={profileName}
           scope={{ kind: "collection", database, collection: collection.name }}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "compare" && (
+        <CompareDialogFor
+          connection={connection}
+          database={database}
+          collection={collection.name}
           onClose={() => setDialog(null)}
         />
       )}

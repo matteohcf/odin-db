@@ -1,0 +1,31 @@
+{
+  "title": "Compare collections",
+  "description": "Matches documents by _id and reports which are identical, which differ and which exist on one side only. Field order does not matter; types do.",
+  "left": "Compare",
+  "target": {
+    "connection": "With connection",
+    "database": "Database",
+    "collection": "Collection"
+  },
+  "filter": "Only documents matching (optional)",
+  "filterPlaceholder": "{ status: \"active\" }",
+  "sameCollection": "Choose another collection: this is the one being compared.",
+  "comparing": "Comparing",
+  "progress": "{{compared}} of {{total}} documents read",
+  "run": "Compare",
+  "again": "Compare again",
+  "stop": "Stop",
+  "pairChanged": "This document changed since the comparison; compare again.",
+  "summary": {
+    "identical": "Identical",
+    "different": "Different",
+    "onlyLeft": "Only in {{left}}",
+    "onlyRight": "Only in {{right}}",
+    "none": "No documents.",
+    "allIdentical": "The collections hold the same documents.",
+    "firstOf": "The first {{shown}} of {{count}}."
+  },
+  "menu": {
+    "compare": "Compare with…"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "title": "Confronta collezioni",
+  "description": "Abbina i documenti per _id e indica quali sono identici, quali differiscono e quali esistono da una sola parte. L'ordine dei campi non conta; i tipi sì.",
+  "left": "Confronta",
+  "target": {
+    "connection": "Con la connessione",
+    "database": "Database",
+    "collection": "Collezione"
+  },
+  "filter": "Solo i documenti che corrispondono (facoltativo)",
+  "filterPlaceholder": "{ status: \"active\" }",
+  "sameCollection": "Scegli un'altra collezione: è quella che stai confrontando.",
+  "comparing": "Confronto in corso",
+  "progress": "{{compared}} di {{total}} documenti letti",
+  "run": "Confronta",
+  "again": "Confronta di nuovo",
+  "stop": "Ferma",
+  "pairChanged": "Questo documento è cambiato dopo il confronto; confronta di nuovo.",
+  "summary": {
+    "identical": "Identici",
+    "different": "Diversi",
+    "onlyLeft": "Solo in {{left}}",
+    "onlyRight": "Solo in {{right}}",
+    "none": "Nessun documento.",
+    "allIdentical": "Le collezioni contengono gli stessi documenti.",
+    "firstOf": "I primi {{shown}} di {{count}}."
+  },
+  "menu": {
+    "compare": "Confronta con…"
+  }
+}

@@ -959,6 +959,30 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   install_update: (args) =>
     // The real backend then restarts the app; here it just ends.
     streamProgress(args.channel, 18_000_000, (done, total) => ({ done, total })),
+  compare_collections: (args) => {
+    const oid = (n: number) => ({ $oid: `65f0a1c${String(n).padStart(17, "0")}` });
+    const range = (from: number, count: number) =>
+      Array.from({ length: count }, (_, i) => oid(from + i));
+    return simulateTransfer(
+      args.channel,
+      2_450,
+      {
+        identical: 2_385,
+        different: 40,
+        onlyLeft: 20,
+        onlyRight: 5,
+        differentIds: range(1, 40),
+        onlyLeftIds: range(100, 20),
+        onlyRightIds: range(200, 5),
+      },
+      1,
+      (compared) => ({ compared, total: 2_450 }),
+    );
+  },
+  compared_pair: (args) => ({
+    left: { _id: args.id, name: "Ada A.", plan: "free", age: { $numberInt: "18" } },
+    right: { _id: args.id, name: "Ada A.", plan: "pro", age: { $numberInt: "19" } },
+  }),
   ai_overview: () => ({
     models: MOCK_MODELS.map((spec) => ({
       spec,

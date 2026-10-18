@@ -44,3 +44,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0038](0038-gridfs.md) | GridFS files | Accepted |
 | [0039](0039-automatic-updates.md) | Automatic updates | Accepted |
 | [0040](0040-ai-query-assistant.md) | AI query assistant | Accepted |
+| [0041](0041-collection-compare.md) | Collection compare | Accepted |
