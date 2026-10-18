@@ -22,6 +22,9 @@ const queryLanguage = new LanguageSupport(
 );
 
 /** Newlines (typed or pasted) become spaces: the editor is a single line. */
+// Mod-I (select parent syntax) would swallow the app's "Ask AI" shortcut in the query bar.
+const editingKeymap = defaultKeymap.filter((binding) => binding.key !== "Mod-i");
+
 const singleLine = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.newDoc.lines === 1) return tr;
   const text = tr.newDoc.toString().replace(/\s*\n\s*/g, " ");
@@ -123,7 +126,7 @@ export default function QueryEditorView({
               { key: "ArrowDown", run: () => callbacks.current.onHistory?.(-1) ?? false },
             ]),
           ),
-          keymap.of([...closeBracketsKeymap, ...historyKeymap, ...defaultKeymap]),
+          keymap.of([...closeBracketsKeymap, ...historyKeymap, ...editingKeymap]),
           queryLanguage,
           syntaxHighlighting(highlight),
           theme,

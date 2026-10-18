@@ -16,6 +16,13 @@
       "sort": "Sort",
       "projection": "Projection",
       "limit": "Limit"
+    },
+    "try": "Try:",
+    "examples": {
+      "newest": "10 newest by {{field}}",
+      "greater": "{{field}} greater than 100",
+      "contains": "{{field}} contains …",
+      "missing": "documents without {{field}}"
     }
   },
   "setup": {

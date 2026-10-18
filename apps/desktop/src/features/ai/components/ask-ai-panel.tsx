@@ -2,9 +2,10 @@ import type { EngineChoice, FieldSummary } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { CircleAlert, Loader2, Sparkles, Square } from "lucide-react";
-import { useId } from "react";
+import { useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useGenerateQuery } from "../hooks/use-generate-query";
+import { examplePrompts } from "../lib/example-prompts";
 import { type QueryText, toQueryText } from "../lib/query-text";
 import { QueryPreview } from "./query-preview";
 
@@ -33,6 +34,8 @@ export function AskAiPanel({
   const { state, query, generate, cancel } = useGenerateQuery();
   const running = state.status === "running";
   const text = query ? toQueryText(query) : null;
+  const examples = useMemo(() => examplePrompts(fields), [fields]);
+  const input = useRef<HTMLTextAreaElement>(null);
   const ask = () => {
     if (prompt.trim() && !running) void generate(engine, prompt.trim(), collection, fields);
   };
@@ -44,6 +47,7 @@ export function AskAiPanel({
         {t("ask.title")}
       </label>
       <textarea
+        ref={input}
         id={`${id}-prompt`}
         value={prompt}
         onChange={(event) => onPromptChange(event.target.value)}
@@ -60,6 +64,33 @@ export function AskAiPanel({
         spellCheck={false}
         className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
       />
+      {!prompt && examples.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-muted-foreground text-xs">{t("ask.try")}</span>
+          {examples.map((example) => {
+            const sentence = t(`ask.examples.${example.kind}`, { field: example.field });
+            return (
+              <Button
+                key={example.kind}
+                variant="outline"
+                size="xs"
+                className="rounded-full font-normal"
+                onClick={() => {
+                  onPromptChange(sentence);
+                  // "contains …" needs its word: select the placeholder so typing replaces it.
+                  requestAnimationFrame(() => {
+                    const at = sentence.indexOf("…");
+                    input.current?.focus();
+                    if (at >= 0) input.current?.setSelectionRange(at, at + 1);
+                  });
+                }}
+              >
+                {sentence}
+              </Button>
+            );
+          })}
+        </div>
+      )}
       {state.status === "failed" && (
         <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs selectable">
           <CircleAlert className="mt-px size-3.5 shrink-0" />
