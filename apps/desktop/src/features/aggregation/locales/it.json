@@ -4,7 +4,13 @@
     "copy": "Copia pipeline",
     "copied": "Pipeline copiata in sintassi mongosh",
     "run": "Esegui",
-    "runHint": "Esegui l'intera pipeline"
+    "runHint": "Esegui l'intera pipeline",
+    "paste": "Incolla pipeline",
+    "pasteHint": "Sostituisci gli stage con una pipeline dagli appunti (anche ⌘V / Ctrl+V)",
+    "pasted_one": "Incollato {{count}} stage",
+    "pasted_other": "Incollati {{count}} stage",
+    "pasteFailed": "Negli appunti non c'è una pipeline: {{message}}",
+    "undo": "Annulla"
   },
   "stage": {
     "label": "Stage {{number}}",

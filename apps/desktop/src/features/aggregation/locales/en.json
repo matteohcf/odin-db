@@ -4,7 +4,13 @@
     "copy": "Copy pipeline",
     "copied": "Pipeline copied as mongosh syntax",
     "run": "Run",
-    "runHint": "Run the whole pipeline"
+    "runHint": "Run the whole pipeline",
+    "paste": "Paste pipeline",
+    "pasteHint": "Replace the stages with a pipeline from the clipboard (also ⌘V / Ctrl+V)",
+    "pasted_one": "Pasted {{count}} stage",
+    "pasted_other": "Pasted {{count}} stages",
+    "pasteFailed": "The clipboard has no pipeline: {{message}}",
+    "undo": "Undo"
   },
   "stage": {
     "label": "Stage {{number}}",

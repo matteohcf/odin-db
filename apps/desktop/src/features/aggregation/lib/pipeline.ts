@@ -1,5 +1,5 @@
-import type { EJsonDocument } from "@odin-db/bindings";
-import { parseShellDocument } from "@/lib/shell-syntax";
+import type { EJsonDocument, JsonValue } from "@odin-db/bindings";
+import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
 import { mustBeFirst } from "./operators";
 
 export interface Stage {
@@ -57,4 +57,29 @@ export function pipelineToText(stages: readonly Stage[]): string {
   if (enabled.length === 0) return "[]";
   const indent = (text: string) => text.trim().replaceAll("\n", "\n    ");
   return `[\n${enabled.map((s) => `  {\n    ${s.operator}: ${indent(s.body || "{}")}\n  }`).join(",\n")}\n]`;
+}
+
+/**
+ * Stages from pasted text: a pipeline array, a single stage, or a whole
+ * `db.<collection>.aggregate([...])` call as copied from a shell or another tool.
+ */
+export async function pipelineFromText(text: string): Promise<Omit<Stage, "id">[]> {
+  let source = text.trim().replace(/;$/, "");
+  const call = /\.aggregate\s*\(([\s\S]*)\)$/.exec(source);
+  if (call?.[1] !== undefined) source = call[1].trim();
+  const parsed = await parseShellDocument(`{ pipeline: ${source}\n}`);
+  const pipeline = isObject(parsed) ? parsed.pipeline : undefined;
+  const list = Array.isArray(pipeline) ? pipeline : [pipeline ?? null];
+  return list.map((stage, index) => {
+    const entries = isObject(stage) ? Object.entries(stage) : [];
+    const [entry] = entries;
+    if (entries.length !== 1 || !entry?.[0].startsWith("$")) {
+      throw new Error(`stage ${index + 1} is not { $operator: … }`);
+    }
+    return { operator: entry[0], body: toShellSyntax(entry[1] ?? null), enabled: true };
+  });
+}
+
+function isObject(value: JsonValue): value is { [key: string]: JsonValue } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

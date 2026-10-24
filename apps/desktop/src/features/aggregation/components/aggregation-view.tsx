@@ -15,7 +15,7 @@ import {
 } from "@odin-db/ui/components/alert-dialog";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { CircleAlert, Code2, Copy, Download, Play, Plus, X } from "lucide-react";
+import { CircleAlert, ClipboardPaste, Code2, Copy, Download, Play, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -30,10 +30,10 @@ import {
 } from "@/features/results";
 import { ExportDialog } from "@/features/transfer";
 import { useShortcut } from "@/hooks/use-shortcut";
-import { call } from "@/lib/ipc";
+import { call, errorMessage } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { isWriteOperator } from "../lib/operators";
-import { buildPipeline, pipelineToText } from "../lib/pipeline";
+import { buildPipeline, pipelineFromText, pipelineToText } from "../lib/pipeline";
 import { createPipelineStore } from "../store/pipeline-store";
 import { pipelineKey } from "../store/saved-pipelines-store";
 import { SavedPipelinesMenu } from "./saved-pipelines-menu";
@@ -70,6 +70,20 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
   const label = `${namespace.database}.${namespace.collection}`;
 
   useShortcut("rerun", () => void run(), active);
+
+  async function paste(text: string) {
+    try {
+      const pasted = await pipelineFromText(text);
+      const previous = store.getState().stages;
+      actions.replace(pasted);
+      setRunError(null);
+      toast.success(t("toolbar.pasted", { count: pasted.length }), {
+        action: { label: t("toolbar.undo"), onClick: () => actions.replace(previous) },
+      });
+    } catch (error) {
+      toast.error(t("toolbar.pasteFailed", { message: errorMessage(error) }));
+    }
+  }
 
   async function showCode() {
     const built = await buildPipeline(stages);
@@ -112,7 +126,16 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div
+      className="flex h-full min-h-0 flex-col"
+      onPaste={(event) => {
+        // Pasting into a stage editor or field stays a normal paste.
+        const target = event.target as HTMLElement;
+        if (target.closest("input, textarea, [contenteditable=true]")) return;
+        event.preventDefault();
+        void paste(event.clipboardData.getData("text"));
+      }}
+    >
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
         <Button variant="outline" size="sm" onClick={() => actions.add("$match")}>
           <Plus />
@@ -128,6 +151,15 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
         >
           <Copy />
           {t("toolbar.copy")}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          title={t("toolbar.pasteHint")}
+          onClick={() => void navigator.clipboard.readText().then(paste)}
+        >
+          <ClipboardPaste />
+          {t("toolbar.paste")}
         </Button>
         <Button variant="ghost" size="sm" onClick={() => void showCode()}>
           <Code2 />

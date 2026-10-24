@@ -1,6 +1,13 @@
 import { terminateWorker } from "@mongodb-js/shell-bson-parser";
 import { afterAll, describe, expect, it } from "vitest";
-import { buildPipeline, parseStage, pipelineToText, type Stage, sampled } from "./pipeline";
+import {
+  buildPipeline,
+  parseStage,
+  pipelineFromText,
+  pipelineToText,
+  type Stage,
+  sampled,
+} from "./pipeline";
 
 afterAll(() => terminateWorker());
 
@@ -51,5 +58,18 @@ describe("pipeline", () => {
     const stages = [stage("$match", "{\n  a: 1\n}"), stage("$limit", "5", false)];
     expect(pipelineToText(stages)).toBe("[\n  {\n    $match: {\n      a: 1\n    }\n  }\n]");
     expect(pipelineToText([])).toBe("[]");
+  });
+
+  it("reads pasted pipelines, single stages and aggregate calls", async () => {
+    const copied = pipelineToText([stage("$match", '{ status: "paid" }'), stage("$limit", "5")]);
+    expect(await pipelineFromText(copied)).toEqual([
+      { operator: "$match", body: '{\n  status: "paid"\n}', enabled: true },
+      { operator: "$limit", body: "5", enabled: true },
+    ]);
+    const call = await pipelineFromText('db.orders.aggregate([{ $unwind: "$items" }]);');
+    expect(call).toEqual([{ operator: "$unwind", body: '"$items"', enabled: true }]);
+    expect(await pipelineFromText("{ $count: 'n' }")).toHaveLength(1);
+    await expect(pipelineFromText("[{ status: 1 }]")).rejects.toThrow("stage 1");
+    await expect(pipelineFromText("not a pipeline")).rejects.toThrow();
   });
 });

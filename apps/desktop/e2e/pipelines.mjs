@@ -71,6 +71,21 @@ await check("delete a saved pipeline", async () => {
   await page.keyboard.press("Escape");
 });
 
+await check("a pipeline copied from a shell pastes in as stages, and can be undone", async () => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.evaluate(() =>
+    navigator.clipboard.writeText(
+      'db.orders.aggregate([{ $match: { status: "paid" } }, { $group: { _id: "$city", n: { $sum: 1 } } }, { $sort: { n: -1 } }])',
+    ),
+  );
+  await page.getByRole("button", { name: "Paste pipeline" }).click();
+  await page.getByText("Pasted 3 stages").waitFor();
+  await page.getByRole("region", { name: "Stage 3" }).waitFor();
+  await shot("paste");
+  await page.getByRole("button", { name: "Undo" }).click();
+  if (await page.getByRole("region", { name: "Stage 3" }).count()) throw new Error("not undone");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();
