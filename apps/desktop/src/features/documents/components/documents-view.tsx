@@ -705,6 +705,7 @@ export function DocumentsView({
             sort: codeQuery.sort,
             skip: codeQuery.skip,
             limit: codeQuery.limit,
+            options: codeQuery.options,
           }}
           onClose={() => setCodeQuery(null)}
         />

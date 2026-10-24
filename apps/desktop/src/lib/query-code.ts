@@ -1,4 +1,4 @@
-import type { EJsonDocument, JsonValue } from "@odin-db/bindings";
+import type { EJsonDocument, JsonValue, QueryOptions } from "@odin-db/bindings";
 import { isJsonObject, type JsonObject } from "./ejson-display";
 import { toShellSyntax } from "./shell-syntax";
 
@@ -20,6 +20,7 @@ export type CodeSource =
       sort: EJsonDocument | null;
       skip: number | null;
       limit: number | null;
+      options?: QueryOptions | undefined;
     }
   | { kind: "aggregate"; database: string; collection: string; pipeline: EJsonDocument[] };
 
@@ -43,6 +44,41 @@ export function queryCode(source: CodeSource, language: CodeLanguage): string {
 const isEmpty = (document: EJsonDocument | null): document is null =>
   document === null || Object.keys(document).length === 0;
 
+/** The options a find sets, in plain form; the settings' default time limit is not included. */
+function findOptions(options: QueryOptions | undefined) {
+  const collation = options?.collation && !isEmpty(options.collation) ? options.collation : null;
+  const hint = options?.hint ?? null;
+  const maxTimeMs = options?.maxTimeMs ? options.maxTimeMs : null;
+  return { collation, hint, maxTimeMs };
+}
+
+const COLLATION_KEYS = [
+  "locale",
+  "caseLevel",
+  "caseFirst",
+  "strength",
+  "numericOrdering",
+  "alternate",
+  "maxVariable",
+  "normalization",
+  "backwards",
+] as const;
+type CollationKey = (typeof COLLATION_KEYS)[number];
+
+/** A collation's settings as plain values, for drivers that build it field by field. */
+function collationFields(collation: EJsonDocument): [CollationKey, string | number | boolean][] {
+  if (!isJsonObject(collation)) return [];
+  return COLLATION_KEYS.flatMap((key): [CollationKey, string | number | boolean][] => {
+    const value = collation[key];
+    if (typeof value === "string" || typeof value === "boolean") return [[key, value]];
+    if (isJsonObject(value)) {
+      const number = Number(Object.values(value)[0]);
+      return Number.isNaN(number) ? [] : [[key, number]];
+    }
+    return [];
+  });
+}
+
 // mongosh
 
 function mongosh(source: CodeSource): string {
@@ -56,6 +92,10 @@ function mongosh(source: CodeSource): string {
   if (!isEmpty(source.sort)) code += `\n  .sort(${toShellSyntax(source.sort, 0)})`;
   if (source.skip !== null) code += `\n  .skip(${source.skip})`;
   if (source.limit !== null) code += `\n  .limit(${source.limit})`;
+  const { collation, hint, maxTimeMs } = findOptions(source.options);
+  if (collation) code += `\n  .collation(${toShellSyntax(collation, 0)})`;
+  if (hint !== null) code += `\n  .hint(${toShellSyntax(hint, 0)})`;
+  if (maxTimeMs !== null) code += `\n  .maxTimeMS(${maxTimeMs})`;
   return code;
 }
 
@@ -73,6 +113,10 @@ function javascript(source: CodeSource): string {
     if (!isEmpty(source.sort)) options.push(`sort: ${value(source.sort, 1)}`);
     if (source.skip !== null) options.push(`skip: ${source.skip}`);
     if (source.limit !== null) options.push(`limit: ${source.limit}`);
+    const { collation, hint, maxTimeMs } = findOptions(source.options);
+    if (collation) options.push(`collation: ${value(collation, 1)}`);
+    if (hint !== null) options.push(`hint: ${value(hint, 1)}`);
+    if (maxTimeMs !== null) options.push(`maxTimeMS: ${maxTimeMs}`);
     const args = [value(source.filter, 0)];
     if (options.length > 0) args.push(`{\n  ${options.join(",\n  ")}\n}`);
     query = `const cursor = collection.find(${args.join(", ")});`;
@@ -171,6 +215,16 @@ function python(source: CodeSource): string {
     }
     if (source.skip !== null) args.push(`skip=${source.skip}`);
     if (source.limit !== null) args.push(`limit=${source.limit}`);
+    const { collation, hint, maxTimeMs } = findOptions(source.options);
+    if (collation) args.push(`collation=${value(collation, 1)}`);
+    if (typeof hint === "string") args.push(`hint=${str(hint)}`);
+    else if (isJsonObject(hint)) {
+      const pairs = Object.entries(hint).map(
+        ([field, direction]) => `(${str(field)}, ${value(direction, 2)})`,
+      );
+      args.push(`hint=[${pairs.join(", ")}]`);
+    }
+    if (maxTimeMs !== null) args.push(`max_time_ms=${maxTimeMs}`);
     call = `cursor = collection.find(\n    ${args.join(",\n    ")},\n)`;
   }
   // PEP 8 groups: the standard library, then third-party packages.
@@ -272,8 +326,15 @@ function java(source: CodeSource): string {
   const parse = (value: JsonValue, pad: string) =>
     `Document.parse("""\n${indentLines(json(value), `${pad}    `)}\n${pad}    """)`;
   const pad = "            ";
+  const imports = new Set([
+    "com.mongodb.client.MongoClient",
+    "com.mongodb.client.MongoClients",
+    "com.mongodb.client.MongoCollection",
+    "org.bson.Document",
+  ]);
   let query: string[];
   if (source.kind === "aggregate") {
+    imports.add("java.util.List");
     query = [
       `${pad}List<Document> pipeline = List.of(`,
       source.pipeline.map((stage) => `${pad}    ${parse(stage, `${pad}    `)}`).join(",\n"),
@@ -281,23 +342,48 @@ function java(source: CodeSource): string {
       `${pad}for (Document document : collection.aggregate(pipeline)) {`,
     ];
   } else {
+    imports.add("com.mongodb.client.FindIterable");
     const chain = [`collection.find(${parse(source.filter, pad)})`];
     if (!isEmpty(source.projection)) chain.push(`.projection(${parse(source.projection, pad)})`);
     if (!isEmpty(source.sort)) chain.push(`.sort(${parse(source.sort, pad)})`);
     if (source.skip !== null) chain.push(`.skip(${source.skip})`);
     if (source.limit !== null) chain.push(`.limit(${source.limit})`);
+    const { collation, hint, maxTimeMs } = findOptions(source.options);
+    if (collation) {
+      imports.add("com.mongodb.client.model.Collation");
+      const setters = collationFields(collation).map(([key, value]) => {
+        const enumOf = (type: string, factory: string) => {
+          imports.add(`com.mongodb.client.model.${type}`);
+          return `${type}.${factory}(${typeof value === "string" ? str(value) : value})`;
+        };
+        switch (key) {
+          case "strength":
+            return `.collationStrength(${enumOf("CollationStrength", "fromInt")})`;
+          case "caseFirst":
+            return `.collationCaseFirst(${enumOf("CollationCaseFirst", "fromString")})`;
+          case "alternate":
+            return `.collationAlternate(${enumOf("CollationAlternate", "fromString")})`;
+          case "maxVariable":
+            return `.collationMaxVariable(${enumOf("CollationMaxVariable", "fromString")})`;
+          default:
+            return `.${key}(${typeof value === "string" ? str(value) : value})`;
+        }
+      });
+      chain.push(`.collation(Collation.builder()${setters.join("")}.build())`);
+    }
+    if (typeof hint === "string") chain.push(`.hintString(${str(hint)})`);
+    else if (isJsonObject(hint)) chain.push(`.hint(${parse(hint, pad)})`);
+    if (maxTimeMs !== null) {
+      imports.add("java.util.concurrent.TimeUnit");
+      chain.push(`.maxTime(${maxTimeMs}, TimeUnit.MILLISECONDS)`);
+    }
     query = [
       `${pad}FindIterable<Document> result = ${chain.join(`\n${pad}        `)};`,
       `${pad}for (Document document : result) {`,
     ];
   }
   return [
-    ...(source.kind === "find" ? ["import com.mongodb.client.FindIterable;"] : []),
-    "import com.mongodb.client.MongoClient;",
-    "import com.mongodb.client.MongoClients;",
-    "import com.mongodb.client.MongoCollection;",
-    ...(source.kind === "aggregate" ? ["import java.util.List;"] : []),
-    "import org.bson.Document;",
+    ...[...imports].sort().map((name) => `import ${name};`),
     "",
     "public class Query {",
     "    public static void main(String[] args) {",
@@ -330,6 +416,21 @@ function csharp(source: CodeSource): string {
     if (source.skip !== null) chain.push(`.Skip(${source.skip})`);
     if (source.limit !== null) chain.push(`.Limit(${source.limit})`);
     chain.push(".ToList()");
+    const { collation, hint, maxTimeMs } = findOptions(source.options);
+    const options: string[] = [];
+    if (collation) {
+      const fields = collationFields(collation);
+      const locale = fields.find(([key]) => key === "locale")?.[1] ?? "simple";
+      const named = fields
+        .filter(([key]) => key !== "locale")
+        .map(([key, value]) => `${key}: ${csharpCollationValue(key, value)}`);
+      options.push(`Collation = new Collation(${[str(String(locale)), ...named].join(", ")})`);
+    }
+    if (typeof hint === "string") options.push(`Hint = ${str(hint)}`);
+    else if (isJsonObject(hint)) options.push(`Hint = ${parse(hint)}`);
+    if (maxTimeMs !== null) options.push(`MaxTime = TimeSpan.FromMilliseconds(${maxTimeMs})`);
+    if (options.length > 0)
+      chain[0] = `collection.Find(${parse(source.filter)}, new FindOptions\n{\n    ${options.join(",\n    ")}\n})`;
     query = [`var documents = ${chain.join("\n    ")};`];
   }
   return [
@@ -347,6 +448,23 @@ function csharp(source: CodeSource): string {
   ].join("\n");
 }
 
+function csharpCollationValue(key: CollationKey, value: string | number | boolean): string {
+  if (typeof value === "boolean") return String(value);
+  const pascal = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  switch (key) {
+    case "strength":
+      return `CollationStrength.${["Primary", "Secondary", "Tertiary", "Quaternary", "Identical"][Number(value) - 1] ?? "Tertiary"}`;
+    case "caseFirst":
+      return `CollationCaseFirst.${pascal(String(value))}`;
+    case "alternate":
+      return `CollationAlternate.${value === "shifted" ? "Shifted" : "NonIgnorable"}`;
+    case "maxVariable":
+      return `CollationMaxVariable.${value === "space" ? "Space" : "Punctuation"}`;
+    default:
+      return typeof value === "string" ? str(value) : String(value);
+  }
+}
+
 function go(source: CodeSource): string {
   // Go raw strings cannot contain a backquote: splice one in when needed.
   const raw = (value: JsonValue) => `\`${json(value, 2).replaceAll("`", '` + "`" + `')}\``;
@@ -357,6 +475,7 @@ function go(source: CodeSource): string {
     "\t}",
   ];
   let query: string[];
+  let timed = false;
   if (source.kind === "aggregate") {
     query = [
       "\tstages := []string{",
@@ -385,6 +504,27 @@ function go(source: CodeSource): string {
     }
     if (source.skip !== null) options.push(`.SetSkip(${source.skip})`);
     if (source.limit !== null) options.push(`.SetLimit(${source.limit})`);
+    const { collation, hint, maxTimeMs } = findOptions(source.options);
+    if (collation) {
+      const fields = collationFields(collation).map(
+        ([key, value]) =>
+          `${key.charAt(0).toUpperCase()}${key.slice(1)}: ${typeof value === "string" ? str(value) : value}`,
+      );
+      options.push(`.SetCollation(&options.Collation{${fields.join(", ")}})`);
+    }
+    if (typeof hint === "string") options.push(`.SetHint(${str(hint)})`);
+    else if (isJsonObject(hint)) {
+      query.push(...decode("hint", hint));
+      options.push(".SetHint(hint)");
+    }
+    if (maxTimeMs !== null) {
+      // The v2 driver bounds operations with the context instead of maxTimeMS.
+      timed = true;
+      query.push(
+        `\tctx, cancel := context.WithTimeout(ctx, ${maxTimeMs}*time.Millisecond)`,
+        "\tdefer cancel()",
+      );
+    }
     query.push(options.join(""), "\tcursor, err := collection.Find(ctx, filter, opts)");
   }
   return [
@@ -394,6 +534,7 @@ function go(source: CodeSource): string {
     '\t"context"',
     '\t"fmt"',
     '\t"os"',
+    ...(timed ? ['\t"time"'] : []),
     "",
     '\t"go.mongodb.org/mongo-driver/v2/bson"',
     '\t"go.mongodb.org/mongo-driver/v2/mongo"',

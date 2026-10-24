@@ -33,4 +33,5 @@ short of closing the tab.
 
 - A query that times out shows the server's "operation exceeded time limit" error; raising the
   limit is one field or one setting away.
-- Generated code (query code dialog) does not include these options yet.
+- Generated code (query code dialog) includes the options a query sets, not the default limit;
+  the Go v2 driver has no `maxTimeMS`, so its code bounds the context instead.

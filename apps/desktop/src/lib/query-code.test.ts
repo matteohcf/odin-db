@@ -91,4 +91,35 @@ describe("queryCode", () => {
       expect(code, language).not.toMatch(/projection|\.sort\(|SetSort|Skip|skip=|limit/i);
     }
   });
+
+  it("carries collation, hint and time limit into every language", () => {
+    const withOptions: CodeSource = {
+      ...find,
+      options: {
+        collation: { locale: "en", strength: { $numberInt: "2" } },
+        hint: { age: { $numberInt: "1" } },
+        maxTimeMs: 5000,
+      },
+    } as CodeSource;
+    const code = (language: (typeof CODE_LANGUAGES)[number]) => queryCode(withOptions, language);
+    expect(code("mongosh")).toContain('.collation({ locale: "en", strength: 2 })');
+    expect(code("mongosh")).toContain(".hint({ age: 1 })\n  .maxTimeMS(5000)");
+    expect(code("javascript")).toContain("maxTimeMS: 5000");
+    expect(code("python")).toContain('hint=[("age", 1)]');
+    expect(code("python")).toContain("max_time_ms=5000");
+    expect(code("java")).toContain(
+      '.collation(Collation.builder().locale("en").collationStrength(CollationStrength.fromInt(2)).build())',
+    );
+    expect(code("java")).toContain("import java.util.concurrent.TimeUnit;");
+    expect(code("csharp")).toContain(
+      'Collation = new Collation("en", strength: CollationStrength.Secondary)',
+    );
+    expect(code("csharp")).toContain("MaxTime = TimeSpan.FromMilliseconds(5000)");
+    expect(code("go")).toContain('.SetCollation(&options.Collation{Locale: "en", Strength: 2})');
+    expect(code("go")).toContain("context.WithTimeout(ctx, 5000*time.Millisecond)");
+    expect(code("go")).toContain('\t"time"');
+    expect(queryCode({ ...find, options: { hint: "age_1" } } as CodeSource, "java")).toContain(
+      '.hintString("age_1")',
+    );
+  });
 });
