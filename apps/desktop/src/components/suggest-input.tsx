@@ -100,7 +100,7 @@ export function SuggestInput({
       </PopoverAnchor>
       <PopoverContent
         align="start"
-        className="max-h-64 w-(--radix-popover-trigger-width) min-w-44 overflow-y-auto p-1"
+        className="max-h-64 w-max max-w-80 min-w-(--radix-popover-trigger-width) overflow-y-auto p-1"
         // The input keeps the focus while the list is open.
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
