@@ -43,5 +43,33 @@
     "deleteWarning": "I documenti eliminati non si possono recuperare. Scrivi {{collection}} per confermare.",
     "confirmLabel": "Nome della collezione, per confermare",
     "done": "Sincronizzato: {{inserted}} inseriti, {{replaced}} sostituiti, {{deleted}} eliminati."
+  },
+  "schema": {
+    "title": "Confronta schema",
+    "description": "Confronta {{left}} con un altro database: collection, campi, indici e regole di validazione. I campi vengono da un campione di ogni collection.",
+    "compare": "Confronta",
+    "again": "Confronta di nuovo",
+    "stop": "Ferma",
+    "progress": "{{done}} di {{total}} collection",
+    "summary": "{{leftOnly}} solo qui · {{rightOnly}} solo là · {{differing}} diverse · {{identical}} identiche",
+    "onlyDifferences": "Solo differenze",
+    "same": "I due database hanno la stessa struttura.",
+    "onlyIn": "Solo in {{side}}",
+    "fields_one": "{{count}} campo",
+    "fields_other": "{{count}} campi",
+    "indexes_one": "{{count}} indice",
+    "indexes_other": "{{count}} indici",
+    "rules": "Regole diverse",
+    "unreadable": "Non leggibile",
+    "field": "Campo",
+    "keys": "Chiavi dell'indice",
+    "createHere": "Crea in {{side}}",
+    "created": "Creato {{name}} su {{collection}}",
+    "createAll_one": "Crea l'indice mancante in {{side}}",
+    "createAll_other": "Crea i {{count}} indici mancanti in {{side}}",
+    "createdAll_one": "Creato {{count}} indice",
+    "createdAll_other": "Creati {{count}} indici",
+    "close": "Chiudi",
+    "menu": "Confronta schema con…"
   }
 }

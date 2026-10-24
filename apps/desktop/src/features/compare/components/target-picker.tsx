@@ -18,10 +18,18 @@ interface TargetPickerProps {
   value: Partial<CompareSide>;
   onChange: (value: Partial<CompareSide>) => void;
   disabled?: boolean;
+  /** Whole databases are compared without picking a collection. */
+  withCollection?: boolean;
 }
 
 /** Connection, database and collection to compare with, each listing what exists. */
-export function TargetPicker({ targets, value, onChange, disabled }: TargetPickerProps) {
+export function TargetPicker({
+  targets,
+  value,
+  onChange,
+  disabled,
+  withCollection = true,
+}: TargetPickerProps) {
   const { t } = useTranslation("compare");
   const id = useId();
   const { connectionId, database } = value;
@@ -33,7 +41,7 @@ export function TargetPicker({ targets, value, onChange, disabled }: TargetPicke
   const collections = useQuery({
     queryKey: ["compare-collections", connectionId, database],
     queryFn: () => call(commands.listCollections(connectionId as ConnectionId, database ?? "")),
-    enabled: connectionId !== undefined && Boolean(database),
+    enabled: withCollection && connectionId !== undefined && Boolean(database),
   });
   const field = "flex min-w-0 flex-1 flex-col gap-1.5";
 
@@ -83,29 +91,31 @@ export function TargetPicker({ targets, value, onChange, disabled }: TargetPicke
           </SelectContent>
         </Select>
       </div>
-      <div className={field}>
-        <Label htmlFor={`${id}-collection`} className="text-xs">
-          {t("target.collection")}
-        </Label>
-        <Select
-          value={value.collection ?? ""}
-          onValueChange={(next) => onChange({ ...value, collection: next })}
-          disabled={disabled || !collections.data}
-        >
-          <SelectTrigger id={`${id}-collection`} size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {collections.data
-              ?.filter((entry) => entry.kind !== "view")
-              .map((entry) => (
-                <SelectItem key={entry.name} value={entry.name}>
-                  {entry.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {withCollection && (
+        <div className={field}>
+          <Label htmlFor={`${id}-collection`} className="text-xs">
+            {t("target.collection")}
+          </Label>
+          <Select
+            value={value.collection ?? ""}
+            onValueChange={(next) => onChange({ ...value, collection: next })}
+            disabled={disabled || !collections.data}
+          >
+            <SelectTrigger id={`${id}-collection`} size="sm" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {collections.data
+                ?.filter((entry) => entry.kind !== "view")
+                .map((entry) => (
+                  <SelectItem key={entry.name} value={entry.name}>
+                    {entry.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }

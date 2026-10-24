@@ -2896,3 +2896,70 @@ async fn advises_an_index_for_slow_collection_scans() {
     assert!(advice.collection_scan && advice.occurrences >= 3.0);
     assert!(advice.existing.is_none());
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn compares_two_databases_structurally() {
+    use odin_core::schema_compare::{self, Presence, SchemaCompareRequest};
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    for (database, extra) in [("odin_staging", "nickname"), ("odin_prod", "email")] {
+        let db = handle.client.database(database);
+        db.collection::<Document>("users")
+            .insert_many((0..50).map(|i| doc! { "n": i, extra: "x" }))
+            .await
+            .expect("users");
+        db.collection::<Document>(if database == "odin_staging" {
+            "drafts"
+        } else {
+            "audit"
+        })
+        .insert_one(doc! { "n": 1 })
+        .await
+        .expect("other");
+    }
+    handle
+        .client
+        .database("odin_prod")
+        .collection::<Document>("users")
+        .create_index(
+            mongodb::IndexModel::builder()
+                .keys(doc! { "email": 1 })
+                .build(),
+        )
+        .await
+        .expect("index");
+
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let found = schema_compare::compare_schemas(
+        &handle,
+        &handle,
+        SchemaCompareRequest {
+            left_database: "odin_staging".into(),
+            right_database: "odin_prod".into(),
+        },
+        tx,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("compared");
+    let presence: Vec<_> = found
+        .collections
+        .iter()
+        .map(|c| (c.name.as_str(), c.presence))
+        .collect();
+    assert_eq!(
+        presence,
+        [
+            ("audit", Presence::RightOnly),
+            ("drafts", Presence::LeftOnly),
+            ("users", Presence::Both)
+        ]
+    );
+    let users = &found.collections[2];
+    let fields: Vec<_> = users.fields.iter().map(|f| f.path.as_str()).collect();
+    assert_eq!(fields, ["email", "nickname"]);
+    assert_eq!(users.indexes.len(), 1);
+    assert!(users.indexes[0].left.is_none() && users.indexes[0].right.is_some());
+}

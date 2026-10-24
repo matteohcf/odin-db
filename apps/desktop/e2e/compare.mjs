@@ -87,6 +87,30 @@ await check(
     await dialog.getByText("The collections hold the same documents.").waitFor({ timeout: 10000 });
   },
 );
+await check("compare schema lists structural differences and creates a missing index", async () => {
+  await page.keyboard.press("Escape");
+  await tree.getByRole("button", { name: /^shop/ }).first().hover();
+  await tree.getByRole("button", { name: "Actions for shop" }).first().click();
+  await page.getByRole("menuitem", { name: "Compare schema with…" }).click();
+  const schema = page.getByRole("dialog", { name: "Compare schema" });
+  await schema.getByRole("combobox", { name: "With connection" }).click();
+  await page.getByRole("option", { name: "Local development" }).click();
+  await schema.getByRole("combobox", { name: "Database" }).click();
+  await page.getByRole("option", { name: "analytics" }).click();
+  await schema.getByRole("button", { name: "Compare", exact: true }).click();
+  await schema.getByText("1 only here · 1 only there · 2 differ · 2 identical").waitFor();
+  await schema.getByRole("button", { name: /^orders/ }).click();
+  await schema.getByText("couponCode").waitFor();
+  await schema.getByText("status_1_placedAt_-1").waitFor();
+  await page.screenshot({ path: "test-results/compare-schema.png" });
+  await schema
+    .getByRole("button", { name: /^Create in/ })
+    .first()
+    .click();
+  await page.getByText("Created status_1_placedAt_-1 on orders").waitFor();
+  await schema.getByRole("button", { name: "Close" }).last().click();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

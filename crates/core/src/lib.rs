@@ -20,6 +20,7 @@ pub mod profiler;
 pub mod profiles;
 pub mod query;
 pub mod schema;
+pub mod schema_compare;
 pub mod secrets;
 pub mod shell;
 pub mod ssh;

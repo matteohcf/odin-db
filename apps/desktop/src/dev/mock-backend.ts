@@ -1110,6 +1110,78 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       },
     ],
   }),
+  compare_schemas: (args) => {
+    const index = (name: string, keys: Record<string, number>, unique = false) => ({
+      name,
+      keys: Object.fromEntries(
+        Object.entries(keys).map(([k, v]) => [k, { $numberInt: String(v) }]),
+      ),
+      unique,
+      sparse: false,
+      hidden: false,
+      expireAfterSeconds: null,
+      partialFilter: null,
+      definition: {},
+      size: null,
+      usageCount: null,
+      usageSince: null,
+    });
+    const same = (name: string) => ({
+      name,
+      presence: "both",
+      fields: [],
+      indexes: [],
+      validation: null,
+      error: null,
+    });
+    const result = {
+      collections: [
+        { ...same("audit_log"), presence: "rightOnly" },
+        same("categories"),
+        { ...same("drafts"), presence: "leftOnly" },
+        {
+          ...same("orders"),
+          fields: [
+            {
+              path: "couponCode",
+              leftTypes: ["string"],
+              rightTypes: [],
+              leftFrequency: 0.3,
+              rightFrequency: 0,
+            },
+            {
+              path: "total",
+              leftTypes: ["decimal"],
+              rightTypes: ["double"],
+              leftFrequency: 1,
+              rightFrequency: 1,
+            },
+          ],
+          indexes: [
+            { left: index("status_1_placedAt_-1", { status: 1, placedAt: -1 }), right: null },
+            {
+              left: index("number_1", { number: 1 }, true),
+              right: index("number_1", { number: 1 }),
+            },
+          ],
+        },
+        same("products"),
+        {
+          ...same("users"),
+          indexes: [{ left: null, right: index("lastSeen_1", { lastSeen: 1 }) }],
+          validation: {
+            left: {
+              validator: { $jsonSchema: { required: ["email"] } },
+              level: "strict",
+              action: "error",
+            },
+            right: { validator: {}, level: "strict", action: "error" },
+          },
+        },
+      ],
+    };
+    return simulateTransfer(args.channel, 6, result, 1, (done) => ({ done, total: 6 }));
+  },
   compare_collections: (args) => {
     const oid = (n: number) => ({ $oid: `65f0a1c${String(n).padStart(17, "0")}` });
     const range = (from: number, count: number) =>

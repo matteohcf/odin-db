@@ -12,6 +12,7 @@ import {
   Database,
   FileDown,
   FileUp,
+  GitCompareArrows,
   HardDriveDownload,
   HardDriveUpload,
   Plus,
@@ -32,6 +33,7 @@ import { useCollections, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
 import { isSystem, SYSTEM_DATABASES } from "../lib/tree-rows";
 import { useExpanded, useExplorer, useTreeFilter } from "../store/explorer-store";
+import { CompareSchemaDialogFor } from "./compare-schema-dialog-for";
 import { CopyDialogFor } from "./copy-dialog-for";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
@@ -60,7 +62,15 @@ export function DatabaseNode({
   const paste = useExplorer((s) => s.paste);
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
   const [toolDialog, setToolDialog] = useState<
-    "backup" | "restore" | "export" | "import" | "copy" | "createCollection" | "drop" | null
+    | "backup"
+    | "restore"
+    | "export"
+    | "import"
+    | "copy"
+    | "compareSchema"
+    | "createCollection"
+    | "drop"
+    | null
   >(null);
   const filter = useTreeFilter();
   // The export dialog lists the collections even when the database is collapsed.
@@ -147,6 +157,10 @@ export function DatabaseNode({
               <FileDown />
               {t("database.menuExport", { ns: "transfer" })}
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setToolDialog("compareSchema")}>
+              <GitCompareArrows />
+              {t("schema.menu", { ns: "compare" })}
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setToolDialog("copy")}>
               <Copy />
               {t("copy.menuDatabase", { ns: "transfer" })}
@@ -200,6 +214,13 @@ export function DatabaseNode({
           collections={collections.data
             ?.filter((collection) => collection.kind !== "view" && !isSystem(collection))
             .map((collection) => collection.name)}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
+      {toolDialog === "compareSchema" && (
+        <CompareSchemaDialogFor
+          connection={connection}
+          database={database.name}
           onClose={() => setToolDialog(null)}
         />
       )}

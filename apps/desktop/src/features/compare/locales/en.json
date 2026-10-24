@@ -43,5 +43,33 @@
     "deleteWarning": "Deleted documents cannot be recovered. Type {{collection}} to confirm.",
     "confirmLabel": "Collection name, to confirm",
     "done": "Synced: {{inserted}} inserted, {{replaced}} replaced, {{deleted}} deleted."
+  },
+  "schema": {
+    "title": "Compare schema",
+    "description": "Compares {{left}} with another database: collections, fields, indexes and validation rules. Fields come from a sample of each collection.",
+    "compare": "Compare",
+    "again": "Compare again",
+    "stop": "Stop",
+    "progress": "{{done}} of {{total}} collections",
+    "summary": "{{leftOnly}} only here · {{rightOnly}} only there · {{differing}} differ · {{identical}} identical",
+    "onlyDifferences": "Only differences",
+    "same": "The two databases have the same structure.",
+    "onlyIn": "Only in {{side}}",
+    "fields_one": "{{count}} field",
+    "fields_other": "{{count}} fields",
+    "indexes_one": "{{count}} index",
+    "indexes_other": "{{count}} indexes",
+    "rules": "Rules differ",
+    "unreadable": "Couldn't read",
+    "field": "Field",
+    "keys": "Index keys",
+    "createHere": "Create in {{side}}",
+    "created": "Created {{name}} on {{collection}}",
+    "createAll_one": "Create the missing index in {{side}}",
+    "createAll_other": "Create the {{count}} missing indexes in {{side}}",
+    "createdAll_one": "Created {{count}} index",
+    "createdAll_other": "Created {{count}} indexes",
+    "close": "Close",
+    "menu": "Compare schema with…"
   }
 }

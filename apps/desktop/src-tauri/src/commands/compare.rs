@@ -7,6 +7,9 @@ use odin_core::connection::ConnectionId;
 use odin_core::ejson::EJsonValue;
 use odin_core::operations::{OperationId, OperationRegistry};
 use odin_core::query::Namespace;
+use odin_core::schema_compare::{
+    self, SchemaCompareProgress, SchemaCompareRequest, SchemaComparison,
+};
 use serde::Serialize;
 use tauri::State;
 use tauri::ipc::Channel;
@@ -112,4 +115,51 @@ pub async fn compared_pair(
     let left_handle = state.connections.get(left_connection_id).await?;
     let right_handle = state.connections.get(right_connection_id).await?;
     Ok(compare::pair(&left_handle, &right_handle, &left, &right, id).await?)
+}
+
+/// Collections, fields and indexes found in one database and checked in the other.
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
+pub enum SchemaCompareEvent {
+    Progress(SchemaCompareProgress),
+    Finished(SchemaComparison),
+}
+
+/// Compares two databases' collections, fields, indexes and rules, as a cancellable operation.
+#[tauri::command]
+#[specta::specta]
+pub async fn compare_schemas(
+    state: State<'_, Arc<AppState>>,
+    registry: State<'_, Arc<OperationRegistry>>,
+    left_connection_id: ConnectionId,
+    right_connection_id: ConnectionId,
+    request: SchemaCompareRequest,
+    channel: Channel<StreamEvent<SchemaCompareEvent>>,
+) -> Result<OperationId, IpcError> {
+    let left = state.connections.get(left_connection_id).await?;
+    let right = state.connections.get(right_connection_id).await?;
+    Ok(spawn_streaming_operation(
+        &registry,
+        channel,
+        move |tx, cancel| async move {
+            let (progress_tx, mut progress_rx) = mpsc::channel(16);
+            let events = tx.clone();
+            tauri::async_runtime::spawn(async move {
+                while let Some(progress) = progress_rx.recv().await {
+                    if events
+                        .send(SchemaCompareEvent::Progress(progress))
+                        .await
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
+            });
+            let found =
+                schema_compare::compare_schemas(&left, &right, request, progress_tx, cancel)
+                    .await?;
+            let _ = tx.send(SchemaCompareEvent::Finished(found)).await;
+            Ok(())
+        },
+    ))
 }

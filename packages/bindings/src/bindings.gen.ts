@@ -32,6 +32,8 @@ export const commands = {
 	generateQuery: (engine: EngineChoice, request: QueryRequest, channel: Channel<StreamEvent<GeneratedQuery>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("generate_query", { engine, request, channel })),
 	/**  Compares two collections, possibly on different connections, as a cancellable operation. */
 	compareCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: CompareRequest, channel: Channel<StreamEvent<CompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_collections", { leftConnectionId, rightConnectionId, request, channel })),
+	/**  Compares two databases' collections, fields, indexes and rules, as a cancellable operation. */
+	compareSchemas: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: SchemaCompareRequest, channel: Channel<StreamEvent<SchemaCompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_schemas", { leftConnectionId, rightConnectionId, request, channel })),
 	/**  Samples a database's collections and infers their references, as a cancellable operation. */
 	databaseDiagram: (connectionId: ConnectionId, database: string, channel: Channel<StreamEvent<DiagramEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("database_diagram", { connectionId, database, channel })),
 	/**  Asks where to save a PNG rendered by the diagram, then writes it. `None` if the user cancels. */
@@ -342,6 +344,19 @@ export type Benchmark = {
 	secondsPerQuery: number | null,
 };
 
+export type CollectionComparison = {
+	name: string,
+	presence: Presence,
+	/**  Fields missing on one side or holding other types; only differences are listed. */
+	fields: FieldDifference[],
+	/**  Indexes missing on one side or built with other options; only differences are listed. */
+	indexes: IndexDifference[],
+	/**  Both sides' rules, when they differ. */
+	validation: ValidationDifference | null,
+	/**  Why one side could not be read (e.g. not authorized). */
+	error: string | null,
+};
+
 export type CollectionCount = {
 	name: string,
 	count: number | null,
@@ -640,6 +655,16 @@ export type ExportRequest = {
 
 export type ExportSource = { kind: "find"; request: FindRequest } | { kind: "aggregate"; pipeline: EJsonDocument[] };
 
+export type FieldDifference = {
+	path: string,
+	/**  Types seen on each side; empty where the field was not seen. */
+	leftTypes: string[],
+	rightTypes: string[],
+	/**  Share of sampled documents that have it, on each side. */
+	leftFrequency: number | null,
+	rightFrequency: number | null,
+};
+
 /**  Field paths and BSON type names only: no value of any document ever reaches a model. */
 export type FieldHint = {
 	path: string,
@@ -772,6 +797,12 @@ export type IndexAdvice = {
 	existing: string | null,
 };
 
+export type IndexDifference = {
+	/**  The same keys on both sides: they are one index, whatever each side calls it. */
+	left: IndexInfo | null,
+	right: IndexInfo | null,
+};
+
 export type IndexInfo = {
 	name: string,
 	keys: EJsonDocument,
@@ -880,6 +911,8 @@ export type PickedFolder = {
 	/**  For display only. */
 	path: string,
 };
+
+export type Presence = "both" | "leftOnly" | "rightOnly";
 
 /**  A label color, like Compass's, so production never looks like development. */
 export type ProfileColor = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink" | "gray";
@@ -1019,6 +1052,23 @@ export type ScheduleInput = {
 	/**  How many of this schedule's backups to keep; older ones are deleted. */
 	keep: number,
 	enabled: boolean,
+};
+
+/**  Collections, fields and indexes found in one database and checked in the other. */
+export type SchemaCompareEvent = { kind: "progress"; value: SchemaCompareProgress } | { kind: "finished"; value: SchemaComparison };
+
+export type SchemaCompareProgress = {
+	done: number | null,
+	total: number | null,
+};
+
+export type SchemaCompareRequest = {
+	leftDatabase: string,
+	rightDatabase: string,
+};
+
+export type SchemaComparison = {
+	collections: CollectionComparison[],
 };
 
 /**
@@ -1175,6 +1225,11 @@ export type UserInfo = {
 export type ValidationAction = "error" | 
 /**  Accepted, and logged by the server. */
 "warn";
+
+export type ValidationDifference = {
+	left: ValidationRules,
+	right: ValidationRules,
+};
 
 /**  Which writes the rules apply to. */
 export type ValidationLevel = "off" | "strict" | 
