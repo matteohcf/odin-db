@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.1.0](https://github.com/matteohcf/odin-db/compare/v1.0.2...v1.1.0) (2026-10-24)
+
+
+### Features
+
+* a database diagram with references inferred from the data ([73f55c4](https://github.com/matteohcf/odin-db/commit/73f55c4632f61ec79d266d59449eeaaafa78bab2))
+* **core:** import compass exports with their passwords, ssh tunnels and colors ([ffad556](https://github.com/matteohcf/odin-db/commit/ffad5560fb03b6fa04afe19cd80c05bf40272834))
+* **desktop:** a navy dark style like compass and a system interface font option ([68309b3](https://github.com/matteohcf/odin-db/commit/68309b37e1d8cc9021ed100227c54a152c00da7d))
+* **desktop:** copy a database diagram as mermaid or save it as an image ([55b71f0](https://github.com/matteohcf/odin-db/commit/55b71f07416e47e8d8147ca6024e64386f1d531f))
+* **desktop:** copy and paste collections and databases in the tree ([23e5250](https://github.com/matteohcf/odin-db/commit/23e52500b203b7b29d85bb3a0280f58a5f34427b))
+* **desktop:** edit documents in place in the list view, like compass ([a6eb0d4](https://github.com/matteohcf/odin-db/commit/a6eb0d436b3e8a449fb6a9f24f9aa089ba00b48a))
+* **desktop:** give the connection tree compass's look ([daa6f6f](https://github.com/matteohcf/odin-db/commit/daa6f6f579d83bf38e5063a57e4a69d05efe8a5a))
+* **desktop:** locate the open collection from the sidebar header ([138e622](https://github.com/matteohcf/odin-db/commit/138e6228657a2d0fe194fdb6be35271596bba3f2))
+* **desktop:** open a database diagram from the command palette ([7e6a9f1](https://github.com/matteohcf/odin-db/commit/7e6a9f18c34b81ba1a5c07398c36ed174efed2dc))
+* **desktop:** paste a pipeline into the aggregation builder ([3e2e2ab](https://github.com/matteohcf/odin-db/commit/3e2e2abc93980fe9ae9efc089096adf4605a598d))
+* **desktop:** quick actions on hover and a right-click menu in the connection tree ([7a720f9](https://github.com/matteohcf/odin-db/commit/7a720f9599bdf0bb01a5d0618396f3e2ff4ff396))
+* **desktop:** show a wide document's first 25 fields with the rest one click away ([e26473a](https://github.com/matteohcf/odin-db/commit/e26473ad30874dbe3a32918ff6dd8a8c92cc4eb1))
+* **desktop:** show document and index counts on the collection tabs ([45b2674](https://github.com/matteohcf/odin-db/commit/45b2674f41da4bc2a68ed4c555d55322f250c640))
+* **desktop:** start a new connection or a compass import from the welcome page ([09472c2](https://github.com/matteohcf/odin-db/commit/09472c25505cecaa16697237977eb306a709eb95))
+* **desktop:** tint an open connection's tree with its color, like compass ([8f27ea3](https://github.com/matteohcf/odin-db/commit/8f27ea3de3d0bcf106c785941141f0f404be1e1e))
+* **ui:** give dialogs a footer bar that stays in view while they scroll ([6983c89](https://github.com/matteohcf/odin-db/commit/6983c89b65655e291c8516c4fd4887f62a7ecd90))
+
+
+### Bug Fixes
+
+* **deps:** update crypto and tls crates for new security advisories ([6962aa3](https://github.com/matteohcf/odin-db/commit/6962aa3c861bd8c8e79d4261fa6c9347b475e5cc))
+* **desktop:** collapse a connection clicked right after it connects ([8357a83](https://github.com/matteohcf/odin-db/commit/8357a83b12d5a627bb603d637f9ebbcd938b7b2d))
+* **desktop:** fit the ai models table in narrow settings panes ([cae22a5](https://github.com/matteohcf/odin-db/commit/cae22a5af8361398f4675ed7b15ae7ded4ee30bc))
+* **desktop:** show the model table columns whenever the settings pane fits them ([2a347db](https://github.com/matteohcf/odin-db/commit/2a347db41e717486bfa3f476e8b1912cb062a98a))
+* **desktop:** stop auto-capitalizing inputs and keep the connection dialog steady ([40e7a65](https://github.com/matteohcf/odin-db/commit/40e7a65dc6eb73286538e9976fc7782df3686978))
+
 ## [1.0.2](https://github.com/matteohcf/odin-db/compare/v1.0.1...v1.0.2) (2026-10-18)
 
 
