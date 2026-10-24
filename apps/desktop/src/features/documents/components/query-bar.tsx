@@ -3,7 +3,7 @@ import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
-import { ChevronDown, Gauge, Loader2, Play } from "lucide-react";
+import { ChevronDown, Gauge, Loader2, Play, SlidersHorizontal, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
@@ -101,12 +101,30 @@ export function QueryBar({
   const messages = Object.entries(errors).filter(([, message]) => message);
 
   return (
-    <div className="flex flex-col gap-2 border-b px-3 py-2.5">
+    // A container, so labels give way to icons when the tab is narrow, before the filter does.
+    <div className="@container flex flex-col gap-2 border-b px-3 py-2.5">
       <div className="flex items-center gap-2">
         <QueryFieldFrame
           label={t("query.filter")}
           invalid={Boolean(errors.filter)}
-          className="flex-1"
+          className="min-w-56 flex-1"
+          end={
+            !isEmpty && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t("query.reset")}
+                title={t("query.resetHint")}
+                onClick={() => {
+                  setExpanded(false);
+                  onRunForm(emptyQueryForm);
+                }}
+                className="mr-0.5 ml-auto size-6 shrink-0 text-muted-foreground"
+              >
+                <X />
+              </Button>
+            )
+          }
         >
           <QueryEditor
             value={form.filter}
@@ -157,29 +175,24 @@ export function QueryBar({
           variant="ghost"
           size="sm"
           aria-expanded={Boolean(showOptions)}
+          aria-label={t("query.options")}
+          title={t("query.options")}
           onClick={() => setExpanded((value) => !value)}
-          className={cn("text-muted-foreground", hasOptions && "text-foreground")}
+          className={cn("relative text-muted-foreground", hasOptions && "text-foreground")}
         >
-          {t("query.options")}
-          <ChevronDown className={cn("transition-transform", showOptions && "rotate-180")} />
+          <SlidersHorizontal className="@4xl:hidden" />
+          <span className="hidden @4xl:inline">{t("query.options")}</span>
+          <ChevronDown
+            className={cn("hidden transition-transform @4xl:block", showOptions && "rotate-180")}
+          />
+          {hasOptions && (
+            <span className="absolute top-1 right-1 size-1.5 rounded-full bg-primary @4xl:hidden" />
+          )}
         </Button>
-        {!isEmpty && (
-          <Button
-            variant="ghost"
-            size="sm"
-            title={t("query.resetHint")}
-            onClick={() => {
-              setExpanded(false);
-              onRunForm(emptyQueryForm);
-            }}
-          >
-            {t("query.reset")}
-          </Button>
-        )}
         <Button size="sm" onClick={onRun} disabled={running} title={t("query.runShortcut")}>
           <Play className="fill-current" />
           {t("query.run")}
-          <Kbd className="bg-primary-foreground/15 text-primary-foreground">
+          <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground @3xl:inline-flex">
             {label(EDIT_SHORTCUTS.submit)}
           </Kbd>
         </Button>

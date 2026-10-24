@@ -39,9 +39,10 @@ export function SavedPipelinesMenu({ storageKey, stages, onLoad }: SavedPipeline
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" aria-label={t("saved.open")} title={t("saved.open")}>
           <Bookmark />
-          {t("saved.open")}
+          {/* Its toolbar is a container that turns secondary labels into icons when narrow. */}
+          <span className="hidden @4xl:inline">{t("saved.open")}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-96 p-0">

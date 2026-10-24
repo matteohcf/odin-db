@@ -111,7 +111,7 @@ export function DatabaseNode({
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => copyNode({ connection, database: database.name })}>
               <Copy />
-              {t("clipboard.copy")}
+              {t("clipboard.copyDatabase")}
               <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.copy)}</DropdownMenuShortcut>
             </DropdownMenuItem>
             {copied && writable && (

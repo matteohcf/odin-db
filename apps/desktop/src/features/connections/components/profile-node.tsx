@@ -166,6 +166,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
                   <RefreshCw />
                   {t("profile.refresh")}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {!connection.readOnly && (
                   <DropdownMenuItem onSelect={() => setToolDialog("createDatabase")}>
                     <DatabaseZap />
@@ -184,6 +185,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
                   <SquareTerminal />
                   {t("profile.openShell")}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
                   <HardDriveDownload />
                   {t("menu.backupAll", { ns: "backup" })}
@@ -200,6 +202,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
                 )}
               </>
             )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onEdit}>
               <Pencil />
               {t("profile.edit")}

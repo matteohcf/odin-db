@@ -61,7 +61,8 @@
     "count_other": "Circa {{count, number}} documenti",
     "databases_one": "{{count, number}} database",
     "databases_other": "{{count, number}} database",
-    "diagram": "Mostra diagramma"
+    "diagram": "Mostra diagramma",
+    "openInNewTab": "Apri in una nuova scheda"
   },
   "dialog": {
     "createTitle": "Nuova connessione",
@@ -264,7 +265,8 @@
   "clipboard": {
     "copied": "Copiato {{name}}. Seleziona un database o un server e premi {{key}} per incollarlo lì.",
     "empty": "Non hai ancora copiato niente: seleziona una collection o un database e premi ⌘C / Ctrl+C.",
-    "copy": "Copia",
-    "paste": "Incolla qui {{name}}"
+    "paste": "Incolla qui {{name}}",
+    "copyCollection": "Copia collezione",
+    "copyDatabase": "Copia database"
   }
 }

@@ -4,10 +4,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
 } from "@odin-db/ui/components/dropdown-menu";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardCopy,
   Clock,
   Copy,
+  Download,
+  ExternalLink,
   Eye,
   Files,
   Folder,
@@ -17,14 +20,17 @@ import {
   Star,
   StarOff,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog } from "@/features/backup";
+import { ExportDialog, ImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
 import { formatCompact } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
 import { EDIT_SHORTCUTS, isModClick, label } from "@/lib/shortcuts";
+import { connectionKeys } from "../api/keys";
 import { useCollectionCounts, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
 import { isSystem } from "../lib/tree-rows";
@@ -81,9 +87,10 @@ export function CollectionNode({
       },
       newTab,
     );
-  const [dialog, setDialog] = useState<"backup" | "compare" | "copy" | "rename" | "drop" | null>(
-    null,
-  );
+  const queryClient = useQueryClient();
+  const [dialog, setDialog] = useState<
+    "backup" | "compare" | "copy" | "rename" | "drop" | "export" | "import" | null
+  >(null);
   const profileName = useProfile(connection.profileId)?.name ?? "";
   const isView = collection.kind === "view";
   const writable = !connection.readOnly && !isSystem(collection);
@@ -121,6 +128,10 @@ export function CollectionNode({
         menuLabel={t("tree.actions", { name: collection.name })}
         menu={
           <>
+            <DropdownMenuItem onSelect={() => open(true)}>
+              <ExternalLink />
+              {t("tree.openInNewTab")}
+            </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
                 toggleFavorite({
@@ -143,8 +154,19 @@ export function CollectionNode({
                 onSelect={() => copyNode({ connection, database, collection: collection.name })}
               >
                 <Copy />
-                {t("clipboard.copy")}
+                {t("clipboard.copyCollection")}
                 <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.copy)}</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setDialog("export")}>
+              <Download />
+              {t("menu.exportCollection", { ns: "transfer" })}
+            </DropdownMenuItem>
+            {writable && !isView && (
+              <DropdownMenuItem onSelect={() => setDialog("import")}>
+                <Upload />
+                {t("menu.importCollection", { ns: "transfer" })}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -195,6 +217,39 @@ export function CollectionNode({
           connection={connection}
           database={database}
           collection={collection.name}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "export" && (
+        <ExportDialog
+          connectionId={connection.id}
+          namespace={{ database, collection: collection.name }}
+          source={{
+            kind: "find",
+            request: {
+              filter: {},
+              projection: null,
+              sort: null,
+              skip: null,
+              limit: null,
+              batchSize: 1000,
+            },
+          }}
+          columns={[]}
+          whole
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "import" && (
+        <ImportDialog
+          connectionId={connection.id}
+          namespace={{ database, collection: collection.name }}
+          // The tree's document counts are the one thing here that changes.
+          onImported={() =>
+            void queryClient.invalidateQueries({
+              queryKey: connectionKeys.counts(connection.id, database),
+            })
+          }
           onClose={() => setDialog(null)}
         />
       )}

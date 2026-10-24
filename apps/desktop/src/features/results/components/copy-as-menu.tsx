@@ -17,7 +17,8 @@ export function CopyAsMenu({ value, label }: { value: JsonValue; label: string }
   const { t } = useTranslation("results");
   return (
     <ContextMenuSub>
-      <ContextMenuSubTrigger>
+      {/* shadcn's sub-trigger has no gap of its own, unlike its items. */}
+      <ContextMenuSubTrigger className="gap-2">
         <Copy />
         {label}
       </ContextMenuSubTrigger>

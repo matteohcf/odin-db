@@ -2,7 +2,9 @@
   "menu": {
     "more": "More actions",
     "import": "Import documents…",
-    "export": "Export results…"
+    "export": "Export results…",
+    "exportCollection": "Export collection…",
+    "importCollection": "Import into collection…"
   },
   "export": {
     "title": "Export results",
@@ -30,7 +32,9 @@
     "failed": "Export failed: {{message}}",
     "count_one": "{{count, number}} document will be exported.",
     "count_other": "{{count, number}} documents will be exported.",
-    "nothing": "No document matches the query: the file would be empty."
+    "nothing": "No document matches the query: the file would be empty.",
+    "titleCollection": "Export {{collection}}",
+    "descriptionCollection": "Writes every document of {{namespace}} to a file."
   },
   "import": {
     "title": "Import documents",

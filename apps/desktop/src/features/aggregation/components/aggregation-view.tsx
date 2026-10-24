@@ -201,7 +201,8 @@ export function AggregationView({
         void paste(event.clipboardData.getData("text"));
       }}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
+      {/* A container, so secondary labels give way to icons before anything overflows. */}
+      <div className="@container flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
         {mode === "stages" && (
           <Button variant="outline" size="sm" onClick={() => actions.add("$match")}>
             <Plus />
@@ -211,26 +212,35 @@ export function AggregationView({
         <Button
           variant="ghost"
           size="sm"
+          aria-label={t("toolbar.copy")}
+          title={t("toolbar.copy")}
           onClick={() => {
             void navigator.clipboard.writeText(mode === "text" ? text : pipelineToText(stages));
             toast.success(t("toolbar.copied"));
           }}
         >
           <Copy />
-          {t("toolbar.copy")}
+          <span className="hidden @4xl:inline">{t("toolbar.copy")}</span>
         </Button>
         <Button
           variant="ghost"
           size="sm"
+          aria-label={t("toolbar.paste")}
           title={t("toolbar.pasteHint")}
           onClick={() => void navigator.clipboard.readText().then(paste)}
         >
           <ClipboardPaste />
-          {t("toolbar.paste")}
+          <span className="hidden @4xl:inline">{t("toolbar.paste")}</span>
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => void showCode()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={t("queryCode.toolbar", { ns: "common" })}
+          title={t("queryCode.toolbar", { ns: "common" })}
+          onClick={() => void showCode()}
+        >
           <Code2 />
-          {t("queryCode.toolbar", { ns: "common" })}
+          <span className="hidden @4xl:inline">{t("queryCode.toolbar", { ns: "common" })}</span>
         </Button>
         <SavedPipelinesMenu
           storageKey={pipelineKey(connection.profileId, namespace.database, namespace.collection)}
@@ -261,19 +271,29 @@ export function AggregationView({
           aria-label={t("text.label")}
           className="ml-auto"
         >
-          <ToggleGroupItem value="stages" className="gap-1.5 px-2.5">
+          <ToggleGroupItem
+            value="stages"
+            aria-label={t("text.stages")}
+            title={t("text.stages")}
+            className="gap-1.5 px-2.5"
+          >
             <Rows3 />
-            {t("text.stages")}
+            <span className="hidden @3xl:inline">{t("text.stages")}</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="text" className="gap-1.5 px-2.5">
+          <ToggleGroupItem
+            value="text"
+            aria-label={t("text.text")}
+            title={t("text.text")}
+            className="gap-1.5 px-2.5"
+          >
             <FileCode2 />
-            {t("text.text")}
+            <span className="hidden @3xl:inline">{t("text.text")}</span>
           </ToggleGroupItem>
         </ToggleGroup>
         <Button size="sm" onClick={() => void run()} title={t("toolbar.runHint")}>
           <Play className="fill-current" />
           {t("toolbar.run")}
-          <Kbd className="bg-primary-foreground/15 text-primary-foreground">
+          <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground @3xl:inline-flex">
             {label(EDIT_SHORTCUTS.submit)}
           </Kbd>
         </Button>

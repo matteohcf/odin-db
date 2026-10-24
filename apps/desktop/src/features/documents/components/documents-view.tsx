@@ -358,15 +358,27 @@ export function DocumentsView({
         actions={
           <>
             {editable && gridFs.bucket && (
-              <Button variant="outline" size="sm" onClick={() => void gridFs.upload()}>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={t("gridfs.upload")}
+                title={t("gridfs.upload")}
+                onClick={() => void gridFs.upload()}
+              >
                 <Upload />
-                {t("gridfs.upload")}
+                <span className="hidden @4xl:inline">{t("gridfs.upload")}</span>
               </Button>
             )}
             {editable && (
-              <Button variant="outline" size="sm" onClick={() => openInsert()}>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={t("insert")}
+                title={t("insert")}
+                onClick={() => openInsert()}
+              >
                 <Plus />
-                {t("insert")}
+                <span className="hidden @4xl:inline">{t("insert")}</span>
               </Button>
             )}
             <DropdownMenu>

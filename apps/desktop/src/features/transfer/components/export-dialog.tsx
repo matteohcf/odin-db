@@ -34,6 +34,8 @@ interface ExportDialogProps {
   source: ExportSource;
   /** Known columns, pre-selected for CSV. */
   columns: readonly string[];
+  /** The whole collection rather than a query's results: says so in the title. */
+  whole?: boolean;
   onClose: () => void;
 }
 
@@ -44,6 +46,7 @@ export function ExportDialog({
   namespace,
   source,
   columns,
+  whole = false,
   onClose,
 }: ExportDialogProps) {
   const { t } = useTranslation("transfer");
@@ -98,8 +101,18 @@ export function ExportDialog({
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("export.title")}</DialogTitle>
-          <DialogDescription>{t("export.description")}</DialogDescription>
+          <DialogTitle>
+            {whole
+              ? t("export.titleCollection", { collection: namespace.collection })
+              : t("export.title")}
+          </DialogTitle>
+          <DialogDescription>
+            {whole
+              ? t("export.descriptionCollection", {
+                  namespace: `${namespace.database}.${namespace.collection}`,
+                })
+              : t("export.description")}
+          </DialogDescription>
           {exportCount !== undefined && (
             <p
               className={cn(

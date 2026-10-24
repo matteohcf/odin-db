@@ -6,10 +6,18 @@ interface QueryFieldFrameProps {
   invalid: boolean;
   className?: string;
   children: ReactNode;
+  /** Inside the frame, after the editor: e.g. a clear button. */
+  end?: ReactNode;
 }
 
 /** The frame of a query bar field, with its label inside like a terminal prompt. */
-export function QueryFieldFrame({ label, invalid, className, children }: QueryFieldFrameProps) {
+export function QueryFieldFrame({
+  label,
+  invalid,
+  className,
+  children,
+  end,
+}: QueryFieldFrameProps) {
   return (
     <div
       className={cn(
@@ -23,6 +31,7 @@ export function QueryFieldFrame({ label, invalid, className, children }: QueryFi
         {label}
       </span>
       {children}
+      {end}
     </div>
   );
 }

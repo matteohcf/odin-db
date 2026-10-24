@@ -144,7 +144,8 @@ function CollectionWorkspace({
     <Tabs value={view} onValueChange={select} className="flex h-full min-w-0 flex-col gap-0">
       <header
         className={cn(
-          "flex h-11 shrink-0 items-center gap-3 border-b px-3",
+          // A container: when narrow, the path and inactive view labels give way first.
+          "@container flex h-11 shrink-0 items-center gap-3 border-b px-3",
           // The connection's color frames every collection it shows, like Compass.
           color && ["border-t-2", PROFILE_COLOR_CLASS[color].border],
         )}
@@ -153,11 +154,15 @@ function CollectionWorkspace({
           className="flex min-w-0 items-baseline gap-1.5 text-[13px]"
           aria-label={`${tab.database}.${tab.collection}`}
         >
-          <span className="truncate text-muted-foreground">{profileName}</span>
-          <span className="text-muted-foreground/50">/</span>
-          <span className="truncate text-muted-foreground">{tab.database}</span>
-          <span className="text-muted-foreground/50">/</span>
-          <h1 className="truncate font-semibold text-base">
+          <span className="hidden shrink-[3] truncate text-muted-foreground @4xl:inline">
+            {profileName}
+          </span>
+          <span className="hidden text-muted-foreground/50 @4xl:inline">/</span>
+          <span className="hidden shrink-[2] truncate text-muted-foreground @3xl:inline">
+            {tab.database}
+          </span>
+          <span className="hidden text-muted-foreground/50 @3xl:inline">/</span>
+          <h1 className="min-w-[6ch] truncate font-semibold text-base">
             <button
               type="button"
               onClick={reveal}
@@ -182,7 +187,11 @@ function CollectionWorkspace({
           </Tooltip>
         )}
         <div className="ml-auto" />
-        {!isView && <CollectionStats connectionId={connection.id} namespace={namespace} />}
+        {!isView && (
+          <div className="hidden @4xl:contents">
+            <CollectionStats connectionId={connection.id} namespace={namespace} />
+          </div>
+        )}
         <TabsList className="h-8" aria-label={t("views.label")}>
           {/* Views have no validation rules of their own. */}
           {VIEWS.filter((value) => value !== "validation" || !isView).map((value) => {
@@ -191,14 +200,19 @@ function CollectionWorkspace({
               <TabsTrigger
                 key={value}
                 value={value}
+                aria-label={t(`views.${value}`)}
+                title={t(`views.${value}`)}
                 // shadcn's 60% foreground misses WCAG contrast on the muted list.
                 className="group px-2.5 text-muted-foreground text-xs"
               >
                 <Icon />
-                {t(`views.${value}`)}
+                {/* Narrow: only the open view keeps its name and count. */}
+                <span className="hidden group-data-[state=active]:inline @5xl:inline">
+                  {t(`views.${value}`)}
+                </span>
                 {badges[value] !== undefined && (
                   // Compass-style counts; the exact figures are in the stats tooltip.
-                  <span className="rounded-sm bg-muted px-1 font-normal text-[11px] text-muted-foreground tabular-nums group-data-[state=active]:bg-accent">
+                  <span className="hidden rounded-sm bg-muted px-1 font-normal text-[11px] text-muted-foreground tabular-nums group-data-[state=active]:inline group-data-[state=active]:bg-accent @5xl:inline">
                     {badges[value]}
                   </span>
                 )}

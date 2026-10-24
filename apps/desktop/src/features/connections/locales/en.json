@@ -61,7 +61,8 @@
     "count_other": "About {{count, number}} documents",
     "databases_one": "{{count, number}} database",
     "databases_other": "{{count, number}} databases",
-    "diagram": "Show diagram"
+    "diagram": "Show diagram",
+    "openInNewTab": "Open in new tab"
   },
   "dialog": {
     "createTitle": "New connection",
@@ -264,7 +265,8 @@
   "clipboard": {
     "copied": "Copied {{name}}. Select a database or server and press {{key}} to paste it there.",
     "empty": "Nothing copied yet: select a collection or database and press ⌘C / Ctrl+C.",
-    "copy": "Copy",
-    "paste": "Paste {{name}} here"
+    "paste": "Paste {{name}} here",
+    "copyCollection": "Copy collection",
+    "copyDatabase": "Copy database"
   }
 }

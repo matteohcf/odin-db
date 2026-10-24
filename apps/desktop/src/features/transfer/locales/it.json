@@ -2,7 +2,9 @@
   "menu": {
     "more": "Altre azioni",
     "import": "Importa documenti…",
-    "export": "Esporta risultati…"
+    "export": "Esporta risultati…",
+    "exportCollection": "Esporta collezione…",
+    "importCollection": "Importa nella collezione…"
   },
   "export": {
     "title": "Esporta risultati",
@@ -30,7 +32,9 @@
     "failed": "Esportazione non riuscita: {{message}}",
     "count_one": "Verrà esportato {{count, number}} documento.",
     "count_other": "Verranno esportati {{count, number}} documenti.",
-    "nothing": "Nessun documento corrisponde alla query: il file sarebbe vuoto."
+    "nothing": "Nessun documento corrisponde alla query: il file sarebbe vuoto.",
+    "titleCollection": "Esporta {{collection}}",
+    "descriptionCollection": "Scrive tutti i documenti di {{namespace}} in un file."
   },
   "import": {
     "title": "Importa documenti",
