@@ -128,6 +128,15 @@ await check("export the collection", async () => {
   await dialog.getByRole("button", { name: "Choose file and export" }).click();
   await dialog.getByText(/Exported/).waitFor({ timeout: 10000 });
 });
+await check("the welcome page starts a new connection", async () => {
+  await page.keyboard.press("Escape");
+  // The welcome page shows once no tab is open.
+  while (await page.getByRole("tab", { name: /shop/ }).count()) await page.keyboard.press("Meta+w");
+  await page.getByRole("main").getByRole("button", { name: "New connection" }).click();
+  await page.getByRole("dialog", { name: "New connection" }).waitFor();
+  await page.keyboard.press("Escape");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

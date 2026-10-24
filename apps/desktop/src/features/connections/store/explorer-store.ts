@@ -26,6 +26,14 @@ interface ExplorerState {
   /** Where the copied node is being pasted, while the copy dialog is open. */
   pasting: PasteTarget | null;
   paste: (target: PasteTarget | null) => void;
+  /** Set by the mounted sidebar, so screens elsewhere (the welcome page) can start these. */
+  commands: ExplorerCommands | null;
+  setCommands: (commands: ExplorerCommands | null) => void;
+}
+
+interface ExplorerCommands {
+  newConnection: () => void;
+  importConnections: () => void;
 }
 
 export interface PasteTarget {
@@ -58,6 +66,8 @@ export const useExplorer = create<ExplorerState>()((set) => ({
   copy: (copied) => set({ copied }),
   pasting: null,
   paste: (pasting) => set({ pasting }),
+  commands: null,
+  setCommands: (commands) => set({ commands }),
 }));
 
 export function useExpanded(key: string) {

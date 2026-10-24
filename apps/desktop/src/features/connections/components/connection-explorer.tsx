@@ -27,7 +27,7 @@ import {
   Unplug,
   X,
 } from "lucide-react";
-import { type CSSProperties, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useTabs } from "@/features/workspace";
@@ -100,6 +100,21 @@ export function ConnectionExplorer() {
       toast.error(t("explorer.importFailed", { message: errorMessage(error) }));
     }
   }
+
+  // The latest handlers, behind stable functions the welcome page can call.
+  const handlers = useRef({
+    importConnections,
+    newConnection: () => setDialog({ type: "create" }),
+  });
+  handlers.current = { importConnections, newConnection: () => setDialog({ type: "create" }) };
+  const setCommands = useExplorer((s) => s.setCommands);
+  useEffect(() => {
+    setCommands({
+      newConnection: () => handlers.current.newConnection(),
+      importConnections: () => void handlers.current.importConnections(),
+    });
+    return () => setCommands(null);
+  }, [setCommands]);
 
   async function exportConnections(ids: ProfileId[]) {
     try {

@@ -1,8 +1,9 @@
+import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { Clock, Eye, Table2 } from "lucide-react";
+import { Clock, Eye, FileUp, Plus, Table2 } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { ProfileColorMark } from "@/components/profile-color-mark";
-import { useOpenCollection, useProfiles } from "@/features/connections";
+import { useExplorer, useOpenCollection, useProfiles } from "@/features/connections";
 import { useTabs } from "@/features/workspace";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
 
@@ -13,6 +14,7 @@ export function Welcome() {
   const recent = useTabs((s) => s.recent);
   const openCollection = useOpenCollection();
   const { data: profiles = [] } = useProfiles();
+  const commands = useExplorer((s) => s.commands);
   // Collections of deleted connections are not offered.
   const shown = recent.flatMap((entry) => {
     const profile = profiles.find((p) => p.id === entry.profileId);
@@ -35,6 +37,18 @@ export function Welcome() {
         <h1 className="font-semibold text-base">{t("welcome.title")}</h1>
         <p className="text-muted-foreground text-xs leading-relaxed">{t("welcome.body")}</p>
       </div>
+      {commands && (
+        <div className="flex gap-2">
+          <Button size="sm" onClick={commands.newConnection}>
+            <Plus />
+            {t("welcome.newConnection")}
+          </Button>
+          <Button size="sm" variant="outline" onClick={commands.importConnections}>
+            <FileUp />
+            {t("welcome.import")}
+          </Button>
+        </div>
+      )}
       {shown.length > 0 && (
         <section
           aria-label={t("welcome.recent")}

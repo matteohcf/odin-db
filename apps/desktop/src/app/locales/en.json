@@ -4,7 +4,9 @@
     "title": "Open a collection",
     "body": "Connect to a server in the sidebar, then pick a collection to browse, query and edit its documents.",
     "palette": "Press <kbd>{{shortcut}}</kbd> to jump to any collection or action.",
-    "recent": "Recently opened"
+    "recent": "Recently opened",
+    "newConnection": "New connection",
+    "import": "Import from Compass…"
   },
   "quit": {
     "title_one": "Quit while an operation is running?",
