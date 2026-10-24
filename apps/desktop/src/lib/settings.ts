@@ -57,7 +57,7 @@ export interface Settings {
 /** Sidebar row heights in pixels; the tree adds a 1px gap between rows. */
 export const TREE_ROW_HEIGHTS = { normal: 28, compact: 24 } as const;
 
-export const ACCENTS = ["indigo", "blue", "teal", "green", "orange", "rose", "violet"] as const;
+export const ACCENTS = ["green", "indigo", "blue", "teal", "orange", "rose", "violet"] as const;
 type Accent = (typeof ACCENTS)[number];
 
 export const ROW_HEIGHTS = { compact: 24, normal: 30, comfortable: 36 } as const;
@@ -74,7 +74,7 @@ export const DEFAULT_SETTINGS: Settings = {
   queryHistorySize: 50,
   queryCodeLanguage: "javascript",
   sidebarWidth: 288,
-  accent: "indigo",
+  accent: "green",
   darkStyle: "graphite",
   uiFont: "plex",
   rowDensity: "normal",

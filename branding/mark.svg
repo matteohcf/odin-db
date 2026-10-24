@@ -1,4 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="232 232 560 560">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 180 824 680" fill="currentColor">
   <title>odin-db</title>
-  <path fill="currentColor" fill-rule="evenodd" d="M850 484 Q742 402 636 392 C600 340 540 318 470 322 C380 330 326 396 318 470 C312 548 322 612 350 662 L306 760 L392 706 L410 806 L468 716 L530 786 L552 670 C592 630 616 592 640 552 Z M620 410 a30 30 0 1 0 -60 0 a30 30 0 1 0 60 0 Z" transform="translate(-66 -50)"/>
+  <defs>
+    <mask id="eye">
+      <rect x="0" y="0" width="1024" height="1024" fill="#ffffff"/>
+      <circle cx="792" cy="262" r="20" fill="#000000"/>
+    </mask>
+  </defs>
+  <g transform="translate(512 512) scale(0.92) translate(-512 -540)" mask="url(#eye)">
+    <path d="M300 640 C210 642 160 690 128 712 C200 724 262 718 316 700 Z"/>
+    <rect x="318" y="660" width="70" height="128" rx="32"/>
+    <rect x="600" y="660" width="70" height="128" rx="32"/>
+    <path d="M282 714 C276 556 392 476 520 482 C650 488 732 572 736 714 Z"/>
+    <rect x="402" y="672" width="72" height="128" rx="32"/>
+    <rect x="660" y="664" width="70" height="128" rx="32"/>
+    <path d="M640 560 C706 470 690 380 760 292" fill="none" stroke="currentColor" stroke-width="96" stroke-linecap="round"/>
+    <ellipse cx="770" cy="282" rx="92" ry="66"/>
+  </g>
 </svg>

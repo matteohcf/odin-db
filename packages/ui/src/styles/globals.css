@@ -21,7 +21,7 @@
   --card-foreground: #1a1a23;
   --popover: #ffffff;
   --popover-foreground: #1a1a23;
-  --primary: #4f46e5;
+  --primary: #00684a;
   --primary-foreground: #ffffff;
   --secondary: #ececf2;
   --secondary-foreground: #1a1a23;
@@ -29,13 +29,13 @@
   --muted-foreground: #64646f;
   --accent: #e9e9f0;
   --accent-foreground: #1a1a23;
-  --selection: #4f46e51a;
+  --selection: #00684a1a;
   --destructive: #d23a3a;
   --success: #2f7d4f;
   --warning: #9a5b00;
   --border: #e3e3ea;
   --input: #dcdce4;
-  --ring: #4f46e580;
+  --ring: #00684a80;
 
   --type-string: #2a7046;
   --type-number: #2459c9;
@@ -55,7 +55,7 @@
   --card-foreground: #e7e7ee;
   --popover: #1d1d26;
   --popover-foreground: #e7e7ee;
-  --primary: #8b85ff;
+  --primary: #00ed64;
   --primary-foreground: #121218;
   --secondary: #23232e;
   --secondary-foreground: #e7e7ee;
@@ -63,13 +63,13 @@
   --muted-foreground: #9a9aab;
   --accent: #262632;
   --accent-foreground: #e7e7ee;
-  --selection: #8b85ff24;
+  --selection: #00ed6424;
   --destructive: #f06363;
   --success: #7ccf9a;
   --warning: #e2b053;
   --border: #2a2a35;
   --input: #34343f;
-  --ring: #8b85ff80;
+  --ring: #00ed6480;
 
   --type-string: #7ccf9a;
   --type-number: #7aa7ff;
@@ -119,16 +119,17 @@
   --selection: #4fd1c524;
   --ring: #4fd1c580;
 }
+/* Compass's greens: forest on light surfaces, spring on dark ones. */
 [data-accent="green"] {
-  --primary: #15803d;
-  --selection: #15803d1a;
-  --ring: #15803d80;
+  --primary: #00684a;
+  --selection: #00684a1a;
+  --ring: #00684a80;
 }
 .dark[data-accent="green"],
 .dark [data-accent="green"] {
-  --primary: #6fd394;
-  --selection: #6fd39424;
-  --ring: #6fd39480;
+  --primary: #00ed64;
+  --selection: #00ed6424;
+  --ring: #00ed6480;
 }
 [data-accent="orange"] {
   --primary: #c2410c;

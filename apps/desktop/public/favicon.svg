@@ -2,13 +2,26 @@
   <title>odin-db</title>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3b3591"/>
-      <stop offset="1" stop-color="#16133f"/>
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f1f5f3"/>
     </linearGradient>
   </defs>
-  <rect x="100" y="100" width="824" height="824" rx="190" fill="url(#background)"/>
-  <g transform="translate(-66 -50)">
-    <path fill="#ffffff" d="M850 484 Q742 402 636 392 C600 340 540 318 470 322 C380 330 326 396 318 470 C312 548 322 612 350 662 L306 760 L392 706 L410 806 L468 716 L530 786 L552 670 C592 630 616 592 640 552 Z"/>
-    <circle cx="590" cy="410" r="30" fill="#241f63"/>
+  <rect x="100" y="100" width="824" height="824" rx="190" fill="url(#background)" stroke="#dfe6e2" stroke-width="5"/>
+  <g transform="translate(512 512) scale(0.92) translate(-512 -540)">
+    <path fill="#00A35C" d="M300 640 C210 642 160 690 128 712 C200 724 262 718 316 700 Z"/>
+    <rect x="318" y="660" width="70" height="128" rx="32" fill="#00684A"/>
+    <rect x="600" y="660" width="70" height="128" rx="32" fill="#00684A"/>
+    <path fill="#00A35C" d="M282 714 C276 556 392 476 520 482 C650 488 732 572 736 714 Z"/>
+    <rect x="402" y="672" width="72" height="128" rx="32" fill="#00A35C"/>
+    <rect x="660" y="664" width="70" height="128" rx="32" fill="#00A35C"/>
+    <path d="M640 560 C706 470 690 380 760 292" fill="none" stroke="#00A35C" stroke-width="96" stroke-linecap="round"/>
+    <ellipse cx="770" cy="282" rx="92" ry="66" fill="#00A35C"/>
+    <circle cx="452" cy="560" r="26" fill="#00684A"/>
+    <circle cx="530" cy="530" r="18" fill="#00684A"/>
+    <circle cx="380" cy="620" r="16" fill="#00684A"/>
+    <circle cx="792" cy="262" r="20" fill="#023430"/>
+    <circle cx="799" cy="255" r="7" fill="#ffffff"/>
+    <path d="M776 312 Q812 328 846 304" fill="none" stroke="#023430" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="830" cy="290" r="11" fill="#71F6BA"/>
   </g>
 </svg>
