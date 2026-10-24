@@ -3270,6 +3270,7 @@ async fn fields_are_renamed_removed_and_converted_by_filter() {
             doc! { "_id": 2, "price": "abc", "old": 2 },
             doc! { "_id": 3, "price": 2.5 },
             doc! { "_id": 4 },
+            doc! { "_id": 5, "items": [{ "price": "1" }, { "price": "2" }] },
         ])
         .await
         .expect("seeded");

@@ -47,7 +47,13 @@ const isEmpty = (document: EJsonDocument | null): document is null =>
 /** The options a find sets, in plain form; the settings' default time limit is not included. */
 function findOptions(options: QueryOptions | undefined) {
   const collation = options?.collation && !isEmpty(options.collation) ? options.collation : null;
-  const hint = options?.hint ?? null;
+  // An empty hint is refused when the query runs; leave it out of the code too.
+  const hint =
+    options?.hint == null ||
+    options.hint === "" ||
+    (isJsonObject(options.hint) && Object.keys(options.hint).length === 0)
+      ? null
+      : options.hint;
   const maxTimeMs = options?.maxTimeMs ? options.maxTimeMs : null;
   return { collation, hint, maxTimeMs };
 }

@@ -224,7 +224,7 @@
       "title": "Cambia il tipo di {{field}}",
       "description": "{{field}} viene convertito in ogni documento corrispondente, come fa $convert.",
       "to": "Nuovo tipo",
-      "hint": "I valori che non si possono convertire restano come sono.",
+      "hint": "I valori che non si possono convertire, o che stanno dentro array, restano come sono.",
       "submit": "Converti",
       "done_one": "{{field}} convertito in {{count, number}} documento",
       "done_other": "{{field}} convertito in {{count, number}} documenti"

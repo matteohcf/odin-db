@@ -194,6 +194,7 @@ fn field_update(
         return Err(CoreError::Validation("_id cannot be changed".into()));
     }
     let mut condition = doc! { "$exists": true };
+    let mut clauses = vec![Bson::Document(filter)];
     let update = match change {
         FieldChange::Rename { to } => {
             let to = to.trim();
@@ -209,6 +210,11 @@ fn field_update(
         FieldChange::Convert { to } => {
             condition.insert("$not", doc! { "$type": to.name() });
             let input = format!("${field}");
+            // Through an array of subdocuments `$a.b` is every element's value, and `$set`
+            // would write that whole array into each element: leave such values alone.
+            clauses.push(Bson::Document(
+                doc! { "$expr": { "$not": [{ "$isArray": &input }] } },
+            ));
             UpdateModifications::Pipeline(vec![doc! {
                 "$set": { field: { "$convert": {
                     "input": &input, "to": to.name(), "onError": &input, "onNull": &input,
@@ -216,7 +222,8 @@ fn field_update(
             }])
         }
     };
-    let scoped = doc! { "$and": [filter, { field: condition }] };
+    clauses.insert(1, Bson::Document(doc! { field: condition }));
+    let scoped = doc! { "$and": clauses };
     Ok((scoped, update))
 }
 
@@ -272,7 +279,11 @@ mod tests {
         .expect("valid");
         assert_eq!(
             filter,
-            doc! { "$and": [{ "a": 1 }, { "price": { "$exists": true, "$not": { "$type": "double" } } }] }
+            doc! { "$and": [
+                { "a": 1 },
+                { "price": { "$exists": true, "$not": { "$type": "double" } } },
+                { "$expr": { "$not": [{ "$isArray": "$price" }] } },
+            ] }
         );
         assert!(matches!(update, UpdateModifications::Pipeline(_)));
         let (_, rename) = field_update(

@@ -224,7 +224,7 @@
       "title": "Change the type of {{field}}",
       "description": "Every matching document's {{field}} is converted, like $convert does.",
       "to": "New type",
-      "hint": "Values that cannot be converted stay as they are.",
+      "hint": "Values that cannot be converted, or that sit inside arrays, stay as they are.",
       "submit": "Convert",
       "done_one": "Converted {{field}} in {{count, number}} document",
       "done_other": "Converted {{field}} in {{count, number}} documents"
