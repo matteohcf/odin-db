@@ -54,11 +54,7 @@ await check("a collection scan offers the ESR index and opens it prefilled", asy
   await dialog.waitFor();
   await page.waitForTimeout(300);
   await shot("03-create-index");
-  const keys = await dialog
-    .getByRole("textbox")
-    .first()
-    .inputValue()
-    .catch(async () => dialog.locator("input, textarea").first().inputValue());
+  const keys = await dialog.getByRole("textbox", { name: "Keys" }).innerText();
   if (!keys.includes("name: 1")) throw new Error(keys);
   await page.keyboard.press("Escape");
   await page.getByRole("tab", { name: "Documents" }).click();
