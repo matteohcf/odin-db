@@ -16,6 +16,7 @@ pub mod monitor;
 pub mod operations;
 pub mod perf_lab;
 pub mod profiles;
+pub mod search;
 pub mod shell;
 pub mod transfer;
 pub mod updates;

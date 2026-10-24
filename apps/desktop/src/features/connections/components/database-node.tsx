@@ -16,6 +16,7 @@ import {
   HardDriveDownload,
   HardDriveUpload,
   Plus,
+  TextSearch,
   Trash2,
   Waypoints,
 } from "lucide-react";
@@ -38,6 +39,7 @@ import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
 import { TreeRow } from "./tree-row";
+import { ValueSearchDialog } from "./value-search-dialog";
 
 /** A database row; its collections are rows of their own, after it. */
 export function DatabaseNode({
@@ -71,6 +73,7 @@ export function DatabaseNode({
     | "compareSchema"
     | "createCollection"
     | "drop"
+    | "search"
     | null
   >(null);
   const filter = useTreeFilter();
@@ -96,6 +99,10 @@ export function DatabaseNode({
             <DropdownMenuItem onSelect={() => openDiagram(connection.profileId, database.name)}>
               <Waypoints />
               {t("tree.diagram")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setToolDialog("search")}>
+              <TextSearch />
+              {t("search.menu")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {writable && (
@@ -168,6 +175,13 @@ export function DatabaseNode({
           </>
         }
       />
+      {toolDialog === "search" && (
+        <ValueSearchDialog
+          connection={connection}
+          database={database.name}
+          onClose={() => setToolDialog(null)}
+        />
+      )}
       {toolDialog === "createCollection" && (
         <CreateCollectionDialog
           connection={connection}

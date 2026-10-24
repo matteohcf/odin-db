@@ -34,6 +34,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::ai::list_ollama_models,
             commands::ai::generate_query,
             commands::compare::compare_collections,
+            commands::search::search_values,
             commands::compare::compare_schemas,
             commands::diagram::database_diagram,
             commands::diagram::save_diagram_image,

@@ -3377,3 +3377,63 @@ async fn a_query_past_its_time_limit_is_reported_as_such() {
     let result = CursorRegistry::default().find(&handle, &ns, request).await;
     assert!(matches!(result, Err(CoreError::TimeLimit(_))), "{result:?}");
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn values_are_found_across_collections_and_databases() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let db = |name: &str| handle.client.database(name);
+    db("search_a")
+        .collection::<Document>("people")
+        .insert_many([
+            doc! { "_id": 1, "name": "Ada", "address": { "city": "Milano" } },
+            doc! { "_id": 2, "name": "Bob", "tags": ["rome", "MILANO"] },
+        ])
+        .await
+        .expect("seeded");
+    db("search_b")
+        .collection::<Document>("places")
+        .insert_one(doc! { "_id": 3, "milanoCode": "x" })
+        .await
+        .expect("seeded");
+    let request = |database: Option<&str>, field_names: bool| odin_core::search::SearchRequest {
+        database: database.map(str::to_owned),
+        collection: None,
+        text: "milano".into(),
+        regex: false,
+        case_sensitive: false,
+        field_names,
+        documents_per_collection: 1,
+    };
+    let run = |request| {
+        let handle = handle.clone();
+        async move {
+            let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+            let summary = odin_core::search::search(&handle, request, tx, CancellationToken::new())
+                .await
+                .expect("searched");
+            let mut hits = Vec::new();
+            while let Ok(update) = rx.try_recv() {
+                if let odin_core::search::SearchUpdate::Hits(batch) = update {
+                    hits.extend(batch);
+                }
+            }
+            (summary, hits)
+        }
+    };
+
+    // One document per collection: the second person is not read.
+    let (summary, hits) = run(request(Some("search_a"), false)).await;
+    assert_eq!(summary.partial_collections, 1);
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].path, "address.city");
+
+    let (summary, hits) = run(request(None, true)).await;
+    assert!(summary.collections >= 2);
+    assert!(
+        hits.iter()
+            .any(|hit| hit.field_name && hit.namespace.database == "search_b"),
+        "{hits:?}"
+    );
+}

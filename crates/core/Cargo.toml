@@ -23,6 +23,7 @@ keyring.workspace = true
 mongodb.workspace = true
 pbkdf2.workspace = true
 portable-pty.workspace = true
+regex.workspace = true
 reqwest.workspace = true
 rusqlite.workspace = true
 rusqlite_migration.workspace = true

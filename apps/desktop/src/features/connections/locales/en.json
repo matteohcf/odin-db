@@ -316,5 +316,30 @@
     "paste": "Paste {{name}} here",
     "copyCollection": "Copy collection",
     "copyDatabase": "Copy database"
+  },
+  "search": {
+    "menu": "Search values…",
+    "title": "Search values",
+    "description": "Text or a pattern in the values of {{scope}}, read document by document.",
+    "everyDatabase": "every database",
+    "placeholder": "Text to find",
+    "text": "Text to find",
+    "submit": "Search",
+    "stop": "Stop",
+    "regex": "Regular expression",
+    "caseSensitive": "Match case",
+    "fieldNames": "Field names too",
+    "depth": "Read per collection",
+    "documents_one": "{{value}} document",
+    "documents_other": "{{value}} documents",
+    "scanning": "Searching {{namespace}} ({{done}} of {{total}})…",
+    "summary_one": "{{hits}} match in {{collections}} collections, {{documents}} documents read",
+    "summary_other": "{{hits}} matches in {{collections}} collections, {{documents}} documents read",
+    "partial_one": "{{count}} collection has more documents than were read",
+    "partial_other": "{{count}} collections have more documents than were read",
+    "truncated": "stopped at 1,000 matches",
+    "none": "Nothing matches.",
+    "open": "Open this document",
+    "fieldName": "field name"
   }
 }

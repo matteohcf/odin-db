@@ -42,7 +42,7 @@
     "title": "Crea indice",
     "description": "La creazione di un indice su una collezione di grandi dimensioni può richiedere tempo e aumenta il carico sul server.",
     "keys": "Chiavi",
-    "keysHint": "1 per crescente, -1 per decrescente, oppure \"text\", \"2dsphere\", \"hashed\".",
+    "keysHint": "1 per crescente, -1 per decrescente, oppure \"text\", \"2dsphere\", \"hashed\". { \"$**\": 1 } indicizza ogni campo (wildcard).",
     "name": "Nome",
     "namePlaceholder": "Generato dalle chiavi",
     "unique": "Univoco",

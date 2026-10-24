@@ -42,7 +42,7 @@
     "title": "Create index",
     "description": "Building an index on a large collection can take a while and adds load to the server.",
     "keys": "Keys",
-    "keysHint": "1 for ascending, -1 for descending, or \"text\", \"2dsphere\", \"hashed\".",
+    "keysHint": "1 for ascending, -1 for descending, or \"text\", \"2dsphere\", \"hashed\". { \"$**\": 1 } indexes every field (wildcard).",
     "name": "Name",
     "namePlaceholder": "Generated from the keys",
     "unique": "Unique",

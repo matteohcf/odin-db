@@ -16,7 +16,7 @@ use crate::ejson::{EJsonDocument, EJsonValue};
 
 pub const MAX_BATCH_SIZE: u32 = 1000;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct Namespace {

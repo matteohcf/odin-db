@@ -16,6 +16,7 @@ import {
   Plug,
   RefreshCw,
   SquareTerminal,
+  TextSearch,
   Trash2,
   Unplug,
   UsersRound,
@@ -34,6 +35,7 @@ import { useExpanded } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { TreeRow } from "./tree-row";
+import { ValueSearchDialog } from "./value-search-dialog";
 
 interface ProfileNodeProps {
   /** Levels added by an enclosing group. */
@@ -60,9 +62,9 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
     ...databasesQuery(connection?.id ?? ""),
     enabled: connection !== undefined,
   }).data?.length;
-  const [toolDialog, setToolDialog] = useState<"backup" | "restore" | "createDatabase" | null>(
-    null,
-  );
+  const [toolDialog, setToolDialog] = useState<
+    "backup" | "restore" | "createDatabase" | "search" | null
+  >(null);
   const queryClient = useQueryClient();
   const openShell = useTabs((s) => s.openShell);
   const openServer = useTabs((s) => s.openServer);
@@ -173,6 +175,10 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
                     {t("profile.createDatabase")}
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onSelect={() => setToolDialog("search")}>
+                  <TextSearch />
+                  {t("search.menu")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openUsers(profile.id)}>
                   <UsersRound />
                   {t("profile.users")}
@@ -242,6 +248,9 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
           </>
         }
       />
+      {connection && toolDialog === "search" && (
+        <ValueSearchDialog connection={connection} onClose={() => setToolDialog(null)} />
+      )}
       {connection && toolDialog === "createDatabase" && (
         <CreateCollectionDialog connection={connection} onClose={() => setToolDialog(null)} />
       )}

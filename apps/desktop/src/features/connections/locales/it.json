@@ -316,5 +316,30 @@
     "paste": "Incolla qui {{name}}",
     "copyCollection": "Copia collezione",
     "copyDatabase": "Copia database"
+  },
+  "search": {
+    "menu": "Cerca valori…",
+    "title": "Cerca valori",
+    "description": "Testo o un pattern nei valori di {{scope}}, letti documento per documento.",
+    "everyDatabase": "tutti i database",
+    "placeholder": "Testo da trovare",
+    "text": "Testo da trovare",
+    "submit": "Cerca",
+    "stop": "Ferma",
+    "regex": "Espressione regolare",
+    "caseSensitive": "Maiuscole/minuscole",
+    "fieldNames": "Anche i nomi dei campi",
+    "depth": "Leggi per collezione",
+    "documents_one": "{{value}} documento",
+    "documents_other": "{{value}} documenti",
+    "scanning": "Ricerca in {{namespace}} ({{done}} di {{total}})…",
+    "summary_one": "{{hits}} risultato in {{collections}} collezioni, {{documents}} documenti letti",
+    "summary_other": "{{hits}} risultati in {{collections}} collezioni, {{documents}} documenti letti",
+    "partial_one": "{{count}} collezione ha più documenti di quelli letti",
+    "partial_other": "{{count}} collezioni hanno più documenti di quelli letti",
+    "truncated": "fermata a 1.000 risultati",
+    "none": "Nessun risultato.",
+    "open": "Apri questo documento",
+    "fieldName": "nome del campo"
   }
 }

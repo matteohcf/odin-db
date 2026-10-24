@@ -58,3 +58,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0052](0052-query-options.md) | Collation, hint and time limit for queries | Accepted |
 | [0053](0053-collection-types-and-views.md) | Collection types and views | Accepted |
 | [0054](0054-field-changes.md) | Renaming, converting and removing a field across documents | Accepted |
+| [0055](0055-value-search.md) | Searching values across collections | Accepted |

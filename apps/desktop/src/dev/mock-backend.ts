@@ -20,6 +20,8 @@ import type {
   ProfileInput,
   QueryOptions,
   ReplicaSetStatus,
+  SearchHit,
+  SearchRequest,
 } from "@odin-db/bindings";
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -1287,6 +1289,114 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       setTimeout(tick, 700);
     };
     setTimeout(tick, 400);
+    return operationId;
+  },
+  search_values: (args) => {
+    const { databases } = serverOf(id("connectionId", args));
+    const request = args.request as SearchRequest;
+    let pattern: RegExp;
+    try {
+      const source = request.regex
+        ? request.text
+        : request.text.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      pattern = new RegExp(source, request.caseSensitive ? "" : "i");
+    } catch (error) {
+      return fail("validation", `invalid input: regular expression: ${String(error)}`);
+    }
+    if (!request.text.trim())
+      return fail("validation", "invalid input: enter something to search for");
+    const namespaces = Object.entries(databases)
+      .filter(([db]) =>
+        request.database ? db === request.database : !["admin", "local", "config"].includes(db),
+      )
+      .flatMap(([db, collections]) =>
+        Object.entries(collections)
+          .filter(
+            ([name, coll]) =>
+              (request.collection ? name === request.collection : !name.startsWith("system.")) &&
+              coll.kind !== "view",
+          )
+          .map(([name, coll]) => ({ database: db, collection: name, docs: coll.docs })),
+      );
+    const send = channelSender(args.channel);
+    const operationId = crypto.randomUUID();
+    const operation = { cancelled: false };
+    operations.set(operationId, operation);
+    const summary = {
+      collections: 0,
+      documents: 0,
+      hits: 0,
+      partialCollections: 0,
+      truncated: false,
+    };
+    let index = 0;
+    const tick = () => {
+      if (operation.cancelled) {
+        send({ event: "cancelled" });
+        operations.delete(operationId);
+        return;
+      }
+      const target = namespaces[index];
+      if (!target || summary.truncated) {
+        send({ event: "data", data: { kind: "finished", value: summary } });
+        send({ event: "completed" });
+        operations.delete(operationId);
+        return;
+      }
+      const namespace = { database: target.database, collection: target.collection };
+      send({
+        event: "data",
+        data: {
+          kind: "update",
+          value: { kind: "scanning", value: { namespace, done: index, total: namespaces.length } },
+        },
+      });
+      const read = target.docs.slice(0, request.documentsPerCollection);
+      if (target.docs.length > read.length) summary.partialCollections += 1;
+      const hits: SearchHit[] = [];
+      const walk = (value: JsonValue, path: string, doc: Doc) => {
+        if (typeof value === "string") {
+          if (pattern.test(value))
+            hits.push({
+              namespace,
+              id: doc._id ?? null,
+              path,
+              preview: value.slice(0, 80),
+              fieldName: false,
+            });
+        } else if (Array.isArray(value)) {
+          for (const [i, item] of value.entries()) walk(item, `${path}.${i}`, doc);
+        } else if (
+          value &&
+          typeof value === "object" &&
+          !Object.keys(value).some((k) => k.startsWith("$"))
+        )
+          for (const [key, inner] of Object.entries(value)) {
+            const child = path ? `${path}.${key}` : key;
+            if (request.fieldNames && pattern.test(key))
+              hits.push({
+                namespace,
+                id: doc._id ?? null,
+                path: child,
+                preview: key,
+                fieldName: true,
+              });
+            walk(inner, child, doc);
+          }
+      };
+      for (const doc of read) walk(doc, "", doc);
+      const room = 1000 - summary.hits;
+      if (hits.length > room) summary.truncated = true;
+      const kept = hits.slice(0, room);
+      summary.hits += kept.length;
+      summary.documents += read.length;
+      summary.collections += 1;
+      if (kept.length > 0)
+        send({ event: "data", data: { kind: "update", value: { kind: "hits", value: kept } } });
+      index += 1;
+      setTimeout(tick, 60);
+    };
+    setTimeout(tick, 60);
     return operationId;
   },
   compare_collections: (args) => {

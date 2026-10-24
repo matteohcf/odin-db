@@ -89,6 +89,7 @@ docs/adr/                Architecture Decision Records
 - **Query options** (ADR-0052): collation, hint and `maxTimeMs` travel as `QueryOptions` on find, aggregate, explain and count; `withTimeLimit` adds the `queryTimeLimitSeconds` setting when a query sets none.
 - **Collection types and views** (ADR-0053): `create_collection` takes `CollectionOptions` (capped, time series, clustered, view, collation) and sends one raw `create` command; the aggregation tab reports a pipeline through `onCreateView`, `connections`' `CreateViewDialog` creates it.
 - **Field changes** (ADR-0054): `documents::change_field` renames, removes or converts (`$convert`, keeping failures) one field in the documents matching the filter that have it; the grid's column menu opens `ChangeFieldDialog`.
+- **Value search** (ADR-0055): `search::search` reads up to N documents per collection and matches string values (and optionally field names) here, streaming hits per collection; `ValueSearchDialog` opens from the connection and database menus.
 - **Shortcuts are customizable** (ADR-0050): never match `SHORTCUTS.x` directly; use `useShortcut(id)`, `matches(keybinding(id), event)` in handlers and `useKeybindingLabel(id)` for labels.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 

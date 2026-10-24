@@ -32,6 +32,7 @@ export const commands = {
 	generateQuery: (engine: EngineChoice, request: QueryRequest, channel: Channel<StreamEvent<GeneratedQuery>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("generate_query", { engine, request, channel })),
 	/**  Compares two collections, possibly on different connections, as a cancellable operation. */
 	compareCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: CompareRequest, channel: Channel<StreamEvent<CompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_collections", { leftConnectionId, rightConnectionId, request, channel })),
+	searchValues: (connectionId: ConnectionId, request: SearchRequest, channel: Channel<StreamEvent<SearchEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("search_values", { connectionId, request, channel })),
 	/**  Compares two databases' collections, fields, indexes and rules, as a cancellable operation. */
 	compareSchemas: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: SchemaCompareRequest, channel: Channel<StreamEvent<SchemaCompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_schemas", { leftConnectionId, rightConnectionId, request, channel })),
 	/**  Samples a database's collections and infers their references, as a cancellable operation. */
@@ -1219,6 +1220,51 @@ export type SchemaCompareRequest = {
 export type SchemaComparison = {
 	collections: CollectionComparison[],
 };
+
+/**  Progress and hits as they come, then exactly one `finished` with the totals. */
+export type SearchEvent = { kind: "update"; value: SearchUpdate } | { kind: "finished"; value: SearchSummary };
+
+export type SearchHit = {
+	namespace: Namespace,
+	id: EJsonValue,
+	/**  Where the match is, array positions included (`items.2.sku`). */
+	path: string,
+	/**  The matching value around the match, or the field name. */
+	preview: string,
+	fieldName: boolean,
+};
+
+export type SearchRequest = {
+	/**  `None` searches every database except `admin`, `local` and `config`. */
+	database: string | null,
+	/**  `None` searches every collection of the database(s). */
+	collection: string | null,
+	text: string,
+	regex: boolean,
+	caseSensitive: boolean,
+	/**  Also match field names, not only string values. */
+	fieldNames: boolean,
+	/**  Documents read per collection at most. */
+	documentsPerCollection: number,
+};
+
+export type SearchSummary = {
+	collections: number,
+	documents: number | null,
+	hits: number | null,
+	/**  Collections with more documents than were read. */
+	partialCollections: number,
+	/**  The search stopped at the hit limit. */
+	truncated: boolean,
+};
+
+export type SearchUpdate = 
+/**  Starting on the `done + 1`th of `total` collections. */
+{ kind: "scanning"; value: {
+	namespace: Namespace,
+	done: number,
+	total: number,
+} } | { kind: "hits"; value: SearchHit[] };
 
 /**
  *  A secret value whose `Debug` output is redacted, so it cannot leak through logs.
