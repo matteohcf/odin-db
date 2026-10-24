@@ -6,7 +6,9 @@
     "items_other": "[ {{count}} elementi ]",
     "showAll": "Mostra tutti ({{count}})",
     "created": "Creato il {{date}} ({{relative}})",
-    "localTime": "{{date}} ora locale ({{relative}})"
+    "localTime": "{{date}} ora locale ({{relative}})",
+    "moreFields_one": "Mostra ancora {{count}} campo",
+    "moreFields_other": "Mostra ancora {{count}} campi"
   },
   "types": {
     "null": "Null",

@@ -79,6 +79,11 @@ await check(
     await panel().getByRole("tab", { name: "Documents" }).click();
     await page.getByRole("radio", { name: "List" }).click();
     await page.mouse.move(800, 500);
+    // Wide documents show their first fields and offer the rest.
+    await page
+      .getByRole("button", { name: /^Show \d+ more fields$/ })
+      .first()
+      .waitFor();
     for (let i = 0; i < 20; i++) await page.mouse.wheel(0, 2000);
     await page.waitForTimeout(300);
     await shot("list-wide");

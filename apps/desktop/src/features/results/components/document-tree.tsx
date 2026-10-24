@@ -10,6 +10,8 @@ import { InlineCellEditor } from "./inline-cell-editor";
 
 /** Arrays longer than this show their first items and a "show all" button. */
 const ARRAY_PREVIEW = 50;
+/** Top-level fields shown before "show N more fields". */
+const TOP_LEVEL_PREVIEW = 25;
 
 /**
  * One document as an expandable tree: top-level fields are shown, nested
@@ -28,9 +30,14 @@ export function DocumentTree({
   /** Saves a top-level value edited in place (double-click). Omitted when read-only. */
   onSetField?: ((field: string, value: JsonValue) => Promise<void>) | undefined;
 }) {
+  const { t } = useTranslation("common");
+  const [showAll, setShowAll] = useState(expanded);
+  const entries = Object.entries(document);
+  // Like Compass: a wide document shows its first fields and offers the rest.
+  const visible = showAll ? entries : entries.slice(0, TOP_LEVEL_PREVIEW);
   const fields = (
     <ul className="font-mono text-xs leading-5">
-      {Object.entries(document).map(([key, value]) => (
+      {visible.map(([key, value]) => (
         <Field
           key={key}
           name={key}
@@ -41,6 +48,17 @@ export function DocumentTree({
           onSave={key === "_id" || !onSetField ? undefined : (next) => onSetField(key, next)}
         />
       ))}
+      {visible.length < entries.length && (
+        <li className="pt-1 pl-5">
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="rounded-sm font-sans text-primary hover:underline"
+          >
+            {t("value.moreFields", { count: entries.length - visible.length })}
+          </button>
+        </li>
+      )}
     </ul>
   );
   return onFilter ? (

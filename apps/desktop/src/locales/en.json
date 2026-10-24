@@ -6,7 +6,9 @@
     "items_other": "[ {{count}} elements ]",
     "showAll": "Show all {{count}}",
     "created": "Created {{date}} ({{relative}})",
-    "localTime": "{{date}} local time ({{relative}})"
+    "localTime": "{{date}} local time ({{relative}})",
+    "moreFields_one": "Show {{count}} more field",
+    "moreFields_other": "Show {{count}} more fields"
   },
   "types": {
     "null": "Null",
