@@ -68,7 +68,8 @@ export function useDuplicateProfile() {
 export function useImportConnections() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => call(commands.importConnections()),
+    mutationFn: ({ token, passphrase }: { token: string; passphrase: string | null }) =>
+      call(commands.importConnections(token, passphrase)),
     meta: { handlesErrors: true },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.profiles }),
   });

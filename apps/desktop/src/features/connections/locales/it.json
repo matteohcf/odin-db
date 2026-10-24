@@ -245,5 +245,11 @@
     "open_one": "{{count}} connessione aperta",
     "open_other": "{{count}} connessioni aperte",
     "disconnectAll": "Disconnetti tutte le connessioni del gruppo"
+  },
+  "importPassphrase": {
+    "title": "File protetto da password",
+    "description": "{{name}} è stato esportato con una password. Inseriscila per importare le connessioni con le loro password.",
+    "label": "Password del file",
+    "submit": "Importa"
   }
 }

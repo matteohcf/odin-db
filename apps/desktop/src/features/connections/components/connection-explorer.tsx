@@ -1,4 +1,10 @@
-import type { ConnectionProfile, ProfileId } from "@odin-db/bindings";
+import {
+  type ConnectionProfile,
+  type ConnectionsFile,
+  commands,
+  type ImportedProfiles,
+  type ProfileId,
+} from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import {
   DropdownMenu,
@@ -25,7 +31,7 @@ import { type CSSProperties, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useShortcut } from "@/hooks/use-shortcut";
-import { errorMessage } from "@/lib/ipc";
+import { call, errorMessage } from "@/lib/ipc";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { useDisconnectAll, useExportConnections, useImportConnections } from "../api/mutations";
@@ -37,6 +43,7 @@ import { CommandPalette } from "./command-palette";
 import { DeleteProfileDialog } from "./delete-profile-dialog";
 import { FavoritesSection } from "./favorites-section";
 import { HostKeyDialog } from "./host-key-dialog";
+import { ImportPassphraseDialog } from "./import-passphrase-dialog";
 import { ProfileDialog } from "./profile-dialog";
 import { TreeList } from "./tree-list";
 import { TryLocalhostButton } from "./try-localhost-button";
@@ -47,7 +54,8 @@ type DialogState =
   | { type: "closed" }
   | { type: "create"; group?: string }
   | { type: "edit"; profile: ConnectionProfile }
-  | { type: "delete"; profile: ConnectionProfile };
+  | { type: "delete"; profile: ConnectionProfile }
+  | { type: "passphrase"; file: ConnectionsFile };
 
 /** Sidebar: saved connections, expanding into databases and collections. */
 export function ConnectionExplorer() {
@@ -69,13 +77,21 @@ export function ConnectionExplorer() {
   const disconnectAll = useDisconnectAll();
   const exportMutation = useExportConnections();
 
+  function reportImported(result: ImportedProfiles) {
+    toast.success(
+      t("explorer.imported", { count: result.created.length, skipped: result.skipped ?? 0 }),
+    );
+  }
+
   async function importConnections() {
     try {
-      const result = await importMutation.mutateAsync();
-      if (!result) return;
-      toast.success(
-        t("explorer.imported", { count: result.created.length, skipped: result.skipped ?? 0 }),
-      );
+      const file = await call(commands.chooseConnectionsFile());
+      if (!file) return;
+      if (file.needsPassphrase) {
+        setDialog({ type: "passphrase", file });
+        return;
+      }
+      reportImported(await importMutation.mutateAsync({ token: file.token, passphrase: null }));
     } catch (error) {
       toast.error(t("explorer.importFailed", { message: errorMessage(error) }));
     }
@@ -281,6 +297,16 @@ export function ConnectionExplorer() {
         profile={dialog.type === "delete" ? dialog.profile : undefined}
         onClose={closeDialog}
       />
+      {dialog.type === "passphrase" && (
+        <ImportPassphraseDialog
+          file={dialog.file}
+          onImported={(result) => {
+            closeDialog();
+            reportImported(result);
+          }}
+          onClose={closeDialog}
+        />
+      )}
     </aside>
   );
 }

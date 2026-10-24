@@ -1134,6 +1134,11 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     return { ...profile };
   },
   export_connections: () => "/Users/ada/odin-db-connections.json",
+  choose_connections_file: () => ({
+    token: crypto.randomUUID(),
+    name: "connections.json",
+    needsPassphrase: false,
+  }),
   import_connections: () => {
     const created = ["Staging", "Reporting replica"]
       .filter((name) => !profiles.some((p) => p.name === name))

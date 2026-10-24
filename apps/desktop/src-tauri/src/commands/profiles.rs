@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, PoisonError};
 
 use odin_core::CoreError;
 use odin_core::connection::{self, ServerInfo};
 use odin_core::profiles::{
     self, ConnectionProfile, ImportedProfiles, ProfileId, ProfileInput, split_password,
 };
+use serde::Serialize;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
@@ -135,29 +136,84 @@ pub async fn export_connections(
     Ok(Some(path.display().to_string()))
 }
 
-/// Asks for a connections file (odin-db or Compass) and imports it.
-/// `None` if the user cancels.
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectionsFile {
+    /// Opaque handle for `import_connections`; the path stays in the backend.
+    pub token: String,
+    pub name: String,
+    /// The file's secrets are encrypted (Compass): importing needs its password.
+    pub needs_passphrase: bool,
+}
+
+/// Asks for a connections file (odin-db, Compass, or connection strings). `None` if cancelled.
 #[tauri::command]
 #[specta::specta]
-pub async fn import_connections(
+pub async fn choose_connections_file(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
-) -> Result<Option<ImportedProfiles>, IpcError> {
-    let dialog = app.dialog().file().add_filter("JSON", &["json"]);
+) -> Result<Option<ConnectionsFile>, IpcError> {
+    let dialog = app
+        .dialog()
+        .file()
+        .add_filter("Connections", &["json", "uri", "txt"]);
     let Some(path) = blocking_dialog(move || dialog.blocking_pick_file()).await? else {
         return Ok(None);
     };
     let path = path
         .into_path()
         .map_err(|error| CoreError::Validation(error.to_string()))?;
-    let json = std::fs::read_to_string(&path)
-        .map_err(|error| CoreError::Validation(format!("cannot read the file: {error}")))?;
-    Ok(Some(
-        blocking(&state, move |s| {
-            profiles::import_profiles(&s.storage, s.secrets.as_ref(), &json)
-        })
-        .await?,
-    ))
+    let needs_passphrase = profiles::needs_passphrase(&read_connections_file(&path)?);
+    let name = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let token = uuid::Uuid::now_v7();
+    state
+        .picked_files
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .insert(token, path);
+    Ok(Some(ConnectionsFile {
+        token: token.to_string(),
+        name,
+        needs_passphrase,
+    }))
+}
+
+/// Imports the chosen file. The token stays valid until the import succeeds, so a wrong
+/// password can be retried.
+#[tauri::command]
+#[specta::specta]
+pub async fn import_connections(
+    state: State<'_, Arc<AppState>>,
+    token: String,
+    passphrase: Option<String>,
+) -> Result<ImportedProfiles, IpcError> {
+    let token =
+        uuid::Uuid::parse_str(&token).map_err(|_| CoreError::NotFound("connections file"))?;
+    let picked = || {
+        state
+            .picked_files
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+    };
+    let path = picked()
+        .get(&token)
+        .cloned()
+        .ok_or(CoreError::NotFound("connections file"))?;
+    let json = read_connections_file(&path)?;
+    let imported = blocking(&state, move |s| {
+        profiles::import_profiles(&s.storage, s.secrets.as_ref(), &json, passphrase.as_deref())
+    })
+    .await?;
+    picked().remove(&token);
+    Ok(imported)
+}
+
+fn read_connections_file(path: &std::path::Path) -> Result<String, CoreError> {
+    std::fs::read_to_string(path)
+        .map_err(|error| CoreError::Validation(format!("cannot read the file: {error}")))
 }
 
 /// Trusts the SSH host key the user confirmed after an `unknownHostKey` error.

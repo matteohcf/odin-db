@@ -245,5 +245,11 @@
     "open_one": "{{count}} open connection",
     "open_other": "{{count}} open connections",
     "disconnectAll": "Disconnect all in this group"
+  },
+  "importPassphrase": {
+    "title": "Password-protected file",
+    "description": "{{name}} was exported with a password. Enter it to import the connections with their passwords.",
+    "label": "File password",
+    "submit": "Import"
   }
 }

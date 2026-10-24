@@ -1,0 +1,26 @@
+{
+  "type": "Compass Connections",
+  "version": {
+    "$numberInt": "1"
+  },
+  "connections": [
+    {
+      "id": "6b1c",
+      "connectionOptions": {
+        "connectionString": "mongodb://admin@db.example.com:27017/?authSource=admin",
+        "sshTunnel": {
+          "host": "bastion.example.com",
+          "port": {
+            "$numberInt": "2222"
+          },
+          "username": "deploy"
+        }
+      },
+      "favorite": {
+        "name": "Production",
+        "color": "color6"
+      },
+      "connectionSecrets": "AAGkNWjbMeWLfIBZ2r8zNbwdy1+T0GasNmr0QxV6QAcTs1sR1oq/nEaQjfTmjdgGhv+My1tCJnDjqwtOLWQ4vODdIlYXhISCI1zpR7a7TmpkKh6o/3cAQTIzVMws3Akbn4R7lkmiRTMJHpBWfDj16Ds="
+    }
+  ]
+}

@@ -65,15 +65,19 @@ export const commands = {
 	 *  without passwords. `None` if the user cancels.
 	 */
 	exportConnections: (ids: ProfileId[]) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_connections", { ids })),
+	/**  Asks for a connections file (odin-db, Compass, or connection strings). `None` if cancelled. */
+	chooseConnectionsFile: () => typedError<{
+	/**  Opaque handle for `import_connections`; the path stays in the backend. */
+	token: string,
+	name: string,
+	/**  The file's secrets are encrypted (Compass): importing needs its password. */
+	needsPassphrase: boolean,
+} | null, IpcError>(__TAURI_INVOKE("choose_connections_file")),
 	/**
-	 *  Asks for a connections file (odin-db or Compass) and imports it.
-	 *  `None` if the user cancels.
+	 *  Imports the chosen file. The token stays valid until the import succeeds, so a wrong
+	 *  password can be retried.
 	 */
-	importConnections: () => typedError<{
-	created: ConnectionProfile[],
-	/**  Entries identical to an existing profile (same name and connection string). */
-	skipped: number | null,
-} | null, IpcError>(__TAURI_INVOKE("import_connections")),
+	importConnections: (token: string, passphrase: string | null) => typedError<ImportedProfiles, IpcError>(__TAURI_INVOKE("import_connections", { token, passphrase })),
 	/**  Closes the profile's connection, if open, before deleting it and its password. */
 	deleteProfile: (id: ProfileId) => typedError<null, IpcError>(__TAURI_INVOKE("delete_profile", { id })),
 	/**  Tests unsaved settings. Without a new password, the saved one of `profile_id` is used. */
@@ -404,6 +408,14 @@ export type ConnectionProfile = {
 	sshHostKey: string | null,
 	/**  The folder the profile is listed under, like "Clients" or "Staging". */
 	group: string | null,
+};
+
+export type ConnectionsFile = {
+	/**  Opaque handle for `import_connections`; the path stays in the backend. */
+	token: string,
+	name: string,
+	/**  The file's secrets are encrypted (Compass): importing needs its password. */
+	needsPassphrase: boolean,
 };
 
 export type CopyRequest = {

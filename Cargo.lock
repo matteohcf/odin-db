@@ -4505,12 +4505,15 @@ dependencies = [
 name = "odin-core"
 version = "1.0.2"
 dependencies = [
+ "aes-gcm",
+ "base64 0.22.1",
  "bson",
  "csv",
  "flate2",
  "jiff",
  "keyring",
  "mongodb",
+ "pbkdf2",
  "portable-pty",
  "reqwest",
  "rusqlite",

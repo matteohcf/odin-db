@@ -12,6 +12,8 @@ use crate::secrets::{Secret, SecretStore};
 use crate::ssh::{SshSettings, tunnel_target};
 use crate::storage::Storage;
 
+mod compass;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(transparent)]
@@ -356,18 +358,38 @@ pub struct ImportedProfiles {
     pub skipped: f64,
 }
 
-/// Imports a file exported by odin-db, or by MongoDB Compass (connections
-/// exported without passwords). Passwords in connection strings go to the keychain.
+/// One connection read from a file, with the secrets the file carried.
+struct ImportEntry {
+    shared: SharedConnection,
+    password: Option<Secret>,
+    ssh_secret: Option<Secret>,
+}
+
+/// Whether the file's secrets are encrypted, so importing needs its password (Compass).
+#[must_use]
+pub fn needs_passphrase(json: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(json)
+        .is_ok_and(|value| compass::is_compass(&value) && compass::needs_passphrase(&value))
+}
+
+/// Imports a file exported by odin-db or MongoDB Compass, or a list of connection strings
+/// (one per line, like Studio 3T's `.uri` files). Secrets go to the keychain.
 pub fn import_profiles(
     storage: &Storage,
     secrets: &dyn SecretStore,
     json: &str,
+    passphrase: Option<&str>,
 ) -> Result<ImportedProfiles, CoreError> {
-    let entries = parse_shared(json)?;
+    let entries = parse_file(json, passphrase)?;
     let existing = storage.list_profiles()?;
     let mut created = Vec::new();
     let mut skipped = 0.0;
-    for entry in entries {
+    for ImportEntry {
+        shared: entry,
+        password,
+        ssh_secret,
+    } in entries
+    {
         let (sanitized, _) = split_password(&entry.connection_string)?;
         if existing
             .iter()
@@ -382,11 +404,11 @@ pub fn import_profiles(
             ProfileInput {
                 name: entry.name,
                 connection_string: entry.connection_string,
-                password: None,
+                password,
                 read_only: entry.read_only,
                 color: entry.color,
                 ssh: entry.ssh,
-                ssh_secret: None,
+                ssh_secret,
                 ssh_host_key: None,
                 group: entry.group,
             },
@@ -395,44 +417,54 @@ pub fn import_profiles(
     Ok(ImportedProfiles { created, skipped })
 }
 
-fn parse_shared(json: &str) -> Result<Vec<SharedConnection>, CoreError> {
+fn parse_file(text: &str, passphrase: Option<&str>) -> Result<Vec<ImportEntry>, CoreError> {
     let invalid = |reason: &str| CoreError::Validation(format!("not a connections file: {reason}"));
-    let value: serde_json::Value =
-        serde_json::from_str(json).map_err(|e| invalid(&e.to_string()))?;
-    if value.get("format").and_then(serde_json::Value::as_str) == Some(SHARED_FORMAT) {
-        let file: SharedFile =
-            serde_json::from_value(value).map_err(|e| invalid(&e.to_string()))?;
-        return Ok(file.connections);
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(text) else {
+        return connection_strings(text).ok_or_else(|| invalid("unknown format"));
+    };
+    if compass::is_compass(&value) {
+        return compass::parse(value, passphrase);
     }
-    // Compass: { type: "Compass Connections", connections: [{ connectionOptions, favorite }] }.
-    if value.get("type").and_then(serde_json::Value::as_str) == Some("Compass Connections") {
-        let connections = value
-            .get("connections")
-            .and_then(serde_json::Value::as_array)
-            .ok_or_else(|| invalid("no connections"))?;
-        return connections
-            .iter()
-            .map(|connection| {
-                let uri = connection
-                    .pointer("/connectionOptions/connectionString")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| invalid("a connection has no connection string"))?;
-                let name = connection
-                    .pointer("/favorite/name")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or(uri);
-                Ok(SharedConnection {
-                    name: name.to_owned(),
-                    connection_string: uri.to_owned(),
+    if value.get("format").and_then(serde_json::Value::as_str) != Some(SHARED_FORMAT) {
+        return Err(invalid("unknown format"));
+    }
+    let file: SharedFile = serde_json::from_value(value).map_err(|e| invalid(&e.to_string()))?;
+    Ok(file
+        .connections
+        .into_iter()
+        .map(|shared| ImportEntry {
+            shared,
+            password: None,
+            ssh_secret: None,
+        })
+        .collect())
+}
+
+/// Plain text with one `mongodb://` or `mongodb+srv://` string per line.
+fn connection_strings(text: &str) -> Option<Vec<ImportEntry>> {
+    let lines: Vec<&str> = text
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect();
+    let valid = !lines.is_empty() && lines.iter().all(|line| line.starts_with("mongodb"));
+    valid.then(|| {
+        lines
+            .into_iter()
+            .map(|line| ImportEntry {
+                shared: SharedConnection {
+                    name: compass::host_of(line),
+                    connection_string: line.to_owned(),
                     read_only: false,
                     color: None,
                     ssh: None,
                     group: None,
-                })
+                },
+                password: None,
+                ssh_secret: None,
             })
-            .collect();
-    }
-    Err(invalid("unknown format"))
+            .collect()
+    })
 }
 
 pub fn delete(
@@ -572,7 +604,7 @@ mod tests {
         assert!(!json.contains("pw"), "no password in {json}");
 
         let other = Storage::open_in_memory().expect("storage");
-        let imported = import_profiles(&other, &secrets, &json).expect("import");
+        let imported = import_profiles(&other, &secrets, &json, None).expect("import");
         assert_eq!(imported.created.len(), 2);
         let prod = imported
             .created
@@ -582,7 +614,7 @@ mod tests {
         assert_eq!(prod.connection_string, "mongodb://admin@prod.example.com");
         assert!(prod.read_only && prod.color == Some(ProfileColor::Teal));
         // Importing the same file again creates nothing.
-        let again = import_profiles(&other, &secrets, &json).expect("again");
+        let again = import_profiles(&other, &secrets, &json, None).expect("again");
         assert_eq!((again.created.len(), again.skipped), (0, 2.0));
     }
 
@@ -593,11 +625,11 @@ mod tests {
         let compass = r#"{"type":"Compass Connections","version":{"$numberInt":"1"},"connections":[
             {"id":"1","connectionOptions":{"connectionString":"mongodb://localhost:27017"},"favorite":{"name":"Local"}},
             {"id":"2","connectionOptions":{"connectionString":"mongodb+srv://cluster0.example.net"}}]}"#;
-        let imported = import_profiles(&storage, &secrets, compass).expect("import");
+        let imported = import_profiles(&storage, &secrets, compass, None).expect("import");
         let names: Vec<_> = imported.created.iter().map(|p| p.name.as_str()).collect();
-        assert_eq!(names, ["Local", "mongodb+srv://cluster0.example.net"]);
+        assert_eq!(names, ["Local", "cluster0.example.net"]);
         assert!(matches!(
-            import_profiles(&storage, &secrets, r#"{"hello":1}"#),
+            import_profiles(&storage, &secrets, r#"{"hello":1}"#, None),
             Err(CoreError::Validation(_))
         ));
     }
@@ -767,7 +799,7 @@ mod tests {
 
         let shared = export_profiles(&storage, &[copy.id]).expect("exported");
         let other = Storage::open_in_memory().expect("storage");
-        let imported = import_profiles(&other, &secrets, &shared).expect("imported");
+        let imported = import_profiles(&other, &secrets, &shared, None).expect("imported");
         assert_eq!(imported.created[0].group.as_deref(), Some("Clients"));
     }
 

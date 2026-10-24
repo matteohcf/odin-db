@@ -44,6 +44,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::profiles::trust_ssh_host_key,
             commands::profiles::choose_ssh_key,
             commands::profiles::export_connections,
+            commands::profiles::choose_connections_file,
             commands::profiles::import_connections,
             commands::profiles::delete_profile,
             commands::profiles::test_connection,
