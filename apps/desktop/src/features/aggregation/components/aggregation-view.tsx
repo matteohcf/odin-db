@@ -61,7 +61,13 @@ interface AggregationViewProps {
   /** Whether this view is the one on screen, which takes the rerun shortcut. */
   active: boolean;
   /** A pipeline handed over (e.g. from My queries); a new nonce loads it again. */
-  pendingPipeline?: { text: string; nonce: string } | undefined;
+  pendingPipeline?:
+    | {
+        text: string;
+        stages?: { operator: string; body: string; enabled: boolean }[] | undefined;
+        nonce: string;
+      }
+    | undefined;
   /** Saves the pipeline as a view; absent where views cannot be created. */
   onCreateView?: ((pipeline: EJsonDocument[]) => void) | undefined;
 }
@@ -109,7 +115,9 @@ export function AggregationView({
   useEffect(() => {
     if (!pendingPipeline || loaded.current === pendingPipeline.nonce) return;
     loaded.current = pendingPipeline.nonce;
-    pipelineFromText(pendingPipeline.text).then(
+    // Saved stages come as stored, disabled ones included; text only when that is all there is.
+    const stages = pendingPipeline.stages;
+    (stages ? Promise.resolve(stages) : pipelineFromText(pendingPipeline.text)).then(
       (stages) => {
         actions.replace(stages);
         setMode("stages");

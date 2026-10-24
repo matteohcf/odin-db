@@ -48,10 +48,12 @@ export function QueriesView() {
       openCollection({ ...target, query: { ...item.form, nonce: crypto.randomUUID() } });
     } else {
       openCollection(target);
-      openPipeline(
-        target,
-        pipelineToText(item.pipeline.stages.map((stage) => ({ ...stage, id: "" }))),
-      );
+      const stages = item.pipeline.stages.map(({ operator, body, enabled }) => ({
+        operator,
+        body,
+        enabled,
+      }));
+      openPipeline(target, pipelineToText(stages.map((stage) => ({ ...stage, id: "" }))), stages);
     }
   }
 

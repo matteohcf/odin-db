@@ -59,7 +59,7 @@ await page.evaluate((id) => {
                 {
                   operator: "$group",
                   body: '{ _id: "$city", total: { $sum: "$total" } }',
-                  enabled: true,
+                  enabled: false,
                 },
               ],
               savedAt: Date.now() - 3_600_000,
@@ -112,7 +112,11 @@ await check("a saved pipeline opens in the aggregation builder", async () => {
     .filter({ hasText: "Revenue by city" })
     .getByRole("button", { name: "Open" })
     .click();
-  await page.getByRole("region", { name: "Stage 2" }).waitFor();
+  const second = page.getByRole("region", { name: "Stage 2" });
+  await second.waitFor();
+  // A skipped stage stays skipped, not dropped or turned back on.
+  if ((await second.getByRole("switch").getAttribute("aria-checked")) !== "false")
+    throw new Error("the skipped stage came back enabled");
   await shot("02-pipeline");
 });
 

@@ -13,8 +13,18 @@ export interface CollectionTab {
   collectionKind: CollectionKind;
   /** A query to run in the tab, e.g. a slow one from the profiler; a new nonce runs it again. */
   query?: TabQuery;
-  /** A pipeline (mongosh text) to load in the aggregation view; a new nonce loads it again. */
-  pipeline?: { text: string; nonce: string };
+  /**
+   * A pipeline (mongosh text) to load in the aggregation view; a new nonce loads it again.
+   * Saved pipelines also carry their stages, which keep disabled ones and the text as written.
+   */
+  pipeline?: { text: string; stages?: PipelineStage[] | undefined; nonce: string };
+}
+
+/** One stage of a handed-over pipeline, as the aggregation view stores it. */
+interface PipelineStage {
+  operator: string;
+  body: string;
+  enabled: boolean;
 }
 
 /** Query bar text (mongosh syntax) handed to a collection tab. */
@@ -112,6 +122,7 @@ interface TabsState {
   openPipeline: (
     target: Omit<CollectionTab, "kind" | "id" | "query" | "pipeline">,
     text: string,
+    stages?: PipelineStage[],
   ) => void;
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
@@ -215,10 +226,10 @@ export const useTabs = create<TabsState>()(
             recent,
           };
         }),
-      openPipeline: (target, text) =>
+      openPipeline: (target, text, stages) =>
         set((state) => {
           const id = collectionTabId(target.profileId, target.database, target.collection);
-          const pipeline = { text, nonce: crypto.randomUUID() };
+          const pipeline = { text, stages, nonce: crypto.randomUUID() };
           const open = state.tabs.some((tab) => tab.id === id);
           return {
             tabs: open
