@@ -2,6 +2,7 @@ import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { Clock, Eye, FileUp, Plus, Table2 } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
+import { OdinAppIcon } from "@/components/odin-app-icon";
 import { ProfileColorMark } from "@/components/profile-color-mark";
 import { useExplorer, useOpenCollection, useProfiles } from "@/features/connections";
 import { useTabs } from "@/features/workspace";
@@ -23,16 +24,7 @@ export function Welcome() {
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 p-8 text-center">
-      <svg viewBox="0 0 1024 1024" className="size-14 text-muted-foreground/40" aria-hidden>
-        <path
-          d="M512 196 L712 396 L512 596 L312 396 Z M412 496 L248 828 M612 496 L776 828"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="64"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <OdinAppIcon className="size-16 drop-shadow-sm" />
       <div className="flex max-w-sm flex-col gap-1.5">
         <h1 className="font-semibold text-base">{t("welcome.title")}</h1>
         <p className="text-muted-foreground text-xs leading-relaxed">{t("welcome.body")}</p>

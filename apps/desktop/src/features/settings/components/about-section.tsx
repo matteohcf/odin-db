@@ -15,6 +15,7 @@ import { useTheme } from "@odin-db/ui/components/theme-provider";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { OdinAppIcon } from "@/components/odin-app-icon";
 import { useSettings } from "@/lib/settings";
 import { SettingRow } from "./setting-row";
 import { SettingsSection } from "./settings-section";
@@ -34,11 +35,16 @@ export function AboutSection() {
   return (
     <>
       <SettingsSection title={t("about.title")}>
-        <SettingRow label="odin-db" description={t("about.tagline")}>
-          <span className="font-mono text-muted-foreground text-sm selectable">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <OdinAppIcon className="size-11 shrink-0" />
+          <div className="flex min-w-0 flex-col">
+            <span className="font-semibold text-sm">odin-db</span>
+            <span className="text-muted-foreground text-xs">{t("about.tagline")}</span>
+          </div>
+          <span className="ml-auto font-mono text-muted-foreground text-sm selectable">
             {info.data ? `v${info.data.version}` : "—"}
           </span>
-        </SettingRow>
+        </div>
         <SettingRow label={t("about.platform")}>
           <span className="max-w-72 truncate font-mono text-muted-foreground text-xs selectable">
             {info.data

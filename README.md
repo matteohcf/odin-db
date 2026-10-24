@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/logo-dark.png">
+    <img alt="odin-db" src="branding/logo-light.png" width="420">
+  </picture>
+</p>
+
 # odin-db
 
 Open source desktop client for MongoDB. A free alternative to Studio 3T, built with Tauri 2 (Rust) and React.
