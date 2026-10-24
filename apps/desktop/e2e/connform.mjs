@@ -24,6 +24,22 @@ await page.getByRole("button", { name: "New connection" }).first().click();
 const dialog = page.getByRole("dialog", { name: "New connection" });
 await dialog.waitFor();
 
+await check(
+  "switching tabs keeps the dialog size, and names are not auto-capitalized",
+  async () => {
+    const height = () => dialog.evaluate((el) => el.getBoundingClientRect().height);
+    await page.waitForTimeout(300);
+    const before = await height();
+    for (const tab of ["Form", "SSH tunnel", "Connection string"]) {
+      await dialog.getByRole("tab", { name: tab }).click();
+      const after = await height();
+      if (Math.abs(after - before) > 1) throw new Error(`${tab}: ${before} → ${after}`);
+    }
+    const name = dialog.getByLabel("Name");
+    if ((await name.getAttribute("autocapitalize")) !== "off") throw new Error("autocapitalize");
+  },
+);
+
 await check("the form edits the connection string", async () => {
   await dialog.getByRole("tab", { name: "Form" }).click();
   await dialog.getByLabel("Hosts").fill("db1:27017,db2:27017");

@@ -242,6 +242,10 @@
   ::selection {
     background-color: color-mix(in oklab, var(--primary) 35%, transparent);
   }
+  /* A scrollbar that appears in a tall dialog would narrow it, rewrap it and flicker. */
+  [data-slot="dialog-content"] {
+    scrollbar-gutter: stable;
+  }
 }
 
 /* The system's "reduce motion" setting turns off animations and transitions. */

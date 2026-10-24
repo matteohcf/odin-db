@@ -96,7 +96,8 @@ function toInput(form: FormState): ProfileInput {
 export function ProfileDialog({ open, profile, defaultGroup, onClose }: ProfileDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[calc(100vh-3rem)] overflow-y-auto sm:max-w-lg">
+      {/* A fixed height: switching tabs must not resize and re-center the dialog. */}
+      <DialogContent className="h-[min(56rem,calc(100vh-3rem))] overflow-y-auto sm:max-w-lg">
         {/* Radix unmounts closed content, so the form starts fresh on every open. */}
         <ProfileForm profile={profile} defaultGroup={defaultGroup} onClose={onClose} />
       </DialogContent>
@@ -160,7 +161,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
   const busy = save.isPending;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+    <form onSubmit={onSubmit} className="flex min-h-full flex-col gap-5" noValidate>
       <DialogHeader>
         <DialogTitle>{profile ? t("dialog.editTitle") : t("dialog.createTitle")}</DialogTitle>
         <DialogDescription>{t("dialog.description")}</DialogDescription>
@@ -315,7 +316,7 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
         }}
       />
 
-      <DialogFooter className="sm:justify-between">
+      <DialogFooter className="mt-auto sm:justify-between">
         <Button type="button" variant="outline" onClick={onTest} disabled={test.isPending}>
           {test.isPending ? t("dialog.testing") : t("dialog.test")}
         </Button>
