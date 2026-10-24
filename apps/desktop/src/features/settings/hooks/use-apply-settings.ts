@@ -16,6 +16,7 @@ export function useApplySettings() {
   const accent = useSettings((s) => s.accent);
   const darkStyle = useSettings((s) => s.darkStyle);
   const monoFont = useSettings((s) => s.monoFont);
+  const uiFont = useSettings((s) => s.uiFont);
 
   useEffect(() => {
     const resolved = resolveLanguage(language);
@@ -48,6 +49,16 @@ export function useApplySettings() {
       style.setProperty("--odin-mono", `"${font}", "IBM Plex Mono", ui-monospace, monospace`);
     else style.removeProperty("--odin-mono");
   }, [monoFont]);
+
+  useEffect(() => {
+    const style = document.documentElement.style;
+    if (uiFont === "system") {
+      style.setProperty(
+        "--odin-sans",
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+      );
+    } else style.removeProperty("--odin-sans");
+  }, [uiFont]);
 
   const zoomIn = () => update({ zoom: stepZoom(useSettings.getState().zoom, 1) });
   useShortcut("zoomIn", zoomIn);

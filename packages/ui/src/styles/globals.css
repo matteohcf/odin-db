@@ -164,6 +164,24 @@
   --ring: #b48cff80;
 }
 
+/* Deep blue surfaces, like MongoDB Compass in the dark. */
+.dark[data-dark-style="navy"] {
+  --background: #0f1e29;
+  --foreground: #e8edf1;
+  --sidebar: #0b1720;
+  --card: #132532;
+  --popover: #152a38;
+  --muted: #142634;
+  --muted-foreground: #9fb0bd;
+  --secondary: #1a2f3e;
+  --accent: #1d3444;
+  --border: #233a4a;
+  --input: #2b4456;
+  /* Lifted so null and binary values keep 4.5:1 on hovered and selected rows. */
+  --type-null: #a3abb9;
+  --type-binary: #a3abb9;
+}
+
 /* Pure black dark mode, for OLED screens and dark rooms. */
 .dark[data-dark-style="black"] {
   --background: #000000;
@@ -178,7 +196,8 @@
 }
 
 @theme inline {
-  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  /* `--odin-sans` is set when the user picks the system font. */
+  --font-sans: var(--odin-sans, "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif);
   /* `--odin-mono` is the user's own monospace font, when they pick one. */
   --font-mono: var(--odin-mono, "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace);
   --radius-sm: calc(var(--radius) - 2px);

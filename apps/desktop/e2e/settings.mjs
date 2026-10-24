@@ -71,7 +71,9 @@ await check("theme toggles from settings", async () => {
   await page.getByRole("radio", { name: "Dark" }).click();
   if (!(await page.evaluate(() => document.documentElement.classList.contains("dark"))))
     throw new Error("not dark");
-  await page.getByRole("radio", { name: scheme === "dark" ? "Dark" : "System" }).click();
+  await page
+    .getByRole("radio", { name: scheme === "dark" ? "Dark" : "System", exact: true })
+    .click();
 });
 
 await check("editor and results pages change their settings", async () => {

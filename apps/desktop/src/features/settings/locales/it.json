@@ -39,13 +39,17 @@
       "violet": "Viola"
     },
     "darkStyle": "Superfici in modalità scura",
-    "darkStyleHint": "Il nero puro è adatto a schermi OLED e stanze buie.",
+    "darkStyleHint": "Navy ricorda Compass; il nero puro è adatto a schermi OLED e stanze buie.",
     "graphite": "Grafite",
     "black": "Nero",
     "sidebarDensity": "Densità della barra laterale",
     "sidebarDensityHint": "Compatta mostra più connessioni e collezioni.",
     "sidebarSizes": "Dimensioni nella barra laterale",
-    "sidebarSizesHint": "Mostra dimensione dei database e numero di documenti accanto a ogni nome."
+    "sidebarSizesHint": "Mostra dimensione dei database e numero di documenti accanto a ogni nome.",
+    "navy": "Navy",
+    "uiFont": "Font dell'interfaccia",
+    "uiFontHint": "Il font di sistema è lo stesso delle altre app del computer.",
+    "systemFont": "Font di sistema"
   },
   "editor": {
     "title": "Editor",

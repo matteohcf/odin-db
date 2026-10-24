@@ -57,6 +57,15 @@ await check("swatches preview their own color in dark mode", async () => {
     .evaluate((el) => getComputedStyle(el).backgroundColor);
   if (!rose.includes("255, 122, 147")) throw new Error(rose);
 });
+await check("navy dark mode and the system interface font", async () => {
+  await settings.getByRole("radio", { name: "Navy" }).click();
+  if ((await token("--background")) !== "#0f1e29") throw new Error(await token("--background"));
+  await settings.getByRole("radio", { name: "System font" }).click();
+  const font = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
+  if (!font.includes("system-ui")) throw new Error(font);
+  await shot("02-navy");
+  await settings.getByRole("radio", { name: "IBM Plex Sans" }).click();
+});
 await check("black dark mode", async () => {
   await settings.getByRole("radio", { name: "Black" }).click();
   if ((await token("--background")) !== "#000000") throw new Error(await token("--background"));
@@ -101,7 +110,7 @@ await check("light theme with an accent", async () => {
   await shot("04-light-violet");
   await panel.getByRole("radio", { name: "Indigo" }).click();
   await panel.getByRole("radio", { name: "Graphite" }).click();
-  await panel.getByRole("radio", { name: "System" }).click();
+  await panel.getByRole("radio", { name: "System", exact: true }).click();
   await section("Results");
   await panel.getByRole("radio", { name: "Normal" }).click();
 });

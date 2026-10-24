@@ -26,6 +26,7 @@ export function AppearanceSection() {
   const darkStyle = useSettings((s) => s.darkStyle);
   const sidebarDensity = useSettings((s) => s.sidebarDensity);
   const sidebarSizes = useSettings((s) => s.sidebarSizes);
+  const uiFont = useSettings((s) => s.uiFont);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("appearance.title")}>
@@ -84,8 +85,28 @@ export function AppearanceSection() {
           <ToggleGroupItem value="graphite" className="px-3">
             {t("appearance.graphite")}
           </ToggleGroupItem>
+          <ToggleGroupItem value="navy" className="px-3">
+            {t("appearance.navy")}
+          </ToggleGroupItem>
           <ToggleGroupItem value="black" className="px-3">
             {t("appearance.black")}
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </SettingRow>
+      <SettingRow label={t("appearance.uiFont")} description={t("appearance.uiFontHint")}>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={uiFont}
+          onValueChange={(value) => value && update({ uiFont: value as typeof uiFont })}
+          aria-label={t("appearance.uiFont")}
+        >
+          <ToggleGroupItem value="plex" className="px-3">
+            IBM Plex Sans
+          </ToggleGroupItem>
+          <ToggleGroupItem value="system" className="px-3">
+            {t("appearance.systemFont")}
           </ToggleGroupItem>
         </ToggleGroup>
       </SettingRow>

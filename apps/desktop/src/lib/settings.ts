@@ -26,7 +26,9 @@ export interface Settings {
   /** The color of selection, focus and primary actions. */
   accent: Accent;
   /** Dark mode surfaces: graphite, or pure black for OLED screens and dark rooms. */
-  darkStyle: "graphite" | "black";
+  darkStyle: "graphite" | "navy" | "black";
+  /** The interface font; code keeps the monospace font. */
+  uiFont: "plex" | "system";
   /** Height of result rows. */
   rowDensity: RowDensity;
   /** Reconnect at launch the connections that restored tabs use. */
@@ -74,6 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sidebarWidth: 256,
   accent: "indigo",
   darkStyle: "graphite",
+  uiFont: "plex",
   rowDensity: "normal",
   reconnectOnLaunch: true,
   confirmDelete: true,

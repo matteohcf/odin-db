@@ -39,13 +39,17 @@
       "violet": "Violet"
     },
     "darkStyle": "Dark mode surfaces",
-    "darkStyleHint": "Pure black suits OLED screens and dark rooms.",
+    "darkStyleHint": "Navy is close to Compass; pure black suits OLED screens and dark rooms.",
     "graphite": "Graphite",
     "black": "Black",
     "sidebarDensity": "Sidebar density",
     "sidebarDensityHint": "Compact fits more connections and collections on screen.",
     "sidebarSizes": "Sizes in the sidebar",
-    "sidebarSizesHint": "Show database sizes and document counts beside each name."
+    "sidebarSizesHint": "Show database sizes and document counts beside each name.",
+    "navy": "Navy",
+    "uiFont": "Interface font",
+    "uiFontHint": "The system font matches other apps on your computer.",
+    "systemFont": "System font"
   },
   "editor": {
     "title": "Editors",
