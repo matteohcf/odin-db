@@ -70,6 +70,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
   const openBackups = useTabs((s) => s.openBackups);
 
   function open() {
+    if (connect.isPending) return;
     if (connection) {
       setExpanded(!expanded);
       return;

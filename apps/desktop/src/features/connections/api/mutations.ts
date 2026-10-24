@@ -1,5 +1,6 @@
 import {
   type ConnectionId,
+  type ConnectionInfo,
   type ConnectionProfile,
   commands,
   type Namespace,
@@ -110,7 +111,13 @@ export function useConnect() {
   const askHostKey = useHostKeyPrompt((s) => s.ask);
   return useMutation({
     mutationFn: (profileId: ProfileId) => call(commands.connect(profileId)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: connectionKeys.connections }),
+    onSuccess: (connection) => {
+      // Known at once, so a click right after connecting collapses instead of connecting again.
+      queryClient.setQueryData<ConnectionInfo[]>(connectionKeys.connections, (list = []) =>
+        list.some((other) => other.id === connection.id) ? list : [...list, connection],
+      );
+      return queryClient.invalidateQueries({ queryKey: connectionKeys.connections });
+    },
     onError: (error, profileId) => {
       const hostKey = hostKeyError(error);
       if (hostKey) askHostKey({ profileId, ...hostKey });
