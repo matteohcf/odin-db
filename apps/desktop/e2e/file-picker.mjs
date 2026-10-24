@@ -38,9 +38,12 @@ await check("a file dropped on the window is previewed", async () => {
   await tree.getByRole("button", { name: "Actions for orders" }).click();
   await page.getByRole("menuitem", { name: "Import into collection…" }).click();
   await dialog.getByText("Drop a JSON, NDJSON or CSV file here").waitFor();
+  // Past the dialog's opening animation.
+  await page.waitForTimeout(400);
   await shot("01-empty");
   await drag(true);
   await dialog.getByText("Release to use it").waitFor();
+  await page.waitForTimeout(250);
   await shot("02-hovering");
   await drop([{ name: "people.csv" }]);
   await dialog.getByText("people.csv", { exact: true }).waitFor();
