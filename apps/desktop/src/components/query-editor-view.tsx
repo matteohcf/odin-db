@@ -14,7 +14,7 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { useEffect, useRef } from "react";
 import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
-import { submitOnKeybinding } from "@/lib/editor-keybindings";
+import { submitOnKeybinding, withoutAppShortcuts } from "@/lib/editor-keybindings";
 import { reopensCompletion } from "@/lib/query-completion";
 
 // A query is one expression, not a script: `{ a: 1 }` is an object, not a block.
@@ -23,12 +23,6 @@ const queryLanguage = new LanguageSupport(
 );
 
 /** Newlines (typed or pasted) become spaces: the editor is a single line. */
-// Mod-I (select parent syntax) and Mod-/ (toggle comment) would swallow the app's "Ask AI" and
-// shortcuts-overview keys; neither is of use in a one-line query field.
-const editingKeymap = defaultKeymap.filter(
-  (binding) => binding.key !== "Mod-i" && binding.key !== "Mod-/",
-);
-
 const singleLine = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.newDoc.lines === 1) return tr;
   const text = tr.newDoc.toString().replace(/\s*\n\s*/g, " ");
@@ -130,7 +124,10 @@ export default function QueryEditorView({
               { key: "ArrowDown", run: () => callbacks.current.onHistory?.(-1) ?? false },
             ]),
           ),
-          keymap.of([...closeBracketsKeymap, ...historyKeymap, ...editingKeymap]),
+          // The app's shortcuts (Ask AI on Mod-I, the overview on Mod-/…) win over the editor's.
+          keymap.of(
+            withoutAppShortcuts([...closeBracketsKeymap, ...historyKeymap, ...defaultKeymap]),
+          ),
           queryLanguage,
           syntaxHighlighting(highlight),
           theme,
