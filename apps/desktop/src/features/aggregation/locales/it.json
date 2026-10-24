@@ -10,7 +10,9 @@
     "pasted_one": "Incollato {{count}} stage",
     "pasted_other": "Incollati {{count}} stage",
     "pasteFailed": "Negli appunti non c'è una pipeline: {{message}}",
-    "undo": "Annulla"
+    "undo": "Annulla",
+    "createView": "Crea vista",
+    "createViewHint": "Salva questa pipeline come vista di sola lettura"
   },
   "stage": {
     "label": "Stage {{number}}",

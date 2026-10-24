@@ -122,7 +122,47 @@
       "database": "Database name",
       "collection": "Collection name",
       "submit": "Create",
-      "created": "Created {{namespace}}"
+      "created": "Created {{namespace}}",
+      "moreOptions": "More options",
+      "optional": "Optional",
+      "required": "Required",
+      "invalidNumber": "Use a number above 0.",
+      "expireHint": "Documents are deleted this many seconds after their time. Empty keeps them.",
+      "collationHint": "How strings compare by default, e.g. case-insensitive.",
+      "fields": {
+        "type": "Type",
+        "sizeMb": "Size (MB)",
+        "maxDocuments": "Max documents",
+        "timeField": "Time field",
+        "metaField": "Meta field",
+        "granularity": "Granularity",
+        "expireAfterSeconds": "Expire after (seconds)",
+        "collation": "Collation"
+      },
+      "types": {
+        "standard": {
+          "label": "Standard",
+          "hint": "An ordinary collection."
+        },
+        "capped": {
+          "label": "Capped",
+          "hint": "A fixed size: the oldest documents make room for new ones. Good for logs."
+        },
+        "timeSeries": {
+          "label": "Time series",
+          "hint": "Measurements over time, stored efficiently by time and source."
+        },
+        "clustered": {
+          "label": "Clustered",
+          "hint": "Documents stored in _id order: fast range queries on _id."
+        }
+      },
+      "granularity": {
+        "auto": "Automatic",
+        "seconds": "Seconds",
+        "minutes": "Minutes",
+        "hours": "Hours"
+      }
     },
     "rename": {
       "title": "Rename {{name}}",
@@ -141,6 +181,14 @@
       "confirmLabel": "Type {{name}} to confirm",
       "submit": "Drop",
       "dropped": "Dropped {{name}}"
+    },
+    "createView": {
+      "title": "Create view",
+      "description_one": "A read-only view of {{source}} through this pipeline's stage, kept up to date by MongoDB.",
+      "description_other": "A read-only view of {{source}} through this pipeline's {{count}} stages, kept up to date by MongoDB.",
+      "name": "View name",
+      "submit": "Create view",
+      "created": "Created the view {{name}}"
     }
   },
   "palette": {

@@ -87,6 +87,7 @@ docs/adr/                Architecture Decision Records
 - **Database diagram** (ADR-0043): `diagram::database_diagram` samples each collection and infers references from data (ObjectId values found as `_id` elsewhere), not names. The tab draws it with React Flow and dagre, loaded lazily; dragged positions persist per database.
 - **Automatic updates** (ADR-0039): `check_for_update` at launch (setting `checkForUpdates`), `install_update` as a registered long operation; nothing installs without a click.
 - **Query options** (ADR-0052): collation, hint and `maxTimeMs` travel as `QueryOptions` on find, aggregate, explain and count; `withTimeLimit` adds the `queryTimeLimitSeconds` setting when a query sets none.
+- **Collection types and views** (ADR-0053): `create_collection` takes `CollectionOptions` (capped, time series, clustered, view, collation) and sends one raw `create` command; the aggregation tab reports a pipeline through `onCreateView`, `connections`' `CreateViewDialog` creates it.
 - **Shortcuts are customizable** (ADR-0050): never match `SHORTCUTS.x` directly; use `useShortcut(id)`, `matches(keybinding(id), event)` in handlers and `useKeybindingLabel(id)` for labels.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 

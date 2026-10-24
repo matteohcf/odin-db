@@ -1,4 +1,4 @@
-import type { ConnectionInfo, ProfileColor } from "@odin-db/bindings";
+import type { ConnectionInfo, EJsonDocument, ProfileColor } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@odin-db/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
@@ -16,7 +16,13 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useConnect, useConnectionOf, useExplorer, useProfile } from "@/features/connections";
+import {
+  CreateViewDialog,
+  useConnect,
+  useConnectionOf,
+  useExplorer,
+  useProfile,
+} from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
 import { type CollectionTab as CollectionTabModel, useTabs } from "@/features/workspace";
 import { useKeybindingLabel } from "@/hooks/use-keybinding";
@@ -113,6 +119,7 @@ function CollectionWorkspace({
   // Every collection tab stays mounted: only the visible one takes shortcuts.
   const tabActive = useTabs((s) => s.activeTabId === tab.id);
   const [indexDraft, setIndexDraft] = useState<string | null>(null);
+  const [viewPipeline, setViewPipeline] = useState<EJsonDocument[] | null>(null);
   // Views mount on first visit and then stay mounted, keeping their state.
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
 
@@ -258,6 +265,7 @@ function CollectionWorkspace({
                   namespace={namespace}
                   active={tabActive && view === "aggregation"}
                   pendingPipeline={tab.pipeline}
+                  onCreateView={connection.readOnly ? undefined : setViewPipeline}
                 />
               ) : value === "schema" ? (
                 <SchemaView connection={connection} namespace={namespace} />
@@ -278,6 +286,14 @@ function CollectionWorkspace({
           )}
         </TabsContent>
       ))}
+      {viewPipeline && (
+        <CreateViewDialog
+          connection={connection}
+          source={namespace}
+          pipeline={viewPipeline}
+          onClose={() => setViewPipeline(null)}
+        />
+      )}
     </Tabs>
   );
 }

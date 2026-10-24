@@ -122,7 +122,47 @@
       "database": "Nome del database",
       "collection": "Nome della collezione",
       "submit": "Crea",
-      "created": "{{namespace}} creato"
+      "created": "{{namespace}} creato",
+      "moreOptions": "Altre opzioni",
+      "optional": "Facoltativo",
+      "required": "Obbligatorio",
+      "invalidNumber": "Usa un numero maggiore di 0.",
+      "expireHint": "I documenti vengono eliminati dopo questi secondi dal loro orario. Vuoto li conserva.",
+      "collationHint": "Come si confrontano le stringhe di default, ad es. senza distinguere maiuscole.",
+      "fields": {
+        "type": "Tipo",
+        "sizeMb": "Dimensione (MB)",
+        "maxDocuments": "Documenti massimi",
+        "timeField": "Campo orario",
+        "metaField": "Campo meta",
+        "granularity": "Granularità",
+        "expireAfterSeconds": "Scadenza (secondi)",
+        "collation": "Collation"
+      },
+      "types": {
+        "standard": {
+          "label": "Standard",
+          "hint": "Una collezione normale."
+        },
+        "capped": {
+          "label": "Capped",
+          "hint": "Dimensione fissa: i documenti più vecchi lasciano posto ai nuovi. Ideale per i log."
+        },
+        "timeSeries": {
+          "label": "Serie temporale",
+          "hint": "Misure nel tempo, salvate in modo efficiente per orario e sorgente."
+        },
+        "clustered": {
+          "label": "Clustered",
+          "hint": "Documenti salvati in ordine di _id: query per intervalli di _id veloci."
+        }
+      },
+      "granularity": {
+        "auto": "Automatica",
+        "seconds": "Secondi",
+        "minutes": "Minuti",
+        "hours": "Ore"
+      }
     },
     "rename": {
       "title": "Rinomina {{name}}",
@@ -141,6 +181,14 @@
       "confirmLabel": "Digita {{name}} per confermare",
       "submit": "Elimina",
       "dropped": "{{name}} eliminato"
+    },
+    "createView": {
+      "title": "Crea vista",
+      "description_one": "Una vista di sola lettura di {{source}} attraverso lo stage di questa pipeline, aggiornata da MongoDB.",
+      "description_other": "Una vista di sola lettura di {{source}} attraverso i {{count}} stage di questa pipeline, aggiornata da MongoDB.",
+      "name": "Nome della vista",
+      "submit": "Crea vista",
+      "created": "Vista {{name}} creata"
     }
   },
   "palette": {

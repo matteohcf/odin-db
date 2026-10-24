@@ -1,4 +1,4 @@
-// Query bar: autocompletion, history, reset.
+// Catalog: create, rename and drop databases and collections, with collection types and views.
 import { chromium } from "playwright";
 
 const scheme = process.env.SCHEME ?? "light";
@@ -52,6 +52,64 @@ await check("an existing name is explained", async () => {
   await page.getByLabel("Collection name").fill("suppliers");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByRole("tab", { name: /suppliers/ }).waitFor();
+});
+
+await check("a capped collection asks for its size", async () => {
+  await menuFor("inventory");
+  await page.getByRole("menuitem", { name: "Create collection…" }).click();
+  await page.getByLabel("Collection name").fill("log");
+  await page.getByRole("button", { name: "More options" }).click();
+  await page.getByLabel("Type").click();
+  await page.getByRole("option", { name: "Capped" }).click();
+  await page.getByText("A fixed size: the oldest documents").waitFor();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByText("Required").waitFor();
+  await page.getByLabel("Size (MB)").fill("16");
+  await page.getByLabel("Collation").fill("locale: 'en', strength: 2");
+  await shot("02-capped");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("tab", { name: /log/ }).waitFor();
+});
+
+await check("a time series collection needs its time field", async () => {
+  await menuFor("inventory");
+  await page.getByRole("menuitem", { name: "Create collection…" }).click();
+  await page.getByLabel("Collection name").fill("readings");
+  await page.getByRole("button", { name: "More options" }).click();
+  await page.getByLabel("Type").click();
+  await page.getByRole("option", { name: "Time series" }).click();
+  await page.getByLabel("Meta field").fill("sensor");
+  await page.getByLabel("Granularity").click();
+  await page.getByRole("option", { name: "Minutes" }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByText("Required").waitFor();
+  await page.getByLabel("Time field").fill("at");
+  await page.getByText("Required").waitFor({ state: "detached" });
+  await shot("03-time-series");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("tab", { name: /readings/ }).waitFor();
+});
+
+await check("an aggregation pipeline is saved as a view", async () => {
+  await page.click("text=shop");
+  await page.getByRole("button", { name: /^orders$/ }).click();
+  await page.getByRole("tab", { name: "Aggregation" }).click();
+  const editor = page.getByRole("region", { name: "Stage 1" }).locator(".cm-content");
+  await editor.click();
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.insertText('{ status: "paid" }');
+  await page.getByRole("button", { name: "Create view" }).click();
+  const dialog = page.getByRole("dialog", { name: "Create view" });
+  await dialog.getByText("through this pipeline's stage").waitFor();
+  await dialog.getByLabel("View name").fill("paid_orders");
+  await shot("04-view");
+  await dialog.getByRole("button", { name: "Create view" }).click();
+  await page.getByRole("tab", { name: /paid_orders/ }).waitFor();
+  await page.getByText("88 documents").waitFor();
+  await page
+    .getByRole("button", { name: /^paid_orders/ })
+    .first()
+    .waitFor();
 });
 
 await check("rename a collection and keep its tab", async () => {

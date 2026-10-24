@@ -1,4 +1,5 @@
 import {
+  type CollectionOptions,
   type ConnectionId,
   type ConnectionInfo,
   type ConnectionProfile,
@@ -172,8 +173,10 @@ function useCatalogMutation<T>(connectionId: ConnectionId, run: (input: T) => Pr
 }
 
 export function useCreateCollection(connectionId: ConnectionId) {
-  return useCatalogMutation(connectionId, (namespace: Namespace) =>
-    call(commands.createCollection(connectionId, namespace)),
+  return useCatalogMutation(
+    connectionId,
+    ({ namespace, options }: { namespace: Namespace; options: CollectionOptions | null }) =>
+      call(commands.createCollection(connectionId, namespace, options)),
   );
 }
 

@@ -22,6 +22,7 @@ import {
   Code2,
   Copy,
   Download,
+  Eye,
   FileCode2,
   Play,
   Plus,
@@ -61,6 +62,8 @@ interface AggregationViewProps {
   active: boolean;
   /** A pipeline handed over (e.g. from My queries); a new nonce loads it again. */
   pendingPipeline?: { text: string; nonce: string } | undefined;
+  /** Saves the pipeline as a view; absent where views cannot be created. */
+  onCreateView?: ((pipeline: EJsonDocument[]) => void) | undefined;
 }
 
 /** Build a pipeline stage by stage with live previews, then run it in full. */
@@ -69,6 +72,7 @@ export function AggregationView({
   namespace,
   active,
   pendingPipeline,
+  onCreateView,
 }: AggregationViewProps) {
   const submitKeys = useKeybindingLabel("submit");
   const { t } = useTranslation("aggregation");
@@ -168,17 +172,28 @@ export function AggregationView({
     }
   }
 
-  async function showCode() {
-    if (!(await syncText())) return;
+  /** The pipeline as written, or null after showing why it does not parse. */
+  async function builtPipeline() {
+    if (!(await syncText())) return null;
     const stages = store.getState().stages;
     const built = await buildPipeline(stages);
     if (!built.ok) {
       const number = stages.findIndex((s) => s.id === built.stageId) + 1;
       setRunError(`${t("stage.label", { number })}: ${built.error}`);
-      return;
+      return null;
     }
     setRunError(null);
-    setCodePipeline(built.pipeline);
+    return built.pipeline;
+  }
+
+  async function showCode() {
+    const pipeline = await builtPipeline();
+    if (pipeline) setCodePipeline(pipeline);
+  }
+
+  async function createView() {
+    const pipeline = await builtPipeline();
+    if (pipeline) onCreateView?.(pipeline);
   }
 
   async function run(confirmed = false) {
@@ -266,6 +281,18 @@ export function AggregationView({
           <Code2 />
           <span className="hidden @4xl:inline">{t("queryCode.toolbar", { ns: "common" })}</span>
         </Button>
+        {onCreateView && (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={t("toolbar.createView")}
+            title={t("toolbar.createViewHint")}
+            onClick={() => void createView()}
+          >
+            <Eye />
+            <span className="hidden @5xl:inline">{t("toolbar.createView")}</span>
+          </Button>
+        )}
         <SavedPipelinesMenu
           storageKey={pipelineKey(connection.profileId, namespace.database, namespace.collection)}
           stages={stages}

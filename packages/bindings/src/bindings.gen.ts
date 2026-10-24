@@ -109,7 +109,11 @@ export const commands = {
 	/**  The server stops the query past this many milliseconds; `None` lets it run. */
 	maxTimeMs?: number | null,
 } | null) => typedError<number | null, IpcError>(__TAURI_INVOKE("count_documents", { connectionId, namespace, filter, options })),
-	createCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("create_collection", { connectionId, namespace })),
+	createCollection: (connectionId: ConnectionId, namespace: Namespace, options: {
+	kind?: NewCollectionKind,
+	/**  The default collation of its queries and indexes. */
+	collation?: EJsonDocument | null,
+} | null) => typedError<null, IpcError>(__TAURI_INVOKE("create_collection", { connectionId, namespace, options })),
 	renameCollection: (connectionId: ConnectionId, namespace: Namespace, newName: string) => typedError<null, IpcError>(__TAURI_INVOKE("rename_collection", { connectionId, namespace, newName })),
 	dropCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("drop_collection", { connectionId, namespace })),
 	dropDatabase: (connectionId: ConnectionId, database: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_database", { connectionId, database })),
@@ -401,6 +405,12 @@ export type CollectionInfo = {
 };
 
 export type CollectionKind = "collection" | "view" | "timeseries";
+
+export type CollectionOptions = {
+	kind?: NewCollectionKind,
+	/**  The default collation of its queries and indexes. */
+	collation?: EJsonDocument | null,
+};
 
 /**  Sizes in bytes; `f64` because TypeScript numbers cannot hold every `u64`. */
 export type CollectionStats = {
@@ -932,6 +942,19 @@ export type Namespace = {
 	database: string,
 	collection: string,
 };
+
+/**  What kind of collection to create (ADR-0053). */
+export type NewCollectionKind = { kind: "standard" } | 
+/**  Fixed size; the oldest documents make room for new ones. */
+{ kind: "capped"; sizeBytes: number | null; maxDocuments?: number | null } | 
+/**  Measurements over time, stored by time and meta field. */
+{ kind: "timeSeries"; timeField: string; metaField?: string | null; 
+/**  `seconds`, `minutes` or `hours`. */
+granularity?: string | null; expireAfterSeconds?: number | null } | 
+/**  Documents stored in `_id` order. */
+{ kind: "clustered"; expireAfterSeconds?: number | null } | 
+/**  A read-only view: an aggregation pipeline over another collection or view. */
+{ kind: "view"; source: string; pipeline: EJsonDocument[] };
 
 export type OllamaModel = {
 	name: string,

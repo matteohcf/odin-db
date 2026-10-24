@@ -10,7 +10,9 @@
     "pasted_one": "Pasted {{count}} stage",
     "pasted_other": "Pasted {{count}} stages",
     "pasteFailed": "The clipboard has no pipeline: {{message}}",
-    "undo": "Undo"
+    "undo": "Undo",
+    "createView": "Create view",
+    "createViewHint": "Save this pipeline as a read-only view"
   },
   "stage": {
     "label": "Stage {{number}}",

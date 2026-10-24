@@ -7,6 +7,7 @@
 
 import type {
   CollectionInfo,
+  CollectionOptions,
   ConnectionInfo,
   ConnectionProfile,
   DatabaseInfo,
@@ -1608,10 +1609,23 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       fail("validation", "invalid input: enter a collection name");
     if (databases[ns.database]?.[ns.collection])
       fail("validation", `invalid input: ${ns.collection} already exists in ${ns.database}`);
+    const kind = (args.options as CollectionOptions | null)?.kind ?? { kind: "standard" };
+    if (kind.kind === "timeSeries" && !kind.timeField.trim())
+      fail("validation", "invalid input: a time series collection needs a time field");
+    if (kind.kind === "capped" && !(kind.sizeBytes && kind.sizeBytes >= 1))
+      fail("validation", "invalid input: a capped collection needs a size");
     databases[ns.database] ??= {};
-    (databases[ns.database] as Record<string, unknown>)[ns.collection] = {
-      kind: "collection",
-      docs: [],
+    const db = databases[ns.database] as Record<string, { kind: string; docs: Doc[] }>;
+    let docs: Doc[] = [];
+    if (kind.kind === "view") {
+      const source = db[kind.source] ?? fail("notFound", `${kind.source} not found`);
+      // Computed once; a real view follows its source.
+      docs = aggregate(source.docs, kind.pipeline as Doc[]);
+    }
+    db[ns.collection] = {
+      kind:
+        kind.kind === "view" ? "view" : kind.kind === "timeSeries" ? "timeseries" : "collection",
+      docs,
     };
     return null;
   },

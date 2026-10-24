@@ -17,9 +17,10 @@ pub async fn create_collection(
     state: State<'_, Arc<AppState>>,
     connection_id: ConnectionId,
     namespace: Namespace,
+    options: Option<catalog::CollectionOptions>,
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
-    Ok(catalog::create_collection(&handle, &namespace).await?)
+    Ok(catalog::create_collection(&handle, &namespace, &options.unwrap_or_default()).await?)
 }
 
 #[tauri::command]

@@ -2,5 +2,6 @@
 export { useConnect } from "./api/mutations";
 export { useConnectionOf, useConnections, useProfile, useProfiles } from "./api/queries";
 export { ConnectionExplorer } from "./components/connection-explorer";
+export { CreateViewDialog } from "./components/create-view-dialog";
 export { useOpenCollection } from "./hooks/use-open-collection";
 export { useExplorer } from "./store/explorer-store";

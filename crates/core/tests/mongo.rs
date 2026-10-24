@@ -10,6 +10,7 @@ use odin_core::backup::{
     BackupRequest, BackupScope, RestoreRequest, RestoreSource, ToolConnection, backup,
     locate_tools, restore, tools_version,
 };
+use odin_core::catalog::{CollectionOptions, NewCollectionKind};
 use odin_core::connection::{ConnectionHandle, ConnectionManager, test_connection};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::indexes::{self, CreateIndexRequest};
@@ -1176,18 +1177,18 @@ async fn creates_renames_and_drops_collections_and_databases() {
         collection: collection.into(),
     };
 
-    catalog::create_collection(&handle, &ns("orders"))
+    catalog::create_collection(&handle, &ns("orders"), &CollectionOptions::default())
         .await
         .expect("creates");
     assert_eq!(names("catalog_test").await, ["orders"]);
     assert!(
-        catalog::create_collection(&handle, &ns("orders"))
+        catalog::create_collection(&handle, &ns("orders"), &CollectionOptions::default())
             .await
             .is_err(),
         "an existing collection is not silently reused"
     );
 
-    catalog::create_collection(&handle, &ns("archive"))
+    catalog::create_collection(&handle, &ns("archive"), &CollectionOptions::default())
         .await
         .expect("creates");
     assert!(
@@ -1215,7 +1216,7 @@ async fn creates_renames_and_drops_collections_and_databases() {
 
     let read_only = fx.connect(true).await;
     assert!(matches!(
-        catalog::create_collection(&read_only, &ns("x")).await,
+        catalog::create_collection(&read_only, &ns("x"), &CollectionOptions::default()).await,
         Err(CoreError::ReadOnly)
     ));
     assert!(matches!(
@@ -3122,4 +3123,126 @@ async fn streams_a_collections_changes_live() {
     assert_eq!(operations, ["insert", "update", "delete"]);
     cancel.cancel();
     watching.await.expect("joined").expect("stopped cleanly");
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn collections_can_be_capped_clustered_time_series_or_views() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = |collection: &str| Namespace {
+        database: "kinds_test".into(),
+        collection: collection.into(),
+    };
+    let create = |name: &'static str, kind: NewCollectionKind, collation: Option<Document>| {
+        let handle = handle.clone();
+        async move {
+            let options = CollectionOptions {
+                kind,
+                collation: collation.map(EJsonDocument::from),
+            };
+            catalog::create_collection(&handle, &ns(name), &options)
+                .await
+                .expect("creates");
+        }
+    };
+    create(
+        "capped",
+        NewCollectionKind::Capped {
+            size_bytes: 4096.0,
+            max_documents: Some(10),
+        },
+        Some(doc! { "locale": "en", "strength": 2 }),
+    )
+    .await;
+    create(
+        "metrics",
+        NewCollectionKind::TimeSeries {
+            time_field: "at".into(),
+            meta_field: Some("sensor".into()),
+            granularity: Some("minutes".into()),
+            expire_after_seconds: Some(3600),
+        },
+        None,
+    )
+    .await;
+    create(
+        "clustered",
+        NewCollectionKind::Clustered {
+            expire_after_seconds: None,
+        },
+        None,
+    )
+    .await;
+    fx.seed(&handle, &ns("capped"), 3).await;
+    create(
+        "big_n",
+        NewCollectionKind::View {
+            source: "capped".into(),
+            pipeline: vec![EJsonDocument::from(
+                doc! { "$match": { "n": { "$gte": 1 } } },
+            )],
+        },
+        None,
+    )
+    .await;
+
+    let options = |name: &'static str| {
+        let handle = handle.clone();
+        async move { listed_options(&handle, "kinds_test", name).await }
+    };
+    assert_eq!(options("capped").await.get_bool("capped").ok(), Some(true));
+    assert_eq!(
+        options("capped")
+            .await
+            .get_document("collation")
+            .and_then(|c| c.get_i32("strength"))
+            .ok(),
+        Some(2)
+    );
+    assert_eq!(
+        options("metrics")
+            .await
+            .get_document("timeseries")
+            .and_then(|t| t.get_str("metaField"))
+            .ok(),
+        Some("sensor")
+    );
+    assert!(
+        options("clustered")
+            .await
+            .get_document("clusteredIndex")
+            .is_ok()
+    );
+    assert_eq!(
+        options("big_n").await.get_str("viewOn").ok(),
+        Some("capped")
+    );
+    let viewed = handle
+        .client
+        .database("kinds_test")
+        .collection::<Document>("big_n")
+        .count_documents(doc! {})
+        .await
+        .expect("counts");
+    assert_eq!(viewed, 2);
+}
+
+/// A collection's options as `listCollections` reports them.
+async fn listed_options(handle: &ConnectionHandle, database: &str, name: &str) -> Document {
+    let reply = handle
+        .client
+        .database(database)
+        .run_command(doc! { "listCollections": 1, "filter": { "name": name } })
+        .await
+        .expect("lists");
+    reply
+        .get_document("cursor")
+        .and_then(|c| c.get_array("firstBatch"))
+        .ok()
+        .and_then(|batch| batch.first())
+        .and_then(Bson::as_document)
+        .and_then(|spec| spec.get_document("options").ok())
+        .cloned()
+        .unwrap_or_else(|| panic!("{name} listed"))
 }
