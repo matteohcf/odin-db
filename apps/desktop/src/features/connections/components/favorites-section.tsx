@@ -6,7 +6,6 @@ import { useProfiles } from "../api/queries";
 import { useOpenCollection } from "../hooks/use-open-collection";
 import { useExpanded } from "../store/explorer-store";
 import { useFavorites } from "../store/favorites-store";
-import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
 
 /** Starred collections, one click away whatever their connection. */
@@ -50,13 +49,14 @@ export function FavoritesSection() {
                       </span>
                     </span>
                   }
-                  actions={
-                    <NodeMenu label={t("tree.actions", { name: favorite.collection })}>
+                  menuLabel={t("tree.actions", { name: favorite.collection })}
+                  menu={
+                    <>
                       <DropdownMenuItem onSelect={() => toggle(favorite)}>
                         <StarOff />
                         {t("favorites.remove")}
                       </DropdownMenuItem>
-                    </NodeMenu>
+                    </>
                   }
                 />
               </li>

@@ -44,6 +44,8 @@ await check(
   1200,
 );
 await check("the connection shows how many databases it has", async () => {
+  // Hover swaps the count for the row's actions.
+  await page.mouse.move(900, 500);
   const text = await tree
     .getByRole("button", { name: /^Tenants cluster/ })
     .first()

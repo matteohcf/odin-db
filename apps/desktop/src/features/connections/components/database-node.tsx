@@ -32,8 +32,8 @@ import { CopyDialogFor } from "./copy-dialog-for";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
-import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
+import { TreeRowAction } from "./tree-row-action";
 
 /** A database row; its collections are rows of their own, after it. */
 export function DatabaseNode({
@@ -74,8 +74,19 @@ export function DatabaseNode({
         icon={<Database className="size-3.5" />}
         label={<HighlightMatch text={database.name} query={filter} />}
         trailing={database.empty ? undefined : formatBytes(database.sizeOnDisk ?? 0)}
-        actions={
-          <NodeMenu label={t("tree.actions", { name: database.name })}>
+        quickActions={
+          writable && (
+            <TreeRowAction
+              label={t("catalog.createCollection")}
+              onClick={() => setToolDialog("createCollection")}
+            >
+              <Plus />
+            </TreeRowAction>
+          )
+        }
+        menuLabel={t("tree.actions", { name: database.name })}
+        menu={
+          <>
             {writable && (
               <>
                 <DropdownMenuItem onSelect={() => setToolDialog("createCollection")}>
@@ -139,7 +150,7 @@ export function DatabaseNode({
                 )}
               </>
             )}
-          </NodeMenu>
+          </>
         }
       />
       {toolDialog === "createCollection" && (

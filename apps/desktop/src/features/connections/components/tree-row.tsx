@@ -1,6 +1,9 @@
 import { cn } from "@odin-db/ui/lib/utils";
 import { ChevronRight, Loader2 } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
+import { MenuButton } from "@/components/menu-button";
+import { PointerMenu } from "@/components/pointer-menu";
+import { usePointerMenu } from "@/hooks/use-pointer-menu";
 
 interface TreeRowProps {
   depth: number;
@@ -10,7 +13,11 @@ interface TreeRowProps {
   expanded?: boolean;
   loading?: boolean;
   trailing?: ReactNode;
-  actions?: ReactNode;
+  /** `DropdownMenuItem`s, shown by the "…" button and on right-click. */
+  menu?: ReactNode;
+  menuLabel?: string;
+  /** One-click actions (`TreeRowAction`) shown on hover before the "…" button. */
+  quickActions?: ReactNode;
   muted?: boolean;
   /** The row of what the active tab shows. */
   active?: boolean;
@@ -28,18 +35,25 @@ export function TreeRow({
   expanded,
   loading,
   trailing,
-  actions,
+  menu,
+  menuLabel = "",
+  quickActions,
   muted,
   active,
   onActivate,
   onAuxActivate,
   title,
 }: TreeRowProps) {
+  const hasActions = Boolean(menu || quickActions);
+  const pointerMenu = usePointerMenu();
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: right-click is a pointer shortcut; the "…" button opens the same menu from the keyboard.
     <div
+      onContextMenu={menu ? pointerMenu.onContextMenu : undefined}
+      data-state={pointerMenu.at ? "open" : undefined}
       className={cn(
         // The sidebar sets --tree-row from the density setting.
-        "group relative flex h-(--tree-row) items-center rounded-md pr-1 text-[13px] hover:bg-accent",
+        "group relative flex h-(--tree-row) items-center rounded-md text-[13px] hover:bg-accent data-[state=open]:bg-accent",
         muted ? "text-muted-foreground" : "text-foreground",
         active && "bg-accent font-medium",
       )}
@@ -51,7 +65,7 @@ export function TreeRow({
         aria-expanded={expanded}
         aria-current={active ? "page" : undefined}
         title={title}
-        className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ paddingLeft: `${depth * 14 + 6}px` }}
       >
         <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
@@ -66,13 +80,33 @@ export function TreeRow({
         <span className="flex shrink-0 items-center text-muted-foreground">{icon}</span>
         <span className="truncate">{label}</span>
         {trailing && (
-          <span className="ml-auto shrink-0 pl-2 text-muted-foreground text-xs">{trailing}</span>
+          <span
+            className={cn(
+              "ml-auto shrink-0 pl-2 text-muted-foreground text-xs",
+              // The actions take the trailing details' place while shown.
+              hasActions && "group-hover:invisible group-has-focus-visible:invisible",
+            )}
+          >
+            {trailing}
+          </span>
         )}
       </button>
-      {actions && (
-        <div className="flex shrink-0 items-center opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 has-[[data-state=open]]:opacity-100">
-          {actions}
+      {hasActions && (
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 flex items-center gap-0.5 rounded-r-md bg-accent px-1 opacity-0",
+            // Hidden visually only, so screen readers and Tab still reach the actions.
+            "group-hover:opacity-100 group-has-focus-visible:opacity-100 has-[[data-state=open]]:opacity-100",
+          )}
+        >
+          {quickActions}
+          {menu && <MenuButton label={menuLabel}>{menu}</MenuButton>}
         </div>
+      )}
+      {menu && pointerMenu.at && (
+        <PointerMenu at={pointerMenu.at} onClose={pointerMenu.close}>
+          {menu}
+        </PointerMenu>
       )}
     </div>
   );

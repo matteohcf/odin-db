@@ -118,7 +118,12 @@ export function ConnectionExplorer() {
       style={{ "--tree-row": `${TREE_ROW_HEIGHTS[density]}px` } as CSSProperties}
     >
       <div className="flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">
-        <h2 className="font-medium text-muted-foreground text-xs">{t("explorer.title")}</h2>
+        <h2 className="flex items-baseline gap-1.5 font-medium text-muted-foreground text-xs">
+          {t("explorer.title")}
+          {profiles && profiles.length > 0 && (
+            <span className="font-normal tabular-nums opacity-70">{profiles.length}</span>
+          )}
+        </h2>
         <div className="flex items-center">
           <Tooltip>
             <TooltipTrigger asChild>

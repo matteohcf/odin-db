@@ -4,15 +4,24 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
+import { cn } from "@odin-db/ui/lib/utils";
 import { MoreHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
 
-/** The "…" menu shown on hover at the end of a tree row. */
-export function NodeMenu({ label, children }: { label: string; children: ReactNode }) {
+/** A "…" button opening a dropdown of `DropdownMenuItem`s. */
+export function MenuButton({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost" className="size-6" aria-label={label}>
+        <Button size="icon" variant="ghost" className={cn("size-6", className)} aria-label={label}>
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownMenuTrigger>

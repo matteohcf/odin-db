@@ -119,6 +119,30 @@ await check("the filter matches connection names and explains no match", async (
   await page.getByText("Nothing matches “zzz-nothing”.").waitFor();
   await input.fill("");
 });
+await check(
+  "hovering a connection shows quick actions; right-click opens the row menu",
+  async () => {
+    await page.keyboard.press("Escape");
+    const connection = aside()
+      .getByRole("button", { name: /^Local development/ })
+      .first();
+    // Earlier checks may leave it closed.
+    if (!(await aside().getByRole("button", { name: /^shop/ }).count())) await connection.click();
+    await aside().getByRole("button", { name: /^shop/ }).first().click();
+    await connection.hover();
+    await aside().getByRole("button", { name: "Open shell" }).first().waitFor();
+    await aside().getByRole("button", { name: "Create database…" }).first().waitFor();
+    await shot("hover-actions");
+    await aside()
+      .getByRole("button", { name: /^orders/ })
+      .first()
+      .click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Copy to…" }).waitFor();
+    await shot("context-menu");
+    await page.keyboard.press("Escape");
+  },
+);
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

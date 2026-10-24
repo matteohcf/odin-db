@@ -14,6 +14,7 @@ import {
   Lock,
   Pencil,
   Plug,
+  Plus,
   RefreshCw,
   SquareTerminal,
   Trash2,
@@ -33,8 +34,8 @@ import { databasesQuery, useConnectionOf } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
-import { NodeMenu } from "./node-menu";
 import { TreeRow } from "./tree-row";
+import { TreeRowAction } from "./tree-row-action";
 
 interface ProfileNodeProps {
   /** Levels added by an enclosing group. */
@@ -145,8 +146,30 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
             </span>
           ) : undefined
         }
-        actions={
-          <NodeMenu label={t("profile.actions", { name: profile.name })}>
+        quickActions={
+          connection ? (
+            <>
+              {!connection.readOnly && (
+                <TreeRowAction
+                  label={t("profile.createDatabase")}
+                  onClick={() => setToolDialog("createDatabase")}
+                >
+                  <Plus />
+                </TreeRowAction>
+              )}
+              <TreeRowAction label={t("profile.openShell")} onClick={() => openShell(profile.id)}>
+                <SquareTerminal />
+              </TreeRowAction>
+            </>
+          ) : (
+            <TreeRowAction label={t("profile.edit")} onClick={onEdit}>
+              <Pencil />
+            </TreeRowAction>
+          )
+        }
+        menuLabel={t("profile.actions", { name: profile.name })}
+        menu={
+          <>
             {connection ? (
               <DropdownMenuItem onSelect={close}>
                 <Unplug />
@@ -240,7 +263,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
               <Trash2 />
               {t("profile.delete")}
             </DropdownMenuItem>
-          </NodeMenu>
+          </>
         }
       />
       {connection && toolDialog === "createDatabase" && (

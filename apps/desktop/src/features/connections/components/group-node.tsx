@@ -6,7 +6,6 @@ import { useDisconnectAll, useSetGroup } from "../api/mutations";
 import { useConnections, useProfiles } from "../api/queries";
 import { collapsedGroupKey } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
-import { NodeMenu } from "./node-menu";
 import { RenameGroupDialog } from "./rename-group-dialog";
 import { TreeRow } from "./tree-row";
 
@@ -54,8 +53,9 @@ export function GroupNode({
             <span>{count}</span>
           </span>
         }
-        actions={
-          <NodeMenu label={t("group.actions", { name })}>
+        menuLabel={t("group.actions", { name })}
+        menu={
+          <>
             <DropdownMenuItem onSelect={() => onNewConnection(name)}>
               <Plus />
               {t("group.newConnection")}
@@ -82,7 +82,7 @@ export function GroupNode({
               <FolderInput />
               {t("group.ungroup")}
             </DropdownMenuItem>
-          </NodeMenu>
+          </>
         }
       />
       {renaming && (

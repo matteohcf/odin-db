@@ -32,7 +32,6 @@ import { CompareDialogFor } from "./compare-dialog-for";
 import { CopyDialogFor } from "./copy-dialog-for";
 import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
-import { NodeMenu } from "./node-menu";
 import { RenameCollectionDialog } from "./rename-collection-dialog";
 import { TreeRow } from "./tree-row";
 
@@ -115,8 +114,9 @@ export function CollectionNode({
             </span>
           ) : undefined
         }
-        actions={
-          <NodeMenu label={t("tree.actions", { name: collection.name })}>
+        menuLabel={t("tree.actions", { name: collection.name })}
+        menu={
+          <>
             <DropdownMenuItem
               onSelect={() =>
                 toggleFavorite({
@@ -175,7 +175,7 @@ export function CollectionNode({
                 </DropdownMenuItem>
               </>
             )}
-          </NodeMenu>
+          </>
         }
       />
       {dialog === "backup" && (
