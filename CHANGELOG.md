@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/matteohcf/odin-db/compare/v1.1.0...v1.2.0) (2026-10-24)
+
+
+### Features
+
+* a raven logo and app icon ([46ec232](https://github.com/matteohcf/odin-db/commit/46ec232c0fa0bb88fa881f1a00dfddddc2406679))
+* an index advisor from the server's slow operations ([0a1c294](https://github.com/matteohcf/odin-db/commit/0a1c2948d517cf418281589a182fbb01d78cb6d1))
+
 ## [1.1.0](https://github.com/matteohcf/odin-db/compare/v1.0.2...v1.1.0) (2026-10-24)
 
 
