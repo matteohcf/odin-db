@@ -1,3 +1,4 @@
+import { Switch } from "@odin-db/ui/components/switch";
 import { type Theme, useTheme } from "@odin-db/ui/components/theme-provider";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import { cn } from "@odin-db/ui/lib/utils";
@@ -24,6 +25,7 @@ export function AppearanceSection() {
   const accent = useSettings((s) => s.accent);
   const darkStyle = useSettings((s) => s.darkStyle);
   const sidebarDensity = useSettings((s) => s.sidebarDensity);
+  const sidebarSizes = useSettings((s) => s.sidebarSizes);
   const update = useSettings((s) => s.update);
   return (
     <SettingsSection title={t("appearance.title")}>
@@ -108,6 +110,17 @@ export function AppearanceSection() {
             {t("results.densities.compact")}
           </ToggleGroupItem>
         </ToggleGroup>
+      </SettingRow>
+      <SettingRow
+        id={`${id}-sizes`}
+        label={t("appearance.sidebarSizes")}
+        description={t("appearance.sidebarSizesHint")}
+      >
+        <Switch
+          id={`${id}-sizes`}
+          checked={sidebarSizes}
+          onCheckedChange={(checked) => update({ sidebarSizes: checked })}
+        />
       </SettingRow>
       <SettingRow
         id={`${id}-zoom`}

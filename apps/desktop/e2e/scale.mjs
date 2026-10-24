@@ -33,6 +33,13 @@ const row = (name) => tree.getByRole("button", { name: new RegExp(`^${name}\\b`)
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
+await page.evaluate(() => {
+  // Sizes and counts in the tree are off by default, like Compass.
+  const saved = JSON.parse(localStorage.getItem("odin-settings") ?? '{"state":{},"version":1}');
+  saved.state.sidebarSizes = true;
+  localStorage.setItem("odin-settings", JSON.stringify(saved));
+});
+await page.reload();
 await page.getByText("Tenants cluster").waitFor();
 await page.waitForTimeout(500);
 await check(

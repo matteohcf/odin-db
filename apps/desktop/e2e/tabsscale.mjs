@@ -84,9 +84,9 @@ await check("heap stays bounded", async () => {
   if (mb > 300) throw new Error(`${mb} MB`);
 });
 await check("the overflow menu lists every tab and switches", async () => {
-  await page.getByRole("button", { name: "All 40 open tabs" }).click();
+  await page.getByRole("button", { name: `All ${names.length} open tabs` }).click();
   const items = page.getByRole("menuitem");
-  if ((await items.count()) !== 40) throw new Error(`${await items.count()} items`);
+  if ((await items.count()) !== names.length) throw new Error(`${await items.count()} items`);
   await items.nth(20).click();
   if (!(await inView(activeTab()))) throw new Error("not scrolled into view");
 });

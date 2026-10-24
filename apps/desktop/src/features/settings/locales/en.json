@@ -43,7 +43,9 @@
     "graphite": "Graphite",
     "black": "Black",
     "sidebarDensity": "Sidebar density",
-    "sidebarDensityHint": "Compact fits more connections and collections on screen."
+    "sidebarDensityHint": "Compact fits more connections and collections on screen.",
+    "sidebarSizes": "Sizes in the sidebar",
+    "sidebarSizesHint": "Show database sizes and document counts beside each name."
   },
   "editor": {
     "title": "Editors",

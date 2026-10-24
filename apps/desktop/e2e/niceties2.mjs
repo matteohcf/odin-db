@@ -25,6 +25,13 @@ const check = async (name, fn) => {
 };
 const aside = () => page.getByRole("complementary");
 await page.goto("http://localhost:1420/");
+await page.evaluate(() => {
+  // Sizes and counts in the tree are off by default, like Compass.
+  const saved = JSON.parse(localStorage.getItem("odin-settings") ?? '{"state":{},"version":1}');
+  saved.state.sidebarSizes = true;
+  localStorage.setItem("odin-settings", JSON.stringify(saved));
+});
+await page.reload();
 await page.click("text=Local development");
 await aside().getByRole("button", { name: /^shop/ }).first().click();
 

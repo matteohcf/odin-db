@@ -39,6 +39,8 @@ export interface Settings {
   dateDisplay: "utc" | "local";
   /** Height of sidebar rows. */
   sidebarDensity: "normal" | "compact";
+  /** Sizes and counts beside databases and collections in the sidebar. */
+  sidebarSizes: boolean;
   /** Look for a newer release at launch. */
   checkForUpdates: boolean;
   /** Show the AI query assistant; it does nothing until an engine is set up. */
@@ -78,6 +80,7 @@ export const DEFAULT_SETTINGS: Settings = {
   monoFont: "",
   dateDisplay: "utc",
   sidebarDensity: "normal",
+  sidebarSizes: false,
   checkForUpdates: true,
   aiEnabled: true,
   aiEngine: "local",

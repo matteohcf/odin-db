@@ -10,18 +10,19 @@ import {
   Copy,
   Eye,
   Files,
+  Folder,
   GitCompareArrows,
   HardDriveDownload,
   PencilLine,
   Star,
   StarOff,
-  Table2,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
+import { useSettings } from "@/lib/settings";
 import { EDIT_SHORTCUTS, isModClick, label } from "@/lib/shortcuts";
 import { useCollectionCounts, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
@@ -35,7 +36,8 @@ import { HighlightMatch } from "./highlight-match";
 import { RenameCollectionDialog } from "./rename-collection-dialog";
 import { TreeRow } from "./tree-row";
 
-const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
+// Compass's vocabulary: a folder for collections.
+const kindIcon = { collection: Folder, view: Eye, timeseries: Clock } as const;
 
 export function CollectionNode({
   indent,
@@ -50,6 +52,7 @@ export function CollectionNode({
 }) {
   const { t, i18n: translation } = useTranslation("connections");
   const copyNode = useExplorer((s) => s.copy);
+  const sizes = useSettings((s) => s.sidebarSizes);
   const favorite = useIsFavorite(connection.profileId, database, collection.name);
   // One query per database, shared by its rows; absent for views and while loading.
   const count = useCollectionCounts(connection.id, database, true).data?.get(collection.name);
@@ -96,10 +99,10 @@ export function CollectionNode({
         muted={isSystem(collection)}
         active={active}
         trailing={
-          favorite || collection.kind !== "collection" || count !== undefined ? (
+          favorite || collection.kind !== "collection" || (sizes && count !== undefined) ? (
             <span className="flex items-center gap-1.5">
               {collection.kind !== "collection" && t(`tree.${collection.kind}`)}
-              {count !== undefined && collection.kind !== "view" && (
+              {sizes && count !== undefined && collection.kind !== "view" && (
                 // The tree row is named after the collection alone; the count is a hint.
                 <span aria-hidden className="tabular-nums" title={t("tree.count", { count })}>
                   {compactCount(count, translation.language)}

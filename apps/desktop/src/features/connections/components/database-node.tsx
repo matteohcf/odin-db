@@ -23,6 +23,7 @@ import { IconAction } from "@/components/icon-action";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { formatBytes } from "@/lib/format";
+import { useSettings } from "@/lib/settings";
 import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { connectionKeys } from "../api/keys";
 import { useCollections, useProfile } from "../api/queries";
@@ -51,6 +52,7 @@ export function DatabaseNode({
 }) {
   const { t } = useTranslation("connections");
   const copyNode = useExplorer((s) => s.copy);
+  const sizes = useSettings((s) => s.sidebarSizes);
   const copied = useExplorer((s) => s.copied);
   const paste = useExplorer((s) => s.paste);
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
@@ -73,7 +75,7 @@ export function DatabaseNode({
         onActivate={() => setExpanded(!expanded)}
         icon={<Database className="size-3.5" />}
         label={<HighlightMatch text={database.name} query={filter} />}
-        trailing={database.empty ? undefined : formatBytes(database.sizeOnDisk ?? 0)}
+        trailing={sizes && !database.empty ? formatBytes(database.sizeOnDisk ?? 0) : undefined}
         quickActions={
           writable && (
             <IconAction

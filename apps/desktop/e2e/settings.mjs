@@ -131,6 +131,23 @@ await check("search finds settings across pages", async () => {
   await panel.getByRole("searchbox", { name: "Search settings" }).press("Escape");
   await panel.getByText("No setting matches").waitFor({ state: "detached" });
 });
+await check("sizes in the sidebar are off by default and can be shown", async () => {
+  const tree = page.getByRole("complementary", { name: /Connections/ });
+  await tree
+    .getByRole("button", { name: /^Local development/ })
+    .first()
+    .click();
+  const shop = tree.getByRole("button", { name: /^shop/ }).first();
+  await shop.waitFor();
+  await page.mouse.move(900, 500);
+  if ((await shop.innerText()).includes("kB")) throw new Error("size shown by default");
+  await page.keyboard.press("Meta+,");
+  await page.getByRole("button", { name: "Appearance" }).click();
+  await page.getByRole("switch", { name: "Sizes in the sidebar" }).click();
+  await page.mouse.move(900, 500);
+  if (!(await shop.innerText()).includes("kB")) throw new Error("size not shown");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

@@ -43,7 +43,9 @@
     "graphite": "Grafite",
     "black": "Nero",
     "sidebarDensity": "Densità della barra laterale",
-    "sidebarDensityHint": "Compatta mostra più connessioni e collezioni."
+    "sidebarDensityHint": "Compatta mostra più connessioni e collezioni.",
+    "sidebarSizes": "Dimensioni nella barra laterale",
+    "sidebarSizesHint": "Mostra dimensione dei database e numero di documenti accanto a ogni nome."
   },
   "editor": {
     "title": "Editor",

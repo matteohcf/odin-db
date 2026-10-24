@@ -29,6 +29,7 @@ import { ProfileColorMark } from "@/components/profile-color-mark";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
+import { useSettings } from "@/lib/settings";
 import { connectionKeys } from "../api/keys";
 import { useConnect, useDisconnect, useDuplicateProfile } from "../api/mutations";
 import { databasesQuery, useConnectionOf } from "../api/queries";
@@ -56,6 +57,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
   const disconnect = useDisconnect();
   const duplicate = useDuplicateProfile();
   const [expanded, setExpanded] = useExpanded(profile.id);
+  const sizes = useSettings((s) => s.sidebarSizes);
   // The same query as the tree, so it is shared once the connection is expanded.
   const databaseCount = useQuery({
     ...databasesQuery(connection?.id ?? ""),
@@ -130,9 +132,9 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
           </span>
         }
         trailing={
-          databaseCount !== undefined || profile.readOnly ? (
+          (sizes && databaseCount !== undefined) || profile.readOnly ? (
             <span className="flex items-center gap-1.5">
-              {databaseCount !== undefined && (
+              {sizes && databaseCount !== undefined && (
                 // The row is named after the connection alone; the count is a hint.
                 <span
                   aria-hidden

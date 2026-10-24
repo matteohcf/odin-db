@@ -9,7 +9,7 @@
     "localhost": "Connetti a localhost:27017",
     "localhostMissing": "Nessun server MongoDB ha risposto su localhost:27017.",
     "collapseAll": "Comprimi tutto",
-    "filter": "Filtra connessioni e collezioni",
+    "filter": "Cerca connessioni",
     "filterLabel": "Filtra database e collezioni",
     "clearFilter": "Cancella il filtro",
     "more": "Menu connessioni",

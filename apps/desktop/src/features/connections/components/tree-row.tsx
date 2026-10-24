@@ -1,5 +1,5 @@
 import { cn } from "@odin-db/ui/lib/utils";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2, Play } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { MenuButton } from "@/components/menu-button";
 import { PointerMenu } from "@/components/pointer-menu";
@@ -53,9 +53,10 @@ export function TreeRow({
       data-state={pointerMenu.at ? "open" : undefined}
       className={cn(
         // The sidebar sets --tree-row from the density setting.
-        "group relative flex h-(--tree-row) items-center rounded-md text-[13px] hover:bg-accent data-[state=open]:bg-accent",
+        // Full-width rows like Compass: hover and selection span the whole sidebar.
+        "group relative flex h-(--tree-row) items-center text-[13px] hover:bg-accent data-[state=open]:bg-accent",
         muted ? "text-muted-foreground" : "text-foreground",
-        active && "bg-accent font-medium",
+        active && "bg-accent font-semibold",
       )}
     >
       <button
@@ -65,19 +66,22 @@ export function TreeRow({
         aria-expanded={expanded}
         aria-current={active ? "page" : undefined}
         title={title}
-        className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-md pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        style={{ paddingLeft: `${depth * 14 + 6}px` }}
+        className="flex h-full min-w-0 flex-1 items-center gap-1.5 pr-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        style={{ paddingLeft: `${depth * 20 + 8}px` }}
       >
-        <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+        <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
           {loading ? (
             <Loader2 className="size-3 animate-spin" />
           ) : expanded === undefined ? null : (
-            <ChevronRight
-              className={cn("size-3.5 transition-transform", expanded && "rotate-90")}
+            <Play
+              className={cn(
+                "size-2.5 fill-current stroke-0 transition-transform duration-150",
+                expanded && "rotate-90",
+              )}
             />
           )}
         </span>
-        <span className="flex shrink-0 items-center text-muted-foreground">{icon}</span>
+        <span className="flex shrink-0 items-center text-foreground/60">{icon}</span>
         <span className="truncate">{label}</span>
         {trailing && (
           <span
@@ -94,7 +98,7 @@ export function TreeRow({
       {hasActions && (
         <div
           className={cn(
-            "absolute inset-y-0 right-0 flex items-center gap-0.5 rounded-r-md bg-accent px-1 opacity-0",
+            "absolute inset-y-0 right-0 flex items-center gap-0.5 bg-accent pr-2 pl-1 opacity-0",
             // Hidden visually only, so screen readers and Tab still reach the actions.
             "group-hover:opacity-100 group-has-focus-visible:opacity-100 has-[[data-state=open]]:opacity-100",
           )}
@@ -116,7 +120,7 @@ export function TreeMessage({ depth, children }: { depth: number; children: Reac
   return (
     <div
       className="flex h-(--tree-row) items-center text-muted-foreground text-xs"
-      style={{ paddingLeft: `${depth * 14 + 26}px` }}
+      style={{ paddingLeft: `${depth * 20 + 32}px` }}
     >
       {children}
     </div>

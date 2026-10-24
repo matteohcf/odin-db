@@ -19,7 +19,6 @@ import {
   ChevronsDownUp,
   FileDown,
   FileUp,
-  ListFilter,
   LocateFixed,
   MoreHorizontal,
   Plus,
@@ -117,11 +116,13 @@ export function ConnectionExplorer() {
       aria-label={t("explorer.label")}
       style={{ "--tree-row": `${TREE_ROW_HEIGHTS[density]}px` } as CSSProperties}
     >
-      <div className="flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">
-        <h2 className="flex items-baseline gap-1.5 font-medium text-muted-foreground text-xs">
+      <div className="flex h-10 shrink-0 items-center justify-between pr-2 pl-3">
+        <h2 className="flex items-baseline gap-1 font-semibold text-[11px] text-foreground uppercase tracking-wide">
           {t("explorer.title")}
           {profiles && profiles.length > 0 && (
-            <span className="font-normal tabular-nums opacity-70">{profiles.length}</span>
+            <span className="font-normal text-muted-foreground tabular-nums">
+              ({profiles.length})
+            </span>
           )}
         </h2>
         <div className="flex items-center">
@@ -244,8 +245,8 @@ export function ConnectionExplorer() {
       />
 
       {profiles && profiles.length > 0 && (
-        <div className="relative shrink-0 px-1.5 pt-1.5">
-          <ListFilter className="pointer-events-none absolute top-1/2 left-3.5 mt-[3px] size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative shrink-0 px-3 pb-1.5">
+          <Search className="pointer-events-none absolute top-1/2 left-5 -mt-[3px] size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             ref={filterInput}
             type="search"
@@ -268,14 +269,14 @@ export function ConnectionExplorer() {
             title={`${t("explorer.filterLabel")} (${label(SHORTCUTS.filterSidebar)})`}
             aria-label={t("explorer.filterLabel")}
             spellCheck={false}
-            className="h-7 w-full rounded-md border bg-background pr-7 pl-7 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
+            className="h-8 w-full rounded-md border border-input bg-background pr-7 pl-7.5 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
           />
           {filter && (
             <button
               type="button"
               aria-label={t("explorer.clearFilter")}
               onClick={() => setFilter("")}
-              className="absolute top-1/2 right-3 mt-[3px] -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+              className="absolute top-1/2 right-5 -mt-[3px] -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
             >
               <X className="size-3" />
             </button>
@@ -283,7 +284,7 @@ export function ConnectionExplorer() {
         </div>
       )}
 
-      <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto p-1.5">
+      <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto py-1">
         {error ? (
           <p className="p-2 text-destructive text-xs">
             {t("explorer.loadFailed", { message: error.message })}
