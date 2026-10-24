@@ -31,6 +31,7 @@ import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { call, errorMessage } from "@/lib/ipc";
 import { type Rates, rates } from "../lib/rates";
+import { IndexAdvisorSection } from "./index-advisor-section";
 import { ProfilerSection } from "./profiler-section";
 import { Sparkline } from "./sparkline";
 
@@ -267,6 +268,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
             </div>
           )}
         </section>
+        <IndexAdvisorSection connection={connection} />
         <ProfilerSection connection={connection} polling={polling} />
       </div>
 

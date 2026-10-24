@@ -74,5 +74,23 @@
     },
     "detailsHint": "Come registrato dal profiler. Un piano senza IXSCAN, o molti più documenti letti che restituiti, di solito indica un indice mancante: apri la query nella sua collezione ed esegui Explain per un suggerimento.",
     "openQuery": "Apri nella collezione"
+  },
+  "advisor": {
+    "title": "Consigli sugli indici",
+    "refresh": "Analizza di nuovo",
+    "loading": "Lettura delle operazioni lente del server…",
+    "fromLog_one": "{{count}} operazione lenta nel log del server",
+    "fromLog_other": "{{count}} operazioni lente nel log del server",
+    "fromProfiler": "profiler di {{database}}",
+    "noSources": "Non è stato possibile leggere operazioni lente. Attiva il profiler di un database qui sotto, oppure connettiti con un utente con il ruolo clusterMonitor perché odin-db possa leggere il log del server.",
+    "none": "Nessuna scansione lenta trovata: le query registrate usano gli indici.",
+    "collectionScan": "Scansione completa",
+    "existing": "{{name}} esiste ma non viene usato",
+    "stats_one": "Vista {{count}} volta · {{total}} in totale · legge {{examined}} documenti per restituirne {{returned}}",
+    "stats_other": "Vista {{count}} volte · {{total}} in totale · legge {{examined}} documenti per restituirne {{returned}}",
+    "copy": "Copia il comando createIndex",
+    "copied": "Comando createIndex copiato",
+    "create": "Crea indice",
+    "readOnly": "Questa connessione è in sola lettura"
   }
 }

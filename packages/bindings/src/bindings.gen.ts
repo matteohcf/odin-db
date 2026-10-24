@@ -130,6 +130,8 @@ export const commands = {
 	aggregateDocuments: (connectionId: ConnectionId, namespace: Namespace, request: AggregateRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("aggregate_documents", { connectionId, namespace, request })),
 	/**  First results of a pipeline for the builder's stage previews. Never runs `$out`/`$merge`. */
 	previewAggregation: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], limit: number) => typedError<EJsonDocument[], IpcError>(__TAURI_INVOKE("preview_aggregation", { connectionId, namespace, pipeline, limit })),
+	/**  Indexes the server's slow operations call for, from its log and any profiler that is on. */
+	indexAdvice: (connectionId: ConnectionId) => typedError<AdvisorReport, IpcError>(__TAURI_INVOKE("index_advice", { connectionId })),
 	listIndexes: (connectionId: ConnectionId, namespace: Namespace) => typedError<IndexInfo[], IpcError>(__TAURI_INVOKE("list_indexes", { connectionId, namespace })),
 	/**  Returns the name of the new index. */
 	createIndex: (connectionId: ConnectionId, namespace: Namespace, request: CreateIndexRequest) => typedError<string, IpcError>(__TAURI_INVOKE("create_index", { connectionId, namespace, request })),
@@ -241,6 +243,20 @@ export const events = {
 };
 
 /* Types */
+export type AdvisorReport = {
+	advice: IndexAdvice[],
+	sources: AdvisorSource[],
+};
+
+/**  Where slow operations were read from, and whether that worked. */
+export type AdvisorSource = {
+	/**  `log`, or the database whose profiler was read. */
+	name: string,
+	operations: number | null,
+	/**  Why it could not be read (e.g. missing privileges). */
+	error: string | null,
+};
+
 export type AggregateRequest = {
 	pipeline: EJsonDocument[],
 	batchSize: number,
@@ -734,6 +750,26 @@ export type ImportedProfiles = {
 	created: ConnectionProfile[],
 	/**  Entries identical to an existing profile (same name and connection string). */
 	skipped: number | null,
+};
+
+export type IndexAdvice = {
+	database: string,
+	collection: string,
+	/**  The suggested index, equality fields first, then the sort, then ranges (ESR). */
+	keys: EJsonDocument,
+	/**  Slow operations of this shape that were seen. */
+	occurrences: number | null,
+	totalMillis: number | null,
+	maxMillis: number | null,
+	/**  Average documents read and returned per operation. */
+	docsExamined: number | null,
+	returned: number | null,
+	/**  At least one of them read the whole collection. */
+	collectionScan: boolean,
+	/**  The filter of one of them, as an example. */
+	example: EJsonDocument,
+	/**  An existing index that already starts with these keys: the planner chose not to use it. */
+	existing: string | null,
 };
 
 export type IndexInfo = {

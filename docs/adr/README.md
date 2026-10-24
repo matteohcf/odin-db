@@ -47,3 +47,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0041](0041-collection-compare.md) | Collection compare | Accepted |
 | [0042](0042-query-profiler.md) | Query profiler | Accepted |
 | [0043](0043-database-diagram.md) | Database diagram | Accepted |
+| [0044](0044-index-advisor.md) | Index advisor | Accepted |

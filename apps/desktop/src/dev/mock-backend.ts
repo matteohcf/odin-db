@@ -1063,6 +1063,53 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     (window as { lastDiagramImage?: unknown }).lastDiagramImage = args.pngBase64;
     return `/Users/ada/Downloads/${String(args.database)}-diagram.png`;
   },
+  index_advice: () => ({
+    sources: [
+      { name: "log", operations: 37, error: null },
+      { name: "shop", operations: 112, error: null },
+    ],
+    advice: [
+      {
+        database: "shop",
+        collection: "orders",
+        keys: { status: { $numberInt: "1" }, placedAt: { $numberInt: "-1" } },
+        occurrences: 42,
+        totalMillis: 18_640,
+        maxMillis: 1_210,
+        docsExamined: 120_000,
+        returned: 25,
+        collectionScan: true,
+        example: { status: "pending" },
+        existing: null,
+      },
+      {
+        database: "shop",
+        collection: "users",
+        keys: { plan: { $numberInt: "1" }, createdAt: { $numberInt: "1" } },
+        occurrences: 9,
+        totalMillis: 3_420,
+        maxMillis: 610,
+        docsExamined: 48_200,
+        returned: 310,
+        collectionScan: false,
+        example: { plan: "pro", createdAt: { $gte: { $date: "2026-01-01T00:00:00Z" } } },
+        existing: "plan_1_createdAt_-1",
+      },
+      {
+        database: "analytics",
+        collection: "events",
+        keys: { type: { $numberInt: "1" } },
+        occurrences: 4,
+        totalMillis: 860,
+        maxMillis: 300,
+        docsExamined: 9_800,
+        returned: 12,
+        collectionScan: true,
+        example: { type: "signup" },
+        existing: null,
+      },
+    ],
+  }),
   compare_collections: (args) => {
     const oid = (n: number) => ({ $oid: `65f0a1c${String(n).padStart(17, "0")}` });
     const range = (from: number, count: number) =>

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use odin_core::advisor::{self, AdvisorReport};
 use odin_core::connection::ConnectionId;
 use odin_core::indexes::{self, CreateIndexRequest, IndexInfo};
 use odin_core::query::Namespace;
@@ -55,4 +56,15 @@ pub async fn set_index_hidden(
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(indexes::set_hidden(&handle, &namespace, &name, hidden).await?)
+}
+
+/// Indexes the server's slow operations call for, from its log and any profiler that is on.
+#[tauri::command]
+#[specta::specta]
+pub async fn index_advice(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+) -> Result<AdvisorReport, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(advisor::advise(&handle).await?)
 }

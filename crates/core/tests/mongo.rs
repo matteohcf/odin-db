@@ -2848,3 +2848,51 @@ async fn infers_references_between_collections_from_data() {
         ]
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn advises_an_index_for_slow_collection_scans() {
+    use odin_core::advisor;
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let db = handle.client.database("odin_advisor");
+    db.collection::<Document>("orders")
+        .insert_many(
+            (0..3000).map(|i| doc! { "n": i, "status": if i % 100 == 0 { "late" } else { "ok" } }),
+        )
+        .await
+        .expect("orders");
+    // Records every operation, so the test needs no slow query.
+    db.run_command(doc! { "profile": 2, "slowms": 0 })
+        .await
+        .expect("profiler on");
+    for _ in 0..3 {
+        let mut cursor = db
+            .collection::<Document>("orders")
+            .find(doc! { "status": "late" })
+            .sort(doc! { "n": -1 })
+            .await
+            .expect("find");
+        while cursor.advance().await.expect("read") {}
+    }
+
+    let report = advisor::advise(&handle).await.expect("advice");
+    assert!(
+        report
+            .sources
+            .iter()
+            .any(|s| s.name == "odin_advisor" && s.operations > 0.0)
+    );
+    let advice = report
+        .advice
+        .iter()
+        .find(|advice| advice.collection == "orders")
+        .expect("advice for orders");
+    assert_eq!(
+        Document::try_from(advice.keys.clone()).expect("keys"),
+        doc! { "status": 1, "n": -1 }
+    );
+    assert!(advice.collection_scan && advice.occurrences >= 3.0);
+    assert!(advice.existing.is_none());
+}

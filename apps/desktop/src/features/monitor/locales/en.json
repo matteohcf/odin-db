@@ -74,5 +74,23 @@
     },
     "detailsHint": "As recorded by the profiler. A plan without IXSCAN, or many more documents read than returned, usually means a missing index: open the query in its collection and run Explain for a suggestion.",
     "openQuery": "Open in the collection"
+  },
+  "advisor": {
+    "title": "Index advisor",
+    "refresh": "Analyze again",
+    "loading": "Reading the server's slow operations…",
+    "fromLog_one": "{{count}} slow operation in the server log",
+    "fromLog_other": "{{count}} slow operations in the server log",
+    "fromProfiler": "profiler of {{database}}",
+    "noSources": "No slow operations could be read. Turn on the profiler for a database below, or connect as a user with the clusterMonitor role so odin-db can read the server log.",
+    "none": "No slow scans found: the recorded queries are served by indexes.",
+    "collectionScan": "Collection scan",
+    "existing": "{{name}} exists but is not used",
+    "stats_one": "Seen {{count}} time · {{total}} in total · reads {{examined}} documents to return {{returned}}",
+    "stats_other": "Seen {{count}} times · {{total}} in total · reads {{examined}} documents to return {{returned}}",
+    "copy": "Copy the createIndex command",
+    "copied": "createIndex command copied",
+    "create": "Create index",
+    "readOnly": "This connection is read-only"
   }
 }

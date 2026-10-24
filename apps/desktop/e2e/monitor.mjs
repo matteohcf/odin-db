@@ -62,6 +62,25 @@ await check("running operations are listed and can be killed", async () => {
   await table.getByText("analytics.events").waitFor({ state: "detached", timeout: 5000 });
 });
 
+await check("the index advisor lists slow scans and creates the index", async () => {
+  const advisor = page.getByRole("region", { name: "Index advisor" });
+  await advisor.getByText("shop.orders").waitFor();
+  await advisor.getByText("{ status: 1, placedAt: -1 }").waitFor();
+  await advisor.getByText("Collection scan").first().waitFor();
+  await advisor
+    .getByText(/Seen 42 times · 18.6 s in total · reads 120,000 documents to return 25/)
+    .waitFor();
+  await advisor.getByText("plan_1_createdAt_-1 exists but is not used").waitFor();
+  await advisor.scrollIntoViewIfNeeded();
+  await shot("advisor");
+  await advisor.getByRole("button", { name: "Create index" }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Create index" });
+  const keys = await dialog.getByLabel("Keys").inputValue();
+  if (keys !== "{ status: 1, placedAt: -1 }") throw new Error(keys);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await dialog.waitFor({ state: "detached" });
+});
+
 await check("pause stops polling", async () => {
   await page.getByRole("button", { name: "Pause" }).click();
   await page.getByRole("button", { name: "Resume" }).waitFor();

@@ -82,6 +82,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::gridfs::upload_gridfs_file,
             commands::documents::aggregate_documents,
             commands::documents::preview_aggregation,
+            commands::indexes::index_advice,
             commands::indexes::list_indexes,
             commands::indexes::create_index,
             commands::indexes::drop_index,
