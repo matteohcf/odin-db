@@ -20,7 +20,6 @@
     "connect": "Connetti"
   },
   "stats": {
-    "summary": "{{documents}} documenti · {{size}}",
     "documents": "Documenti",
     "size": "Dimensione dati",
     "averageSize": "Documento medio",

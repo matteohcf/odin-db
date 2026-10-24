@@ -22,6 +22,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
+import { formatCompact } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
 import { EDIT_SHORTCUTS, isModClick, label } from "@/lib/shortcuts";
 import { useCollectionCounts, useProfile } from "../api/queries";
@@ -105,7 +106,7 @@ export function CollectionNode({
               {sizes && count !== undefined && collection.kind !== "view" && (
                 // The tree row is named after the collection alone; the count is a hint.
                 <span aria-hidden className="tabular-nums" title={t("tree.count", { count })}>
-                  {compactCount(count, translation.language)}
+                  {formatCompact(count, translation.language)}
                 </span>
               )}
               {favorite && (
@@ -226,12 +227,5 @@ export function CollectionNode({
         />
       )}
     </>
-  );
-}
-
-/** 1.2K, 3.4M: short enough for the tree; the exact estimate is in the tooltip. */
-function compactCount(count: number, locale: string) {
-  return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(
-    count,
   );
 }

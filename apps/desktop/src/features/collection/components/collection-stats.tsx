@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { formatBytes, formatCount } from "@/lib/format";
 import { useCollectionStats } from "../api/use-collection-stats";
 
-/** Document count and sizes, at a glance in the collection header. */
+/** The collection's size in the header; counts are on the tabs, details in the tooltip. */
 export function CollectionStats({
   connectionId,
   namespace,
@@ -32,10 +32,7 @@ export function CollectionStats({
     <Tooltip>
       <TooltipTrigger asChild>
         <p className="hidden shrink-0 cursor-default text-muted-foreground text-xs tabular-nums lg:block">
-          {t("stats.summary", {
-            documents: formatCount(value(data.documents), locale),
-            size: formatBytes(value(data.size), locale),
-          })}
+          {formatBytes(value(data.size), locale)}
         </p>
       </TooltipTrigger>
       <TooltipContent className="p-3">

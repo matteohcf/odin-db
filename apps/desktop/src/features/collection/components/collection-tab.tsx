@@ -19,8 +19,10 @@ import { useConnect, useConnectionOf, useExplorer, useProfile } from "@/features
 import { DocumentsView } from "@/features/documents";
 import { type CollectionTab as CollectionTabModel, useTabs } from "@/features/workspace";
 import { useShortcut } from "@/hooks/use-shortcut";
+import { formatCompact } from "@/lib/format";
 import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
 import { label, SHORTCUTS } from "@/lib/shortcuts";
+import { useCollectionStats } from "../api/use-collection-stats";
 import { CollectionStats } from "./collection-stats";
 
 // Secondary views load on first visit to keep startup light.
@@ -92,7 +94,7 @@ function CollectionWorkspace({
   color: ProfileColor | null;
   connection: ConnectionInfo;
 }) {
-  const { t } = useTranslation("collection");
+  const { t, i18n } = useTranslation("collection");
   const namespace = useMemo(
     () => ({ database: tab.database, collection: tab.collection }),
     [tab.database, tab.collection],
@@ -108,6 +110,13 @@ function CollectionWorkspace({
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
 
   const clearIndexDraft = useCallback(() => setIndexDraft(null), []);
+  const { data: stats } = useCollectionStats(connection.id, namespace, !isView);
+  const badges: Partial<Record<View, string>> = stats
+    ? {
+        documents: formatCompact(stats.documents ?? 0, i18n.language),
+        indexes: formatCompact(stats.indexes ?? 0, i18n.language),
+      }
+    : {};
   const revealInTree = useExplorer((s) => s.reveal);
   const reveal = () => revealInTree(tab.profileId, tab.database, tab.collection);
   useShortcut("revealInSidebar", reveal, tabActive);
@@ -171,10 +180,16 @@ function CollectionWorkspace({
                 key={value}
                 value={value}
                 // shadcn's 60% foreground misses WCAG contrast on the muted list.
-                className="px-2.5 text-muted-foreground text-xs"
+                className="group px-2.5 text-muted-foreground text-xs"
               >
                 <Icon />
                 {t(`views.${value}`)}
+                {badges[value] !== undefined && (
+                  // Compass-style counts; the exact figures are in the stats tooltip.
+                  <span className="rounded-sm bg-muted px-1 font-normal text-[11px] text-muted-foreground tabular-nums group-data-[state=active]:bg-accent">
+                    {badges[value]}
+                  </span>
+                )}
               </TabsTrigger>
             );
           })}

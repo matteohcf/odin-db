@@ -10,26 +10,26 @@ await page.goto("http://localhost:1420/");
 await page.click("text=Local development");
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
-const summary = page.getByText(/documents · /);
+const documentsTab = page.getByRole("tab", { name: /^Documents/ });
 try {
-  await summary.waitFor();
-  const text = await summary.innerText();
-  if (!/^1,240 documents · /.test(text)) throw new Error(text);
-  await summary.hover();
+  await documentsTab.getByText("1.2K").waitFor();
+  await page
+    .getByRole("tab", { name: /^Indexes/ })
+    .getByText(/^\d+$/)
+    .waitFor();
+  const size = page.getByText(/^\d[\d.,]* kB$/).first();
+  await size.hover();
   await page.getByText("Average document").waitFor();
   await page.waitForTimeout(300);
   await page.screenshot({ path: `test-results/${scheme}-stats.png` });
-  console.log("ok   collection header shows stats with details on hover");
+  console.log("ok   tabs show counts and the header the size, with details on hover");
 } catch (error) {
   console.log(`FAIL stats: ${String(error).split("\n")[0]}`);
 }
 await page.getByRole("button", { name: /^active_users/ }).click();
 await page.waitForTimeout(800);
 console.log(
-  (await page
-    .getByText(/documents · /)
-    .filter({ visible: true })
-    .count()) === 0
+  (await documentsTab.filter({ visible: true }).getByText(/\d/).count()) === 0
     ? "ok   views show no stats"
     : "FAIL views show stats",
 );

@@ -20,7 +20,6 @@
     "connect": "Connect"
   },
   "stats": {
-    "summary": "{{documents}} documents · {{size}}",
     "documents": "Documents",
     "size": "Data size",
     "averageSize": "Average document",

@@ -21,6 +21,13 @@ export function formatCount(count: number, locale?: string): string {
   return new Intl.NumberFormat(locale).format(count);
 }
 
+/** 1.2K, 3.4M: for tight spots like tree rows and tab badges. */
+export function formatCompact(count: number, locale?: string): string {
+  return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(
+    count,
+  );
+}
+
 const TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 365 * 24 * 3600],
   ["month", 30 * 24 * 3600],

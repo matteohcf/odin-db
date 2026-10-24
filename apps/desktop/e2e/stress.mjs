@@ -64,8 +64,10 @@ await check(
   "aggregation preview of wide documents",
   async () => {
     await panel().getByRole("tab", { name: "Aggregation" }).click();
-    await panel()
-      .getByText(/documents/)
+    // The stage preview's header, e.g. "20 documents".
+    await page
+      .getByText(/^\d+ documents?$/)
+      .filter({ visible: true })
       .first()
       .waitFor({ timeout: 10000 });
   },
