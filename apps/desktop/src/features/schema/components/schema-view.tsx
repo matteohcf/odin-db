@@ -114,12 +114,21 @@ function FieldRow({ field }: { field: FieldSummary }) {
         </div>
       </td>
       <td className="px-3 py-1.5">
-        <div className="flex flex-wrap gap-1">
-          {field.types.map((type) => (
-            <Badge key={type} variant="secondary" className="font-mono text-[11px]">
-              {type}
-            </Badge>
-          ))}
+        <div className="flex flex-wrap items-center gap-1">
+          {field.types.map((type, index) => {
+            const share = field.typeShares[index];
+            return (
+              <Badge key={type} variant="secondary" className="gap-1 font-mono text-[11px]">
+                {type}
+                {/* With several types, how the documents split between them. */}
+                {field.types.length > 1 && share != null && (
+                  <span className="font-sans text-muted-foreground tabular-nums">
+                    {Math.max(1, Math.round(share * 100))}%
+                  </span>
+                )}
+              </Badge>
+            );
+          })}
           {field.types.length > 1 && (
             <span className="text-warning text-xs" title={t("mixedHint")}>
               {t("mixed")}

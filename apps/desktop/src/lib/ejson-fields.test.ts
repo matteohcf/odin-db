@@ -18,6 +18,7 @@ describe("fieldPathsOf", () => {
     expect(byPath["address.city"]).toEqual({
       path: "address.city",
       types: ["string"],
+      typeShares: [1],
       frequency: 0.5,
       values: ["Rome"],
     });

@@ -246,7 +246,14 @@ fn field_differences(left: &[FieldSummary], right: &[FieldSummary]) -> Vec<Field
         fields
             .iter()
             .map(|field| {
-                let types = field.types.iter().cloned().collect();
+                // A type in a sliver of one sample is noise, not a difference in the schema.
+                let types = field
+                    .types
+                    .iter()
+                    .zip(field.type_shares.iter().chain(std::iter::repeat(&1.0)))
+                    .filter(|(_, share)| **share >= MIN_FREQUENCY)
+                    .map(|(kind, _)| kind.clone())
+                    .collect();
                 (field.path.clone(), (types, field.frequency))
             })
             .collect()
@@ -323,6 +330,7 @@ mod tests {
         FieldSummary {
             path: path.into(),
             types: types.iter().map(|t| (*t).to_owned()).collect(),
+            type_shares: vec![1.0; types.len()],
             frequency,
             values: Vec::new(),
         }
@@ -361,6 +369,16 @@ mod tests {
             .map(|d| d.path)
             .collect();
         assert_eq!(paths, ["age", "email"]);
+    }
+
+    #[test]
+    fn a_type_in_a_sliver_of_the_sample_is_not_a_difference() {
+        let left = [field("age", &["int"], 1.0)];
+        let right = [FieldSummary {
+            type_shares: vec![0.98, 0.02],
+            ..field("age", &["int", "string"], 1.0)
+        }];
+        assert_eq!(field_differences(&left, &right).len(), 0);
     }
 
     #[test]
@@ -403,6 +421,6 @@ mod tests {
         };
         let left = [partial("active", "active"), partial("paid", "paid")];
         let right = [partial("paid_r", "paid"), partial("active_r", "active")];
-        assert!(index_differences(&left, &right).is_empty());
+        assert_eq!(index_differences(&left, &right).len(), 0);
     }
 }

@@ -710,6 +710,8 @@ export type FieldSummary = {
 	path: string,
 	/**  BSON type names seen for this path, most frequent first. */
 	types: string[],
+	/**  For each of `types`, the share of the documents holding the path that hold that type. */
+	typeShares: (number | null)[],
 	/**  Share of sampled documents that contain the path, from 0 to 1. */
 	frequency: number | null,
 	/**

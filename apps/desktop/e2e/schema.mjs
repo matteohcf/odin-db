@@ -33,6 +33,13 @@ await check("analyze again resamples", async () => {
   await page.getByRole("button", { name: "Analyze again" }).click();
   await page.locator("tbody tr", { hasText: "plan" }).first().waitFor();
 });
+await check("a field stored with several types shows how they split", async () => {
+  const row = page.getByRole("row", { name: /^score/ });
+  await row.getByText("mixed").waitFor();
+  await row.getByText("88%").waitFor();
+  await row.getByText("13%").waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

@@ -6,7 +6,13 @@ const collection = (name: string, fields: [string, string][] = []): DiagramColle
   name,
   kind: "collection",
   documents: 1,
-  fields: fields.map(([path, type]) => ({ path, types: [type], frequency: 1, values: [] })),
+  fields: fields.map(([path, type]) => ({
+    path,
+    types: [type],
+    typeShares: [1],
+    frequency: 1,
+    values: [],
+  })),
   error: null,
 });
 const inferred = {

@@ -5,6 +5,7 @@ import { jsonSchemaFromFields } from "./json-schema";
 const field = (path: string, types: string[], frequency = 1): FieldSummary => ({
   path,
   types,
+  typeShares: types.map(() => 1),
   frequency,
   values: [],
 });

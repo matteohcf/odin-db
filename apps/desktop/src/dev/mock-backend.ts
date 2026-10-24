@@ -97,7 +97,11 @@ function user(i: number): Doc {
     plan: plans[i % plans.length] ?? "free",
     active: i % 5 !== 0,
     balance: { $numberDecimal: `${(i * 37) % 5000}.${String(i % 100).padStart(2, "0")}` },
-    score: { $numberDouble: String(((i * 13) % 1000) / 10) },
+    // Mixed types, as real data often has: some scores were written as integers.
+    score:
+      i % 8 === 0
+        ? { $numberInt: String((i * 13) % 100) }
+        : { $numberDouble: String(((i * 13) % 1000) / 10) },
     loginCount: { $numberLong: String(i * 1_234_567) },
     createdAt: { $date: { $numberLong: String(1_672_531_200_000 + i * 3_600_000) } },
     tags: i % 3 === 0 ? ["beta", "newsletter"] : ["newsletter"],
@@ -998,6 +1002,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const field = (path: string, type: string, frequency = 1) => ({
       path,
       types: [type],
+      typeShares: [1],
       frequency,
       values: [],
     });

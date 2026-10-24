@@ -5,6 +5,7 @@ import { examplePrompts } from "./example-prompts";
 const field = (path: string, type: string, frequency = 1): FieldSummary => ({
   path,
   types: [type],
+  typeShares: [1],
   frequency,
   values: ["secret"],
 });

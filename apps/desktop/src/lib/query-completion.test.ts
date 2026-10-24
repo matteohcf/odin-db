@@ -5,12 +5,18 @@ import { describe, expect, it } from "vitest";
 import { type QueryKind, queryCompletionSource } from "./query-completion";
 
 const fields: FieldSummary[] = [
-  { path: "_id", types: ["objectId"], frequency: 1, values: [] },
-  { path: "name", types: ["string"], frequency: 1, values: [] },
-  { path: "plan", types: ["string"], frequency: 1, values: ["free", "pro", "team"] },
-  { path: "address.city", types: ["string"], frequency: 0.5, values: [] },
-  { path: "items", types: ["array"], frequency: 0.4, values: [] },
-  { path: "items.sku", types: ["string"], frequency: 0.4, values: [] },
+  { path: "_id", types: ["objectId"], typeShares: [1], frequency: 1, values: [] },
+  { path: "name", types: ["string"], typeShares: [1], frequency: 1, values: [] },
+  {
+    path: "plan",
+    types: ["string"],
+    typeShares: [1],
+    frequency: 1,
+    values: ["free", "pro", "team"],
+  },
+  { path: "address.city", types: ["string"], typeShares: [1], frequency: 0.5, values: [] },
+  { path: "items", types: ["array"], typeShares: [1], frequency: 0.4, values: [] },
+  { path: "items.sku", types: ["string"], typeShares: [1], frequency: 0.4, values: [] },
 ];
 
 /** `|` marks the cursor. */

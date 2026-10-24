@@ -87,15 +87,17 @@ export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
 
   const total = Math.max(documents.length, 1);
   return [...stats]
-    .map(([path, { count, types, strings }]) => ({
-      path,
-      types: [...types]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([type]) => type),
-      frequency: count / total,
-      values: [...(strings ?? [])]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([value]) => value),
-    }))
+    .map(([path, { count, types, strings }]) => {
+      const ranked = [...types].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      return {
+        path,
+        types: ranked.map(([type]) => type),
+        typeShares: ranked.map(([, seen]) => seen / count),
+        frequency: count / total,
+        values: [...(strings ?? [])]
+          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .map(([value]) => value),
+      };
+    })
     .sort((a, b) => b.frequency - a.frequency || a.path.localeCompare(b.path));
 }

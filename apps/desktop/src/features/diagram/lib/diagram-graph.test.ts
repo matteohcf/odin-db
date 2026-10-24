@@ -5,6 +5,7 @@ import { buildGraph, fieldsOf, HEADER_HANDLE, MAX_ROWS } from "./diagram-graph";
 const field = (path: string, type = "string") => ({
   path,
   types: [type],
+  typeShares: [1],
   frequency: 1,
   values: [],
 });

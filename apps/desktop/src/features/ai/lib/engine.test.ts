@@ -30,7 +30,13 @@ describe("engineFrom", () => {
 describe("fieldHints", () => {
   it("drops sampled values", () => {
     const fields: FieldSummary[] = [
-      { path: "status", types: ["string"], frequency: 1, values: ["active", "banned"] },
+      {
+        path: "status",
+        types: ["string"],
+        typeShares: [1],
+        frequency: 1,
+        values: ["active", "banned"],
+      },
     ];
     const hints = fieldHints(fields);
     expect(hints).toEqual([{ path: "status", types: ["string"] }]);

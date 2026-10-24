@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { toMermaid } from "./mermaid";
 
-const field = (path: string, type: string) => ({ path, types: [type], frequency: 1, values: [] });
+const field = (path: string, type: string) => ({
+  path,
+  types: [type],
+  typeShares: [1],
+  frequency: 1,
+  values: [],
+});
 
 describe("toMermaid", () => {
   it("writes entities with keys and relationships with cardinality", () => {

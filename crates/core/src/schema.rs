@@ -26,6 +26,8 @@ pub struct FieldSummary {
     pub path: String,
     /// BSON type names seen for this path, most frequent first.
     pub types: Vec<String>,
+    /// For each of `types`, the share of the documents holding the path that hold that type.
+    pub type_shares: Vec<f64>,
     /// Share of sampled documents that contain the path, from 0 to 1.
     pub frequency: f64,
     /// The field's string values, most common first, when there are only a few
@@ -106,9 +108,17 @@ pub(crate) fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
             let frequency = stats.documents as f64 / total;
             let mut values: Vec<_> = stats.strings.unwrap_or_default().into_iter().collect();
             values.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+            #[allow(clippy::cast_precision_loss)]
+            let present = stats.documents.max(1) as f64;
+            #[allow(clippy::cast_precision_loss)]
+            let type_shares = types
+                .iter()
+                .map(|(_, count)| *count as f64 / present)
+                .collect();
             FieldSummary {
                 path,
                 types: types.into_iter().map(|(kind, _)| kind.to_owned()).collect(),
+                type_shares,
                 frequency,
                 values: values.into_iter().map(|(value, _)| value).collect(),
             }
@@ -223,6 +233,22 @@ mod tests {
         let sku = field(&fields, "items.sku");
         assert_eq!(sku.frequency, 0.5, "counted once per document");
         assert_eq!(sku.types.len(), 2);
+    }
+
+    #[test]
+    fn shares_how_often_each_type_appears() {
+        let fields = summarize(&[
+            doc! { "age": 30 },
+            doc! { "age": 31 },
+            doc! { "age": 32 },
+            doc! { "age": "unknown" },
+        ]);
+        let age = fields
+            .iter()
+            .find(|field| field.path == "age")
+            .expect("age");
+        assert_eq!(age.types, ["int", "string"]);
+        assert_eq!(age.type_shares, [0.75, 0.25]);
     }
 
     #[test]

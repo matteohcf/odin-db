@@ -4,7 +4,7 @@ import { parseShellDocument } from "@/lib/shell-syntax";
 import { schemaTemplate } from "./schema-template";
 
 const field = (path: string, type: string) =>
-  ({ path, types: [type], frequency: 1 }) as unknown as FieldSummary;
+  ({ path, types: [type], typeShares: [1], frequency: 1 }) as unknown as FieldSummary;
 
 describe("schemaTemplate", () => {
   it("shapes a new document like the sample, without _id", async () => {
@@ -25,7 +25,12 @@ describe("schemaTemplate", () => {
   });
 
   it("leaves out fields most documents lack", () => {
-    const rare = { path: "referrer", types: ["null"], frequency: 0.14 } as unknown as FieldSummary;
+    const rare = {
+      path: "referrer",
+      types: ["null"],
+      typeShares: [1],
+      frequency: 0.14,
+    } as unknown as FieldSummary;
     expect(schemaTemplate([field("name", "string"), rare])).toBe('{\n  name: ""\n}');
   });
 
