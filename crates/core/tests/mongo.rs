@@ -31,7 +31,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use testcontainers_modules::mongo::Mongo;
 use testcontainers_modules::testcontainers::runners::AsyncRunner;
-use testcontainers_modules::testcontainers::{ContainerAsync, ImageExt};
+use testcontainers_modules::testcontainers::{ContainerAsync, ContainerRequest, ImageExt};
 use tokio_util::sync::CancellationToken;
 
 struct Fixture {
@@ -44,20 +44,39 @@ struct Fixture {
 
 impl Fixture {
     async fn start() -> Self {
-        Self::start_with(Mongo::default()).await
+        Self::start_with(Mongo::default().into()).await
     }
 
     /// A one-node replica set, for what standalone servers cannot do (change streams).
+    /// Initiated here rather than by `Mongo::repl_set()`, whose readiness check waits for a log
+    /// line MongoDB 8.0 no longer prints.
     async fn start_replica_set() -> Self {
-        Self::start_with(Mongo::repl_set()).await
+        let fixture = Self::start_with(Mongo::default().with_cmd(["--replSet", "rs"])).await;
+        let client = mongodb::Client::with_uri_str(&fixture.uri)
+            .await
+            .expect("client");
+        let admin = client.database("admin");
+        admin
+            .run_command(doc! {
+                "replSetInitiate": { "_id": "rs", "members": [{ "_id": 0, "host": "127.0.0.1:27017" }] }
+            })
+            .await
+            .expect("replica set initiates");
+        // It elects itself before it accepts writes.
+        for _ in 0..240 {
+            let hello = admin.run_command(doc! { "hello": 1 }).await.expect("hello");
+            if hello.get_bool("isWritablePrimary").unwrap_or(false) {
+                return fixture;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        }
+        panic!("the replica set never elected a primary");
     }
 
-    async fn start_with(image: Mongo) -> Self {
+    async fn start_with(request: ContainerRequest<Mongo>) -> Self {
         let tag = std::env::var("MONGO_VERSION").unwrap_or_else(|_| "8.0".into());
-        let container = image
+        let container = request
             .with_tag(tag)
-            // A replica set elects itself before it accepts writes, slower with tests in parallel.
-            .with_startup_timeout(std::time::Duration::from_secs(180))
             .start()
             .await
             .expect("mongo container starts");
