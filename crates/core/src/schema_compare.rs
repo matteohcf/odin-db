@@ -158,6 +158,10 @@ async fn run(
         };
         let is_view = |kind: Option<&CollectionKind>| kind == Some(&CollectionKind::View);
         let views = is_view(left_names.get(name)) || is_view(right_names.get(name));
+        // Same name, but a view on one side and a collection on the other: say so rather than
+        // let it pass as identical.
+        let kinds_differ = presence == Presence::Both
+            && is_view(left_names.get(name)) != is_view(right_names.get(name));
         let (left, right) = (Arc::clone(left), Arc::clone(right));
         let (left_db, right_db) = (
             request.left_database.clone(),
@@ -174,7 +178,8 @@ async fn run(
                     fields: Vec::new(),
                     indexes: Vec::new(),
                     validation: None,
-                    error: None,
+                    error: kinds_differ
+                        .then(|| "a view on one side and a collection on the other".to_owned()),
                 };
             }
             let sides =
@@ -275,22 +280,20 @@ fn field_differences(left: &[FieldSummary], right: &[FieldSummary]) -> Vec<Field
         .collect()
 }
 
-/// Indexes are matched by their keys, in order; a pair differs when its options do.
+/// Indexes are matched by their keys, in order, preferring one with the same options (two
+/// indexes can share keys with different partial filters); a pair differs when options do.
 fn index_differences(left: &[IndexInfo], right: &[IndexInfo]) -> Vec<IndexDifference> {
     let key_of = |index: &IndexInfo| serde_json::to_string(&index.keys).unwrap_or_default();
     let mut differences = Vec::new();
     for l in left {
-        match right.iter().find(|r| key_of(r) == key_of(l)) {
-            None => differences.push(IndexDifference {
-                left: Some(l.clone()),
-                right: None,
-            }),
-            Some(r) if !same_options(l, r) => differences.push(IndexDifference {
-                left: Some(l.clone()),
-                right: Some(r.clone()),
-            }),
-            Some(_) => {}
+        let same_keys: Vec<&IndexInfo> = right.iter().filter(|r| key_of(r) == key_of(l)).collect();
+        if same_keys.iter().any(|r| same_options(l, r)) {
+            continue;
         }
+        differences.push(IndexDifference {
+            left: Some(l.clone()),
+            right: same_keys.first().map(|r| (*r).clone()),
+        });
     }
     for r in right {
         if !left.iter().any(|l| key_of(l) == key_of(r)) {
@@ -390,5 +393,16 @@ mod tests {
                 (None, Some("created_-1"))
             ]
         );
+    }
+
+    #[test]
+    fn pairs_indexes_with_the_same_keys_by_their_options() {
+        let partial = |name: &str, status: &str| IndexInfo {
+            partial_filter: Some(EJsonDocument::from(bson::doc! { "status": status })),
+            ..index(name, bson::doc! { "email": 1 }, false)
+        };
+        let left = [partial("active", "active"), partial("paid", "paid")];
+        let right = [partial("paid_r", "paid"), partial("active_r", "active")];
+        assert!(index_differences(&left, &right).is_empty());
     }
 }

@@ -95,19 +95,33 @@ pub async fn advise(handle: &Arc<ConnectionHandle>) -> Result<AdvisorReport, Cor
         Err(error) => sources.push(source("log", 0, Some(error.to_string()))),
     }
     let (profiled, from_profiler) = profiled(handle).await;
+    // The log repeats what a database's profiler records: count those operations once.
+    let profiled_databases: Vec<String> = from_profiler
+        .iter()
+        .map(|observation| observation.database.clone())
+        .collect();
+    observations.retain(|observation| !profiled_databases.contains(&observation.database));
     sources.extend(profiled);
     observations.extend(from_profiler);
 
     let mut groups: HashMap<String, Vec<Observation>> = HashMap::new();
-    for observation in observations.into_iter().filter(Observation::inefficient) {
+    for observation in observations
+        .into_iter()
+        .filter(|observation| observation.inefficient() && !observation.internal())
+    {
         if let Some(signature) = shape(&observation) {
             groups.entry(signature).or_default().push(observation);
         }
     }
+    // Only the costliest groups are shown, so only their indexes are looked up.
+    let mut groups: Vec<Vec<Observation>> = groups.into_values().collect();
+    let cost = |group: &Vec<Observation>| group.iter().map(|o| o.millis).sum::<f64>();
+    groups.sort_by(|a, b| cost(b).total_cmp(&cost(a)));
+    groups.truncate(MAX_ADVICE);
 
     let mut existing: HashMap<String, Vec<(String, Vec<String>)>> = HashMap::new();
     let mut advice = Vec::new();
-    for group in groups.into_values() {
+    for group in groups {
         let Some(first) = group.first() else { continue };
         let Some(keys) = suggest_keys(&first.filter, first.sort.as_ref()) else {
             continue;
@@ -143,7 +157,6 @@ pub async fn advise(handle: &Arc<ConnectionHandle>) -> Result<AdvisorReport, Cor
         });
     }
     advice.sort_by(|a, b| b.total_millis.total_cmp(&a.total_millis));
-    advice.truncate(MAX_ADVICE);
     Ok(AdvisorReport { advice, sources })
 }
 
@@ -157,6 +170,12 @@ fn source(name: &str, operations: usize, error: Option<String>) -> AdvisorSource
 }
 
 impl Observation {
+    /// The server's own collections (the oplog, sessions, users…): nothing to index there.
+    fn internal(&self) -> bool {
+        matches!(self.database.as_str(), "local" | "config" | "admin")
+            || self.collection.starts_with("system.")
+    }
+
     fn inefficient(&self) -> bool {
         self.collection_scan
             || (self.examined >= MIN_EXAMINED
@@ -205,8 +224,14 @@ fn from_log_line(line: &str) -> Option<Observation> {
 
 /// Recorded operations of every database whose profiler is on.
 async fn profiled(handle: &Arc<ConnectionHandle>) -> (Vec<AdvisorSource>, Vec<Observation>) {
-    let Ok(databases) = list_databases(handle).await else {
-        return (Vec::new(), Vec::new());
+    let databases = match list_databases(handle).await {
+        Ok(databases) => databases,
+        Err(error) => {
+            return (
+                vec![source("profiler", 0, Some(error.to_string()))],
+                Vec::new(),
+            );
+        }
     };
     let permits = Arc::new(Semaphore::new(CONCURRENCY));
     let mut tasks = JoinSet::new();
@@ -215,28 +240,47 @@ async fn profiled(handle: &Arc<ConnectionHandle>) -> (Vec<AdvisorSource>, Vec<Ob
         let permits = Arc::clone(&permits);
         tasks.spawn(async move {
             let _permit = permits.acquire_owned().await;
-            let status = profiler::status(&handle, &database.name).await.ok()?;
+            let status = match profiler::status(&handle, &database.name).await {
+                Ok(status) => status,
+                Err(error) => return Status::Unreadable(error.to_string()),
+            };
             if matches!(status.level, ProfilingLevel::Off) {
-                return None;
+                return Status::Off;
             }
             let entries = profiler::entries(
                 &handle,
                 ProfileQuery {
                     database: database.name.clone(),
                     collection: None,
-                    min_millis: None,
+                    // At level "all" the profiler also keeps fast operations: they need no index.
+                    min_millis: Some(status.slow_ms),
                 },
             )
             .await;
-            Some((database.name, entries))
+            Status::On(database.name, entries)
         });
     }
     let mut sources = Vec::new();
     let mut observations = Vec::new();
+    let mut unreadable: Option<String> = None;
+    let mut readable = false;
     while let Some(joined) = tasks.join_next().await {
-        let Ok(Some((database, entries))) = joined else {
-            continue;
+        let (database, entries) = match joined {
+            Ok(Status::On(database, entries)) => (database, entries),
+            Ok(Status::Off) => {
+                readable = true;
+                continue;
+            }
+            Ok(Status::Unreadable(error)) => {
+                unreadable.get_or_insert(error);
+                continue;
+            }
+            Err(error) => {
+                unreadable.get_or_insert(error.to_string());
+                continue;
+            }
         };
+        readable = true;
         match entries {
             Ok(entries) => {
                 let found: Vec<_> = entries
@@ -265,8 +309,18 @@ async fn profiled(handle: &Arc<ConnectionHandle>) -> (Vec<AdvisorSource>, Vec<Ob
             Err(error) => sources.push(source(&database, 0, Some(error.to_string()))),
         }
     }
+    // Without the privilege to read any profiler, say so once rather than seem to have none.
+    if let (false, Some(error)) = (readable, unreadable) {
+        sources.push(source("profiler", 0, Some(error)));
+    }
     sources.sort_by(|a, b| a.name.cmp(&b.name));
     (sources, observations)
+}
+
+enum Status {
+    Off,
+    On(String, Result<Vec<profiler::ProfileEntry>, CoreError>),
+    Unreadable(String),
 }
 
 /// The filter (and sort) of a find, aggregate (leading `$match`), count, distinct, update or
@@ -325,6 +379,10 @@ pub(crate) fn suggest_keys(filter: &Document, sort: Option<&Document>) -> Option
     }
     if let Some(sort) = sort {
         for (field, direction) in sort {
+            // `$natural` order and `{ $meta: "textScore" }` are not index keys.
+            if field.starts_with('$') || matches!(direction, Bson::Document(_)) {
+                continue;
+            }
             if !keys.contains_key(field) {
                 keys.insert(field, if number(Some(direction)) < 0.0 { -1 } else { 1 });
             }
@@ -406,6 +464,33 @@ mod tests {
             doc! { "status": 1, "city": 1, "placedAt": -1, "total": 1 }
         );
         assert!(suggest_keys(&doc! { "$or": [{ "a": 1 }] }, None).is_none());
+    }
+
+    #[test]
+    fn leaves_natural_order_and_text_score_out_of_the_keys() {
+        let keys = suggest_keys(
+            &doc! { "status": "paid" },
+            Some(&doc! { "$natural": 1, "score": { "$meta": "textScore" }, "placedAt": -1 }),
+        )
+        .expect("keys");
+        assert_eq!(keys, doc! { "status": 1, "placedAt": -1 });
+    }
+
+    #[test]
+    fn the_servers_own_collections_are_not_advised() {
+        let observation = |database: &str, collection: &str| Observation {
+            database: database.into(),
+            collection: collection.into(),
+            filter: doc! {},
+            sort: None,
+            millis: 0.0,
+            examined: 0.0,
+            returned: 0.0,
+            collection_scan: true,
+        };
+        assert!(observation("local", "oplog.rs").internal());
+        assert!(observation("shop", "system.views").internal());
+        assert!(!observation("shop", "orders").internal());
     }
 
     #[test]

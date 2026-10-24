@@ -24,6 +24,8 @@ const MAX_FIELDS: usize = 60;
 const MAX_IDS: usize = 40;
 /// Without a collection named like the field, every collection is tried only up to this size.
 const MAX_BLIND_TARGETS: usize = 40;
+/// `ObjectId` fields looked up at all: maps keyed by id can produce thousands of paths.
+const MAX_CANDIDATES: usize = 200;
 /// A reference needs at least this share of its sampled values to exist in the target.
 const MIN_MATCH: f64 = 0.5;
 
@@ -159,14 +161,24 @@ async fn build(
 
     let targets: Vec<&str> = collections
         .iter()
-        .filter(|collection| collection.kind != CollectionKind::View && collection.error.is_none())
+        // Views cannot be counted cheaply, and an `_id` lookup scans a time series' buckets.
+        .filter(|collection| {
+            collection.kind == CollectionKind::Collection && collection.error.is_none()
+        })
         .map(|collection| collection.name.as_str())
         .collect();
+    // Fields named after a collection first: they are the likely references.
+    candidates.sort_by_key(|candidate| {
+        !targets
+            .iter()
+            .any(|target| names_match(&candidate.field, target))
+    });
+    candidates.truncate(MAX_CANDIDATES);
     total += candidates.len();
     report(done, total);
     let mut links = Vec::new();
     for candidate in candidates {
-        if let Some(link) = resolve(handle, database, &candidate, &targets).await? {
+        if let Some(link) = resolve(handle, database, &candidate, &targets).await {
             links.push(link);
         }
         done += 1;
@@ -243,7 +255,7 @@ async fn resolve(
     database: &str,
     candidate: &Candidate,
     targets: &[&str],
-) -> Result<Option<DiagramLink>, CoreError> {
+) -> Option<DiagramLink> {
     let named: Vec<&str> = targets
         .iter()
         .copied()
@@ -254,27 +266,31 @@ async fn resolve(
     } else if targets.len() <= MAX_BLIND_TARGETS {
         targets.to_vec()
     } else {
-        return Ok(None);
+        return None;
     };
     let ids: Vec<Bson> = candidate.ids.iter().copied().map(Bson::ObjectId).collect();
     #[allow(clippy::cast_precision_loss)]
     let checked = ids.len() as f64;
     let mut best: Option<(f64, &str)> = None;
     for target in tried {
-        let matched = handle
+        // A collection that cannot be read (permissions, dropped meanwhile) is no target; the
+        // rest of the diagram still stands.
+        let Ok(matched) = handle
             .client
             .database(database)
             .collection::<Document>(target)
             .count_documents(doc! { "_id": { "$in": ids.clone() } })
-            .await?;
+            .await
+        else {
+            continue;
+        };
         #[allow(clippy::cast_precision_loss)]
         let matched = matched as f64;
         if best.is_none_or(|(most, _)| matched > most) {
             best = Some((matched, target));
         }
     }
-    Ok(best
-        .filter(|(matched, _)| *matched > 0.0 && *matched / checked >= MIN_MATCH)
+    best.filter(|(matched, _)| *matched > 0.0 && *matched / checked >= MIN_MATCH)
         .map(|(matched, to)| DiagramLink {
             from: candidate.from.clone(),
             field: candidate.field.clone(),
@@ -282,7 +298,7 @@ async fn resolve(
             many: candidate.many,
             matched,
             checked,
-        }))
+        })
 }
 
 /// `customerId`, `customer_id`, `customers` or `items.productIds` name `customers` / `products`.
