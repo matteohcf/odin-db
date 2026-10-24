@@ -1,6 +1,5 @@
 import type { FieldSummary } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { Input } from "@odin-db/ui/components/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@odin-db/ui/components/popover";
 import {
   Select,
@@ -12,8 +11,9 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { ListFilterPlus, Plus, X } from "lucide-react";
-import { useId, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SuggestInput } from "@/components/suggest-input";
 import {
   buildFilter,
   type Combinator,
@@ -32,9 +32,11 @@ interface VisualQueryBuilderProps {
 const emptyRow = (): Condition => ({ field: "", operator: "eq", value: "" });
 
 /** Builds a filter from rows of field, operator and value, for those who'd rather not type it. */
+const NO_VALUES: readonly string[] = [];
+
 export function VisualQueryBuilder({ fields, onApply }: VisualQueryBuilderProps) {
+  const fieldPaths = useMemo(() => fields.map((field) => field.path), [fields]);
   const { t } = useTranslation("documents");
-  const id = useId();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Condition[]>([emptyRow()]);
   const [combinator, setCombinator] = useState<Combinator>("and");
@@ -84,22 +86,18 @@ export function VisualQueryBuilder({ fields, onApply }: VisualQueryBuilderProps)
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
-        <datalist id={`${id}-fields`}>
-          {fields.map((field) => (
-            <option key={field.path} value={field.path} />
-          ))}
-        </datalist>
         <div className="flex flex-col gap-2">
           {rows.map((row, index) => {
             const known = fields.find((f) => f.path === row.field);
             return (
               // Rows are positional; editing one never reorders the others.
               <div key={index} className="flex items-center gap-2">
-                <Input
+                <SuggestInput
                   aria-label={t("builder.field", { number: index + 1 })}
-                  list={`${id}-fields`}
+                  suggestions={fieldPaths}
+                  mono
                   value={row.field}
-                  onChange={(event) => update(index, { field: event.target.value })}
+                  onValueChange={(field) => update(index, { field })}
                   placeholder={t("builder.fieldPlaceholder")}
                   className="h-8 w-44 font-mono text-xs"
                   spellCheck={false}
@@ -125,11 +123,12 @@ export function VisualQueryBuilder({ fields, onApply }: VisualQueryBuilderProps)
                   </SelectContent>
                 </Select>
                 {takesValue(row.operator) ? (
-                  <Input
+                  <SuggestInput
                     aria-label={t("builder.value", { number: index + 1 })}
                     value={row.value}
-                    onChange={(event) => update(index, { value: event.target.value })}
-                    list={known?.values.length ? `${id}-values-${index}` : undefined}
+                    onValueChange={(value) => update(index, { value })}
+                    suggestions={known?.values ?? NO_VALUES}
+                    mono
                     placeholder={
                       row.operator === "in" || row.operator === "nin"
                         ? t("builder.listPlaceholder")
@@ -141,13 +140,6 @@ export function VisualQueryBuilder({ fields, onApply }: VisualQueryBuilderProps)
                 ) : (
                   <span className="flex-1" />
                 )}
-                {known?.values.length ? (
-                  <datalist id={`${id}-values-${index}`}>
-                    {known.values.map((value) => (
-                      <option key={value} value={value} />
-                    ))}
-                  </datalist>
-                ) : null}
                 <Button
                   variant="ghost"
                   size="icon"

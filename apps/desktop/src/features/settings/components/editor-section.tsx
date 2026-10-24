@@ -1,6 +1,6 @@
-import { Input } from "@odin-db/ui/components/input";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { SuggestInput } from "@/components/suggest-input";
 import { useSettings } from "@/lib/settings";
 import { OptionSelect } from "./option-select";
 import { SettingRow } from "./setting-row";
@@ -36,21 +36,17 @@ export function EditorSection() {
           label={t("editor.monoFont")}
           description={t("editor.monoFontHint")}
         >
-          <Input
+          <SuggestInput
             id={`${id}-mono-font`}
             value={monoFont}
-            onChange={(event) => update({ monoFont: event.target.value })}
+            onValueChange={(monoFont) => update({ monoFont })}
             placeholder="IBM Plex Mono"
-            list={`${id}-mono-fonts`}
+            suggestions={MONO_FONTS}
+            mono
             spellCheck={false}
             autoComplete="off"
             className="h-8 w-52 font-mono text-xs"
           />
-          <datalist id={`${id}-mono-fonts`}>
-            {MONO_FONTS.map((font) => (
-              <option key={font} value={font} />
-            ))}
-          </datalist>
         </SettingRow>
         <SettingRow
           id={`${id}-editor-font`}

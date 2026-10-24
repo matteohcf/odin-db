@@ -25,8 +25,9 @@ import {
 } from "@odin-db/ui/components/select";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CircleAlert } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SuggestInput } from "@/components/suggest-input";
 import { call } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
 import { DatabaseTransferResult } from "./database-transfer-result";
@@ -100,6 +101,10 @@ export function CopyDialog({
     queryFn: () => call(commands.listDatabases(targetId as ConnectionId)),
     enabled: targetId !== undefined,
   });
+  const databaseNames = useMemo(
+    () => databases.data?.map((info) => info.name) ?? [],
+    [databases.data],
+  );
 
   const trimmedDatabase = targetDatabase.trim();
   const trimmedCollection = targetCollection.trim();
@@ -222,20 +227,16 @@ export function CopyDialog({
             <div className={collection ? "grid grid-cols-2 gap-3" : "flex flex-col"}>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`${id}-database`}>{t("copy.database")}</Label>
-                <Input
+                <SuggestInput
                   id={`${id}-database`}
-                  list={`${id}-databases`}
+                  suggestions={databaseNames}
+                  mono
                   value={targetDatabase}
-                  onChange={(event) => setTargetDatabase(event.target.value)}
+                  onValueChange={setTargetDatabase}
                   autoComplete="off"
                   spellCheck={false}
                   className="font-mono text-xs"
                 />
-                <datalist id={`${id}-databases`}>
-                  {databases.data?.map((info) => (
-                    <option key={info.name} value={info.name} />
-                  ))}
-                </datalist>
               </div>
               {collection && (
                 <div className="flex flex-col gap-1.5">

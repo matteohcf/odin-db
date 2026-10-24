@@ -18,6 +18,7 @@ import { Ban, CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FormField } from "@/components/form-field";
+import { SuggestInput } from "@/components/suggest-input";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { PROFILE_COLOR_CLASS, PROFILE_COLORS } from "@/lib/profile-colors";
 import { useConnect, useSaveProfile, useTestConnection } from "../api/mutations";
@@ -277,20 +278,14 @@ function ProfileForm({ profile, defaultGroup, onClose }: Omit<ProfileDialogProps
       </div>
 
       <FormField id={`${id}-group`} label={t("dialog.group")} hint={t("dialog.groupHint")}>
-        <Input
+        {/* Existing groups as suggestions, so a typo does not start a new one. */}
+        <SuggestInput
           id={`${id}-group`}
           value={form.group}
           placeholder={t("dialog.groupPlaceholder")}
-          onChange={(event) => update("group", event.target.value)}
-          list={`${id}-groups`}
-          autoComplete="off"
+          onValueChange={(group) => update("group", group)}
+          suggestions={groups}
         />
-        {/* Existing groups as suggestions, so a typo does not start a new one. */}
-        <datalist id={`${id}-groups`}>
-          {groups.map((group) => (
-            <option key={group} value={group} />
-          ))}
-        </datalist>
       </FormField>
 
       <div className="flex items-start justify-between gap-4 rounded-md border p-3">

@@ -31,6 +31,23 @@ await page
 await page.locator("tbody tr").first().waitFor();
 const preview = () => page.getByTestId("builder-preview").innerText();
 
+await check("fields and values are suggested as you type", async () => {
+  await page.getByRole("button", { name: "Build a filter visually" }).click();
+  const field = page.getByLabel("Field 1");
+  await field.fill("pl");
+  await page.getByRole("option", { name: "plan", exact: true }).click();
+  if ((await field.inputValue()) !== "plan") throw new Error(await field.inputValue());
+  const value = page.getByLabel("Value 1");
+  await value.click();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  if ((await value.inputValue()) === "") throw new Error("no value picked");
+  await page.waitForTimeout(150);
+  await shot("suggestions");
+  await page.getByRole("button", { name: "Clear" }).click();
+  await page.keyboard.press("Escape");
+});
+
 await check("build a typed filter from rows and run it", async () => {
   await page.getByRole("button", { name: "Build a filter visually" }).click();
   await page.getByLabel("Field 1").fill("plan");

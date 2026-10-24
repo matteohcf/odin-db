@@ -392,7 +392,7 @@ export function DocumentsView({
                   <MoreHorizontal />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" className="w-60">
                 {editable && (
                   <DropdownMenuItem onSelect={() => setTransfer("import")}>
                     <Upload />

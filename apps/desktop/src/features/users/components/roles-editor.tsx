@@ -2,8 +2,8 @@ import type { RoleRef } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Input } from "@odin-db/ui/components/input";
 import { Plus, X } from "lucide-react";
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { SuggestInput } from "@/components/suggest-input";
 
 interface RolesEditorProps {
   roles: RoleRef[];
@@ -17,24 +17,19 @@ interface RolesEditorProps {
 /** Roles as editable rows: a role name and the database it applies to. */
 export function RolesEditor({ roles, onChange, suggestions, defaultDb }: RolesEditorProps) {
   const { t } = useTranslation("users");
-  const id = useId();
   const update = (index: number, patch: Partial<RoleRef>) =>
     onChange(roles.map((role, i) => (i === index ? { ...role, ...patch } : role)));
   return (
     <div className="flex flex-col gap-2">
-      <datalist id={`${id}-roles`}>
-        {suggestions.map((role) => (
-          <option key={role} value={role} />
-        ))}
-      </datalist>
       {roles.map((role, index) => (
         // Rows are positional; editing one never reorders the others.
         <div key={index} className="flex items-center gap-2">
-          <Input
+          <SuggestInput
             aria-label={t("roles.role", { number: index + 1 })}
-            list={`${id}-roles`}
+            suggestions={suggestions}
+            mono
             value={role.role}
-            onChange={(event) => update(index, { role: event.target.value })}
+            onValueChange={(value) => update(index, { role: value })}
             placeholder="readWrite"
             className="h-8 flex-1 font-mono text-xs"
             spellCheck={false}

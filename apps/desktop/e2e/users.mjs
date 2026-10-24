@@ -56,8 +56,12 @@ await check("create a user with a generated password and roles", async () => {
   const password = await dialog.getByLabel("Password", { exact: true }).inputValue();
   if (password.length !== 24) throw new Error(`password ${password}`);
   await dialog.getByLabel("Role 1", { exact: true }).fill("read");
+  // Closes the role suggestions, as Tab does for a user.
+  await page.keyboard.press("Tab");
   await dialog.getByRole("button", { name: "Add a role" }).click();
   await dialog.getByLabel("Role 2", { exact: true }).fill("read");
+  // Closes the role suggestions, as Tab does for a user.
+  await page.keyboard.press("Tab");
   await dialog.getByLabel("Database of role 2").fill("analytics");
   await page.waitForTimeout(150);
   await shot("01-create");
