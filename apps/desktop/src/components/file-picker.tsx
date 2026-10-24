@@ -81,6 +81,10 @@ export function FilePicker({
   const { hovering } = useFileDrop((files) => {
     const [first] = files;
     if (!first) return;
+    if (files.length > 1) {
+      setDropError(t("filePicker.oneAtATime"));
+      return;
+    }
     if (first.directory !== (kind === "folder")) {
       setDropError(t(kind === "folder" ? "filePicker.needsFolder" : "filePicker.needsFile"));
       return;
@@ -118,7 +122,10 @@ export function FilePicker({
               variant="ghost"
               size="icon-sm"
               aria-label={t("filePicker.clear", { name: selected.name })}
-              onClick={onClear}
+              onClick={() => {
+                setDropError(null);
+                onClear();
+              }}
             >
               <X />
             </Button>

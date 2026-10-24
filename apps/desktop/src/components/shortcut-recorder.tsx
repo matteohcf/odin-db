@@ -21,7 +21,7 @@ interface ShortcutRecorderProps {
 export function ShortcutRecorder({ value, onRecord, onRemove, label }: ShortcutRecorderProps) {
   const { t } = useTranslation("common");
   const [recording, setRecording] = useState(false);
-  const [problem, setProblem] = useState<"modifier" | "alt" | null>(null);
+  const [problem, setProblem] = useState<"modifier" | "alt" | "reserved" | null>(null);
   const callbacks = useRef({ onRecord, onRemove });
   callbacks.current = { onRecord, onRemove };
 
@@ -32,6 +32,8 @@ export function ShortcutRecorder({ value, onRecord, onRemove, label }: ShortcutR
       setProblem(null);
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      // Tab still moves the focus, so the keyboard is never trapped here; Ctrl+Tab is recorded.
+      if (event.key === "Tab" && !event.metaKey && !event.ctrlKey && !event.altKey) return stop();
       // First in line (capture), so neither global shortcuts nor a surrounding dialog react.
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -88,7 +90,9 @@ export function ShortcutRecorder({ value, onRecord, onRemove, label }: ShortcutR
             ? t("shortcuts.recorder.needsModifier", { mod: isMac ? "⌘ / ⌃" : "Ctrl" })
             : problem === "alt"
               ? t("shortcuts.recorder.noAlt")
-              : t("shortcuts.recorder.hint")}
+              : problem === "reserved"
+                ? t("shortcuts.recorder.reserved")
+                : t("shortcuts.recorder.hint")}
         </p>
       )}
     </div>

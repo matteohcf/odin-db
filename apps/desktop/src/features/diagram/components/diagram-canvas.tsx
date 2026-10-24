@@ -94,7 +94,6 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
   const [query, setQuery] = useState("");
   const [focus, setFocus] = useState<string | null>(null);
   const saved = usePositions((s) => s.byDatabase[storageKey]);
-  const move = usePositions((s) => s.move);
   const moveMany = usePositions((s) => s.moveMany);
   const reset = usePositions((s) => s.reset);
   const annotations = useAnnotations((s) => s.byDatabase[storageKey]) ?? NO_ANNOTATIONS;
@@ -272,27 +271,22 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
     );
   }
 
-  function stopDrag(node: DiagramNode) {
-    if (node.type === "note") {
-      updateNote(storageKey, node.id, { position: node.position });
-      return;
-    }
-    if (node.type === "collection") {
-      move(storageKey, node.id, node.position);
-      return;
-    }
-    updateArea(storageKey, node.id, { position: node.position });
-    const moving = carried.current;
+  /** Keeps where every dragged node ended up, and the nodes an area carried along. */
+  function stopDrag(dragged: readonly DiagramNode[]) {
+    const placed = new Map(flow.getNodes().map((other) => [other.id, other as DiagramNode]));
+    const ids = new Set([
+      ...dragged.map((node) => node.id),
+      ...(carried.current?.nodes.keys() ?? []),
+    ]);
     carried.current = null;
-    if (!moving) return;
-    const placed = new Map(flow.getNodes().map((other) => [other.id, other]));
     const collections: Record<string, { x: number; y: number }> = {};
-    for (const id of moving.nodes.keys()) {
-      const other = placed.get(id);
-      if (other?.type === "note") updateNote(storageKey, id, { position: other.position });
-      else if (other) collections[id] = other.position;
+    for (const id of ids) {
+      const node = placed.get(id);
+      if (node?.type === "note") updateNote(storageKey, id, { position: node.position });
+      else if (node?.type === "area") updateArea(storageKey, id, { position: node.position });
+      else if (node) collections[id] = node.position;
     }
-    moveMany(storageKey, collections);
+    if (Object.keys(collections).length > 0) moveMany(storageKey, collections);
   }
 
   const actions = useMemo(
@@ -312,6 +306,8 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
         { x, y, width, height }: { x: number; y: number; width: number; height: number },
       ) => updateNote(storageKey, id, { position: { x, y }, width, height }),
       onRemoveNote: (id: string) => removeNote(storageKey, id),
+      // Once a new note or area has taken the focus, it should not again when it remounts.
+      onFocused: (id: string) => setFresh((current) => (current === id ? null : current)),
       onAreaChange: (
         id: string,
         patch: { label?: string; color?: DiagramAreaNode["data"]["color"] },
@@ -393,7 +389,7 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
         onNodesChange={onNodesChange}
         onNodeDragStart={(_, node) => startDrag(node)}
         onNodeDrag={(_, node) => drag(node)}
-        onNodeDragStop={(_, node) => stopDrag(node)}
+        onNodeDragStop={(_, _node, nodes) => stopDrag(nodes)}
         onNodeMouseEnter={(_, node) => node.type === "collection" && setFocus(node.id)}
         onNodeMouseLeave={() => setFocus(null)}
         onNodeDoubleClick={(_, node) => node.type === "collection" && onOpen(node.id)}

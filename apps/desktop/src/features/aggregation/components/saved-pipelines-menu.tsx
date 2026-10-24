@@ -15,10 +15,17 @@ interface SavedPipelinesMenuProps {
   storageKey: string;
   stages: readonly Stage[];
   onLoad: (pipeline: SavedPipeline) => void;
+  /** Before opening, e.g. to turn edited text into stages; `false` keeps it closed. */
+  onOpen?: () => Promise<boolean>;
 }
 
 /** Save the current pipeline under a name, or load one saved for this collection. */
-export function SavedPipelinesMenu({ storageKey, stages, onLoad }: SavedPipelinesMenuProps) {
+export function SavedPipelinesMenu({
+  storageKey,
+  stages,
+  onLoad,
+  onOpen,
+}: SavedPipelinesMenuProps) {
   const { t, i18n } = useTranslation("aggregation");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -37,7 +44,13 @@ export function SavedPipelinesMenu({ storageKey, stages, onLoad }: SavedPipeline
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (!next || !onOpen) return setOpen(next);
+        void onOpen().then((ready) => ready && setOpen(true));
+      }}
+    >
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" aria-label={t("saved.open")} title={t("saved.open")}>
           <Bookmark />

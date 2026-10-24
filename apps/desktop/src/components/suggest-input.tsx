@@ -30,7 +30,9 @@ export function SuggestInput({
 }: SuggestInputProps) {
   const listId = useId();
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
+  // No suggestion is highlighted until an arrow key or the pointer picks one, so Enter keeps
+  // what was typed.
+  const [active, setActive] = useState(-1);
   const shown = useMemo(() => {
     const needle = value.trim().toLowerCase();
     return suggestions
@@ -55,8 +57,14 @@ export function SuggestInput({
         return;
       }
       const step = event.key === "ArrowDown" ? 1 : -1;
-      setActive((index) => (index + step + shown.length) % shown.length);
-    } else if (event.key === "Enter" && visible) {
+      setActive((index) =>
+        index < 0
+          ? step === 1
+            ? 0
+            : shown.length - 1
+          : (index + step + shown.length) % shown.length,
+      );
+    } else if (event.key === "Enter" && visible && active >= 0) {
       const suggestion = shown[active];
       if (suggestion !== undefined) {
         event.preventDefault();
@@ -79,7 +87,7 @@ export function SuggestInput({
           onChange={(event) => {
             onValueChange(event.target.value);
             setOpen(true);
-            setActive(0);
+            setActive(-1);
           }}
           onFocus={(event) => {
             onFocus?.(event);
@@ -92,7 +100,8 @@ export function SuggestInput({
           onKeyDown={keyDown}
           role="combobox"
           aria-expanded={visible}
-          aria-controls={listId}
+          aria-controls={visible ? listId : undefined}
+          aria-activedescendant={visible && active >= 0 ? `${listId}-${active}` : undefined}
           aria-autocomplete="list"
           autoComplete="off"
           className={className}
@@ -109,6 +118,10 @@ export function SuggestInput({
           {shown.map((suggestion, index) => (
             <div
               key={suggestion}
+              id={`${listId}-${index}`}
+              ref={
+                index === active ? (node) => node?.scrollIntoView({ block: "nearest" }) : undefined
+              }
               role="option"
               tabIndex={-1}
               aria-selected={index === active}

@@ -64,9 +64,14 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
       : { isAnimationActive: true, animationDuration: 450, animationEasing: "ease-out" as const },
   );
   const [chosen, setChosen] = useState<ChartSpec | null>(null);
-  // A field picked for earlier results may be gone from these ones.
-  const spec =
-    chosen && fields.some((field) => field.path === chosen.x) ? chosen : defaultSpec(fields);
+  const fallback = useMemo(() => defaultSpec(fields), [fields]);
+  // Fields picked for earlier results may be gone from these ones. Memoized, so a re-render
+  // keeps the same chart (and a map keeps where it was zoomed).
+  const spec = useMemo(() => {
+    if (!chosen || !fields.some((field) => field.path === chosen.x)) return fallback;
+    const value = fields.some((field) => field.path === chosen.y && field.role === "number");
+    return chosen.y === null || value ? chosen : { ...chosen, y: null };
+  }, [chosen, fields, fallback]);
   const role = fields.find((field) => field.path === spec?.x)?.role;
   const data = useMemo(
     () => (spec && role ? chartData(rows, role, spec) : null),
@@ -87,8 +92,11 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
     data.kind === "line"
       ? new Intl.DateTimeFormat(i18n.language, { ...timeFormat[data.unit], timeZone: "UTC" })
       : null;
-  const formatX = (point: Pick<ChartPoint, "x" | "to">): string => {
-    if (data.kind === "bar") return point.x === "" ? t("chart.other") : String(point.x);
+  const formatX = (point: Pick<ChartPoint, "x" | "to" | "other">): string => {
+    if (data.kind === "bar") {
+      if (point.other) return t("chart.other");
+      return point.x === "" ? '""' : String(point.x);
+    }
     if (dates) return dates.format(Number(point.x));
     if (point.to !== undefined)
       return `${numbers.format(Number(point.x))}–${numbers.format(point.to)}`;
@@ -231,11 +239,11 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
                   barSize={16}
                   {...motion}
                 >
-                  {points.map((point) => (
+                  {points.map((point, index) => (
                     <Cell
-                      key={point.label}
+                      key={`${index}-${point.label}`}
                       // "Other" is the long tail, not a peer of the bars above it.
-                      fillOpacity={data.other && point.x === "" ? 0.4 : 1}
+                      fillOpacity={point.other ? 0.4 : 1}
                     />
                   ))}
                 </Bar>

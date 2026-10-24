@@ -41,10 +41,15 @@ export function chartFields(rows: readonly JsonObject[]): ChartField[] {
     .filter((field) => field.types[0] === "object" && isPlace(rows, field.path))
     .map((field) => field.path);
   const inPlace = (path: string) => places.some((place) => path.startsWith(`${place}.`));
+  // Fields of documents inside arrays share the array's path (`items.sku`) but hold one value
+  // per item: not something one bar or point can stand for.
+  const arrays = summaries.filter((field) => field.types[0] === "array").map((field) => field.path);
+  const inArray = (path: string) => arrays.some((array) => path.startsWith(`${array}.`));
   return summaries.flatMap((field): ChartField[] => {
     if (places.includes(field.path)) return [{ path: field.path, role: "geo" }];
     const role = ROLES[field.types[0] ?? ""];
-    return role && field.path !== "_id" && !inPlace(field.path) ? [{ path: field.path, role }] : [];
+    const usable = role && field.path !== "_id" && !inPlace(field.path) && !inArray(field.path);
+    return usable ? [{ path: field.path, role }] : [];
   });
 }
 
@@ -161,12 +166,14 @@ export interface ChartPoint {
   to?: number;
   /** The document a map point stands for, by its position in the results. */
   row?: number;
+  /** The bar folding the categories past the first ones. */
+  other?: boolean;
 }
 
 export type TimeUnit = "hour" | "day" | "month" | "year";
 
 export type ChartData =
-  | { kind: "bar"; points: ChartPoint[]; other: boolean; missing: number }
+  | { kind: "bar"; points: ChartPoint[]; missing: number }
   | { kind: "line"; unit: TimeUnit; points: ChartPoint[]; missing: number }
   | { kind: "histogram"; points: ChartPoint[]; missing: number }
   | { kind: "scatter"; points: ChartPoint[]; missing: number }
@@ -214,9 +221,9 @@ function categories(
   if (rest.length > 0) {
     const other = new Accumulator();
     for (const [, group] of rest) other.merge(group);
-    points.push({ x: "", y: other.result(spec) });
+    points.push({ x: "", y: other.result(spec), other: true });
   }
-  return { kind: "bar", points, other: rest.length > 0, missing };
+  return { kind: "bar", points, missing };
 }
 
 /** Smallest and largest, without spreading thousands of arguments into `Math.min`. */

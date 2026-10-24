@@ -89,6 +89,13 @@ export function AggregationView({
   // Like Compass: the whole pipeline as one editable text, or as stage cards.
   const [mode, setMode] = useState<"stages" | "text">("stages");
   const [text, setText] = useState("");
+  // The text last written from the stages: unchanged, it is not parsed back, so stages the text
+  // cannot carry (disabled ones) survive a trip through text mode.
+  const generated = useRef("");
+  // The text editor reads its value once; a new key loads text set from outside.
+  const [editorKey, setEditorKey] = useState(0);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const namespaceLabel = `${namespace.database}.${namespace.collection}`;
 
   useShortcut("rerun", () => void run(), active);
@@ -107,15 +114,28 @@ export function AggregationView({
     );
   }, [pendingPipeline, actions, t]);
 
+  /** Shows the current stages in the text editor. */
+  function writeText() {
+    const written = pipelineToText(store.getState().stages);
+    generated.current = written;
+    setText(written);
+    setEditorKey((key) => key + 1);
+  }
+
+  /** Replaces the stages from outside the editors (paste, load, undo), keeping text mode in step. */
+  function replaceStages(next: Parameters<typeof actions.replace>[0]) {
+    actions.replace(next);
+    if (modeRef.current === "text") writeText();
+  }
+
   async function paste(text: string) {
     try {
       const pasted = await pipelineFromText(text);
       const previous = store.getState().stages;
-      actions.replace(pasted);
-      if (mode === "text") setText(pipelineToText(store.getState().stages));
+      replaceStages(pasted);
       setRunError(null);
       toast.success(t("toolbar.pasted", { count: pasted.length }), {
-        action: { label: t("toolbar.undo"), onClick: () => actions.replace(previous) },
+        action: { label: t("toolbar.undo"), onClick: () => replaceStages(previous) },
       });
     } catch (error) {
       toast.error(t("toolbar.pasteFailed", { message: errorMessage(error) }));
@@ -124,9 +144,10 @@ export function AggregationView({
 
   /** In text mode, turns the text into stages; false (with the error shown) if it does not parse. */
   async function syncText(): Promise<boolean> {
-    if (mode !== "text") return true;
+    if (mode !== "text" || text === generated.current) return true;
     try {
       actions.replace(await pipelineFromText(text));
+      generated.current = text;
       return true;
     } catch (error) {
       setRunError(t("text.invalid", { message: errorMessage(error) }));
@@ -137,7 +158,7 @@ export function AggregationView({
   async function switchMode(next: "stages" | "text") {
     if (next === mode) return;
     if (next === "text") {
-      setText(pipelineToText(store.getState().stages));
+      writeText();
       setRunError(null);
       setMode("text");
     } else if (await syncText()) {
@@ -246,8 +267,9 @@ export function AggregationView({
         <SavedPipelinesMenu
           storageKey={pipelineKey(connection.profileId, namespace.database, namespace.collection)}
           stages={stages}
+          onOpen={syncText}
           onLoad={(pipeline) => {
-            actions.replace(pipeline.stages);
+            replaceStages(pipeline.stages);
             setRunError(null);
             toast.success(t("saved.loaded", { name: pipeline.name }));
           }}
@@ -305,6 +327,7 @@ export function AggregationView({
       {mode === "text" ? (
         <div className="min-h-0 flex-1 bg-muted/30 p-3">
           <CodeEditor
+            key={editorKey}
             initialValue={text}
             onChange={setText}
             onSubmit={() => void run()}

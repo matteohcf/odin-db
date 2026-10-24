@@ -66,9 +66,13 @@ export function conflicts(
   shortcut: Shortcut,
   overrides: Keybindings,
 ): KeybindingId[] {
-  return LISTED.filter(
+  const others = LISTED.filter(
     (other) => other !== id && sameShortcut(resolve(other, overrides), shortcut),
   );
+  // The "+" alias acts as zoom in, so taking its keys takes them from zoom in.
+  const alias = sameShortcut(resolve("zoomInPlus", overrides), shortcut);
+  if (alias && id !== "zoomIn" && !others.includes("zoomIn")) others.push("zoomIn");
+  return others;
 }
 
 export function isChanged(id: KeybindingId, overrides: Keybindings): boolean {
@@ -76,32 +80,62 @@ export function isChanged(id: KeybindingId, overrides: Keybindings): boolean {
 }
 
 const MODIFIER_KEYS = new Set(["Meta", "Control", "Shift", "Alt", "AltGraph", "CapsLock", "Fn"]);
+/** Named keys a shortcut may use; other multi-character keys are dead keys or an input method. */
+const NAMED_KEYS = new Set([
+  "Enter",
+  "Tab",
+  "Backspace",
+  "Delete",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+  "Insert",
+]);
+/** Text editing and the system's own window keys, which a shortcut must not take over. */
+const RESERVED: readonly Shortcut[] = [
+  { key: "z", mod: true },
+  { key: "z", mod: true, shift: true },
+  { key: "y", mod: true },
+  { key: "x", mod: true },
+  { key: "q", mod: true },
+  { key: "h", mod: true },
+  { key: "m", mod: true },
+];
 
 export type Recorded =
   | { shortcut: Shortcut }
-  /** Shortcuts need Cmd/Ctrl (function keys aside); Option/Alt changes the key typed. */
-  | { error: "modifier" | "alt" };
+  /**
+   * Shortcuts need Cmd/Ctrl (function keys aside); Option/Alt changes the key typed; some keys
+   * belong to text editing or the system.
+   */
+  | { error: "modifier" | "alt" | "reserved" };
 
-/** The shortcut a key press makes, or `null` while only modifiers are held. */
+/** The shortcut a key press makes, or `null` while only modifiers (or a dead key) are pressed. */
 export function fromKeyEvent(
   event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "shiftKey" | "altKey">,
   mac = isMac,
 ): Recorded | null {
   if (MODIFIER_KEYS.has(event.key)) return null;
+  const functionKey = /^F\d{1,2}$/.test(event.key);
+  if (event.key.length !== 1 && !functionKey && !NAMED_KEYS.has(event.key)) return null;
   if (event.altKey) return { error: "alt" };
   // Cmd on macOS and Ctrl elsewhere are "mod"; Ctrl on macOS is its own modifier.
   const mod = mac ? event.metaKey : event.ctrlKey;
   const ctrl = mac && event.ctrlKey;
-  const functionKey = /^F\d{1,2}$/.test(event.key);
   if ((!mac && event.metaKey) || (!mod && !ctrl && !functionKey)) return { error: "modifier" };
-  return {
-    shortcut: {
-      key: event.key.length === 1 ? event.key.toLowerCase() : event.key,
-      ...(mod ? { mod: true } : {}),
-      ...(ctrl ? { ctrl: true } : {}),
-      ...(event.shiftKey ? { shift: true } : {}),
-    },
+  const shortcut: Shortcut = {
+    key: event.key.length === 1 ? event.key.toLowerCase() : event.key,
+    ...(mod ? { mod: true } : {}),
+    ...(ctrl ? { ctrl: true } : {}),
+    ...(event.shiftKey ? { shift: true } : {}),
   };
+  if (RESERVED.some((reserved) => sameShortcut(reserved, shortcut))) return { error: "reserved" };
+  return { shortcut };
 }
 
 /** The shortcut in effect now; read at key-press time by handlers that need no re-render. */

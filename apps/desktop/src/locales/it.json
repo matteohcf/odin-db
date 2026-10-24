@@ -201,7 +201,8 @@
       "reset": "Ripristina {{keys}}",
       "conflict": "{{keys}} è già usata da {{actions}}.",
       "reassign": "Usala qui",
-      "cancel": "Annulla"
+      "cancel": "Annulla",
+      "reserved": "Riservata alla modifica del testo o al sistema"
     },
     "customize": "Personalizza…",
     "resetAll": "Ripristina tutte le scorciatoie",
@@ -228,6 +229,7 @@
     "clear": "Rimuovi {{name}}",
     "release": "Rilascia per usarlo",
     "needsFolder": "Trascina qui una cartella, non un file.",
-    "needsFile": "Trascina qui un file, non una cartella."
+    "needsFile": "Trascina qui un file, non una cartella.",
+    "oneAtATime": "Trascina un file alla volta."
   }
 }

@@ -201,7 +201,8 @@
       "reset": "Reset to {{keys}}",
       "conflict": "{{keys}} is already used by {{actions}}.",
       "reassign": "Use it here",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "reserved": "Kept for editing text or by the system"
     },
     "customize": "Customize…",
     "resetAll": "Reset all shortcuts",
@@ -228,6 +229,7 @@
     "clear": "Remove {{name}}",
     "release": "Release to use it",
     "needsFolder": "Drop a folder here, not a file.",
-    "needsFile": "Drop a file here, not a folder."
+    "needsFile": "Drop a file here, not a folder.",
+    "oneAtATime": "Drop one file at a time."
   }
 }

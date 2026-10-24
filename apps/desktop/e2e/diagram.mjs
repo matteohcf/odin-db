@@ -218,6 +218,36 @@ await check("an area groups collections and carries them along", async () => {
   await area.waitFor({ state: "detached" });
 });
 
+await check(
+  "dragging several selected collections keeps them all where they were dropped",
+  async () => {
+    await page.getByRole("button", { name: "Fit to screen" }).click();
+    await page.waitForTimeout(400);
+    const header = (name) => node(name).locator("div").first();
+    await header("suppliers").click();
+    await header("categories").click({ modifiers: ["Meta"] });
+    const before = {
+      s: await node("suppliers").boundingBox(),
+      c: await node("categories").boundingBox(),
+    };
+    const grip = await header("suppliers").boundingBox();
+    if (!before.s || !before.c || !grip) throw new Error("no geometry");
+    await page.mouse.move(grip.x + 40, grip.y + 12);
+    await page.mouse.down();
+    await page.mouse.move(grip.x - 60, grip.y + 92, { steps: 10 });
+    await page.mouse.up();
+    const moved = await node("categories").boundingBox();
+    if (!moved || Math.abs(moved.y - before.c.y) < 30)
+      throw new Error("categories did not move along");
+    // Any annotation rebuilds the nodes from what was saved: nothing may snap back.
+    await page.getByRole("button", { name: "Add a note" }).click();
+    await page.waitForTimeout(300);
+    const after = await node("categories").boundingBox();
+    if (!after || Math.abs(after.y - moved.y) > 2) throw new Error("categories snapped back");
+    await page.getByRole("button", { name: "Delete note" }).first().click({ force: true });
+  },
+);
+
 await check("double-clicking a collection opens it", async () => {
   await page.getByRole("button", { name: "Fit to screen" }).click();
   await page.waitForTimeout(400);

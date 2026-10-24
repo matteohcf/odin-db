@@ -22,6 +22,11 @@ describe("chartFields", () => {
     ]);
   });
 
+  it("leaves out fields inside arrays, which hold one value per item", () => {
+    const rows = [{ items: [{ sku: "a" }, { sku: "b" }], total: int(3) }];
+    expect(chartFields(rows).map((field) => field.path)).toEqual(["total"]);
+  });
+
   it("starts from a date when there is one", () => {
     expect(defaultSpec(chartFields(orders))?.x).toBe("at");
   });
@@ -44,7 +49,6 @@ describe("chartData", () => {
         { x: "paid", y: 2 },
         { x: "open", y: 1 },
       ],
-      other: false,
       missing: 1,
     });
     const sums = chartData(orders, "category", { x: "status", y: "total", aggregate: "sum" });
@@ -58,7 +62,7 @@ describe("chartData", () => {
     const rows = Array.from({ length: MAX_BARS + 5 }, (_, i) => ({ name: `n${i}` }));
     const data = chartData(rows, "category", { x: "name", y: null, aggregate: "sum" });
     expect(data.points).toHaveLength(MAX_BARS + 1);
-    expect(data.points.at(-1)).toEqual({ x: "", y: 5 });
+    expect(data.points.at(-1)).toEqual({ x: "", y: 5, other: true });
   });
 
   it("buckets dates and fills the quiet ones", () => {

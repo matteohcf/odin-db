@@ -59,6 +59,12 @@ await check("keys without Ctrl are refused while recording", async () => {
   await recorder("Close the tab").click();
   await page.keyboard.press("x");
   await page.getByText("Add ⌘ / ⌃ (or a function key)").waitFor();
+  await page.keyboard.press("Meta+z");
+  await page.getByText("Kept for editing text or by the system").waitFor();
+  // Tab leaves, like everywhere else.
+  await page.keyboard.press("Tab");
+  await page.getByText("Press the new shortcut…").waitFor({ state: "detached" });
+  await recorder("Close the tab").click();
   await page.keyboard.press("Escape");
   await page.getByText("Press the new shortcut…").waitFor({ state: "detached" });
 });

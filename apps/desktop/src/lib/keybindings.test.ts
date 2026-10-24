@@ -62,3 +62,17 @@ describe("fromKeyEvent", () => {
     expect(fromKeyEvent(press({ key: "F5" }), true)).toEqual({ shortcut: { key: "F5" } });
   });
 });
+
+describe("recording limits", () => {
+  it("waits through dead keys and refuses reserved ones", () => {
+    expect(fromKeyEvent(press({ key: "Dead", metaKey: true }), true)).toBeNull();
+    expect(fromKeyEvent(press({ key: "z", metaKey: true }), true)).toEqual({ error: "reserved" });
+    expect(fromKeyEvent(press({ key: "ArrowUp", metaKey: true }), true)).toEqual({
+      shortcut: { key: "ArrowUp", mod: true },
+    });
+  });
+
+  it("counts the + alias as zoom in", () => {
+    expect(conflicts("palette", { key: "+", mod: true }, {})).toEqual(["zoomIn"]);
+  });
+});

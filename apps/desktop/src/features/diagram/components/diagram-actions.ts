@@ -12,6 +12,7 @@ export const DiagramActions = createContext<{
   onAreaChange: (id: string, patch: { label?: string; color?: ProfileColor }) => void;
   onAreaResize: (id: string, box: { x: number; y: number; width: number; height: number }) => void;
   onRemoveArea: (id: string) => void;
+  onFocused: (id: string) => void;
 }>({
   onOpen: () => {},
   onRemoveLink: () => {},
@@ -22,4 +23,5 @@ export const DiagramActions = createContext<{
   onAreaChange: () => {},
   onAreaResize: () => {},
   onRemoveArea: () => {},
+  onFocused: () => {},
 });

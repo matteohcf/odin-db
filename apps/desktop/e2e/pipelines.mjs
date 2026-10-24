@@ -111,6 +111,38 @@ await check("text mode edits the whole pipeline and goes back to stages", async 
   await page.getByRole("region", { name: "Stage 1" }).waitFor();
 });
 
+await check("a skipped stage survives a trip through text mode", async () => {
+  await page.getByRole("radio", { name: "Text" }).click();
+  await typeInEditor(
+    page.getByRole("textbox", { name: "Pipeline as text" }),
+    '[{ $match: { status: "paid" } }, { $limit: 2 }]',
+  );
+  await page.getByRole("radio", { name: "Stages" }).click();
+  const second = page.getByRole("region", { name: "Stage 2" });
+  await second.getByRole("switch", { name: "Include this stage" }).click();
+  await page.getByRole("radio", { name: "Text" }).click();
+  await page.getByRole("radio", { name: "Stages" }).click();
+  await second.waitFor();
+  if ((await second.getByRole("switch").getAttribute("aria-checked")) !== "false")
+    throw new Error("the stage came back included");
+});
+
+await check("loading a saved pipeline in text mode shows it in the editor", async () => {
+  await page.getByRole("button", { name: "Saved", exact: true }).click();
+  await page.getByLabel("Pipeline name").fill("Two paid");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("radio", { name: "Text" }).click();
+  const editor = page.getByRole("textbox", { name: "Pipeline as text" });
+  await typeInEditor(editor, '[{ $count: "n" }]');
+  await page.getByRole("button", { name: "Saved", exact: true }).click();
+  await page.getByRole("button", { name: /^Two paid/ }).click();
+  await page.getByText("Loaded Two paid").waitFor();
+  const text = await editor.innerText();
+  if (!text.includes("paid") || text.includes("$count")) throw new Error(text);
+  await page.getByRole("radio", { name: "Stages" }).click();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();

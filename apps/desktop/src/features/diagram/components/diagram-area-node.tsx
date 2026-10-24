@@ -30,12 +30,14 @@ export const DiagramAreaNodeView = memo(function DiagramAreaNodeView({
   selected,
 }: NodeProps<DiagramAreaNode>) {
   const { t } = useTranslation("diagram");
-  const { onAreaChange, onAreaResize, onRemoveArea } = useContext(DiagramActions);
+  const { onAreaChange, onAreaResize, onRemoveArea, onFocused } = useContext(DiagramActions);
   const input = useRef<HTMLInputElement>(null);
   // An area just added is ready to be named.
   useEffect(() => {
-    if (data.autoFocus) input.current?.focus();
-  }, [data.autoFocus]);
+    if (!data.autoFocus) return;
+    input.current?.focus();
+    onFocused(id);
+  }, [data.autoFocus, id, onFocused]);
   const colors = PROFILE_COLOR_CLASS[data.color];
 
   return (

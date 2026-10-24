@@ -171,14 +171,24 @@ pub(crate) fn picked_path(
         .ok_or(CoreError::NotFound(what))
 }
 
+/// Tokens kept at most; drops nobody uses would otherwise pile up for the whole session.
+const MAX_PICKED: usize = 256;
+
 /// Keeps a path in the backend and returns the opaque token the UI uses for it.
 pub(crate) fn remember_path(state: &AppState, path: PathBuf) -> String {
     let token = uuid::Uuid::now_v7();
-    state
+    let mut picked = state
         .picked_files
         .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .insert(token, path);
+        .unwrap_or_else(PoisonError::into_inner);
+    // Version 7 ids sort by creation time: the smallest is the oldest pick.
+    while picked.len() >= MAX_PICKED {
+        let Some(oldest) = picked.keys().min().copied() else {
+            break;
+        };
+        picked.remove(&oldest);
+    }
+    picked.insert(token, path);
     token.to_string()
 }
 

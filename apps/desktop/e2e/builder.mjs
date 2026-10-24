@@ -34,7 +34,10 @@ const preview = () => page.getByTestId("builder-preview").innerText();
 await check("fields and values are suggested as you type", async () => {
   await page.getByRole("button", { name: "Build a filter visually" }).click();
   const field = page.getByLabel("Field 1");
+  // Enter keeps what was typed until a suggestion is chosen.
   await field.fill("pl");
+  await page.keyboard.press("Enter");
+  if ((await field.inputValue()) !== "pl") throw new Error(await field.inputValue());
   await page.getByRole("option", { name: "plan", exact: true }).click();
   if ((await field.inputValue()) !== "plan") throw new Error(await field.inputValue());
   const value = page.getByLabel("Value 1");

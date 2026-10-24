@@ -16,12 +16,14 @@ export const DiagramNoteNodeView = memo(function DiagramNoteNodeView({
   selected,
 }: NodeProps<DiagramNoteNode>) {
   const { t } = useTranslation("diagram");
-  const { onNoteChange, onNoteResize, onRemoveNote } = useContext(DiagramActions);
+  const { onNoteChange, onNoteResize, onRemoveNote, onFocused } = useContext(DiagramActions);
   const input = useRef<HTMLTextAreaElement>(null);
   // A note just added is ready to type into.
   useEffect(() => {
-    if (data.autoFocus) input.current?.focus();
-  }, [data.autoFocus]);
+    if (!data.autoFocus) return;
+    input.current?.focus();
+    onFocused(id);
+  }, [data.autoFocus, id, onFocused]);
 
   return (
     <div
