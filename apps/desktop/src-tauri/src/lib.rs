@@ -173,7 +173,7 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             let state = Arc::new(state::AppState {
                 storage: Storage::open(&data_dir.join("odin-db.sqlite3"))?,
-                secrets: Box::new(KeyringStore),
+                secrets: Box::new(KeyringStore::default()),
                 connections: ConnectionManager::default(),
                 cursors: CursorRegistry::default(),
                 picked_files: std::sync::Mutex::default(),
