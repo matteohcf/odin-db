@@ -67,6 +67,18 @@ await check("explain shows the index used", async () => {
   await page.keyboard.insertText('{ plan: "pro" }');
   await page.getByRole("button", { name: "Explain query" }).click();
   await page.getByText("Used the index plan_1_createdAt_-1").waitFor();
+  // The tree: FETCH at the root, the index scan as its input with its key pattern and counts.
+  const steps = page.getByRole("dialog").locator("ol li");
+  await steps.nth(0).getByText("FETCH").waitFor();
+  await steps
+    .nth(1)
+    .getByText(/plan_1_createdAt_-1 \{ plan: 1, createdAt: -1 \}/)
+    .waitFor();
+  await steps
+    .nth(1)
+    .getByText(/keys? examined/)
+    .waitFor();
+  await page.getByText("2 plans considered").waitFor();
   await page.waitForTimeout(300);
   await shot("02-index");
   await page.keyboard.press("Escape");

@@ -1001,6 +1001,19 @@ export type PickedFolder = {
 	path: string,
 };
 
+export type PlanStep = {
+	stage: string,
+	/**  0 for the root; inputs are one deeper than the stage they feed. */
+	depth: number,
+	returned: number | null,
+	/**  The server's estimate of the time spent in this stage and its inputs. */
+	milliseconds: number | null,
+	documentsExamined: number | null,
+	keysExamined: number | null,
+	indexName: string | null,
+	keyPattern: EJsonDocument | null,
+};
+
 export type Presence = "both" | "leftOnly" | "rightOnly";
 
 /**  A label color, like Compass's, so production never looks like development. */
@@ -1085,6 +1098,13 @@ export type QueryPlan = {
 	documentsExamined: number | null,
 	keysExamined: number | null,
 	milliseconds: number | null,
+	/**
+	 *  The winning plan as a tree, root first, with what each stage did when the
+	 *  classic engine reports it.
+	 */
+	steps: PlanStep[],
+	/**  How many candidate plans the planner compared. */
+	plansConsidered: number,
 	/**  The full `explain` output, for details the summary leaves out. */
 	raw: EJsonDocument,
 };

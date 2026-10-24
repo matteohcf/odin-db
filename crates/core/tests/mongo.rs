@@ -1271,6 +1271,12 @@ async fn explains_collection_and_index_scans() {
     assert_eq!(indexed.indexes, ["n_1"]);
     assert!(indexed.stages.contains(&"IXSCAN".to_owned()));
     assert!((indexed.documents_examined - 10.0).abs() < f64::EPSILON);
+    let index_step = indexed
+        .steps
+        .iter()
+        .find(|step| step.index_name.as_deref() == Some("n_1"))
+        .expect("the index scan is a step");
+    assert!(index_step.depth > 0);
 }
 
 #[tokio::test]

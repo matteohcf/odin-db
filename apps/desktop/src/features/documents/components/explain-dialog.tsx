@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code-editor";
 import { formatCount } from "@/lib/format";
 import { toShellSyntax } from "@/lib/shell-syntax";
+import { PlanTree } from "./plan-tree";
 
 interface ExplainDialogProps {
   collection: string;
@@ -109,26 +110,8 @@ export function ExplainDialog({
           ))}
         </dl>
 
-        {plan.stages.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-muted-foreground text-xs">{t("explain.stages")}</p>
-            <ol className="flex flex-wrap items-center gap-1">
-              {plan.stages.map((stage, index) => (
-                // Stages are positional; the same name can appear twice.
-                <li key={`${index}-${stage}`} className="flex items-center gap-1">
-                  {index > 0 && <ChevronRight className="size-3 text-muted-foreground" />}
-                  <span
-                    className={cn(
-                      "rounded-sm px-1.5 py-0.5 font-mono text-[11px]",
-                      stage === "COLLSCAN" ? "bg-warning/15 text-warning" : "bg-muted",
-                    )}
-                  >
-                    {stage}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
+        {plan.steps.length > 0 && (
+          <PlanTree steps={plan.steps} plansConsidered={plan.plansConsidered ?? 1} />
         )}
 
         <div className="flex flex-col gap-2">

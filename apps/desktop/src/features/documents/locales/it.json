@@ -78,7 +78,16 @@
     "stages": "Stage",
     "raw": "Output explain grezzo",
     "failed": "Impossibile eseguire l'explain della query: {{message}}",
-    "createIndex": "Crea indice"
+    "createIndex": "Crea indice",
+    "stagesHint": "Gli input sono rientrati e vengono eseguiti prima",
+    "plansConsidered_one": "{{count, number}} piano valutato",
+    "plansConsidered_other": "{{count, number}} piani valutati",
+    "stepKeys_one": "{{value}} chiave esaminata",
+    "stepKeys_other": "{{value}} chiavi esaminate",
+    "stepDocuments_one": "{{value}} documento esaminato",
+    "stepDocuments_other": "{{value}} documenti esaminati",
+    "stepReturned_one": "{{value}} restituito",
+    "stepReturned_other": "{{value}} restituiti"
   },
   "field": {
     "title": "Modifica {{field}}",

@@ -78,7 +78,16 @@
     "stages": "Stages",
     "raw": "Raw explain output",
     "failed": "Couldn't explain the query: {{message}}",
-    "createIndex": "Create index"
+    "createIndex": "Create index",
+    "stagesHint": "Inputs are indented and run first",
+    "plansConsidered_one": "{{count, number}} plan considered",
+    "plansConsidered_other": "{{count, number}} plans considered",
+    "stepKeys_one": "{{value}} key examined",
+    "stepKeys_other": "{{value}} keys examined",
+    "stepDocuments_one": "{{value}} document examined",
+    "stepDocuments_other": "{{value}} documents examined",
+    "stepReturned_one": "{{value}} returned",
+    "stepReturned_other": "{{value}} returned"
   },
   "field": {
     "title": "Edit {{field}}",

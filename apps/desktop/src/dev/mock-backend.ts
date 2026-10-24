@@ -2184,6 +2184,42 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       documentsExamined: index ? matched : coll.docs.length,
       keysExamined: index ? matched : 0,
       milliseconds: 3,
+      plansConsidered: index ? 2 : 1,
+      steps: index
+        ? [
+            {
+              stage: "FETCH",
+              depth: 0,
+              returned: matched,
+              milliseconds: 2,
+              documentsExamined: matched,
+              keysExamined: null,
+              indexName: null,
+              keyPattern: null,
+            },
+            {
+              stage: "IXSCAN",
+              depth: 1,
+              returned: matched,
+              milliseconds: 1,
+              documentsExamined: null,
+              keysExamined: matched,
+              indexName: index.name as string,
+              keyPattern: index.key as Doc,
+            },
+          ]
+        : [
+            {
+              stage: "COLLSCAN",
+              depth: 0,
+              returned: matched,
+              milliseconds: 3,
+              documentsExamined: coll.docs.length,
+              keysExamined: null,
+              indexName: null,
+              keyPattern: null,
+            },
+          ],
       raw: {
         queryPlanner: {
           winningPlan: index
