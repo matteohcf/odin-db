@@ -15,11 +15,24 @@ import {
 } from "@odin-db/ui/components/alert-dialog";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { CircleAlert, ClipboardPaste, Code2, Copy, Download, Play, Plus, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
+import {
+  CircleAlert,
+  ClipboardPaste,
+  Code2,
+  Copy,
+  Download,
+  FileCode2,
+  Play,
+  Plus,
+  Rows3,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useStore } from "zustand";
+import { CodeEditor } from "@/components/code-editor";
 import { QueryCodeDialog } from "@/components/query-code-dialog";
 import {
   DocumentEditorDialog,
@@ -45,10 +58,17 @@ interface AggregationViewProps {
   namespace: Namespace;
   /** Whether this view is the one on screen, which takes the rerun shortcut. */
   active: boolean;
+  /** A pipeline handed over (e.g. from My queries); a new nonce loads it again. */
+  pendingPipeline?: { text: string; nonce: string } | undefined;
 }
 
 /** Build a pipeline stage by stage with live previews, then run it in full. */
-export function AggregationView({ connection, namespace, active }: AggregationViewProps) {
+export function AggregationView({
+  connection,
+  namespace,
+  active,
+  pendingPipeline,
+}: AggregationViewProps) {
   const { t } = useTranslation("aggregation");
   const [store] = useState(createPipelineStore);
   const stages = useStore(store, (s) => s.stages);
@@ -65,16 +85,33 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
   const lastPipeline = useRef<EJsonDocument[]>([]);
   const [codePipeline, setCodePipeline] = useState<EJsonDocument[] | null>(null);
 
-  const writeStage = stages.find((s) => s.enabled && isWriteOperator(s.operator));
+  // Like Compass: the whole pipeline as one editable text, or as stage cards.
+  const [mode, setMode] = useState<"stages" | "text">("stages");
+  const [text, setText] = useState("");
   const namespaceLabel = `${namespace.database}.${namespace.collection}`;
 
   useShortcut("rerun", () => void run(), active);
+
+  const loaded = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingPipeline || loaded.current === pendingPipeline.nonce) return;
+    loaded.current = pendingPipeline.nonce;
+    pipelineFromText(pendingPipeline.text).then(
+      (stages) => {
+        actions.replace(stages);
+        setMode("stages");
+        setRunError(null);
+      },
+      (error: unknown) => setRunError(t("text.invalid", { message: errorMessage(error) })),
+    );
+  }, [pendingPipeline, actions, t]);
 
   async function paste(text: string) {
     try {
       const pasted = await pipelineFromText(text);
       const previous = store.getState().stages;
       actions.replace(pasted);
+      if (mode === "text") setText(pipelineToText(store.getState().stages));
       setRunError(null);
       toast.success(t("toolbar.pasted", { count: pasted.length }), {
         action: { label: t("toolbar.undo"), onClick: () => actions.replace(previous) },
@@ -84,7 +121,33 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
     }
   }
 
+  /** In text mode, turns the text into stages; false (with the error shown) if it does not parse. */
+  async function syncText(): Promise<boolean> {
+    if (mode !== "text") return true;
+    try {
+      actions.replace(await pipelineFromText(text));
+      return true;
+    } catch (error) {
+      setRunError(t("text.invalid", { message: errorMessage(error) }));
+      return false;
+    }
+  }
+
+  async function switchMode(next: "stages" | "text") {
+    if (next === mode) return;
+    if (next === "text") {
+      setText(pipelineToText(store.getState().stages));
+      setRunError(null);
+      setMode("text");
+    } else if (await syncText()) {
+      setRunError(null);
+      setMode("stages");
+    }
+  }
+
   async function showCode() {
+    if (!(await syncText())) return;
+    const stages = store.getState().stages;
     const built = await buildPipeline(stages);
     if (!built.ok) {
       const number = stages.findIndex((s) => s.id === built.stageId) + 1;
@@ -96,6 +159,9 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
   }
 
   async function run(confirmed = false) {
+    if (!(await syncText())) return;
+    const stages = store.getState().stages;
+    const writeStage = stages.find((s) => s.enabled && isWriteOperator(s.operator));
     if (writeStage && connection.readOnly) {
       setRunError(t("write.readOnly"));
       return;
@@ -136,15 +202,17 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
       }}
     >
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
-        <Button variant="outline" size="sm" onClick={() => actions.add("$match")}>
-          <Plus />
-          {t("toolbar.addStage")}
-        </Button>
+        {mode === "stages" && (
+          <Button variant="outline" size="sm" onClick={() => actions.add("$match")}>
+            <Plus />
+            {t("toolbar.addStage")}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
-            void navigator.clipboard.writeText(pipelineToText(stages));
+            void navigator.clipboard.writeText(mode === "text" ? text : pipelineToText(stages));
             toast.success(t("toolbar.copied"));
           }}
         >
@@ -184,12 +252,25 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
             </span>
           </p>
         )}
-        <Button
+        <ToggleGroup
+          type="single"
+          variant="outline"
           size="sm"
+          value={mode}
+          onValueChange={(value) => value && void switchMode(value as "stages" | "text")}
+          aria-label={t("text.label")}
           className="ml-auto"
-          onClick={() => void run()}
-          title={t("toolbar.runHint")}
         >
+          <ToggleGroupItem value="stages" className="gap-1.5 px-2.5">
+            <Rows3 />
+            {t("text.stages")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="text" className="gap-1.5 px-2.5">
+            <FileCode2 />
+            {t("text.text")}
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <Button size="sm" onClick={() => void run()} title={t("toolbar.runHint")}>
           <Play className="fill-current" />
           {t("toolbar.run")}
           <Kbd className="bg-primary-foreground/15 text-primary-foreground">
@@ -198,39 +279,51 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/30">
-        <ol className="mx-auto flex max-w-6xl flex-col gap-3 p-3">
-          {stages.map((stage, index) => (
-            <li key={stage.id}>
-              <StageCard
-                connectionId={connection.id}
-                namespace={namespace}
-                stages={stages}
-                index={index}
-                onOperatorChange={(operator, field) =>
-                  actions.setOperator(stage.id, operator, field)
-                }
-                onBodyChange={(body) => actions.update(stage.id, { body })}
-                onToggle={(enabled) => actions.update(stage.id, { enabled })}
-                onMove={(delta) => actions.move(stage.id, delta)}
-                onRemove={() => actions.remove(stage.id)}
-                onAddAfter={() => actions.add("$match", stage.id)}
-                onRun={() => void run()}
-              />
+      {mode === "text" ? (
+        <div className="min-h-0 flex-1 bg-muted/30 p-3">
+          <CodeEditor
+            initialValue={text}
+            onChange={setText}
+            onSubmit={() => void run()}
+            ariaLabel={t("text.editor")}
+            className="mx-auto h-full max-w-6xl rounded-lg border bg-background"
+          />
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto bg-muted/30">
+          <ol className="mx-auto flex max-w-6xl flex-col gap-3 p-3">
+            {stages.map((stage, index) => (
+              <li key={stage.id}>
+                <StageCard
+                  connectionId={connection.id}
+                  namespace={namespace}
+                  stages={stages}
+                  index={index}
+                  onOperatorChange={(operator, field) =>
+                    actions.setOperator(stage.id, operator, field)
+                  }
+                  onBodyChange={(body) => actions.update(stage.id, { body })}
+                  onToggle={(enabled) => actions.update(stage.id, { enabled })}
+                  onMove={(delta) => actions.move(stage.id, delta)}
+                  onRemove={() => actions.remove(stage.id)}
+                  onAddAfter={() => actions.add("$match", stage.id)}
+                  onRun={() => void run()}
+                />
+              </li>
+            ))}
+            <li>
+              <Button
+                variant="ghost"
+                className="h-10 w-full border border-dashed text-muted-foreground"
+                onClick={() => actions.add("$match")}
+              >
+                <Plus />
+                {t("toolbar.addStage")}
+              </Button>
             </li>
-          ))}
-          <li>
-            <Button
-              variant="ghost"
-              className="h-10 w-full border border-dashed text-muted-foreground"
-              onClick={() => actions.add("$match")}
-            >
-              <Plus />
-              {t("toolbar.addStage")}
-            </Button>
-          </li>
-        </ol>
-      </div>
+          </ol>
+        </div>
+      )}
 
       {resultsOpen && (
         <section

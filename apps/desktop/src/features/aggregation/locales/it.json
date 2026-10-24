@@ -89,5 +89,12 @@
     "loaded": "{{name}} caricata",
     "empty": "Le pipeline che salvi per questa collezione compaiono qui.",
     "delete": "Elimina {{name}}"
+  },
+  "text": {
+    "label": "Modifica la pipeline come",
+    "stages": "Stage",
+    "text": "Testo",
+    "editor": "Pipeline come testo",
+    "invalid": "Il testo della pipeline non è valido: {{message}}"
   }
 }

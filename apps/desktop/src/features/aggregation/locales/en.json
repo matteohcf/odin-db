@@ -89,5 +89,12 @@
     "loaded": "Loaded {{name}}",
     "empty": "Pipelines you save for this collection appear here.",
     "delete": "Delete {{name}}"
+  },
+  "text": {
+    "label": "Edit the pipeline as",
+    "stages": "Stages",
+    "text": "Text",
+    "editor": "Pipeline as text",
+    "invalid": "The pipeline text is not valid: {{message}}"
   }
 }

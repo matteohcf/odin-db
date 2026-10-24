@@ -86,6 +86,31 @@ await check("a pipeline copied from a shell pastes in as stages, and can be undo
   if (await page.getByRole("region", { name: "Stage 3" }).count()) throw new Error("not undone");
 });
 
+await check("text mode edits the whole pipeline and goes back to stages", async () => {
+  await page.getByRole("radio", { name: "Text" }).click();
+  const editor = page.getByRole("textbox", { name: "Pipeline as text" });
+  await editor.waitFor();
+  if (!(await editor.innerText()).includes("$match")) throw new Error("pipeline not shown as text");
+  await typeInEditor(
+    editor,
+    '[{ $match: { status: "paid" } }, { $sort: { total: -1 } }, { $limit: 5 }]',
+  );
+  await shot("text");
+  await page.getByRole("radio", { name: "Stages" }).click();
+  await page.getByRole("region", { name: "Stage 3" }).waitFor();
+  // Text that does not parse keeps you in text mode, with the reason.
+  await page.getByRole("radio", { name: "Text" }).click();
+  await typeInEditor(page.getByRole("textbox", { name: "Pipeline as text" }), "[{ $match: ");
+  await page.getByRole("radio", { name: "Stages" }).click();
+  await page
+    .getByRole("alert")
+    .getByText(/pipeline text is not valid/)
+    .waitFor();
+  await typeInEditor(page.getByRole("textbox", { name: "Pipeline as text" }), "[{ $limit: 1 }]");
+  await page.getByRole("radio", { name: "Stages" }).click();
+  await page.getByRole("region", { name: "Stage 1" }).waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();
