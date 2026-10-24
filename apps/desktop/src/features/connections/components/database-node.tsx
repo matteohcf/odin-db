@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { IconAction } from "@/components/icon-action";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { formatBytes } from "@/lib/format";
@@ -33,7 +34,6 @@ import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
 import { HighlightMatch } from "./highlight-match";
 import { TreeRow } from "./tree-row";
-import { TreeRowAction } from "./tree-row-action";
 
 /** A database row; its collections are rows of their own, after it. */
 export function DatabaseNode({
@@ -76,12 +76,12 @@ export function DatabaseNode({
         trailing={database.empty ? undefined : formatBytes(database.sizeOnDisk ?? 0)}
         quickActions={
           writable && (
-            <TreeRowAction
+            <IconAction
               label={t("catalog.createCollection")}
               onClick={() => setToolDialog("createCollection")}
             >
               <Plus />
-            </TreeRowAction>
+            </IconAction>
           )
         }
         menuLabel={t("tree.actions", { name: database.name })}

@@ -130,5 +130,19 @@
     "onlyDifferences": "Solo le differenze",
     "field": "Campo",
     "missing": "assente"
+  },
+  "edit": {
+    "fieldName": "Nome del campo",
+    "fieldValue": "Valore di {{field}}",
+    "addField": "Aggiungi campo",
+    "addItem": "Aggiungi elemento",
+    "removeField": "Rimuovi campo",
+    "update": "Aggiorna",
+    "editing": "Modifica sul posto: i valori usano la sintassi mongosh",
+    "openEditor": "Apri nell'editor",
+    "nameRequired": "Questo campo ha bisogno di un nome",
+    "duplicate": "Un altro campo ha questo nome",
+    "problems_one": "{{count}} campo da correggere",
+    "problems_other": "{{count}} campi da correggere"
   }
 }

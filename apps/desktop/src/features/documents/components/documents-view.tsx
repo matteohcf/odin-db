@@ -499,6 +499,20 @@ export function DocumentsView({
           onEditField: editable ? (row, field) => setFieldEdit({ row, field }) : undefined,
           onPaste: editable ? () => void pasteDocuments() : undefined,
           onDownloadFile: gridFs.bucket ? (row) => void gridFs.download(row) : undefined,
+          onReplace: editable
+            ? async (row, document) => {
+                const id = row._id;
+                if (id === undefined) return;
+                try {
+                  await replace.mutateAsync({ ...target, id, document });
+                } catch (error) {
+                  toast.error(errorMessage(error));
+                  throw error;
+                }
+                toast.success(t("editor.saved"));
+                refresh(true);
+              }
+            : undefined,
           onSetField: editable
             ? async (row, field, value) => {
                 const id = row._id;

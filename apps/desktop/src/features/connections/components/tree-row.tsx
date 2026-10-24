@@ -16,7 +16,7 @@ interface TreeRowProps {
   /** `DropdownMenuItem`s, shown by the "…" button and on right-click. */
   menu?: ReactNode;
   menuLabel?: string;
-  /** One-click actions (`TreeRowAction`) shown on hover before the "…" button. */
+  /** One-click actions (`IconAction`) shown on hover before the "…" button. */
   quickActions?: ReactNode;
   muted?: boolean;
   /** The row of what the active tab shows. */

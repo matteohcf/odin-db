@@ -1,4 +1,4 @@
-import type { JsonValue } from "@odin-db/bindings";
+import type { EJsonDocument, JsonValue } from "@odin-db/bindings";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -68,6 +68,8 @@ export interface RowActions {
   onEditField?: ((row: JsonObject, field: string) => void) | undefined;
   /** Documents pasted with Cmd+V while the table has focus. */
   onPaste?: (() => void) | undefined;
+  /** Replaces a document edited in place in its card. Omitted for read-only results. */
+  onReplace?: ((row: JsonObject, document: EJsonDocument) => Promise<void>) | undefined;
   /** Saves a value edited in place (double-click a cell). Omitted for read-only results. */
   onSetField?: ((row: JsonObject, field: string, value: JsonValue) => Promise<void>) | undefined;
   /** Saves a GridFS file's bytes to disk; only in `<bucket>.files` collections. */

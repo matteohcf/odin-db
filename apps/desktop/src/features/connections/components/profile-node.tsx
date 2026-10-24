@@ -24,6 +24,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { IconAction } from "@/components/icon-action";
 import { ProfileColorMark } from "@/components/profile-color-mark";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
@@ -35,7 +36,6 @@ import { useExpanded } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { TreeRow } from "./tree-row";
-import { TreeRowAction } from "./tree-row-action";
 
 interface ProfileNodeProps {
   /** Levels added by an enclosing group. */
@@ -150,21 +150,21 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
           connection ? (
             <>
               {!connection.readOnly && (
-                <TreeRowAction
+                <IconAction
                   label={t("profile.createDatabase")}
                   onClick={() => setToolDialog("createDatabase")}
                 >
                   <Plus />
-                </TreeRowAction>
+                </IconAction>
               )}
-              <TreeRowAction label={t("profile.openShell")} onClick={() => openShell(profile.id)}>
+              <IconAction label={t("profile.openShell")} onClick={() => openShell(profile.id)}>
                 <SquareTerminal />
-              </TreeRowAction>
+              </IconAction>
             </>
           ) : (
-            <TreeRowAction label={t("profile.edit")} onClick={onEdit}>
+            <IconAction label={t("profile.edit")} onClick={onEdit}>
               <Pencil />
-            </TreeRowAction>
+            </IconAction>
           )
         }
         menuLabel={t("profile.actions", { name: profile.name })}

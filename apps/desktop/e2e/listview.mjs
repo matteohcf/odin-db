@@ -90,6 +90,32 @@ await check("double-click a value in the list view edits it in place", async () 
   if (await page.getByRole("dialog").count()) throw new Error("opened the editor");
   if (before === '"vip"') throw new Error("unchanged");
 });
+await check("edit a document in place: change, add, validate, cancel and update", async () => {
+  await page.keyboard.press("Escape");
+  const card = list.getByRole("option").first();
+  await card.hover();
+  await card.getByRole("button", { name: "Edit document" }).click();
+  const name = card.getByLabel("Value of name");
+  await name.fill('"Ada Lovelace"');
+  await card.getByRole("button", { name: "Add field" }).last().click();
+  await page.keyboard.insertText("nickname");
+  await card.getByLabel("Value of nickname").fill("ObjectId(");
+  await card.getByRole("button", { name: /^Update/ }).click();
+  await card.getByText("1 field to fix").waitFor();
+  await shot("05-inplace-problem");
+  await card.getByLabel("Value of nickname").fill('"Countess"');
+  await card.getByRole("button", { name: /^Update/ }).click();
+  await page.getByText("Document saved").waitFor();
+  await list.getByRole("option").first().getByText('"Ada Lovelace"').waitFor();
+  await list.getByRole("option").first().getByText('"Countess"').waitFor();
+  // Escape leaves without saving.
+  await list.getByRole("option").first().hover();
+  await list.getByRole("option").first().getByRole("button", { name: "Edit document" }).click();
+  await list.getByRole("option").first().getByLabel("Value of name").fill('"Nobody"');
+  await page.keyboard.press("Escape");
+  await list.getByRole("option").first().getByText('"Ada Lovelace"').waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();

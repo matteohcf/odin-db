@@ -130,5 +130,19 @@
     "onlyDifferences": "Only differences",
     "field": "Field",
     "missing": "missing"
+  },
+  "edit": {
+    "fieldName": "Field name",
+    "fieldValue": "Value of {{field}}",
+    "addField": "Add field",
+    "addItem": "Add item",
+    "removeField": "Remove field",
+    "update": "Update",
+    "editing": "Editing in place: values use mongosh syntax",
+    "openEditor": "Open in editor",
+    "nameRequired": "This field needs a name",
+    "duplicate": "Another field has this name",
+    "problems_one": "{{count}} field to fix",
+    "problems_other": "{{count}} fields to fix"
   }
 }
