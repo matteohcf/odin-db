@@ -29,6 +29,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { isJsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
+import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { compareDocuments } from "../lib/compare";
 
 export type EditorMode = "edit" | "view" | "insert";
@@ -46,8 +47,6 @@ interface DocumentEditorDialogProps {
   /** A new document shaped like the collection's, offered by "Fill from schema". */
   template?: string | undefined;
 }
-
-const isMac = navigator.userAgent.includes("Mac");
 
 export function DocumentEditorDialog(props: DocumentEditorDialogProps) {
   // Unsaved edits are confirmed before the dialog closes, whatever closed it.
@@ -184,7 +183,7 @@ function DocumentEditor({
         <DialogDescription>
           {readOnly
             ? t("editor.viewDescription", { namespace })
-            : t("editor.description", { namespace, shortcut: isMac ? "⌘↵" : "Ctrl+Enter" })}
+            : t("editor.description", { namespace, shortcut: label(EDIT_SHORTCUTS.submit) })}
         </DialogDescription>
       </DialogHeader>
       <div className="-mb-2 flex items-center gap-1">

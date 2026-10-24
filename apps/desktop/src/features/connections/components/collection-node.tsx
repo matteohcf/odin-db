@@ -1,5 +1,9 @@
 import type { CollectionInfo, ConnectionInfo } from "@odin-db/bindings";
-import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from "@odin-db/ui/components/dropdown-menu";
 import {
   ClipboardCopy,
   Clock,
@@ -18,10 +22,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
+import { EDIT_SHORTCUTS, isModClick, label } from "@/lib/shortcuts";
 import { useCollectionCounts, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
 import { isSystem } from "../lib/tree-rows";
-import { useTreeFilter } from "../store/explorer-store";
+import { useExplorer, useTreeFilter } from "../store/explorer-store";
 import { useFavorites, useIsFavorite } from "../store/favorites-store";
 import { CompareDialogFor } from "./compare-dialog-for";
 import { CopyDialogFor } from "./copy-dialog-for";
@@ -45,6 +50,7 @@ export function CollectionNode({
   collection: CollectionInfo;
 }) {
   const { t, i18n: translation } = useTranslation("connections");
+  const copyNode = useExplorer((s) => s.copy);
   const favorite = useIsFavorite(connection.profileId, database, collection.name);
   // One query per database, shared by its rows; absent for views and while loading.
   const count = useCollectionCounts(connection.id, database, true).data?.get(collection.name);
@@ -84,7 +90,7 @@ export function CollectionNode({
       <TreeRow
         depth={2 + indent}
         // Cmd/Ctrl-click or middle click opens another tab, like a browser link.
-        onActivate={(event) => open(event.metaKey || event.ctrlKey)}
+        onActivate={(event) => open(isModClick(event))}
         onAuxActivate={() => open(true)}
         icon={<Icon className="size-3.5" />}
         label={<HighlightMatch text={collection.name} query={filter} />}
@@ -128,6 +134,15 @@ export function CollectionNode({
               <ClipboardCopy />
               {t("tree.copyName")}
             </DropdownMenuItem>
+            {!isView && (
+              <DropdownMenuItem
+                onSelect={() => copyNode({ connection, database, collection: collection.name })}
+              >
+                <Copy />
+                {t("clipboard.copy")}
+                <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.copy)}</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             {writable && !isView && (
               <DropdownMenuItem onSelect={() => setDialog("rename")}>

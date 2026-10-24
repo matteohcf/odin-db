@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { label, matches, SHORTCUTS } from "./shortcuts";
+import { EDIT_SHORTCUTS, isModClick, label, matches, SHORTCUTS } from "./shortcuts";
 
 const event = (press: {
   key: string;
@@ -34,5 +34,16 @@ describe("shortcuts", () => {
     expect(label(SHORTCUTS.palette, true)).toBe("⌘ K");
     expect(label(SHORTCUTS.palette, false)).toBe("Ctrl K");
     expect(label(SHORTCUTS.previousTab, false)).toBe("Ctrl Shift Tab");
+    expect(label(EDIT_SHORTCUTS.submit, true)).toBe("⌘ ↵");
+  });
+
+  it("edit shortcuts and modifier clicks follow the platform", () => {
+    expect(matches(EDIT_SHORTCUTS.copy, event({ key: "c", ctrlKey: true }), false)).toBe(true);
+    expect(matches(EDIT_SHORTCUTS.copy, event({ key: "c", ctrlKey: true }), true)).toBe(false);
+    expect(matches(EDIT_SHORTCUTS.paste, event({ key: "V", metaKey: true }), true)).toBe(true);
+    expect(isModClick({ metaKey: true, ctrlKey: false }, true)).toBe(true);
+    // Ctrl-click is a right click on macOS, not a modifier click.
+    expect(isModClick({ metaKey: false, ctrlKey: true }, true)).toBe(false);
+    expect(isModClick({ metaKey: false, ctrlKey: true }, false)).toBe(true);
   });
 });

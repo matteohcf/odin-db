@@ -4,6 +4,7 @@ import { Kbd } from "@odin-db/ui/components/kbd";
 import { CircleAlert, Loader2, Sparkles, Square } from "lucide-react";
 import { useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { EDIT_SHORTCUTS, label, matches } from "@/lib/shortcuts";
 import { useGenerateQuery } from "../hooks/use-generate-query";
 import { examplePrompts } from "../lib/example-prompts";
 import { type QueryText, toQueryText } from "../lib/query-text";
@@ -18,8 +19,6 @@ interface AskAiPanelProps {
   onPromptChange: (prompt: string) => void;
   onApply: (text: QueryText, run: boolean) => void;
 }
-
-const isMac = navigator.userAgent.includes("Mac");
 
 /** A description in, a query out: shown for review, applied only on request. */
 export function AskAiPanel({
@@ -76,7 +75,7 @@ export function AskAiPanel({
           }
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            if (text && (event.metaKey || event.ctrlKey)) onApply(text, true);
+            if (text && matches(EDIT_SHORTCUTS.submit, event)) onApply(text, true);
             else ask();
           }
         }}
@@ -138,7 +137,7 @@ export function AskAiPanel({
             <Button size="sm" onClick={() => onApply(text, true)}>
               {t("ask.applyAndRun")}
               <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-                {isMac ? "⌘↵" : "Ctrl ↵"}
+                {label(EDIT_SHORTCUTS.submit)}
               </Kbd>
             </Button>
           </>

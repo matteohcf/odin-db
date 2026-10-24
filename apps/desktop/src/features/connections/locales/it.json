@@ -252,5 +252,11 @@
     "description": "{{name}} è stato esportato con una password. Inseriscila per importare le connessioni con le loro password.",
     "label": "Password del file",
     "submit": "Importa"
+  },
+  "clipboard": {
+    "copied": "Copiato {{name}}. Seleziona un database o un server e premi {{key}} per incollarlo lì.",
+    "empty": "Non hai ancora copiato niente: seleziona una collection o un database e premi ⌘C / Ctrl+C.",
+    "copy": "Copia",
+    "paste": "Incolla qui {{name}}"
   }
 }

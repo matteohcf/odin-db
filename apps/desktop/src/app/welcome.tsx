@@ -4,8 +4,8 @@ import { Trans, useTranslation } from "react-i18next";
 import { ProfileColorMark } from "@/components/profile-color-mark";
 import { useOpenCollection, useProfiles } from "@/features/connections";
 import { useTabs } from "@/features/workspace";
+import { label, SHORTCUTS } from "@/lib/shortcuts";
 
-const isMac = navigator.userAgent.includes("Mac");
 const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 
 export function Welcome() {
@@ -71,7 +71,7 @@ export function Welcome() {
         <Trans
           t={t}
           i18nKey="welcome.palette"
-          values={{ shortcut: isMac ? "⌘K" : "Ctrl K" }}
+          values={{ shortcut: label(SHORTCUTS.palette) }}
           components={{ kbd: <Kbd /> }}
         />
       </p>

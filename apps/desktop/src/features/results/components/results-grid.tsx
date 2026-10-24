@@ -24,6 +24,7 @@ import { compactEJson, type JsonObject } from "@/lib/ejson-display";
 import { linkOf } from "@/lib/links";
 import { ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
+import { EDIT_SHORTCUTS, isModClick, matches } from "@/lib/shortcuts";
 import {
   columnSlots,
   columnWidth,
@@ -294,28 +295,23 @@ export function ResultsGrid({
     if (rows.length === 0) return;
     const current = selectedIndex ?? -1;
     const page = Math.floor((scrollRef.current?.clientHeight ?? 300) / rowHeight) - 1;
-    if (
-      (event.metaKey || event.ctrlKey) &&
-      event.key.toLowerCase() === "c" &&
-      selected &&
-      !textSelectedIn(scrollRef.current)
-    ) {
+    if (matches(EDIT_SHORTCUTS.copy, event) && selected && !textSelectedIn(scrollRef.current)) {
       event.preventDefault();
       void navigator.clipboard.writeText(toShellSyntax(multiple ? markedRows : selected));
       toast.success(multiple ? t("rows.copied", { count: markedRows.length }) : t("row.copied"));
       return;
     }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "v" && actions.onPaste) {
+    if (matches(EDIT_SHORTCUTS.paste, event) && actions.onPaste) {
       event.preventDefault();
       actions.onPaste();
       return;
     }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "d" && selected) {
+    if (matches(EDIT_SHORTCUTS.duplicate, event) && selected) {
       event.preventDefault();
       actions.onDuplicate?.(selected);
       return;
     }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
+    if (matches(EDIT_SHORTCUTS.selectAll, event)) {
       event.preventDefault();
       setMarked(new Set(rows.keys()));
       return;
@@ -607,7 +603,7 @@ export function ResultsGrid({
                           onContextMenu={() => setMenuColumn(header.id)}
                           onClick={(event) => {
                             // Cmd/Ctrl-click follows a link, like in an editor.
-                            if ((event.metaKey || event.ctrlKey) && linkOf(row[header.id])) {
+                            if (isModClick(event) && linkOf(row[header.id])) {
                               event.stopPropagation();
                               openLink(row[header.id]);
                             }

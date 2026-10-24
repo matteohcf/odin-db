@@ -252,5 +252,11 @@
     "description": "{{name}} was exported with a password. Enter it to import the connections with their passwords.",
     "label": "File password",
     "submit": "Import"
+  },
+  "clipboard": {
+    "copied": "Copied {{name}}. Select a database or server and press {{key}} to paste it there.",
+    "empty": "Nothing copied yet: select a collection or database and press ⌘C / Ctrl+C.",
+    "copy": "Copy",
+    "paste": "Paste {{name}} here"
   }
 }

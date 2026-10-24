@@ -1,4 +1,12 @@
+import type { ConnectionId, ConnectionInfo } from "@odin-db/bindings";
 import { create } from "zustand";
+
+/** A collection or database copied in the tree, to paste on another database. */
+export interface CopiedNode {
+  connection: ConnectionInfo;
+  database: string;
+  collection?: string;
+}
 
 /** Expanded tree nodes, keyed by `profileId` or `profileId/database`. */
 interface ExplorerState {
@@ -13,6 +21,16 @@ interface ExplorerState {
   revealing: string | null;
   reveal: (profileId: string, database: string, collection: string) => void;
   revealed: () => void;
+  copied: CopiedNode | null;
+  copy: (node: CopiedNode) => void;
+  /** Where the copied node is being pasted, while the copy dialog is open. */
+  pasting: PasteTarget | null;
+  paste: (target: PasteTarget | null) => void;
+}
+
+export interface PasteTarget {
+  connectionId: ConnectionId;
+  database: string;
 }
 
 export const useExplorer = create<ExplorerState>()((set) => ({
@@ -36,6 +54,10 @@ export const useExplorer = create<ExplorerState>()((set) => ({
       revealing: `${profileId}/${database}/${collection}`,
     })),
   revealed: () => set({ revealing: null }),
+  copied: null,
+  copy: (copied) => set({ copied }),
+  pasting: null,
+  paste: (pasting) => set({ pasting }),
 }));
 
 export function useExpanded(key: string) {

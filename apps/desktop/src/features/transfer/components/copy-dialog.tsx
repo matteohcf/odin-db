@@ -49,6 +49,8 @@ interface CopyDialogProps {
   /** Called after the copy ran, e.g. to refresh the target's tree. */
   onCopied: (target: ConnectionId) => void;
   onClose: () => void;
+  /** Where it was pasted, preselected; the user can still change it. */
+  target?: { connectionId: ConnectionId; database: string } | undefined;
 }
 
 /** Copies a collection or a database to another connection, or within the same one. */
@@ -59,19 +61,26 @@ export function CopyDialog({
   targets,
   onCopied,
   onClose,
+  target,
 }: CopyDialogProps) {
   const { t } = useTranslation("transfer");
   const id = useId();
   const writable = targets.filter((target) => !target.readOnly);
   const initial =
-    writable.find((target) => target.connectionId === sourceConnectionId) ?? writable[0];
+    writable.find((candidate) => candidate.connectionId === target?.connectionId) ??
+    writable.find((candidate) => candidate.connectionId === sourceConnectionId) ??
+    writable[0];
   const [targetId, setTargetId] = useState<ConnectionId | undefined>(initial?.connectionId);
   const sameConnection = targetId === sourceConnectionId;
   // Within the same connection the default names must differ from the source.
-  const defaultNames = (same: boolean) => ({
-    database: collection || !same ? database : `${database}_copy`,
-    collection: collection && same ? `${collection}_copy` : (collection ?? ""),
-  });
+  const defaultNames = (same: boolean) => {
+    const into = target?.database ?? database;
+    const ontoSource = same && into === database;
+    return {
+      database: collection || !ontoSource ? into : `${database}_copy`,
+      collection: collection && ontoSource ? `${collection}_copy` : (collection ?? ""),
+    };
+  };
   const [targetDatabase, setTargetDatabase] = useState(() => defaultNames(sameConnection).database);
   const [targetCollection, setTargetCollection] = useState(
     () => defaultNames(sameConnection).collection,

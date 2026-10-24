@@ -9,11 +9,16 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
+import { EDIT_SHORTCUTS, label, matches } from "@/lib/shortcuts";
+import { useConnections } from "../api/queries";
 import { useTreeRows } from "../hooks/use-tree-rows";
+import { pasteTargetOf } from "../lib/paste-target";
 import { collapsedGroupKey, type TreeItem } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
 import { CollectionNode } from "./collection-node";
+import { CopyDialogFor } from "./copy-dialog-for";
 import { DatabaseNode } from "./database-node";
 import { GroupNode } from "./group-node";
 import { ProfileNode } from "./profile-node";
@@ -85,6 +90,11 @@ export function TreeList({
 
   const { t } = useTranslation("connections");
   const filter = useExplorer((s) => s.filter.trim());
+  const copied = useExplorer((s) => s.copied);
+  const copy = useExplorer((s) => s.copy);
+  const pasting = useExplorer((s) => s.pasting);
+  const paste = useExplorer((s) => s.paste);
+  const connections = useConnections().data ?? [];
 
   // Focuses a row's main button, scrolling it into view (and so into the DOM) first.
   function focusRow(index: number) {
@@ -106,6 +116,11 @@ export function TreeList({
     const item = (event.target as HTMLElement).closest<HTMLElement>("li[data-index]");
     if (!item || (event.target as HTMLElement).closest("[aria-haspopup]")) return;
     const index = Number(item.dataset.index);
+    const row = rows[index];
+    if (row && clipboardKey(event, row)) {
+      event.preventDefault();
+      return;
+    }
     const button = item.querySelector<HTMLElement>("button:not([aria-haspopup])");
     const expanded = button?.getAttribute("aria-expanded");
     const handlers: Record<string, () => void> = {
@@ -122,6 +137,32 @@ export function TreeList({
     handler();
   }
 
+  // ⌘C copies a collection or database, ⌘V on a database (or anything in it) pastes it there.
+  function clipboardKey(event: KeyboardEvent, row: TreeItem) {
+    if (matches(EDIT_SHORTCUTS.copy, event)) {
+      const node =
+        row.kind === "collection"
+          ? { connection: row.connection, database: row.database, collection: row.collection.name }
+          : row.kind === "database"
+            ? { connection: row.connection, database: row.database.name }
+            : undefined;
+      if (!node) return false;
+      copy(node);
+      toast.success(
+        t("clipboard.copied", {
+          name: node.collection ?? node.database,
+          key: label(EDIT_SHORTCUTS.paste),
+        }),
+      );
+      return true;
+    }
+    if (!matches(EDIT_SHORTCUTS.paste, event)) return false;
+    const target = pasteTargetOf(row, copied, connections);
+    if (!copied) toast.info(t("clipboard.empty"));
+    else if (target) paste(target);
+    return Boolean(target) || !copied;
+  }
+
   // Sticky scroll: while a database's collections fill the view, its row stays on top.
   const scrolled = virtualizer.scrollOffset ?? 0;
   const top = virtualizer.getVirtualItems().find((item) => item.end > scrolled + ROW_HEIGHT);
@@ -131,55 +172,66 @@ export function TreeList({
     stickyIndex >= 0 && stickyIndex < (top?.index ?? 0) ? rows[stickyIndex] : undefined;
 
   return (
-    <ul
-      ref={list}
-      onKeyDown={onKeyDown}
-      className="relative"
-      style={{ height: virtualizer.getTotalSize() }}
-    >
-      {stickyRow && scrolled > offset && (
-        <li
-          data-index={stickyIndex}
-          data-sticky
-          // Reaches over the scroller's top padding, so no row peeks out above it.
-          className="sticky -top-1.5 z-10 -mt-1.5 border-b bg-sidebar pt-1.5 shadow-xs"
-          style={{ height: ROW_HEIGHT + 6 }}
-        >
-          <Row
-            row={stickyRow}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onExport={onExport}
-            onNewConnection={onNewConnection}
-          />
-        </li>
-      )}
-      {rows.length === 0 && filter && (
-        <li>
-          <TreeMessage depth={0}>{t("explorer.noMatch", { filter })}</TreeMessage>
-        </li>
-      )}
-      {virtualizer.getVirtualItems().map((item) => {
-        const row = rows[item.index];
-        if (!row) return null;
-        return (
+    <>
+      <ul
+        ref={list}
+        onKeyDown={onKeyDown}
+        className="relative"
+        style={{ height: virtualizer.getTotalSize() }}
+      >
+        {stickyRow && scrolled > offset && (
           <li
-            key={item.key}
-            data-index={item.index}
-            className="absolute inset-x-0 top-0"
-            style={{ height: ROW_HEIGHT, transform: `translateY(${item.start - offset}px)` }}
+            data-index={stickyIndex}
+            data-sticky
+            // Reaches over the scroller's top padding, so no row peeks out above it.
+            className="sticky -top-1.5 z-10 -mt-1.5 border-b bg-sidebar pt-1.5 shadow-xs"
+            style={{ height: ROW_HEIGHT + 6 }}
           >
             <Row
-              row={row}
+              row={stickyRow}
               onEdit={onEdit}
               onDelete={onDelete}
               onExport={onExport}
               onNewConnection={onNewConnection}
             />
           </li>
-        );
-      })}
-    </ul>
+        )}
+        {rows.length === 0 && filter && (
+          <li>
+            <TreeMessage depth={0}>{t("explorer.noMatch", { filter })}</TreeMessage>
+          </li>
+        )}
+        {virtualizer.getVirtualItems().map((item) => {
+          const row = rows[item.index];
+          if (!row) return null;
+          return (
+            <li
+              key={item.key}
+              data-index={item.index}
+              className="absolute inset-x-0 top-0"
+              style={{ height: ROW_HEIGHT, transform: `translateY(${item.start - offset}px)` }}
+            >
+              <Row
+                row={row}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onExport={onExport}
+                onNewConnection={onNewConnection}
+              />
+            </li>
+          );
+        })}
+      </ul>
+      {pasting && copied && (
+        <CopyDialogFor
+          connection={copied.connection}
+          database={copied.database}
+          collection={copied.collection}
+          target={pasting}
+          onClose={() => paste(null)}
+        />
+      )}
+    </>
   );
 }
 

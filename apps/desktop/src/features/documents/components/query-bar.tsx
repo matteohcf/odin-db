@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
 import { AskAiButton } from "@/features/ai";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
+import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
 import { useQueryHistory } from "../store/query-history-store";
 import { QueryFieldFrame } from "./query-field-frame";
@@ -40,7 +41,6 @@ interface QueryBarProps {
   askSignal?: number;
 }
 
-const isMac = navigator.userAgent.includes("Mac");
 // Stable, so the store selector does not return a new array on every render.
 const NO_ENTRIES: never[] = [];
 const hasOptionsIn = (form: QueryForm) =>
@@ -180,7 +180,7 @@ export function QueryBar({
           <Play className="fill-current" />
           {t("query.run")}
           <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-            {isMac ? "⌘↵" : "Ctrl ↵"}
+            {label(EDIT_SHORTCUTS.submit)}
           </Kbd>
         </Button>
         {actions && (

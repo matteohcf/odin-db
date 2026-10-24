@@ -1,3 +1,5 @@
+import { isModClick } from "@/lib/shortcuts";
+
 export type SelectMode = "replace" | "toggle" | "range";
 
 /**
@@ -22,4 +24,4 @@ export function nextMarked(
 }
 
 export const modeOf = (event: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) =>
-  event.shiftKey ? "range" : event.metaKey || event.ctrlKey ? "toggle" : "replace";
+  event.shiftKey ? "range" : isModClick(event) ? "toggle" : "replace";

@@ -32,6 +32,18 @@ export const SHORTCUTS = {
 
 export type ShortcutId = keyof typeof SHORTCUTS;
 
+/**
+ * Shortcuts that act on whatever has focus (grid rows, tree nodes, editors), so the focused
+ * element handles them with `matches` instead of the global registry.
+ */
+export const EDIT_SHORTCUTS = {
+  copy: { key: "c", mod: true },
+  paste: { key: "v", mod: true },
+  duplicate: { key: "d", mod: true },
+  selectAll: { key: "a", mod: true },
+  submit: { key: "Enter", mod: true },
+} as const satisfies Record<string, Shortcut>;
+
 export interface Shortcut {
   key: string;
   /** Cmd on macOS, Ctrl elsewhere. */
@@ -41,7 +53,12 @@ export interface Shortcut {
   shift?: boolean;
 }
 
-const isMac = typeof navigator !== "undefined" && navigator.userAgent.includes("Mac");
+export const isMac = typeof navigator !== "undefined" && navigator.userAgent.includes("Mac");
+
+/** Cmd-click on macOS, Ctrl-click elsewhere (on macOS Ctrl-click opens the context menu). */
+export function isModClick(event: Pick<MouseEvent, "metaKey" | "ctrlKey">, mac = isMac) {
+  return mac ? event.metaKey : event.ctrlKey;
+}
 
 type KeyPress = Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "shiftKey" | "altKey">;
 
@@ -58,12 +75,17 @@ export function matches(shortcut: Shortcut, event: KeyPress, mac = isMac): boole
   );
 }
 
+const KEY_LABELS: Record<string, string> = { Enter: "↵" };
+
 /** How the shortcut reads on this platform, e.g. "⌘ K" or "Ctrl K". */
 export function label(shortcut: Shortcut, mac = isMac): string {
   const parts: string[] = [];
   if (shortcut.ctrl) parts.push(mac ? "⌃" : "Ctrl");
   if (shortcut.mod) parts.push(mac ? "⌘" : "Ctrl");
   if (shortcut.shift) parts.push(mac ? "⇧" : "Shift");
-  parts.push(shortcut.key.length === 1 ? shortcut.key.toUpperCase() : shortcut.key);
+  parts.push(
+    KEY_LABELS[shortcut.key] ??
+      (shortcut.key.length === 1 ? shortcut.key.toUpperCase() : shortcut.key),
+  );
   return parts.join(" ");
 }

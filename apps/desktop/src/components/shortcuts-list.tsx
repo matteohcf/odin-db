@@ -1,8 +1,7 @@
 import { Kbd } from "@odin-db/ui/components/kbd";
 import { useTranslation } from "react-i18next";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
+import { isMac, label, SHORTCUTS } from "@/lib/shortcuts";
 
-const isMac = navigator.userAgent.includes("Mac");
 const mod = isMac ? "⌘" : "Ctrl";
 
 const GROUPS = [

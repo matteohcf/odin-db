@@ -32,6 +32,7 @@ import { ExportDialog } from "@/features/transfer";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { call, errorMessage } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
+import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { isWriteOperator } from "../lib/operators";
 import { buildPipeline, pipelineFromText, pipelineToText } from "../lib/pipeline";
 import { createPipelineStore } from "../store/pipeline-store";
@@ -45,8 +46,6 @@ interface AggregationViewProps {
   /** Whether this view is the one on screen, which takes the rerun shortcut. */
   active: boolean;
 }
-
-const isMac = navigator.userAgent.includes("Mac");
 
 /** Build a pipeline stage by stage with live previews, then run it in full. */
 export function AggregationView({ connection, namespace, active }: AggregationViewProps) {
@@ -67,7 +66,7 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
   const [codePipeline, setCodePipeline] = useState<EJsonDocument[] | null>(null);
 
   const writeStage = stages.find((s) => s.enabled && isWriteOperator(s.operator));
-  const label = `${namespace.database}.${namespace.collection}`;
+  const namespaceLabel = `${namespace.database}.${namespace.collection}`;
 
   useShortcut("rerun", () => void run(), active);
 
@@ -194,7 +193,7 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
           <Play className="fill-current" />
           {t("toolbar.run")}
           <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-            {isMac ? "⌘↵" : "Ctrl ↵"}
+            {label(EDIT_SHORTCUTS.submit)}
           </Kbd>
         </Button>
       </div>
@@ -306,7 +305,7 @@ export function AggregationView({ connection, namespace, active }: AggregationVi
         <DocumentEditorDialog
           open
           mode="view"
-          namespace={label}
+          namespace={namespaceLabel}
           initialText={viewing}
           onSave={async () => {}}
           onClose={() => setViewing(null)}

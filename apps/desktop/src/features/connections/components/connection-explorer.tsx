@@ -50,8 +50,6 @@ import { ProfileDialog } from "./profile-dialog";
 import { TreeList } from "./tree-list";
 import { TryLocalhostButton } from "./try-localhost-button";
 
-const isMac = navigator.userAgent.includes("Mac");
-
 type DialogState =
   | { type: "closed" }
   | { type: "create"; group?: string }
@@ -180,7 +178,7 @@ export function ConnectionExplorer() {
             </TooltipTrigger>
             <TooltipContent className="flex items-center gap-2">
               {t("palette.hint")}
-              <Kbd>{isMac ? "⌘K" : "Ctrl K"}</Kbd>
+              <Kbd>{label(SHORTCUTS.palette)}</Kbd>
             </TooltipContent>
           </Tooltip>
           <DropdownMenu>

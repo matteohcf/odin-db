@@ -101,6 +101,33 @@ await check("copy a database with typed confirmation to replace", async () => {
     .waitFor();
 });
 
+await check(
+  "Cmd+C on a collection and Cmd+V on another database opens the copy there",
+  async () => {
+    await page.keyboard.press("Escape");
+    await page
+      .getByRole("button", { name: /^orders/ })
+      .first()
+      .focus();
+    await page.keyboard.press("Meta+c");
+    await page.getByText(/Copied orders\. Select a database/).waitFor();
+    await page
+      .getByRole("button", { name: /^analytics/ })
+      .first()
+      .focus();
+    await page.keyboard.press("Meta+v");
+    const dialog = page.getByRole("dialog", { name: "Copy collection" });
+    const database = dialog.getByLabel("Database", { exact: true });
+    await database.waitFor();
+    if ((await database.inputValue()) !== "analytics") throw new Error(await database.inputValue());
+    if ((await dialog.getByLabel("Collection", { exact: true }).inputValue()) !== "orders")
+      throw new Error("collection name");
+    await page.waitForTimeout(300);
+    await shot("05-paste");
+    await page.keyboard.press("Escape");
+  },
+);
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

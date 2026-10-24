@@ -1,8 +1,13 @@
 import type { ConnectionInfo, DatabaseInfo } from "@odin-db/bindings";
-import { DropdownMenuItem, DropdownMenuSeparator } from "@odin-db/ui/components/dropdown-menu";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from "@odin-db/ui/components/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardCopy,
+  ClipboardPaste,
   Copy,
   Database,
   FileDown,
@@ -17,11 +22,12 @@ import { useTranslation } from "react-i18next";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { formatBytes } from "@/lib/format";
+import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { connectionKeys } from "../api/keys";
 import { useCollections, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
 import { isSystem, SYSTEM_DATABASES } from "../lib/tree-rows";
-import { useExpanded, useTreeFilter } from "../store/explorer-store";
+import { useExpanded, useExplorer, useTreeFilter } from "../store/explorer-store";
 import { CopyDialogFor } from "./copy-dialog-for";
 import { CreateCollectionDialog } from "./create-collection-dialog";
 import { DropDialog } from "./drop-dialog";
@@ -44,6 +50,9 @@ export function DatabaseNode({
   loading: boolean;
 }) {
   const { t } = useTranslation("connections");
+  const copyNode = useExplorer((s) => s.copy);
+  const copied = useExplorer((s) => s.copied);
+  const paste = useExplorer((s) => s.paste);
   const [expanded, setExpanded] = useExpanded(`${connection.profileId}/${database.name}`);
   const [toolDialog, setToolDialog] = useState<
     "backup" | "restore" | "export" | "import" | "copy" | "createCollection" | "drop" | null
@@ -80,6 +89,20 @@ export function DatabaseNode({
               <ClipboardCopy />
               {t("tree.copyName")}
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => copyNode({ connection, database: database.name })}>
+              <Copy />
+              {t("clipboard.copy")}
+              <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.copy)}</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            {copied && writable && (
+              <DropdownMenuItem
+                onSelect={() => paste({ connectionId: connection.id, database: database.name })}
+              >
+                <ClipboardPaste />
+                {t("clipboard.paste", { name: copied.collection ?? copied.database })}
+                <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.paste)}</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onSelect={() => setToolDialog("backup")}>
               <HardDriveDownload />
               {t("menu.backup", { ns: "backup" })}

@@ -1,4 +1,4 @@
-import type { ConnectionInfo } from "@odin-db/bindings";
+import type { ConnectionId, ConnectionInfo } from "@odin-db/bindings";
 import { useQueryClient } from "@tanstack/react-query";
 import { CopyDialog } from "@/features/transfer";
 import { connectionKeys } from "../api/keys";
@@ -9,11 +9,13 @@ export function CopyDialogFor({
   connection,
   database,
   collection,
+  target,
   onClose,
 }: {
   connection: ConnectionInfo;
   database: string;
-  collection?: string;
+  collection?: string | undefined;
+  target?: { connectionId: ConnectionId; database: string } | undefined;
   onClose: () => void;
 }) {
   const targets = useCopyTargets();
@@ -24,6 +26,7 @@ export function CopyDialogFor({
       database={database}
       collection={collection}
       targets={targets}
+      target={target}
       onCopied={(target) =>
         void queryClient.invalidateQueries({ queryKey: connectionKeys.connection(target) })
       }
