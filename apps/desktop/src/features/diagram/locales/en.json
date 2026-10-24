@@ -53,5 +53,21 @@
   "hideLink": "Hide",
   "hiddenLinks_one": "{{count}} reference hidden",
   "hiddenLinks_other": "{{count}} references hidden",
-  "showHidden": "Show"
+  "showHidden": "Show",
+  "addArea": "Add an area",
+  "areaName": "Area name",
+  "areaPlaceholder": "Name this area",
+  "areaColor": "Area color",
+  "removeArea": "Delete area",
+  "colors": {
+    "red": "Red",
+    "orange": "Orange",
+    "yellow": "Yellow",
+    "green": "Green",
+    "teal": "Teal",
+    "blue": "Blue",
+    "purple": "Purple",
+    "pink": "Pink",
+    "gray": "Gray"
+  }
 }

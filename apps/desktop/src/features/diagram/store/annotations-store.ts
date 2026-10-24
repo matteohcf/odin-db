@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   type DiagramAnnotations,
+  type DiagramArea,
   type DiagramNote,
   linkId,
   NO_ANNOTATIONS,
@@ -19,6 +20,9 @@ interface AnnotationsState {
   addNote: (key: string, note: DiagramNote) => void;
   updateNote: (key: string, id: string, patch: Partial<Omit<DiagramNote, "id">>) => void;
   removeNote: (key: string, id: string) => void;
+  addArea: (key: string, area: DiagramArea) => void;
+  updateArea: (key: string, id: string, patch: Partial<Omit<DiagramArea, "id">>) => void;
+  removeArea: (key: string, id: string) => void;
 }
 
 export const useAnnotations = create<AnnotationsState>()(
@@ -61,8 +65,33 @@ export const useAnnotations = create<AnnotationsState>()(
             ...current,
             notes: current.notes.filter((note) => note.id !== id),
           })),
+        addArea: (key, area) =>
+          edit(key, (current) => ({ ...current, areas: [...current.areas, area] })),
+        updateArea: (key, id, patch) =>
+          edit(key, (current) => ({
+            ...current,
+            areas: current.areas.map((area) => (area.id === id ? { ...area, ...patch } : area)),
+          })),
+        removeArea: (key, id) =>
+          edit(key, (current) => ({
+            ...current,
+            areas: current.areas.filter((area) => area.id !== id),
+          })),
       };
     },
-    { name: "odin-diagram-annotations", version: 1 },
+    {
+      name: "odin-diagram-annotations",
+      version: 2,
+      // Version 1 had no areas.
+      migrate: (persisted, version) => {
+        const state = persisted as { byDatabase: Record<string, DiagramAnnotations> };
+        if (version < 2) {
+          for (const key of Object.keys(state.byDatabase)) {
+            state.byDatabase[key] = { ...NO_ANNOTATIONS, ...state.byDatabase[key] };
+          }
+        }
+        return state as AnnotationsState;
+      },
+    },
   ),
 );

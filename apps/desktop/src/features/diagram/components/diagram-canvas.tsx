@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   Map as MapIcon,
   Maximize,
+  SquareDashed,
   StickyNote,
 } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
@@ -30,18 +31,33 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { IconAction } from "@/components/icon-action";
 import { call, errorMessage } from "@/lib/ipc";
-import { annotate, drawnLink, linkId, NO_ANNOTATIONS, NOTE_SIZE } from "../lib/annotations";
+import { PROFILE_COLORS } from "@/lib/profile-colors";
+import {
+  AREA_SIZE,
+  annotate,
+  drawnLink,
+  linkId,
+  NO_ANNOTATIONS,
+  NOTE_SIZE,
+  nodesInside,
+} from "../lib/annotations";
 import { buildGraph, type FieldMode, HEADER_HANDLE } from "../lib/diagram-graph";
 import { toMermaid } from "../lib/mermaid";
 import { useAnnotations } from "../store/annotations-store";
 import { usePositions } from "../store/positions-store";
 import { DiagramActions } from "./diagram-actions";
+import { AREA_HANDLE, type DiagramAreaNode, DiagramAreaNodeView } from "./diagram-area-node";
 import { type DiagramCollectionNode, DiagramCollectionNodeView } from "./diagram-collection-node";
 import { type DiagramEdge, DiagramEdgeView } from "./diagram-edge";
 import { type DiagramNoteNode, DiagramNoteNodeView } from "./diagram-note-node";
 import { DiagramSearch } from "./diagram-search";
 
-const nodeTypes = { collection: DiagramCollectionNodeView, note: DiagramNoteNodeView };
+const nodeTypes = {
+  collection: DiagramCollectionNodeView,
+  note: DiagramNoteNodeView,
+  area: DiagramAreaNodeView,
+};
+type DiagramNode = DiagramCollectionNode | DiagramNoteNode | DiagramAreaNode;
 const edgeTypes = { link: DiagramEdgeView };
 const EDGE_STROKE = "color-mix(in oklab, var(--muted-foreground) 60%, transparent)";
 
@@ -67,7 +83,7 @@ interface DiagramCanvasProps {
 
 /**
  * The collections of a database as cards, joined by the references found between them, with
- * the references and notes the user added. Needs a `ReactFlowProvider` above it.
+ * the references, notes and areas the user added. Needs a `ReactFlowProvider` above it.
  */
 export function DiagramCanvas({ diagram, database, storageKey, onOpen }: DiagramCanvasProps) {
   const { t } = useTranslation("diagram");
@@ -79,13 +95,30 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
   const [focus, setFocus] = useState<string | null>(null);
   const saved = usePositions((s) => s.byDatabase[storageKey]);
   const move = usePositions((s) => s.move);
+  const moveMany = usePositions((s) => s.moveMany);
   const reset = usePositions((s) => s.reset);
   const annotations = useAnnotations((s) => s.byDatabase[storageKey]) ?? NO_ANNOTATIONS;
-  const { addLink, removeLink, hideLink, showHidden, addNote, updateNote, removeNote } =
-    useAnnotations.getState();
+  const {
+    addLink,
+    removeLink,
+    hideLink,
+    showHidden,
+    addNote,
+    updateNote,
+    removeNote,
+    addArea,
+    updateArea,
+    removeArea,
+  } = useAnnotations.getState();
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
-  const [freshNote, setFreshNote] = useState<string | null>(null);
+  // The note or area just added, which takes the keyboard.
+  const [fresh, setFresh] = useState<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
+  // While an area is dragged: where it started, and the nodes inside it then.
+  const carried = useRef<{
+    start: { x: number; y: number };
+    nodes: Map<string, { x: number; y: number }>;
+  } | null>(null);
 
   const { diagram: shown, manual } = useMemo(
     () => annotate(diagram, annotations),
@@ -99,13 +132,26 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
     () => buildGraph(shown, mode, saved, diagram.links),
     [shown, mode, saved, diagram.links],
   );
-  const [nodes, setNodes, onNodesChange] = useNodesState<DiagramCollectionNode | DiagramNoteNode>(
-    [],
-  );
+  const [nodes, setNodes, onNodesChange] = useNodesState<DiagramNode>([]);
   useEffect(() => {
     setNodes((current) => {
       const selected = new Set(current.filter((node) => node.selected).map((node) => node.id));
       return [
+        ...annotations.areas.map(
+          (area): DiagramAreaNode => ({
+            id: area.id,
+            type: "area",
+            position: area.position,
+            width: area.width,
+            height: area.height,
+            data: { label: area.label, color: area.color, autoFocus: area.id === fresh },
+            selected: selected.has(area.id),
+            zIndex: -1,
+            dragHandle: `.${AREA_HANDLE}`,
+            // Only its title strip and handles take the pointer: inside, the canvas pans.
+            style: { pointerEvents: "none" },
+          }),
+        ),
         ...graph.nodes.map(
           (node): DiagramCollectionNode => ({
             ...node,
@@ -120,13 +166,13 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
             position: note.position,
             width: note.width,
             height: note.height,
-            data: { text: note.text, autoFocus: note.id === freshNote },
+            data: { text: note.text, autoFocus: note.id === fresh },
             selected: selected.has(note.id),
           }),
         ),
       ];
     });
-  }, [graph, annotations.notes, freshNote, setNodes]);
+  }, [graph, annotations.notes, annotations.areas, fresh, setNodes]);
 
   // The hovered or selected collection lights up its references; the rest steps back.
   const lit =
@@ -162,21 +208,91 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
     addLink(storageKey, drawnLink(diagram, source, sourceHandle, target));
   }
 
-  function newNote() {
+  /** Where something of `size` sits centred in the visible part of the diagram. */
+  function centred(size: { width: number; height: number }) {
     const rect = container.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect) return null;
     const center = flow.screenToFlowPosition({
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
     });
+    return { x: center.x - size.width / 2, y: center.y - size.height / 2 };
+  }
+
+  function newNote() {
+    const position = centred(NOTE_SIZE);
+    if (!position) return;
     const id = `note-${crypto.randomUUID()}`;
-    addNote(storageKey, {
-      id,
-      text: "",
-      position: { x: center.x - NOTE_SIZE.width / 2, y: center.y - NOTE_SIZE.height / 2 },
-      ...NOTE_SIZE,
-    });
-    setFreshNote(id);
+    addNote(storageKey, { id, text: "", position, ...NOTE_SIZE });
+    setFresh(id);
+  }
+
+  function newArea() {
+    const position = centred(AREA_SIZE);
+    if (!position) return;
+    const id = `area-${crypto.randomUUID()}`;
+    // Blue first, then around the palette, so neighbouring areas differ.
+    const color = PROFILE_COLORS[(annotations.areas.length + 5) % PROFILE_COLORS.length] ?? "blue";
+    addArea(storageKey, { id, label: "", color, position, ...AREA_SIZE });
+    setFresh(id);
+  }
+
+  const sizeOf = (node: DiagramNode) => ({
+    width: node.measured?.width ?? node.width ?? 0,
+    height: node.measured?.height ?? node.height ?? 0,
+  });
+
+  function startDrag(node: DiagramNode) {
+    if (node.type !== "area") return;
+    const others = flow
+      .getNodes()
+      .filter((other) => other.type !== "area")
+      .map((other) => ({
+        id: other.id,
+        position: other.position,
+        ...sizeOf(other as DiagramNode),
+      }));
+    const inside = new Set(nodesInside({ position: node.position, ...sizeOf(node) }, others));
+    carried.current = {
+      start: node.position,
+      nodes: new Map(others.filter((o) => inside.has(o.id)).map((o) => [o.id, o.position])),
+    };
+  }
+
+  function drag(node: DiagramNode) {
+    const moving = carried.current;
+    if (!moving || node.type !== "area") return;
+    const dx = node.position.x - moving.start.x;
+    const dy = node.position.y - moving.start.y;
+    setNodes((list) =>
+      list.map((other) => {
+        const from = moving.nodes.get(other.id);
+        return from ? { ...other, position: { x: from.x + dx, y: from.y + dy } } : other;
+      }),
+    );
+  }
+
+  function stopDrag(node: DiagramNode) {
+    if (node.type === "note") {
+      updateNote(storageKey, node.id, { position: node.position });
+      return;
+    }
+    if (node.type === "collection") {
+      move(storageKey, node.id, node.position);
+      return;
+    }
+    updateArea(storageKey, node.id, { position: node.position });
+    const moving = carried.current;
+    carried.current = null;
+    if (!moving) return;
+    const placed = new Map(flow.getNodes().map((other) => [other.id, other]));
+    const collections: Record<string, { x: number; y: number }> = {};
+    for (const id of moving.nodes.keys()) {
+      const other = placed.get(id);
+      if (other?.type === "note") updateNote(storageKey, id, { position: other.position });
+      else if (other) collections[id] = other.position;
+    }
+    moveMany(storageKey, collections);
   }
 
   const actions = useMemo(
@@ -196,8 +312,17 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
         { x, y, width, height }: { x: number; y: number; width: number; height: number },
       ) => updateNote(storageKey, id, { position: { x, y }, width, height }),
       onRemoveNote: (id: string) => removeNote(storageKey, id),
+      onAreaChange: (
+        id: string,
+        patch: { label?: string; color?: DiagramAreaNode["data"]["color"] },
+      ) => updateArea(storageKey, id, patch),
+      onAreaResize: (
+        id: string,
+        { x, y, width, height }: { x: number; y: number; width: number; height: number },
+      ) => updateArea(storageKey, id, { position: { x, y }, width, height }),
+      onRemoveArea: (id: string) => removeArea(storageKey, id),
     }),
-    [onOpen, storageKey, removeLink, hideLink, updateNote, removeNote],
+    [onOpen, storageKey, removeLink, hideLink, updateNote, removeNote, updateArea, removeArea],
   );
 
   const matchIds = useMemo(() => {
@@ -266,11 +391,9 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
-        onNodeDragStop={(_, node) =>
-          node.type === "note"
-            ? updateNote(storageKey, node.id, { position: node.position })
-            : move(storageKey, node.id, node.position)
-        }
+        onNodeDragStart={(_, node) => startDrag(node)}
+        onNodeDrag={(_, node) => drag(node)}
+        onNodeDragStop={(_, node) => stopDrag(node)}
         onNodeMouseEnter={(_, node) => node.type === "collection" && setFocus(node.id)}
         onNodeMouseLeave={() => setFocus(null)}
         onNodeDoubleClick={(_, node) => node.type === "collection" && onOpen(node.id)}
@@ -287,6 +410,8 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
         edgesFocusable={false}
+        // An area stays behind its collections even while selected.
+        elevateNodesOnSelect={false}
         // A diagram only shows the database: no key removes anything from it.
         deleteKeyCode={null}
         onlyRenderVisibleElements
@@ -347,6 +472,9 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
             }}
           >
             <ClipboardCopy />
+          </IconAction>
+          <IconAction label={t("addArea")} onClick={newArea}>
+            <SquareDashed />
           </IconAction>
           <IconAction label={t("addNote")} onClick={newNote}>
             <StickyNote />

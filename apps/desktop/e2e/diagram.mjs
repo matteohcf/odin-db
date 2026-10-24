@@ -167,6 +167,57 @@ await check("a note is added, kept, and deleted", async () => {
   await note.waitFor({ state: "detached" });
 });
 
+await check("an area groups collections and carries them along", async () => {
+  await page.getByRole("button", { name: "Fit to screen" }).click();
+  await page.waitForTimeout(400);
+  await page.getByRole("button", { name: "Add an area" }).click();
+  const name = page.getByRole("textbox", { name: "Area name" });
+  await name.waitFor();
+  await page.keyboard.type("Catalog");
+  const area = page.locator(".react-flow__node-area");
+  const box = await area.boundingBox();
+  const coupons = node("coupons");
+  const from = await coupons.locator("div").first().boundingBox();
+  if (!box || !from) throw new Error("no geometry");
+  // Drop coupons in the middle of the area, by its header.
+  await page.mouse.move(from.x + 60, from.y + 14);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 40, box.y + 60, { steps: 10 });
+  await page.mouse.up();
+  const placed = await coupons.boundingBox();
+  const areaBefore = await area.boundingBox();
+  // Then move the area by its title strip.
+  const handle = area.locator(".diagram-area-handle");
+  const strip = await handle.boundingBox();
+  if (!placed || !strip) throw new Error("no geometry");
+  await page.mouse.move(strip.x + strip.width - 60, strip.y + strip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(strip.x + strip.width - 60 + 120, strip.y + strip.height / 2 + 80, {
+    steps: 10,
+  });
+  await page.mouse.up();
+  const after = await coupons.boundingBox();
+  const areaAfter = await area.boundingBox();
+  if (!after || !areaBefore || !areaAfter) throw new Error("no geometry");
+  const dx = areaAfter.x - areaBefore.x;
+  const dy = areaAfter.y - areaBefore.y;
+  if (dx < 50 || Math.abs(after.x - placed.x - dx) > 2 || Math.abs(after.y - placed.y - dy) > 2)
+    throw new Error(`coupons did not follow: ${JSON.stringify({ dx, dy, placed, after })}`);
+  await page.locator(".react-flow__pane").click({ position: { x: 20, y: 400 } });
+  await page.waitForTimeout(200);
+  await shot("09-area");
+  await page.reload();
+  await tree
+    .getByRole("button", { name: /^Local development/ })
+    .first()
+    .click();
+  await name.waitFor({ timeout: 15000 });
+  if ((await name.inputValue()) !== "Catalog") throw new Error("area lost");
+  await handle.hover();
+  await page.getByRole("button", { name: "Delete area" }).click();
+  await area.waitFor({ state: "detached" });
+});
+
 await check("double-clicking a collection opens it", async () => {
   await page.getByRole("button", { name: "Fit to screen" }).click();
   await page.waitForTimeout(400);

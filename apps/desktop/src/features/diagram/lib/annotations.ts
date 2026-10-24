@@ -1,8 +1,18 @@
-import type { DatabaseDiagram, DiagramLink } from "@odin-db/bindings";
+import type { DatabaseDiagram, DiagramLink, ProfileColor } from "@odin-db/bindings";
 
 export interface DiagramNote {
   id: string;
   text: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+}
+
+/** A named, tinted frame grouping the collections drawn inside it. */
+export interface DiagramArea {
+  id: string;
+  label: string;
+  color: ProfileColor;
   position: { x: number; y: number };
   width: number;
   height: number;
@@ -15,9 +25,10 @@ export interface DiagramAnnotations {
   /** Ids of inferred references the user hid as wrong. */
   hidden: string[];
   notes: DiagramNote[];
+  areas: DiagramArea[];
 }
 
-export const NO_ANNOTATIONS: DiagramAnnotations = { links: [], hidden: [], notes: [] };
+export const NO_ANNOTATIONS: DiagramAnnotations = { links: [], hidden: [], notes: [], areas: [] };
 
 export const linkId = (link: Pick<DiagramLink, "from" | "field" | "to">) =>
   `${link.from}.${link.field}->${link.to}`;
@@ -58,3 +69,27 @@ export function drawnLink(
 
 export const NOTE_MIN = { width: 160, height: 72 };
 export const NOTE_SIZE = { width: 220, height: 120 };
+export const AREA_MIN = { width: 200, height: 120 };
+export const AREA_SIZE = { width: 520, height: 340 };
+
+/** The nodes lying wholly inside an area, which move with it. */
+export function nodesInside(
+  area: { position: { x: number; y: number }; width: number; height: number },
+  nodes: readonly {
+    id: string;
+    position: { x: number; y: number };
+    width: number;
+    height: number;
+  }[],
+): string[] {
+  const { x, y } = area.position;
+  return nodes
+    .filter(
+      (node) =>
+        node.position.x >= x &&
+        node.position.y >= y &&
+        node.position.x + node.width <= x + area.width &&
+        node.position.y + node.height <= y + area.height,
+    )
+    .map((node) => node.id);
+}

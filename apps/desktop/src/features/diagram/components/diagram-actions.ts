@@ -1,3 +1,4 @@
+import type { ProfileColor } from "@odin-db/bindings";
 import { createContext } from "react";
 
 /** What diagram nodes and edges can ask of their tab, without passing functions through data. */
@@ -8,6 +9,9 @@ export const DiagramActions = createContext<{
   onNoteChange: (id: string, text: string) => void;
   onNoteResize: (id: string, box: { x: number; y: number; width: number; height: number }) => void;
   onRemoveNote: (id: string) => void;
+  onAreaChange: (id: string, patch: { label?: string; color?: ProfileColor }) => void;
+  onAreaResize: (id: string, box: { x: number; y: number; width: number; height: number }) => void;
+  onRemoveArea: (id: string) => void;
 }>({
   onOpen: () => {},
   onRemoveLink: () => {},
@@ -15,4 +19,7 @@ export const DiagramActions = createContext<{
   onNoteChange: () => {},
   onNoteResize: () => {},
   onRemoveNote: () => {},
+  onAreaChange: () => {},
+  onAreaResize: () => {},
+  onRemoveArea: () => {},
 });

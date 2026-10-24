@@ -1,6 +1,6 @@
 import type { DatabaseDiagram, DiagramCollection } from "@odin-db/bindings";
 import { describe, expect, it } from "vitest";
-import { annotate, drawnLink, linkId, NO_ANNOTATIONS } from "./annotations";
+import { annotate, drawnLink, linkId, NO_ANNOTATIONS, nodesInside } from "./annotations";
 
 const collection = (name: string, fields: [string, string][] = []): DiagramCollection => ({
   name,
@@ -54,5 +54,17 @@ describe("drawnLink", () => {
   it("points at many from an array field", () => {
     expect(drawnLink(diagram, "orders", "tags", "customers").many).toBe(true);
     expect(drawnLink(diagram, "orders", "sku", "customers").many).toBe(false);
+  });
+});
+
+describe("nodesInside", () => {
+  it("keeps the nodes wholly inside the area", () => {
+    const area = { position: { x: 0, y: 0 }, width: 300, height: 200 };
+    const nodes = [
+      { id: "in", position: { x: 10, y: 10 }, width: 100, height: 50 },
+      { id: "across", position: { x: 250, y: 10 }, width: 100, height: 50 },
+      { id: "out", position: { x: 400, y: 10 }, width: 100, height: 50 },
+    ];
+    expect(nodesInside(area, nodes)).toEqual(["in"]);
   });
 });

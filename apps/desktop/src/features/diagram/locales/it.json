@@ -53,5 +53,21 @@
   "hideLink": "Nascondi",
   "hiddenLinks_one": "{{count}} riferimento nascosto",
   "hiddenLinks_other": "{{count}} riferimenti nascosti",
-  "showHidden": "Mostra"
+  "showHidden": "Mostra",
+  "addArea": "Aggiungi un'area",
+  "areaName": "Nome dell'area",
+  "areaPlaceholder": "Dai un nome all'area",
+  "areaColor": "Colore dell'area",
+  "removeArea": "Elimina area",
+  "colors": {
+    "red": "Rosso",
+    "orange": "Arancione",
+    "yellow": "Giallo",
+    "green": "Verde",
+    "teal": "Verde acqua",
+    "blue": "Blu",
+    "purple": "Viola",
+    "pink": "Rosa",
+    "gray": "Grigio"
+  }
 }
