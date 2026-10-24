@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/matteohcf/odin-db/compare/v1.2.0...v1.3.0) (2026-10-24)
+
+
+### Features
+
+* watch a collection's changes live ([806e732](https://github.com/matteohcf/odin-db/commit/806e732789cc0a3bf8c48a48e95e203803484a03))
+
+
+### Bug Fixes
+
+* **core:** ask the macOS keychain once, not once per saved password ([123ff75](https://github.com/matteohcf/odin-db/commit/123ff75368e01437bf16fe597f7923b480673fa1))
+* **desktop:** compass-style connection colors and a tidier sidebar ([4a640e6](https://github.com/matteohcf/odin-db/commit/4a640e672b7aa1e977569e367261fb9fdd90d032))
+* **desktop:** show one number on a connection folder, with a dot when any is open ([17c005e](https://github.com/matteohcf/odin-db/commit/17c005e323afe30406bad34e4fd885141419f114))
+
 ## [1.2.0](https://github.com/matteohcf/odin-db/compare/v1.1.0...v1.2.0) (2026-10-24)
 
 
