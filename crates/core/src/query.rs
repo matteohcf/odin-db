@@ -2,8 +2,10 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::time::Duration;
 
-use bson::Document;
+use bson::{Bson, Document};
+use mongodb::options::{Collation, Hint};
 use mongodb::{Collection, Cursor};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -49,6 +51,8 @@ pub struct FindRequest {
     pub skip: Option<u32>,
     pub limit: Option<u32>,
     pub batch_size: u32,
+    #[serde(default)]
+    pub options: QueryOptions,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -57,6 +61,77 @@ pub struct FindRequest {
 pub struct AggregateRequest {
     pub pipeline: Vec<EJsonDocument>,
     pub batch_size: u32,
+    #[serde(default)]
+    pub options: QueryOptions,
+}
+
+/// What a query may add besides its filter (ADR-0052): how strings compare, which index to
+/// use, and how long the server may work on it.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct QueryOptions {
+    /// e.g. `{ locale: "en", strength: 2 }` for case-insensitive matching.
+    #[serde(default)]
+    pub collation: Option<EJsonDocument>,
+    /// An index name, or its keys.
+    #[serde(default)]
+    pub hint: Option<EJsonValue>,
+    /// The server stops the query past this many milliseconds; `None` lets it run.
+    #[serde(default)]
+    pub max_time_ms: Option<u32>,
+}
+
+impl QueryOptions {
+    pub(crate) fn collation(&self) -> Result<Option<Collation>, CoreError> {
+        self.collation
+            .clone()
+            .map(|collation| {
+                bson::deserialize_from_document::<Collation>(Document::try_from(collation)?)
+                    .map_err(|error| CoreError::Validation(format!("collation: {error}")))
+            })
+            .transpose()
+    }
+
+    pub(crate) fn hint(&self) -> Result<Option<Hint>, CoreError> {
+        let Some(hint) = self.hint.clone() else {
+            return Ok(None);
+        };
+        match Bson::try_from(hint)? {
+            Bson::String(name) if !name.trim().is_empty() => Ok(Some(Hint::Name(name))),
+            Bson::Document(keys) if !keys.is_empty() => Ok(Some(Hint::Keys(keys))),
+            _ => Err(CoreError::Validation(
+                "hint: an index name or its keys, like { email: 1 }".into(),
+            )),
+        }
+    }
+
+    pub(crate) fn max_time(&self) -> Option<Duration> {
+        self.max_time_ms
+            .filter(|ms| *ms > 0)
+            .map(|ms| Duration::from_millis(u64::from(ms)))
+    }
+
+    /// The same options as fields of a raw command, as `explain` takes them.
+    pub(crate) fn add_to(&self, command: &mut Document) -> Result<(), CoreError> {
+        if let Some(collation) = self.collation.clone() {
+            command.insert("collation", Document::try_from(collation)?);
+        }
+        if let Some(hint) = self.hint()? {
+            command.insert(
+                "hint",
+                match hint {
+                    Hint::Name(name) => Bson::String(name),
+                    Hint::Keys(keys) => Bson::Document(keys),
+                    _ => Bson::Null,
+                },
+            );
+        }
+        if let Some(ms) = self.max_time_ms.filter(|ms| *ms > 0) {
+            command.insert("maxTimeMS", i64::from(ms));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -113,7 +188,14 @@ impl CursorRegistry {
         request: AggregateRequest,
     ) -> Result<DocumentPage, CoreError> {
         let batch_size = validate_batch_size(request.batch_size)?;
-        let cursor = aggregate_cursor(handle, namespace, request.pipeline, batch_size).await?;
+        let cursor = aggregate_cursor(
+            handle,
+            namespace,
+            request.pipeline,
+            batch_size,
+            &request.options,
+        )
+        .await?;
         self.first_page(handle, cursor, batch_size).await
     }
 
@@ -206,6 +288,15 @@ pub(crate) async fn find_cursor(
     if let Some(limit) = request.limit {
         find = find.limit(i64::from(limit));
     }
+    if let Some(collation) = request.options.collation()? {
+        find = find.collation(collation);
+    }
+    if let Some(hint) = request.options.hint()? {
+        find = find.hint(hint);
+    }
+    if let Some(max_time) = request.options.max_time() {
+        find = find.max_time(max_time);
+    }
     Ok(find.await?)
 }
 
@@ -215,6 +306,7 @@ pub(crate) async fn aggregate_cursor(
     namespace: &Namespace,
     pipeline: Vec<EJsonDocument>,
     batch_size: u32,
+    options: &QueryOptions,
 ) -> Result<Cursor<Document>, CoreError> {
     let batch_size = validate_batch_size(batch_size)?;
     let pipeline = to_pipeline(pipeline)?;
@@ -222,11 +314,20 @@ pub(crate) async fn aggregate_cursor(
         handle.ensure_writable()?;
     }
     let collection = namespace.collection(handle)?;
-    Ok(collection
+    let mut aggregate = collection
         .aggregate(pipeline)
         .batch_size(batch_size)
-        .allow_disk_use(true)
-        .await?)
+        .allow_disk_use(true);
+    if let Some(collation) = options.collation()? {
+        aggregate = aggregate.collation(collation);
+    }
+    if let Some(hint) = options.hint()? {
+        aggregate = aggregate.hint(hint);
+    }
+    if let Some(max_time) = options.max_time() {
+        aggregate = aggregate.max_time(max_time);
+    }
+    Ok(aggregate.await?)
 }
 
 /// The first `limit` results of a pipeline, for the stage previews of the
@@ -259,11 +360,20 @@ pub async fn count_documents(
     handle: &ConnectionHandle,
     namespace: &Namespace,
     filter: EJsonDocument,
+    options: &QueryOptions,
 ) -> Result<f64, CoreError> {
-    let count = namespace
-        .collection(handle)?
-        .count_documents(Document::try_from(filter)?)
-        .await?;
+    let collection = namespace.collection(handle)?;
+    let mut count = collection.count_documents(Document::try_from(filter)?);
+    if let Some(collation) = options.collation()? {
+        count = count.collation(collation);
+    }
+    if let Some(hint) = options.hint()? {
+        count = count.hint(hint);
+    }
+    if let Some(max_time) = options.max_time() {
+        count = count.max_time(max_time);
+    }
+    let count = count.await?;
     #[allow(clippy::cast_precision_loss)]
     Ok(count as f64)
 }

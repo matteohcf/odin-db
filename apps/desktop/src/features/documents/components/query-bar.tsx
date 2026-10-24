@@ -43,8 +43,16 @@ interface QueryBarProps {
 
 // Stable, so the store selector does not return a new array on every render.
 const NO_ENTRIES: never[] = [];
-const hasOptionsIn = (form: QueryForm) =>
-  form.sort !== "" || form.projection !== "" || form.skip !== "" || form.limit !== "";
+const OPTION_FIELDS = [
+  "sort",
+  "projection",
+  "skip",
+  "limit",
+  "collation",
+  "hint",
+  "maxTimeMS",
+] as const satisfies readonly QueryField[];
+const hasOptionsIn = (form: QueryForm) => OPTION_FIELDS.some((field) => (form[field] ?? "") !== "");
 
 export function QueryBar({
   collection,
@@ -72,7 +80,7 @@ export function QueryBar({
   useEffect(() => {
     if (hasOptions) setExpanded(true);
   }, [hasOptions]);
-  const showOptions = expanded || errors.sort || errors.projection || errors.skip || errors.limit;
+  const showOptions = expanded || OPTION_FIELDS.some((field) => errors[field] !== undefined);
 
   const completionsFor = useQueryCompletions(fields);
 
@@ -208,57 +216,107 @@ export function QueryBar({
       </div>
 
       {showOptions && (
-        <div className="flex items-center gap-2">
-          <QueryFieldFrame
-            label={t("query.sort")}
-            invalid={Boolean(errors.sort)}
-            className="flex-1"
-          >
-            <QueryEditor
-              value={form.sort}
-              onChange={(value) => onChange("sort", value)}
-              onSubmit={onRun}
-              completions={completionsFor("sort")}
-              placeholder={t("query.sortPlaceholder")}
-              ariaLabel={t("query.sort")}
-              invalid={Boolean(errors.sort)}
-            />
-          </QueryFieldFrame>
-          <QueryFieldFrame
-            label={t("query.projection")}
-            invalid={Boolean(errors.projection)}
-            className="flex-1"
-          >
-            <QueryEditor
-              value={form.projection}
-              onChange={(value) => onChange("projection", value)}
-              onSubmit={onRun}
-              completions={completionsFor("projection")}
-              placeholder={t("query.projectionPlaceholder")}
-              ariaLabel={t("query.projection")}
-              invalid={Boolean(errors.projection)}
-            />
-          </QueryFieldFrame>
-          {(["skip", "limit"] as const).map((field) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             <QueryFieldFrame
-              key={field}
-              label={t(`query.${field}`)}
-              invalid={Boolean(errors[field])}
-              className="w-28"
+              label={t("query.sort")}
+              invalid={Boolean(errors.sort)}
+              className="flex-1"
+            >
+              <QueryEditor
+                value={form.sort}
+                onChange={(value) => onChange("sort", value)}
+                onSubmit={onRun}
+                completions={completionsFor("sort")}
+                placeholder={t("query.sortPlaceholder")}
+                ariaLabel={t("query.sort")}
+                invalid={Boolean(errors.sort)}
+              />
+            </QueryFieldFrame>
+            <QueryFieldFrame
+              label={t("query.projection")}
+              invalid={Boolean(errors.projection)}
+              className="flex-1"
+            >
+              <QueryEditor
+                value={form.projection}
+                onChange={(value) => onChange("projection", value)}
+                onSubmit={onRun}
+                completions={completionsFor("projection")}
+                placeholder={t("query.projectionPlaceholder")}
+                ariaLabel={t("query.projection")}
+                invalid={Boolean(errors.projection)}
+              />
+            </QueryFieldFrame>
+            {(["skip", "limit"] as const).map((field) => (
+              <QueryFieldFrame
+                key={field}
+                label={t(`query.${field}`)}
+                invalid={Boolean(errors[field])}
+                className="w-28"
+              >
+                <input
+                  value={form[field]}
+                  placeholder={t("query.numberPlaceholder")}
+                  onChange={(event) => onChange(field, event.target.value)}
+                  onKeyDown={onNumberKeyDown}
+                  aria-label={t(`query.${field}`)}
+                  aria-invalid={errors[field] !== undefined}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  className="h-full min-w-0 flex-1 bg-transparent pr-2.5 font-mono text-xs outline-none placeholder:text-muted-foreground/60"
+                />
+              </QueryFieldFrame>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <QueryFieldFrame
+              label={t("query.collation")}
+              invalid={Boolean(errors.collation)}
+              className="flex-1"
+            >
+              <QueryEditor
+                value={form.collation ?? ""}
+                onChange={(value) => onChange("collation", value)}
+                onSubmit={onRun}
+                placeholder={t("query.collationPlaceholder")}
+                ariaLabel={t("query.collation")}
+                invalid={Boolean(errors.collation)}
+              />
+            </QueryFieldFrame>
+            <QueryFieldFrame
+              label={t("query.hint")}
+              invalid={Boolean(errors.hint)}
+              className="flex-1"
+            >
+              <QueryEditor
+                value={form.hint ?? ""}
+                onChange={(value) => onChange("hint", value)}
+                onSubmit={onRun}
+                completions={completionsFor("sort")}
+                placeholder={t("query.hintPlaceholder")}
+                ariaLabel={t("query.hint")}
+                invalid={Boolean(errors.hint)}
+              />
+            </QueryFieldFrame>
+            <QueryFieldFrame
+              label={t("query.maxTimeMS")}
+              invalid={Boolean(errors.maxTimeMS)}
+              className="w-44"
             >
               <input
-                value={form[field]}
-                placeholder={t("query.numberPlaceholder")}
-                onChange={(event) => onChange(field, event.target.value)}
+                value={form.maxTimeMS ?? ""}
+                placeholder={t("query.maxTimePlaceholder")}
+                onChange={(event) => onChange("maxTimeMS", event.target.value)}
                 onKeyDown={onNumberKeyDown}
-                aria-label={t(`query.${field}`)}
-                aria-invalid={errors[field] !== undefined}
+                aria-label={t("query.maxTimeMS")}
+                aria-invalid={errors.maxTimeMS !== undefined}
                 inputMode="numeric"
                 autoComplete="off"
                 className="h-full min-w-0 flex-1 bg-transparent pr-2.5 font-mono text-xs outline-none placeholder:text-muted-foreground/60"
               />
             </QueryFieldFrame>
-          ))}
+          </div>
         </div>
       )}
 

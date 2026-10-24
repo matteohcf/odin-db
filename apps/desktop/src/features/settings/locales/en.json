@@ -96,8 +96,8 @@
     "localTime": "Local time"
   },
   "data": {
-    "title": "Query history",
-    "description": "Recent queries are kept on this computer only.",
+    "title": "Queries",
+    "description": "Limits for queries, and the recent ones kept on this computer only.",
     "historySize": "Recent queries per collection",
     "historySizeHint": "Saved queries are never trimmed.",
     "queries_one": "{{count, number}} query",
@@ -105,7 +105,12 @@
     "clearHistory": "Clear recent queries",
     "clearHistoryHint": "Forgets the recent queries of every collection. Saved queries stay.",
     "clear": "Clear",
-    "historyCleared": "Recent queries cleared."
+    "historyCleared": "Recent queries cleared.",
+    "timeLimit": "Time limit",
+    "timeLimitHint": "The server stops queries, counts and pipelines that run longer, unless they set their own.",
+    "noTimeLimit": "None",
+    "seconds_one": "{{count, number}} second",
+    "seconds_other": "{{count, number}} seconds"
   },
   "tools": {
     "title": "Bundled tools",

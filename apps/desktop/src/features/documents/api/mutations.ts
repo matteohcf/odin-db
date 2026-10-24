@@ -5,6 +5,7 @@ import {
   type EJsonValue,
   type ExplainRequest,
   type Namespace,
+  type QueryOptions,
 } from "@odin-db/bindings";
 import { useMutation } from "@tanstack/react-query";
 import { call } from "@/lib/ipc";
@@ -44,8 +45,13 @@ export function useDeleteDocument() {
 
 export function useCountDocuments() {
   return useMutation({
-    mutationFn: ({ connectionId, namespace, filter }: Target & { filter: EJsonDocument }) =>
-      call(commands.countDocuments(connectionId, namespace, filter)),
+    mutationFn: ({
+      connectionId,
+      namespace,
+      filter,
+      options,
+    }: Target & { filter: EJsonDocument; options?: QueryOptions | undefined }) =>
+      call(commands.countDocuments(connectionId, namespace, filter, options ?? null)),
   });
 }
 

@@ -101,7 +101,14 @@ export const commands = {
 	findDocuments: (connectionId: ConnectionId, namespace: Namespace, request: FindRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("find_documents", { connectionId, namespace, request })),
 	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
 	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
-	countDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("count_documents", { connectionId, namespace, filter })),
+	countDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, options: {
+	/**  e.g. `{ locale: "en", strength: 2 }` for case-insensitive matching. */
+	collation?: EJsonDocument | null,
+	/**  An index name, or its keys. */
+	hint?: EJsonValue | null,
+	/**  The server stops the query past this many milliseconds; `None` lets it run. */
+	maxTimeMs?: number | null,
+} | null) => typedError<number | null, IpcError>(__TAURI_INVOKE("count_documents", { connectionId, namespace, filter, options })),
 	createCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("create_collection", { connectionId, namespace })),
 	renameCollection: (connectionId: ConnectionId, namespace: Namespace, newName: string) => typedError<null, IpcError>(__TAURI_INVOKE("rename_collection", { connectionId, namespace, newName })),
 	dropCollection: (connectionId: ConnectionId, namespace: Namespace) => typedError<null, IpcError>(__TAURI_INVOKE("drop_collection", { connectionId, namespace })),
@@ -270,6 +277,7 @@ export type AdvisorSource = {
 export type AggregateRequest = {
 	pipeline: EJsonDocument[],
 	batchSize: number,
+	options?: QueryOptions,
 };
 
 /**  Everything the AI settings show: the catalog with what is on disk, and the machine. */
@@ -672,6 +680,7 @@ export type ExplainRequest = {
 	sort: EJsonDocument | null,
 	skip: number | null,
 	limit: number | null,
+	options?: QueryOptions,
 };
 
 export type ExportFormat = "jsonArray" | "ndjson" | "csv";
@@ -749,6 +758,7 @@ export type FindRequest = {
 	skip: number | null,
 	limit: number | null,
 	batchSize: number,
+	options?: QueryOptions,
 };
 
 export type Frequency = "hourly" | "daily" | "weekly";
@@ -1013,6 +1023,19 @@ export type ProfilingStatus = {
 	level: ProfilingLevel,
 	/**  Operations at least this long count as slow, in milliseconds. */
 	slowMs: number | null,
+};
+
+/**
+ *  What a query may add besides its filter (ADR-0052): how strings compare, which index to
+ *  use, and how long the server may work on it.
+ */
+export type QueryOptions = {
+	/**  e.g. `{ locale: "en", strength: 2 }` for case-insensitive matching. */
+	collation?: EJsonDocument | null,
+	/**  An index name, or its keys. */
+	hint?: EJsonValue | null,
+	/**  The server stops the query past this many milliseconds; `None` lets it run. */
+	maxTimeMs?: number | null,
 };
 
 export type QueryPlan = {

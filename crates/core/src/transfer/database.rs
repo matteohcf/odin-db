@@ -14,7 +14,7 @@ use crate::CoreError;
 use crate::browse::{self, CollectionKind};
 use crate::connection::ConnectionHandle;
 use crate::ejson::EJsonDocument;
-use crate::query::{FindRequest, Namespace};
+use crate::query::{FindRequest, Namespace, QueryOptions};
 
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -116,6 +116,7 @@ pub async fn export_database(
                         skip: None,
                         limit: None,
                         batch_size: 1000,
+                        options: QueryOptions::default(),
                     },
                 },
                 format: request.format,

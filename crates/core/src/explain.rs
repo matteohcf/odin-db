@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
 use crate::ejson::{EJsonDocument, number_of};
-use crate::query::Namespace;
+use crate::query::{Namespace, QueryOptions};
 
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -17,6 +17,8 @@ pub struct ExplainRequest {
     pub sort: Option<EJsonDocument>,
     pub skip: Option<u32>,
     pub limit: Option<u32>,
+    #[serde(default)]
+    pub options: QueryOptions,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -62,6 +64,7 @@ pub async fn explain_find(
     if let Some(limit) = request.limit {
         find.insert("limit", i64::from(limit));
     }
+    request.options.add_to(&mut find)?;
     let raw = handle
         .client
         .database(&namespace.database)

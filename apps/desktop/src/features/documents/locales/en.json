@@ -9,7 +9,7 @@
     "limit": "Limit",
     "run": "Run",
     "runShortcut": "Run query",
-    "options": "Sort and projection",
+    "options": "Options",
     "filterPlaceholder": "{ status: \"active\", age: { $gt: 30 } }",
     "sortPlaceholder": "{ createdAt: -1 }",
     "projectionPlaceholder": "{ name: 1, email: 1 }",
@@ -17,7 +17,13 @@
     "invalidNumber": "Use a whole number of 0 or more.",
     "reset": "Reset",
     "resetHint": "Clear the query and show all documents",
-    "suggest": "Show suggestions"
+    "suggest": "Show suggestions",
+    "collation": "Collation",
+    "collationPlaceholder": "{ locale: \"en\", strength: 2 }",
+    "hint": "Hint",
+    "hintPlaceholder": "Index name or { field: 1 }",
+    "maxTimeMS": "Max time (ms)",
+    "maxTimePlaceholder": "Default"
   },
   "results": {
     "label": "Documents in {{collection}}",

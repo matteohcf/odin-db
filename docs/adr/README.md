@@ -55,3 +55,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0049](0049-results-map.md) | Results on a map | Accepted |
 | [0050](0050-customizable-shortcuts.md) | Customizable shortcuts | Accepted |
 | [0051](0051-file-picking-and-dropping.md) | Picking and dropping files | Accepted |
+| [0052](0052-query-options.md) | Collation, hint and time limit for queries | Accepted |

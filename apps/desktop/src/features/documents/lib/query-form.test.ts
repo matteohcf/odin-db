@@ -49,4 +49,31 @@ describe("parseQueryForm", () => {
       expect(result.errors.skip).toBe("bad number");
     }
   });
+
+  it("parses collation, hint and time limit into query options", async () => {
+    const result = await parseQueryForm(
+      {
+        ...emptyQueryForm,
+        collation: "locale: 'en', strength: 2",
+        hint: "'name_1'",
+        maxTimeMS: "0",
+      },
+      messages,
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      query: {
+        options: {
+          collation: { locale: "en", strength: { $numberInt: "2" } },
+          hint: "name_1",
+          maxTimeMs: 0,
+        },
+      },
+    });
+    const byKeys = await parseQueryForm({ ...emptyQueryForm, hint: "{ age: 1 }" }, messages);
+    expect(byKeys).toMatchObject({
+      ok: true,
+      query: { options: { hint: { age: { $numberInt: "1" } } } },
+    });
+  });
 });

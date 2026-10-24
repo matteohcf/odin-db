@@ -51,9 +51,11 @@ pub async fn count_documents(
     connection_id: ConnectionId,
     namespace: Namespace,
     filter: EJsonDocument,
+    options: Option<query::QueryOptions>,
 ) -> Result<f64, IpcError> {
     let handle = state.connections.get(connection_id).await?;
-    Ok(query::count_documents(&handle, &namespace, filter).await?)
+    let options = options.unwrap_or_default();
+    Ok(query::count_documents(&handle, &namespace, filter, &options).await?)
 }
 
 /// How the server runs a find: winning plan, indexes and counts.

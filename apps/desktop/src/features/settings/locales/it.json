@@ -96,8 +96,8 @@
     "localTime": "Ora locale"
   },
   "data": {
-    "title": "Cronologia query",
-    "description": "Le query recenti restano solo su questo computer.",
+    "title": "Query",
+    "description": "Limiti per le query e quelle recenti, salvate solo su questo computer.",
     "historySize": "Query recenti per collezione",
     "historySizeHint": "Le query salvate non vengono mai eliminate.",
     "queries_one": "{{count, number}} query",
@@ -105,7 +105,12 @@
     "clearHistory": "Cancella le query recenti",
     "clearHistoryHint": "Dimentica le query recenti di tutte le collezioni. Le query salvate restano.",
     "clear": "Cancella",
-    "historyCleared": "Query recenti cancellate."
+    "historyCleared": "Query recenti cancellate.",
+    "timeLimit": "Tempo massimo",
+    "timeLimitHint": "Il server interrompe query, conteggi e pipeline che durano di più, se non impostano un loro limite.",
+    "noTimeLimit": "Nessuno",
+    "seconds_one": "{{count, number}} secondo",
+    "seconds_other": "{{count, number}} secondi"
   },
   "tools": {
     "title": "Strumenti inclusi",

@@ -45,7 +45,7 @@ import { useSampleFields } from "@/hooks/use-sample-fields";
 import { useShortcut } from "@/hooks/use-shortcut";
 import type { JsonObject } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
-import { useSettings } from "@/lib/settings";
+import { useSettings, withTimeLimit } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import {
   useCountDocuments,
@@ -180,7 +180,13 @@ export function DocumentsView({
       setRunning(true);
       await results.run(
         (batchSize) =>
-          call(commands.findDocuments(connection.id, namespace, { ...query, batchSize })),
+          call(
+            commands.findDocuments(connection.id, namespace, {
+              ...query,
+              batchSize,
+              options: withTimeLimit(query.options),
+            }),
+          ),
         { keepRows },
       );
       setRunning(false);
@@ -195,9 +201,12 @@ export function DocumentsView({
       return;
     }
     setFormErrors({});
-    const { filter, sort, projection, skip, limit } = parsed.query;
+    const { filter, sort, projection, skip, limit, options } = parsed.query;
     explainFind.mutate(
-      { ...target, request: { filter, sort, projection, skip, limit } },
+      {
+        ...target,
+        request: { filter, sort, projection, skip, limit, options: withTimeLimit(options) },
+      },
       {
         onSuccess: (result) =>
           setPlan({ plan: result, suggestedIndex: suggestIndexKeys(filter, sort) }),
@@ -586,7 +595,13 @@ export function DocumentsView({
               variant="ghost"
               size="sm"
               className="h-6 px-2 text-xs"
-              onClick={() => count.mutate({ ...target, filter: lastQuery.current.filter })}
+              onClick={() =>
+                count.mutate({
+                  ...target,
+                  filter: lastQuery.current.filter,
+                  options: withTimeLimit(lastQuery.current.options),
+                })
+              }
               disabled={count.isPending}
             >
               {count.isPending ? t("count.pending") : t("count.action")}

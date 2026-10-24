@@ -25,9 +25,12 @@ export const historyKey = (profileId: string, database: string, collection: stri
   JSON.stringify([profileId, database, collection]);
 
 export const sameForm = (a: QueryForm, b: QueryForm) =>
-  (Object.keys(a) as (keyof QueryForm)[]).every((field) => a[field].trim() === b[field].trim());
+  (Object.keys(a) as (keyof QueryForm)[]).every(
+    (field) => (a[field] ?? "").trim() === (b[field] ?? "").trim(),
+  );
 
-const isEmpty = (form: QueryForm) => Object.values(form).every((value) => value.trim() === "");
+const isEmpty = (form: QueryForm) =>
+  Object.values(form).every((value) => (value ?? "").trim() === "");
 
 /** Recent queries per collection, kept across restarts. */
 export const useQueryHistory = create<QueryHistoryState>()(

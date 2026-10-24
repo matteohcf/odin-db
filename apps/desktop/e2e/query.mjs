@@ -113,7 +113,7 @@ await check("picking an enum-like field offers its values", async () => {
 });
 
 await check("sort suggests fields then directions", async () => {
-  await page.getByRole("button", { name: "Sort and projection" }).click();
+  await page.getByRole("button", { name: "Options", exact: true }).click();
   const sort = page.getByRole("textbox", { name: "Sort" });
   await sort.click();
   await page.keyboard.type("{");
@@ -183,6 +183,37 @@ await check("pasted multi-line text stays on one line", async () => {
   });
   const text = await filterText();
   if (text.includes("\n") || !text.includes("a: 1, b: 2")) throw new Error(JSON.stringify(text));
+});
+
+await check("collation, hint and time limit go with the query", async () => {
+  const replace = async (name, text) => {
+    await page.getByRole("textbox", { name }).click();
+    await page.keyboard.press("Meta+a");
+    await page.keyboard.press("Backspace");
+    if (text) await page.keyboard.type(text);
+    await page.keyboard.press("Escape");
+  };
+  const collation = page.getByRole("textbox", { name: "Collation" });
+  if (!(await collation.isVisible()))
+    await page.getByRole("button", { name: "Options", exact: true }).click();
+  await replace("Filter", 'plan: "PRO"');
+  await page.keyboard.press("Meta+Enter");
+  await page.getByText("No documents match this filter.").waitFor();
+  await replace("Collation", "locale: 'en', strength: 2");
+  await page.keyboard.press("Meta+Enter");
+  await page.locator("[role=grid] tbody tr").first().waitFor();
+  await page.getByRole("textbox", { name: "Hint" }).waitFor();
+  await page.getByRole("textbox", { name: "Max time (ms)" }).fill("1");
+  await page.getByRole("button", { name: /^Run/ }).click();
+  await page
+    .getByText(/operation exceeded time limit/)
+    .first()
+    .waitFor();
+  await shot("05-options");
+  await page.getByRole("textbox", { name: "Max time (ms)" }).fill("abc");
+  await page.getByRole("button", { name: /^Run/ }).click();
+  await page.getByRole("alert").getByText("Max time (ms):").waitFor();
+  await page.getByRole("textbox", { name: "Max time (ms)" }).fill("");
 });
 
 console.log(results.join("\n"));

@@ -60,7 +60,14 @@ export function ExportDialog({
     queryKey: ["export-count", connectionId, namespace, source],
     queryFn: () =>
       source.kind === "find"
-        ? call(commands.countDocuments(connectionId, namespace, source.request.filter))
+        ? call(
+            commands.countDocuments(
+              connectionId,
+              namespace,
+              source.request.filter,
+              source.request.options ?? null,
+            ),
+          )
         : null,
     enabled: source.kind === "find",
   });

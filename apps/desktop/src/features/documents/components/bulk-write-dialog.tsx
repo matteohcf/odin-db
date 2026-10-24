@@ -59,7 +59,7 @@ export function BulkWriteDialog({
   const matchAll = isJsonObject(filter) && Object.keys(filter).length === 0;
   const count = useQuery({
     queryKey: ["bulk-count", connectionId, namespace, filter],
-    queryFn: () => call(commands.countDocuments(connectionId, namespace, filter)),
+    queryFn: () => call(commands.countDocuments(connectionId, namespace, filter, null)),
     gcTime: 0,
   });
   const matching = count.data ?? null;

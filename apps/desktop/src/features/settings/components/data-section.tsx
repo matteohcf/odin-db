@@ -16,6 +16,7 @@ export function DataSection() {
   const { t } = useTranslation("settings");
   const id = useId();
   const historySize = useSettings((s) => s.queryHistorySize);
+  const timeLimit = useSettings((s) => s.queryTimeLimitSeconds);
   const update = useSettings((s) => s.update);
   const clearHistory = useQueryHistory((s) => s.clearAll);
   const tools = useQuery({
@@ -25,6 +26,21 @@ export function DataSection() {
   return (
     <>
       <SettingsSection title={t("data.title")} description={t("data.description")}>
+        <SettingRow
+          id={`${id}-time-limit`}
+          label={t("data.timeLimit")}
+          description={t("data.timeLimitHint")}
+        >
+          <OptionSelect
+            id={`${id}-time-limit`}
+            value={timeLimit}
+            options={[0, 15, 30, 60, 300, 900] as const}
+            onChange={(value) => update({ queryTimeLimitSeconds: value })}
+            format={(value) =>
+              value === 0 ? t("data.noTimeLimit") : t("data.seconds", { count: value })
+            }
+          />
+        </SettingRow>
         <SettingRow
           id={`${id}-history`}
           label={t("data.historySize")}

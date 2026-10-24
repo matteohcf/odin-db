@@ -15,7 +15,8 @@ use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::indexes::{self, CreateIndexRequest};
 use odin_core::profiles::{self, ConnectionProfile, ProfileInput};
 use odin_core::query::{
-    AggregateRequest, CursorRegistry, FindRequest, Namespace, count_documents, preview_aggregation,
+    AggregateRequest, CursorRegistry, FindRequest, Namespace, QueryOptions, count_documents,
+    preview_aggregation,
 };
 use odin_core::secrets::{MemoryStore, Secret, SecretStore};
 use odin_core::shell::{
@@ -148,6 +149,7 @@ fn find_all(batch_size: u32) -> FindRequest {
         skip: None,
         limit: None,
         batch_size,
+        options: QueryOptions::default(),
     }
 }
 
@@ -229,6 +231,7 @@ async fn pages_through_results_with_a_server_cursor() {
         &handle,
         &ns,
         EJsonDocument::from(doc! { "n": { "$lt": 10 } }),
+        &QueryOptions::default(),
     )
     .await
     .expect("count");
@@ -273,6 +276,74 @@ async fn small_results_do_not_keep_a_cursor_open() {
         .expect("page");
     assert_eq!(page.documents.len(), 5);
     assert_eq!(page.cursor_id, None);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn queries_take_a_collation_a_hint_and_a_time_limit() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("names");
+    handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection)
+        .insert_many([
+            doc! { "name": "Ada" },
+            doc! { "name": "ada" },
+            doc! { "name": "ADA" },
+            doc! { "name": "Bob" },
+        ])
+        .await
+        .expect("seeded");
+    let options = |collation: Option<Document>, hint: Option<Bson>| QueryOptions {
+        collation: collation.map(EJsonDocument::from),
+        hint: hint.map(EJsonValue::from),
+        max_time_ms: Some(5_000),
+    };
+    let insensitive = Some(doc! { "locale": "en", "strength": 2 });
+    let request = |options: QueryOptions| FindRequest {
+        filter: EJsonDocument::from(doc! { "name": "ada" }),
+        options,
+        ..find_all(10)
+    };
+
+    let page = CursorRegistry::default()
+        .find(&handle, &ns, request(options(insensitive.clone(), None)))
+        .await
+        .expect("page");
+    assert_eq!(
+        page.documents.len(),
+        3,
+        "a case-insensitive collation matches every case"
+    );
+    let count = count_documents(
+        &handle,
+        &ns,
+        EJsonDocument::from(doc! { "name": "ada" }),
+        &options(insensitive, None),
+    )
+    .await
+    .expect("count");
+    assert_eq!(count, 3.0);
+
+    let hinted = CursorRegistry::default()
+        .find(
+            &handle,
+            &ns,
+            request(options(None, Some(Bson::Document(doc! { "_id": 1 })))),
+        )
+        .await
+        .expect("hinted by keys");
+    assert_eq!(hinted.documents.len(), 1);
+    let missing = CursorRegistry::default()
+        .find(
+            &handle,
+            &ns,
+            request(options(None, Some(Bson::String("nope".into())))),
+        )
+        .await;
+    assert!(missing.is_err(), "a hint naming no index is refused");
 }
 
 #[tokio::test]
@@ -398,6 +469,7 @@ async fn aggregates_with_paging_and_safe_previews() {
                     stage(doc! { "$sort": { "n": 1 } }),
                 ],
                 batch_size: 150,
+                options: QueryOptions::default(),
             },
         )
         .await
@@ -444,6 +516,7 @@ async fn read_only_profiles_cannot_run_write_stages() {
             AggregateRequest {
                 pipeline: vec![EJsonDocument::from(doc! { "$out": "copy" })],
                 batch_size: 10,
+                options: QueryOptions::default(),
             },
         )
         .await;
@@ -1164,6 +1237,7 @@ async fn explains_collection_and_index_scans() {
         sort: None,
         skip: None,
         limit: None,
+        options: QueryOptions::default(),
     };
 
     let scan = explain::explain_find(&handle, &ns, request(doc! { "n": { "$lt": 10 } }))
@@ -1906,7 +1980,8 @@ async fn updates_and_deletes_by_filter() {
         count_documents(
             &handle,
             &ns,
-            filter(doc! { "tier": "low", "n": { "$gte": 100 } })
+            filter(doc! { "tier": "low", "n": { "$gte": 100 } }),
+            &QueryOptions::default(),
         )
         .await
         .expect("count"),
@@ -1928,7 +2003,7 @@ async fn updates_and_deletes_by_filter() {
         .expect("deleted");
     assert_eq!(deleted, 5.0);
     assert_eq!(
-        count_documents(&handle, &ns, filter(doc! {}))
+        count_documents(&handle, &ns, filter(doc! {}), &QueryOptions::default())
             .await
             .expect("count"),
         15.0

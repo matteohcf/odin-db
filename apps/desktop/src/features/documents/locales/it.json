@@ -9,7 +9,7 @@
     "limit": "Limit",
     "run": "Esegui",
     "runShortcut": "Esegui query",
-    "options": "Ordinamento e proiezione",
+    "options": "Opzioni",
     "filterPlaceholder": "{ status: \"active\", age: { $gt: 30 } }",
     "sortPlaceholder": "{ createdAt: -1 }",
     "projectionPlaceholder": "{ name: 1, email: 1 }",
@@ -17,7 +17,13 @@
     "invalidNumber": "Usa un numero intero pari o superiore a 0.",
     "reset": "Reimposta",
     "resetHint": "Cancella la query e mostra tutti i documenti",
-    "suggest": "Mostra suggerimenti"
+    "suggest": "Mostra suggerimenti",
+    "collation": "Collation",
+    "collationPlaceholder": "{ locale: \"it\", strength: 2 }",
+    "hint": "Hint",
+    "hintPlaceholder": "Nome indice o { campo: 1 }",
+    "maxTimeMS": "Tempo max (ms)",
+    "maxTimePlaceholder": "Predefinito"
   },
   "results": {
     "label": "Documenti in {{collection}}",

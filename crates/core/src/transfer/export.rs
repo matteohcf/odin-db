@@ -73,7 +73,14 @@ pub async fn export_documents(
             query::find_cursor(handle, namespace, request).await?
         }
         ExportSource::Aggregate { pipeline } => {
-            query::aggregate_cursor(handle, namespace, pipeline, READ_BATCH).await?
+            query::aggregate_cursor(
+                handle,
+                namespace,
+                pipeline,
+                READ_BATCH,
+                &query::QueryOptions::default(),
+            )
+            .await?
         }
     };
 

@@ -15,6 +15,7 @@ import type {
   IpcError,
   JsonValue,
   ProfileInput,
+  QueryOptions,
 } from "@odin-db/bindings";
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -397,8 +398,10 @@ function project(doc: Doc, projection: Doc | null) {
   );
 }
 
+const scalar = (value: JsonValue | undefined) => scalarOf(value);
+
 /** Plain JS value of a canonical EJSON scalar, for comparisons. */
-function scalar(value: JsonValue | undefined): unknown {
+function scalarOf(value: JsonValue | undefined): unknown {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
   const [key] = Object.keys(value);
   const inner = key === undefined ? undefined : value[key];
@@ -436,7 +439,18 @@ function fieldValue(doc: Doc, path: string): JsonValue | undefined {
   return current;
 }
 
-function matchesFilter(doc: Doc, filter: Doc): boolean {
+/** True when a collation compares strings regardless of case (strength 1 or 2). */
+function ignoresCase(options: QueryOptions | undefined) {
+  const collation = options?.collation as Doc | null | undefined;
+  const strength = collation?.strength;
+  return strength !== undefined && Number(scalar(strength)) <= 2;
+}
+
+function matchesFilter(doc: Doc, filter: Doc, caseless = false): boolean {
+  const scalar = (value: JsonValue | undefined) => {
+    const plain = scalarOf(value);
+    return caseless && typeof plain === "string" ? plain.toLowerCase() : plain;
+  };
   return Object.entries(filter).every(([key, condition]) => {
     if (key.startsWith("$")) return true;
     const value = scalar(fieldValue(doc, key));
@@ -2172,7 +2186,13 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const ns = args.namespace as { database: string; collection: string };
     const request = args.request as FindRequest;
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
-    let docs = coll.docs.filter((doc) => matchesFilter(doc, request.filter as Doc));
+    if (request.options?.maxTimeMs === 1)
+      return fail(
+        "database",
+        "Executor error during find command :: caused by :: operation exceeded time limit",
+      );
+    const caseless = ignoresCase(request.options);
+    let docs = coll.docs.filter((doc) => matchesFilter(doc, request.filter as Doc, caseless));
     if (request.sort) docs = sortDocs(docs, request.sort as Doc);
     docs = docs.slice(
       request.skip ?? 0,
@@ -2193,7 +2213,8 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   count_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
-    return coll.docs.filter((doc) => matchesFilter(doc, args.filter as Doc)).length;
+    const caseless = ignoresCase((args.options as QueryOptions | null | undefined) ?? undefined);
+    return coll.docs.filter((doc) => matchesFilter(doc, args.filter as Doc, caseless)).length;
   },
   insert_document: (args) => {
     const ns = args.namespace as { database: string; collection: string };

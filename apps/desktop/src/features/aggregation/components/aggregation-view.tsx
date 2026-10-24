@@ -45,6 +45,7 @@ import { ExportDialog } from "@/features/transfer";
 import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { call, errorMessage } from "@/lib/ipc";
+import { withTimeLimit } from "@/lib/settings";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { isWriteOperator } from "../lib/operators";
 import { buildPipeline, pipelineFromText, pipelineToText } from "../lib/pipeline";
@@ -207,6 +208,7 @@ export function AggregationView({
         commands.aggregateDocuments(connection.id, namespace, {
           pipeline: built.pipeline,
           batchSize,
+          options: withTimeLimit(),
         }),
       ),
     );

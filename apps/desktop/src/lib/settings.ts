@@ -1,3 +1,4 @@
+import type { QueryOptions } from "@odin-db/bindings";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Keybindings } from "./keybindings";
@@ -20,6 +21,8 @@ export interface Settings {
   shellScrollback: number;
   /** Recent queries remembered per collection. */
   queryHistorySize: number;
+  /** Server-side time limit for queries that set none; 0 for none. */
+  queryTimeLimitSeconds: number;
   /** Last language picked in the query code dialog. */
   queryCodeLanguage: CodeLanguage;
   /** Sidebar width in pixels, set by dragging its edge. */
@@ -75,6 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shellFontSize: 13,
   shellScrollback: 10_000,
   queryHistorySize: 50,
+  queryTimeLimitSeconds: 60,
   queryCodeLanguage: "javascript",
   sidebarWidth: 288,
   accent: "green",
@@ -95,6 +99,13 @@ export const DEFAULT_SETTINGS: Settings = {
   aiOllamaModel: "",
   keybindings: {},
 };
+
+/** Query options with the time limit from settings when they set none (ADR-0052). */
+export function withTimeLimit(options: QueryOptions = {}): QueryOptions {
+  const maxTimeMs = useSettings.getState().queryTimeLimitSeconds * 1000;
+  if (options.maxTimeMs != null || maxTimeMs === 0) return options;
+  return { ...options, maxTimeMs };
+}
 
 // The header's title and actions need the minimum; narrower would push them out.
 export const SIDEBAR_WIDTH = { min: 264, max: 520 } as const;
