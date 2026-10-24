@@ -9,7 +9,7 @@
     "field": "Field",
     "presence": "Present in",
     "types": "Types",
-    "values": "Common values"
+    "values": "Values"
   },
   "mixed": "mixed",
   "mixedHint": "Documents store this field with different types, which can make queries miss documents.",
@@ -35,5 +35,7 @@
     "hint": "A query filter or a $jsonSchema. Existing documents are not checked; ⌘↵ saves.",
     "readOnly": "Read-only: the rules cannot be changed from this connection."
   },
-  "filterBy": "Show documents where {{field}} is \"{{value}}\""
+  "filterBy": "Show documents where {{field}} is \"{{value}}\"",
+  "range": "{{min}} – {{max}}",
+  "rangeHint": "Smallest and largest value in the sample"
 }

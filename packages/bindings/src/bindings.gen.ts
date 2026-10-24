@@ -751,6 +751,8 @@ export type FieldSummary = {
 	 *  (an enum-like field such as `status`); empty otherwise.
 	 */
 	values: string[],
+	/**  Smallest and largest value, for number and date fields. */
+	range?: ValueRange | null,
 };
 
 /**  Files are dragged over the window (`true`), or were dropped or dragged away (`false`). */
@@ -1386,6 +1388,11 @@ export type ValidationRules = {
 	validator: EJsonDocument,
 	level: ValidationLevel,
 	action: ValidationAction,
+};
+
+export type ValueRange = {
+	min: EJsonValue,
+	max: EJsonValue,
 };
 
 /* Tauri Specta runtime */

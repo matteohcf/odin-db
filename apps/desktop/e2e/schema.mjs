@@ -29,6 +29,10 @@ await check("schema lists fields with presence, types and values", async () => {
   await page.locator("tbody tr", { hasText: "city" }).first().waitFor();
   await page.screenshot({ path: `test-results/${scheme}-schema.png` });
 });
+await check("number and date fields show their range", async () => {
+  const age = page.locator("tbody tr", { hasText: /^age/ }).first();
+  await age.getByText(/^\d+ – \d+$/).waitFor();
+});
 await check("analyze again resamples", async () => {
   await page.getByRole("button", { name: "Analyze again" }).click();
   await page.locator("tbody tr", { hasText: "plan" }).first().waitFor();

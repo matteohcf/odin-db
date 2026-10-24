@@ -1,10 +1,11 @@
-import type { ConnectionInfo, FieldSummary, Namespace } from "@odin-db/bindings";
+import type { ConnectionInfo, FieldSummary, JsonValue, Namespace } from "@odin-db/bindings";
 import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { cn } from "@odin-db/ui/lib/utils";
 import { CircleAlert, Loader2, RotateCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { describeEJson, isJsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { SCHEMA_SAMPLE, useSchema } from "../api/use-schema";
 
@@ -93,7 +94,7 @@ function FieldRow({
   field: FieldSummary;
   onFilterBy: ((field: string, literal: string) => void) | undefined;
 }) {
-  const { t } = useTranslation("schema");
+  const { t, i18n } = useTranslation("schema");
   const [allValues, setAllValues] = useState(false);
   const values = allValues ? field.values : field.values.slice(0, MAX_VALUES);
   const parts = field.path.split(".");
@@ -150,6 +151,17 @@ function FieldRow({
       </td>
       <td className="max-w-md px-3 py-1.5">
         <div className="flex flex-wrap gap-1">
+          {field.range && (
+            <span
+              className="font-mono text-[11px] text-muted-foreground tabular-nums selectable"
+              title={t("rangeHint")}
+            >
+              {t("range", {
+                min: rangeEnd(field.range.min, i18n.language),
+                max: rangeEnd(field.range.max, i18n.language),
+              })}
+            </span>
+          )}
           {values.map((value) =>
             onFilterBy ? (
               <button
@@ -183,4 +195,21 @@ function FieldRow({
       </td>
     </tr>
   );
+}
+
+/** A range end as people read it: a plain number, or a date (UTC) without the wrapper. */
+function rangeEnd(value: JsonValue, locale: string): string {
+  if (isJsonObject(value)) {
+    const [key, inner] = Object.entries(value)[0] ?? [];
+    if (key === "$date") {
+      const millis = isJsonObject(inner) ? Number(inner.$numberLong) : Date.parse(String(inner));
+      if (!Number.isNaN(millis))
+        return new Date(millis).toISOString().slice(0, 16).replace("T", " ");
+    } else if (key?.startsWith("$number")) {
+      const number = Number(inner);
+      if (Number.isFinite(number))
+        return number.toLocaleString(locale, { maximumFractionDigits: 4 });
+    }
+  }
+  return describeEJson(value).text;
 }

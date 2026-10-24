@@ -333,6 +333,7 @@ mod tests {
             type_shares: vec![1.0; types.len()],
             frequency,
             values: Vec::new(),
+            range: None,
         }
     }
 

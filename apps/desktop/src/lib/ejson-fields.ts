@@ -32,6 +32,27 @@ function typeOf(value: JsonValue): string {
   return wrapper ? (WRAPPERS[wrapper] as string) : "object";
 }
 
+/** A number or date as something to order by, with its kind; null for other values. */
+function orderedOf(value: JsonValue): { kind: "number" | "date"; key: number } | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const type = typeOf(value);
+  const inner = Object.values(value)[0];
+  if (type === "int" || type === "long" || type === "double") {
+    const key = Number(inner);
+    return Number.isFinite(key) ? { kind: "number", key } : null;
+  }
+  if (type === "date") {
+    const millis =
+      inner !== null && typeof inner === "object" && !Array.isArray(inner)
+        ? Number(inner.$numberLong)
+        : Date.parse(String(inner));
+    return Number.isNaN(millis) ? null : { kind: "date", key: millis };
+  }
+  return null;
+}
+
+type Extreme = { key: number; value: JsonValue };
+
 /**
  * Field paths of canonical EJSON documents, summarized like core's
  * `schema::sample_fields`: dot notation, array items share the array's path.
@@ -39,14 +60,21 @@ function typeOf(value: JsonValue): string {
 export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
   const stats = new Map<
     string,
-    { count: number; types: Map<string, number>; strings: Map<string, number> | null }
+    {
+      count: number;
+      types: Map<string, number>;
+      strings: Map<string, number> | null;
+      extremes: Partial<Record<"number" | "date", [Extreme, Extreme]>>;
+    }
   >();
 
   for (const document of documents) {
     const seen = new Map<string, Set<string>>();
     const strings = new Map<string, Set<string>>();
+    const ordered = new Map<string, JsonValue[]>();
     const visit = (value: JsonValue, path: string, depth: number) => {
       const type = typeOf(value);
+      if (orderedOf(value)) ordered.set(path, [...(ordered.get(path) ?? []), value]);
       seen.set(path, (seen.get(path) ?? new Set()).add(type));
       // Strings inside an array count for the array's path: `{ tags: "x" }` matches them.
       for (const item of Array.isArray(value) ? value : [value]) {
@@ -71,7 +99,23 @@ export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
     for (const [key, value] of Object.entries(document)) visit(value, key, 0);
 
     for (const [path, types] of seen) {
-      const entry = stats.get(path) ?? { count: 0, types: new Map(), strings: new Map() };
+      const entry = stats.get(path) ?? {
+        count: 0,
+        types: new Map(),
+        strings: new Map(),
+        extremes: {} as Partial<Record<"number" | "date", [Extreme, Extreme]>>,
+      };
+      for (const value of ordered.get(path) ?? []) {
+        const found = orderedOf(value);
+        if (!found) continue;
+        const current = entry.extremes[found.kind];
+        const extreme = { key: found.key, value };
+        if (!current) entry.extremes[found.kind] = [extreme, extreme];
+        else {
+          if (found.key < current[0].key) current[0] = extreme;
+          if (found.key > current[1].key) current[1] = extreme;
+        }
+      }
       entry.count += 1;
       for (const type of types) entry.types.set(type, (entry.types.get(type) ?? 0) + 1);
       if (entry.strings) {
@@ -87,9 +131,18 @@ export function fieldPathsOf(documents: readonly JsonObject[]): FieldSummary[] {
 
   const total = Math.max(documents.length, 1);
   return [...stats]
-    .map(([path, { count, types, strings }]) => {
+    .map(([path, { count, types, strings, extremes }]) => {
       const ranked = [...types].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      const main = ranked[0]?.[0];
+      const kind =
+        main === "int" || main === "long" || main === "double"
+          ? "number"
+          : main === "date"
+            ? "date"
+            : null;
+      const extreme = kind ? extremes[kind] : undefined;
       return {
+        range: extreme ? { min: extreme[0].value, max: extreme[1].value } : null,
         path,
         types: ranked.map(([type]) => type),
         typeShares: ranked.map(([, seen]) => seen / count),

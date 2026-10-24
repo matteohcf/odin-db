@@ -21,9 +21,11 @@ describe("fieldPathsOf", () => {
       typeShares: [1],
       frequency: 0.5,
       values: ["Rome"],
+      range: null,
     });
     expect(byPath["items.sku"]?.types).toEqual(["string"]);
     expect(byPath.age?.types).toEqual(["int"]);
+    expect(byPath.age?.range).toEqual({ min: { $numberInt: "3" }, max: { $numberInt: "3" } });
     expect(fieldPathsOf([{ tags: ["a", "b"] }, { tags: ["a"] }])[0]?.values).toEqual(["a", "b"]);
     // Wrappers are values, never paths.
     expect(fields.some((field) => field.path.includes("$"))).toBe(false);

@@ -9,7 +9,7 @@
     "field": "Campo",
     "presence": "Presente in",
     "types": "Tipi",
-    "values": "Valori comuni"
+    "values": "Valori"
   },
   "mixed": "misto",
   "mixedHint": "I documenti memorizzano questo campo con tipi diversi, e le query potrebbero non trovare alcuni documenti.",
@@ -35,5 +35,7 @@
     "hint": "Un filtro di query o un $jsonSchema. I documenti esistenti non vengono controllati; ⌘↵ salva.",
     "readOnly": "Sola lettura: le regole non si possono modificare da questa connessione."
   },
-  "filterBy": "Mostra i documenti dove {{field}} è \"{{value}}\""
+  "filterBy": "Mostra i documenti dove {{field}} è \"{{value}}\"",
+  "range": "{{min}} – {{max}}",
+  "rangeHint": "Valore più piccolo e più grande nel campione"
 }

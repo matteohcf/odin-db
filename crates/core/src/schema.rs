@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
+use crate::ejson::EJsonValue;
 use crate::query::Namespace;
 
 pub const MAX_SAMPLE_SIZE: u32 = 1000;
@@ -33,6 +34,76 @@ pub struct FieldSummary {
     /// The field's string values, most common first, when there are only a few
     /// (an enum-like field such as `status`); empty otherwise.
     pub values: Vec<String>,
+    /// Smallest and largest value, for number and date fields.
+    #[serde(default)]
+    pub range: Option<ValueRange>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ValueRange {
+    pub min: EJsonValue,
+    pub max: EJsonValue,
+}
+
+/// Number and date values can be ordered; a field gets the range of its main type.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Ordered {
+    Number,
+    Date,
+}
+
+fn ordered(value: &Bson) -> Option<(Ordered, f64)> {
+    #[allow(clippy::cast_precision_loss)]
+    match value {
+        Bson::Int32(n) => Some((Ordered::Number, f64::from(*n))),
+        Bson::Int64(n) => Some((Ordered::Number, *n as f64)),
+        Bson::Double(n) if n.is_finite() => Some((Ordered::Number, *n)),
+        Bson::DateTime(date) => Some((Ordered::Date, date.timestamp_millis() as f64)),
+        _ => None,
+    }
+}
+
+#[derive(Default)]
+struct Extremes {
+    numbers: Option<((f64, Bson), (f64, Bson))>,
+    dates: Option<((f64, Bson), (f64, Bson))>,
+}
+
+impl Extremes {
+    fn add(&mut self, value: &Bson) {
+        let Some((kind, key)) = ordered(value) else {
+            return;
+        };
+        let slot = match kind {
+            Ordered::Number => &mut self.numbers,
+            Ordered::Date => &mut self.dates,
+        };
+        match slot {
+            None => *slot = Some(((key, value.clone()), (key, value.clone()))),
+            Some((low, high)) => {
+                if key < low.0 {
+                    *low = (key, value.clone());
+                }
+                if key > high.0 {
+                    *high = (key, value.clone());
+                }
+            }
+        }
+    }
+
+    fn range(self, main_type: Option<&str>) -> Option<ValueRange> {
+        let slot = match main_type? {
+            "int" | "long" | "double" => self.numbers,
+            "date" => self.dates,
+            _ => None,
+        };
+        slot.map(|((_, min), (_, max))| ValueRange {
+            min: EJsonValue::from(min),
+            max: EJsonValue::from(max),
+        })
+    }
 }
 
 /// Samples up to `size` documents and summarizes their field paths, most common first.
@@ -63,6 +134,7 @@ struct PathStats {
     types: HashMap<&'static str, usize>,
     /// Documents per distinct string value; `None` once there are too many to suggest.
     strings: Option<HashMap<String, usize>>,
+    extremes: Extremes,
 }
 
 /// What one document holds at one path.
@@ -70,6 +142,7 @@ struct PathStats {
 struct Seen {
     types: Vec<&'static str>,
     strings: Vec<String>,
+    ordered: Vec<Bson>,
 }
 
 pub(crate) fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
@@ -85,6 +158,9 @@ pub(crate) fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
             stats.documents += 1;
             for kind in found.types {
                 *stats.types.entry(kind).or_default() += 1;
+            }
+            for value in &found.ordered {
+                stats.extremes.add(value);
             }
             if let Some(strings) = stats.strings.as_mut() {
                 for value in found.strings {
@@ -115,8 +191,10 @@ pub(crate) fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
                 .iter()
                 .map(|(_, count)| *count as f64 / present)
                 .collect();
+            let range = stats.extremes.range(types.first().map(|(kind, _)| *kind));
             FieldSummary {
                 path,
+                range,
                 types: types.into_iter().map(|(kind, _)| kind.to_owned()).collect(),
                 type_shares,
                 frequency,
@@ -163,6 +241,9 @@ fn record(value: &Bson, path: &str, depth: usize, seen: &mut HashMap<String, See
         {
             found.strings.push(text.clone());
         }
+    }
+    if ordered(value).is_some() {
+        found.ordered.push(value.clone());
     }
     if depth + 1 >= MAX_DEPTH {
         return;
@@ -282,5 +363,21 @@ mod tests {
                 .iter()
                 .all(|field| field.path.split('.').count() <= MAX_DEPTH)
         );
+    }
+
+    #[test]
+    fn number_and_date_fields_get_their_range() {
+        let at = bson::DateTime::from_millis;
+        let fields = summarize(&[
+            doc! { "n": 5, "at": at(2_000), "name": "a" },
+            doc! { "n": 1.5, "at": at(1_000) },
+            doc! { "n": 40_i64, "at": "soon" },
+        ]);
+        let range = field(&fields, "n").range.clone().expect("a range");
+        assert_eq!(range.min, EJsonValue::from(Bson::Double(1.5)));
+        assert_eq!(range.max, EJsonValue::from(Bson::Int64(40)));
+        let dates = field(&fields, "at").range.clone().expect("a range");
+        assert_eq!(dates.min, EJsonValue::from(Bson::DateTime(at(1_000))));
+        assert_eq!(field(&fields, "name").range, None);
     }
 }
