@@ -20,6 +20,7 @@ import {
   FileDown,
   FileUp,
   ListFilter,
+  LocateFixed,
   MoreHorizontal,
   Plus,
   Search,
@@ -30,6 +31,7 @@ import {
 import { type CSSProperties, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTabs } from "@/features/workspace";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { call, errorMessage } from "@/lib/ipc";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
@@ -67,6 +69,11 @@ export function ConnectionExplorer() {
   const filter = useExplorer((s) => s.filter);
   const setFilter = useExplorer((s) => s.setFilter);
   const collapseAll = useExplorer((s) => s.collapseAll);
+  const reveal = useExplorer((s) => s.reveal);
+  const activeCollection = useTabs((s) => {
+    const tab = s.tabs.find((candidate) => candidate.id === s.activeTabId);
+    return tab?.kind === "collection" ? tab : undefined;
+  });
   const filterInput = useRef<HTMLInputElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const density = useSettings((s) => s.sidebarDensity);
@@ -115,6 +122,30 @@ export function ConnectionExplorer() {
       <div className="flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">
         <h2 className="font-medium text-muted-foreground text-xs">{t("explorer.title")}</h2>
         <div className="flex items-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                aria-label={t("explorer.locate")}
+                disabled={!activeCollection}
+                onClick={() =>
+                  activeCollection &&
+                  reveal(
+                    activeCollection.profileId,
+                    activeCollection.database,
+                    activeCollection.collection,
+                  )
+                }
+              >
+                <LocateFixed className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("explorer.locate")} <Kbd>{label(SHORTCUTS.revealInSidebar)}</Kbd>
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

@@ -170,6 +170,13 @@ await check("Shift+Cmd+E reveals the active collection", async () => {
   await tree.locator("[aria-current=page]").waitFor({ timeout: 5000 });
 });
 
+await check("the locate button in the sidebar header reveals the active collection", async () => {
+  await page.getByRole("button", { name: "Collapse all" }).click();
+  await page.getByRole("button", { name: "Show the open collection in the tree" }).click();
+  await tree.locator("[aria-current=page]").waitFor({ timeout: 5000 });
+  await shot("06-locate");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

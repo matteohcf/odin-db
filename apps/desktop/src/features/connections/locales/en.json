@@ -21,7 +21,8 @@
     "exported": "Saved to {{path}}. Passwords are not included.",
     "exportFailed": "Export failed: {{message}}",
     "noMatch": "Nothing matches “{{filter}}”.",
-    "disconnectAll": "Disconnect all"
+    "disconnectAll": "Disconnect all",
+    "locate": "Show the open collection in the tree"
   },
   "profile": {
     "connect": "Connect",
