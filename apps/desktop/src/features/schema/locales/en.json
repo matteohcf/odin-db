@@ -34,5 +34,6 @@
     "saved": "Validation rules saved.",
     "hint": "A query filter or a $jsonSchema. Existing documents are not checked; ⌘↵ saves.",
     "readOnly": "Read-only: the rules cannot be changed from this connection."
-  }
+  },
+  "filterBy": "Show documents where {{field}} is \"{{value}}\""
 }

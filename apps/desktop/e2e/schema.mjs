@@ -40,6 +40,21 @@ await check("a field stored with several types shows how they split", async () =
   await row.getByText("13%").waitFor();
 });
 
+await check("more values open, and a value shows its documents", async () => {
+  const city = page.locator("tbody tr", { hasText: "city" }).first();
+  await city.getByRole("button", { name: "+1 more" }).click();
+  await city.getByRole("button", { name: "+1 more" }).waitFor({ state: "detached" });
+  if ((await city.getByRole("button").count()) !== 7) throw new Error("values not expanded");
+  const plan = page.locator("tbody tr", { hasText: "plan" }).first();
+  await plan.getByRole("button", { name: '"pro"' }).click();
+  await page.getByRole("tab", { name: /Documents/, selected: true }).waitFor();
+  const filter = page.getByRole("textbox", { name: "Filter" });
+  await filter.getByText('plan: "pro"').waitFor();
+  await page.getByText("Linus B.").first().waitFor();
+  await page.getByText("Ada A.").waitFor({ state: "detached" });
+  await page.screenshot({ path: `test-results/${scheme}-schema-filter.png` });
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

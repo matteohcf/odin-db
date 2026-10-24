@@ -104,6 +104,8 @@ interface DocumentsViewProps {
         nonce: string;
       }
     | undefined;
+  /** A condition to add to the current filter and run, e.g. a value clicked in the schema. */
+  pendingCondition?: { field: string; literal: string; nonce: string } | undefined;
 }
 
 const matchAll: FindQuery = { filter: {}, sort: null, projection: null, skip: null, limit: null };
@@ -119,6 +121,7 @@ export function DocumentsView({
   onCreateIndex,
   active,
   pendingQuery,
+  pendingCondition,
 }: DocumentsViewProps) {
   const { t } = useTranslation("documents");
   const label = `${namespace.database}.${namespace.collection}`;
@@ -298,6 +301,15 @@ export function DocumentsView({
   useEffect(() => {
     runPending();
   }, [pendingQuery?.nonce]);
+  const addCondition = useEffectEvent(() => {
+    if (!pendingCondition) return;
+    const { field, literal } = pendingCondition;
+    void runForm({ ...form, filter: addFilterCondition(form.filter, field, literal) });
+  });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new nonce is a new condition.
+  useEffect(() => {
+    addCondition();
+  }, [pendingCondition?.nonce]);
 
   const openInsert = (text = NEW_DOCUMENT) =>
     setEditor({ open: true, mode: "insert", text, id: undefined });

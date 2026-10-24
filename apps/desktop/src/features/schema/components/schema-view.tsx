@@ -3,6 +3,7 @@ import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { cn } from "@odin-db/ui/lib/utils";
 import { CircleAlert, Loader2, RotateCw } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorMessage } from "@/lib/ipc";
 import { SCHEMA_SAMPLE, useSchema } from "../api/use-schema";
@@ -24,9 +25,12 @@ function byPath(a: FieldSummary, b: FieldSummary) {
 export function SchemaView({
   connection,
   namespace,
+  onFilterBy,
 }: {
   connection: ConnectionInfo;
   namespace: Namespace;
+  /** Shows the documents where the field has this value (mongosh literal). */
+  onFilterBy?: ((field: string, literal: string) => void) | undefined;
 }) {
   const { t } = useTranslation("schema");
   const schema = useSchema(connection.id, namespace);
@@ -72,7 +76,7 @@ export function SchemaView({
             </thead>
             <tbody>
               {fields.map((field) => (
-                <FieldRow key={field.path} field={field} />
+                <FieldRow key={field.path} field={field} onFilterBy={onFilterBy} />
               ))}
             </tbody>
           </table>
@@ -82,8 +86,16 @@ export function SchemaView({
   );
 }
 
-function FieldRow({ field }: { field: FieldSummary }) {
+function FieldRow({
+  field,
+  onFilterBy,
+}: {
+  field: FieldSummary;
+  onFilterBy: ((field: string, literal: string) => void) | undefined;
+}) {
   const { t } = useTranslation("schema");
+  const [allValues, setAllValues] = useState(false);
+  const values = allValues ? field.values : field.values.slice(0, MAX_VALUES);
   const parts = field.path.split(".");
   const depth = parts.length - 1;
   const frequency = field.frequency ?? 0;
@@ -138,18 +150,34 @@ function FieldRow({ field }: { field: FieldSummary }) {
       </td>
       <td className="max-w-md px-3 py-1.5">
         <div className="flex flex-wrap gap-1">
-          {field.values.slice(0, MAX_VALUES).map((value) => (
-            <span
-              key={value}
-              className="truncate rounded-sm bg-muted px-1.5 font-mono text-[11px] text-type-string"
+          {values.map((value) =>
+            onFilterBy ? (
+              <button
+                key={value}
+                type="button"
+                title={t("filterBy", { field: field.path, value })}
+                onClick={() => onFilterBy(field.path, JSON.stringify(value))}
+                className="truncate rounded-sm bg-muted px-1.5 font-mono text-[11px] text-type-string outline-none hover:bg-accent hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {JSON.stringify(value)}
+              </button>
+            ) : (
+              <span
+                key={value}
+                className="truncate rounded-sm bg-muted px-1.5 font-mono text-[11px] text-type-string"
+              >
+                {JSON.stringify(value)}
+              </span>
+            ),
+          )}
+          {field.values.length > MAX_VALUES && !allValues && (
+            <button
+              type="button"
+              onClick={() => setAllValues(true)}
+              className="text-muted-foreground text-xs hover:text-foreground"
             >
-              {JSON.stringify(value)}
-            </span>
-          ))}
-          {field.values.length > MAX_VALUES && (
-            <span className="text-muted-foreground text-xs">
               {t("more", { count: field.values.length - MAX_VALUES })}
-            </span>
+            </button>
           )}
         </div>
       </td>

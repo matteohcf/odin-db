@@ -120,6 +120,11 @@ function CollectionWorkspace({
   const tabActive = useTabs((s) => s.activeTabId === tab.id);
   const [indexDraft, setIndexDraft] = useState<string | null>(null);
   const [viewPipeline, setViewPipeline] = useState<EJsonDocument[] | null>(null);
+  const [condition, setCondition] = useState<{
+    field: string;
+    literal: string;
+    nonce: string;
+  }>();
   // Views mount on first visit and then stay mounted, keeping their state.
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
 
@@ -244,6 +249,7 @@ function CollectionWorkspace({
             <DocumentsView
               active={tabActive && view === "documents"}
               pendingQuery={tab.query}
+              pendingCondition={condition}
               connection={connection}
               namespace={namespace}
               editable={editable}
@@ -268,7 +274,14 @@ function CollectionWorkspace({
                   onCreateView={connection.readOnly ? undefined : setViewPipeline}
                 />
               ) : value === "schema" ? (
-                <SchemaView connection={connection} namespace={namespace} />
+                <SchemaView
+                  connection={connection}
+                  namespace={namespace}
+                  onFilterBy={(field, literal) => {
+                    setCondition({ field, literal, nonce: crypto.randomUUID() });
+                    select("documents");
+                  }}
+                />
               ) : value === "live" ? (
                 <ChangesView connection={connection} namespace={namespace} />
               ) : value === "validation" ? (
