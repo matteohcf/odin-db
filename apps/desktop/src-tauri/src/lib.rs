@@ -34,6 +34,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::ai::generate_query,
             commands::compare::compare_collections,
             commands::diagram::database_diagram,
+            commands::diagram::save_diagram_image,
             commands::compare::compared_pair,
             commands::compare::sync_collections,
             commands::updates::check_for_update,

@@ -1,10 +1,12 @@
-import type { DatabaseDiagram } from "@odin-db/bindings";
+import { commands, type DatabaseDiagram } from "@odin-db/bindings";
 import { useTheme } from "@odin-db/ui/components/theme-provider";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import {
   Background,
   BackgroundVariant,
   type Edge,
+  getNodesBounds,
+  getViewportForBounds,
   MarkerType,
   MiniMap,
   Panel,
@@ -13,22 +15,33 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { LayoutGrid, Map as MapIcon, Maximize, Search } from "lucide-react";
+import { toPng } from "html-to-image";
+import {
+  ClipboardCopy,
+  ImageDown,
+  LayoutGrid,
+  Map as MapIcon,
+  Maximize,
+  Search,
+} from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { IconAction } from "@/components/icon-action";
+import { call, errorMessage } from "@/lib/ipc";
 import { buildGraph, type FieldMode } from "../lib/diagram-graph";
+import { toMermaid } from "../lib/mermaid";
 import { usePositions } from "../store/positions-store";
 import { DiagramActions } from "./diagram-actions";
 import { type DiagramCollectionNode, DiagramCollectionNodeView } from "./diagram-collection-node";
 
 const nodeTypes = { collection: DiagramCollectionNodeView };
+const EDGE_STROKE = "color-mix(in oklab, var(--muted-foreground) 60%, transparent)";
 
 // React Flow's own variables, pointed at the design tokens so it follows theme and accent.
 const flowStyle = {
   "--xy-background-color": "var(--background)",
   "--xy-background-pattern-color": "color-mix(in oklab, var(--muted-foreground) 25%, transparent)",
-  "--xy-edge-stroke": "color-mix(in oklab, var(--muted-foreground) 60%, transparent)",
   "--xy-edge-stroke-selected": "var(--primary)",
   "--xy-minimap-background-color": "var(--card)",
   "--xy-minimap-mask-background-color": "color-mix(in oklab, var(--background) 70%, transparent)",
@@ -39,6 +52,7 @@ const flowStyle = {
 
 interface DiagramCanvasProps {
   diagram: DatabaseDiagram;
+  database: string;
   /** `profileId/database`, under which dragged positions are kept. */
   storageKey: string;
   onOpen: (collection: string) => void;
@@ -48,7 +62,7 @@ interface DiagramCanvasProps {
  * The collections of a database as cards, joined by the references found between them.
  * Needs a `ReactFlowProvider` above it.
  */
-export function DiagramCanvas({ diagram, storageKey, onOpen }: DiagramCanvasProps) {
+export function DiagramCanvas({ diagram, database, storageKey, onOpen }: DiagramCanvasProps) {
   const { t } = useTranslation("diagram");
   const { theme } = useTheme();
   const flow = useReactFlow();
@@ -87,7 +101,8 @@ export function DiagramCanvas({ diagram, storageKey, onOpen }: DiagramCanvasProp
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
       style: {
         strokeWidth: active ? 2 : 1.25,
-        stroke: active ? "var(--primary)" : undefined,
+        // Explicit, not inherited from the canvas, so the saved image keeps the lines.
+        stroke: active ? "var(--primary)" : EDGE_STROKE,
         opacity: lit === null || active ? 1 : 0.25,
       },
     };
@@ -96,6 +111,35 @@ export function DiagramCanvas({ diagram, storageKey, onOpen }: DiagramCanvasProp
   const matches = query.trim()
     ? diagram.collections.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
     : [];
+  async function saveImage() {
+    const viewport = document.querySelector<HTMLElement>(".react-flow__viewport");
+    if (!viewport) return;
+    // The whole diagram at a readable scale, whatever is on screen right now.
+    const bounds = getNodesBounds(flow.getNodes());
+    const width = Math.min(Math.ceil(bounds.width + 96), 6000);
+    const height = Math.min(Math.ceil(bounds.height + 96), 6000);
+    const { x, y, zoom } = getViewportForBounds(bounds, width, height, 0.1, 1, 0.04);
+    try {
+      const png = await toPng(viewport, {
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue(
+          "--background",
+        ),
+        width,
+        height,
+        pixelRatio: 2,
+        style: {
+          width: `${width}px`,
+          height: `${height}px`,
+          transform: `translate(${x}px, ${y}px) scale(${zoom})`,
+        },
+      });
+      const path = await call(commands.saveDiagramImage(png, database));
+      if (path) toast.success(t("saved", { path }));
+    } catch (error) {
+      toast.error(t("saveFailed", { message: errorMessage(error) }));
+    }
+  }
+
   function findCollection() {
     const [first] = matches;
     if (!first) return;
@@ -185,6 +229,18 @@ export function DiagramCanvas({ diagram, storageKey, onOpen }: DiagramCanvasProp
             onClick={() => void flow.fitView({ padding: 0.15, duration: 300 })}
           >
             <Maximize />
+          </IconAction>
+          <IconAction
+            label={t("copyMermaid")}
+            onClick={() => {
+              void navigator.clipboard.writeText(toMermaid(diagram));
+              toast.success(t("mermaidCopied"));
+            }}
+          >
+            <ClipboardCopy />
+          </IconAction>
+          <IconAction label={t("saveImage")} onClick={() => void saveImage()}>
+            <ImageDown />
           </IconAction>
           <IconAction
             label={t("minimap")}

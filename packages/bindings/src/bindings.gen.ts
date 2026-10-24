@@ -34,6 +34,8 @@ export const commands = {
 	compareCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: CompareRequest, channel: Channel<StreamEvent<CompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_collections", { leftConnectionId, rightConnectionId, request, channel })),
 	/**  Samples a database's collections and infers their references, as a cancellable operation. */
 	databaseDiagram: (connectionId: ConnectionId, database: string, channel: Channel<StreamEvent<DiagramEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("database_diagram", { connectionId, database, channel })),
+	/**  Asks where to save a PNG rendered by the diagram, then writes it. `None` if the user cancels. */
+	saveDiagramImage: (pngBase64: string, database: string) => typedError<string | null, IpcError>(__TAURI_INVOKE("save_diagram_image", { pngBase64, database })),
 	/**  Both versions of one compared document. */
 	comparedPair: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, left: Namespace, right: Namespace, id: EJsonValue) => typedError<ComparedPair, IpcError>(__TAURI_INVOKE("compared_pair", { leftConnectionId, rightConnectionId, left, right, id })),
 	/**  Changes the right collection to match the left; read-only targets are refused. */

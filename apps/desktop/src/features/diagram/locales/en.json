@@ -32,5 +32,10 @@
   "open": "Open {{collection}}",
   "view": "View",
   "timeseries": "Time series",
-  "noLinks": "No references found between these collections in the sampled documents."
+  "noLinks": "No references found between these collections in the sampled documents.",
+  "copyMermaid": "Copy as Mermaid diagram",
+  "mermaidCopied": "Copied as a Mermaid diagram: paste it in a README, wiki or pull request",
+  "saveImage": "Save as image…",
+  "saved": "Saved to {{path}}",
+  "saveFailed": "Couldn't save the image: {{message}}"
 }

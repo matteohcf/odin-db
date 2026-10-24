@@ -35,6 +35,7 @@
     "@xyflow/react": "catalog:",
     "bson": "catalog:",
     "codemirror": "catalog:",
+    "html-to-image": "catalog:",
     "i18next": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",

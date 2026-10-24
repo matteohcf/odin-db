@@ -1058,6 +1058,11 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     };
     return simulateTransfer(args.channel, 17, diagram, 1, (done) => ({ done, total: 17 }));
   },
+  save_diagram_image: (args) => {
+    // Lets UI checks look at the rendered image.
+    (window as { lastDiagramImage?: unknown }).lastDiagramImage = args.pngBase64;
+    return `/Users/ada/Downloads/${String(args.database)}-diagram.png`;
+  },
   compare_collections: (args) => {
     const oid = (n: number) => ({ $oid: `65f0a1c${String(n).padStart(17, "0")}` });
     const range = (from: number, count: number) =>

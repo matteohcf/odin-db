@@ -1,10 +1,16 @@
 use std::sync::Arc;
 
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+use odin_core::CoreError;
 use odin_core::connection::ConnectionId;
 use odin_core::diagram::{self, DatabaseDiagram, DiagramProgress};
 use odin_core::operations::{OperationId, OperationRegistry};
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
+
+use super::transfer::blocking_dialog;
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
@@ -48,4 +54,45 @@ pub async fn database_diagram(
             Ok(())
         },
     ))
+}
+
+/// Asks where to save a PNG rendered by the diagram, then writes it. `None` if the user cancels.
+#[tauri::command]
+#[specta::specta]
+pub async fn save_diagram_image(
+    app: AppHandle,
+    png_base64: String,
+    database: String,
+) -> Result<Option<String>, IpcError> {
+    let bytes = STANDARD
+        .decode(png_base64.trim_start_matches("data:image/png;base64,"))
+        .map_err(|error| CoreError::Validation(format!("not a PNG image: {error}")))?;
+    if !bytes.starts_with(b"\x89PNG") {
+        return Err(CoreError::Validation("not a PNG image".into()).into());
+    }
+    // Only the suggested name comes from the webview, never the path.
+    let name: String = database
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let dialog = app
+        .dialog()
+        .file()
+        .set_file_name(format!("{name}-diagram.png"))
+        .add_filter("PNG", &["png"]);
+    let Some(path) = blocking_dialog(move || dialog.blocking_save_file()).await? else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?;
+    std::fs::write(&path, bytes)
+        .map_err(|error| CoreError::Internal(format!("cannot write the file: {error}")))?;
+    Ok(Some(path.display().to_string()))
 }

@@ -111,6 +111,7 @@ export function DiagramTab({ tab }: { tab: DiagramTabModel }) {
           <ReactFlowProvider>
             <DiagramCanvas
               diagram={diagram}
+              database={tab.database}
               storageKey={`${tab.profileId}/${tab.database}`}
               onOpen={(collection) => {
                 const kind = diagram.collections.find((c) => c.name === collection)?.kind;

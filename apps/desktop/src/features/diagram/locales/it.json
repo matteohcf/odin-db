@@ -32,5 +32,10 @@
   "open": "Apri {{collection}}",
   "view": "Vista",
   "timeseries": "Serie temporale",
-  "noLinks": "Nessun riferimento trovato tra queste collection nei documenti campionati."
+  "noLinks": "Nessun riferimento trovato tra queste collection nei documenti campionati.",
+  "copyMermaid": "Copia come diagramma Mermaid",
+  "mermaidCopied": "Copiato come diagramma Mermaid: incollalo in un README, una wiki o una pull request",
+  "saveImage": "Salva come immagine…",
+  "saved": "Salvato in {{path}}",
+  "saveFailed": "Impossibile salvare l'immagine: {{message}}"
 }

@@ -76,6 +76,16 @@ await check("searching selects and centers a collection", async () => {
   await page.locator(".react-flow__node.selected").filter({ hasText: "suppliers" }).waitFor();
 });
 
+await check("the diagram copies as Mermaid and saves as an image", async () => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Copy as Mermaid diagram" }).click();
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  if (!text.startsWith("erDiagram") || !text.includes('orders }o--o{ products : "items.productId"'))
+    throw new Error(text.slice(0, 200));
+  await page.getByRole("button", { name: "Save as image…" }).click();
+  await page.getByText("Saved to /Users/ada/Downloads/shop-diagram.png").waitFor();
+});
+
 await check("double-clicking a collection opens it", async () => {
   await page.getByRole("button", { name: "Fit to screen" }).click();
   await page.waitForTimeout(400);

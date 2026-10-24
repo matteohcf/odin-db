@@ -4536,6 +4536,7 @@ dependencies = [
 name = "odin-desktop"
 version = "1.0.2"
 dependencies = [
+ "base64 0.22.1",
  "jiff",
  "odin-ai",
  "odin-core",

@@ -26,6 +26,7 @@ bindings = []
 tauri-build.workspace = true
 
 [dependencies]
+base64.workspace = true
 odin-ai = { workspace = true, features = ["specta"] }
 odin-core = { workspace = true, features = ["specta"] }
 serde.workspace = true
