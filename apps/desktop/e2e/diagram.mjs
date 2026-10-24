@@ -1,4 +1,5 @@
-// Database diagram: collections, inferred references, search, field modes, opening a collection.
+// Database diagram: collections, inferred and drawn references, notes, search, field modes,
+// opening a collection.
 import { chromium } from "playwright";
 
 const scheme = process.env.SCHEME ?? "light";
@@ -99,6 +100,71 @@ await check("no key removes a collection from the diagram", async () => {
   await page.keyboard.press("Backspace");
   await page.keyboard.press("Delete");
   if ((await nodes.count()) !== 8) throw new Error(`${await nodes.count()} nodes`);
+});
+
+const edge = (id) => page.getByTestId(`rf__edge-${id}`);
+
+await check("a field dragged onto a collection draws a reference", async () => {
+  await page.getByRole("button", { name: "Fit to screen" }).click();
+  await page.waitForTimeout(400);
+  const row = node("coupons").locator("li").filter({ hasText: "code" });
+  await row.hover();
+  const handle = row.locator('.react-flow__handle[data-handleid="code"]');
+  const from = await handle.boundingBox();
+  const to = await node("users").boundingBox();
+  if (!from || !to) throw new Error("no geometry");
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + 20, { steps: 12 });
+  await shot("05-drawing");
+  await page.mouse.up();
+  await edge("coupons.code->users").waitFor();
+  await page.getByRole("button", { name: "Copy as Mermaid diagram" }).click();
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  if (!text.includes('coupons }o--|| users : "code"')) throw new Error("not in Mermaid");
+});
+
+await check("a drawn reference is dashed and can be removed", async () => {
+  const drawn = edge("coupons.code->users");
+  const dash = await drawn.locator(".react-flow__edge-path").getAttribute("style");
+  if (!dash?.includes("stroke-dasharray")) throw new Error(`style ${dash}`);
+  await drawn.dispatchEvent("click");
+  await page.getByText("drawn").waitFor();
+  await shot("06-drawn-selected");
+  await page.getByRole("button", { name: "Remove", exact: true }).click();
+  await drawn.waitFor({ state: "detached" });
+});
+
+await check("a wrong inferred reference can be hidden and shown again", async () => {
+  await edge("orders.couponId->coupons").dispatchEvent("click");
+  await page.getByRole("button", { name: "Hide", exact: true }).click();
+  await edge("orders.couponId->coupons").waitFor({ state: "detached" });
+  await page.getByText("1 reference hidden").waitFor();
+  await shot("07-hidden");
+  await page.getByRole("button", { name: "Show", exact: true }).click();
+  await edge("orders.couponId->coupons").waitFor();
+  if (await page.getByRole("button", { name: "Hide", exact: true }).isVisible())
+    throw new Error("still selected");
+});
+
+await check("a note is added, kept, and deleted", async () => {
+  await page.getByRole("button", { name: "Add a note" }).click();
+  const note = page.getByRole("textbox", { name: "Note" });
+  await note.waitFor();
+  await page.keyboard.type("Orders are archived after 2 years");
+  await page.waitForTimeout(300);
+  await shot("08-note");
+  await page.reload();
+  await tree
+    .getByRole("button", { name: /^Local development/ })
+    .first()
+    .click();
+  await page.getByRole("heading", { name: "Diagram of shop" }).waitFor();
+  await note.waitFor({ timeout: 15000 });
+  if ((await note.inputValue()) !== "Orders are archived after 2 years") throw new Error("lost");
+  await note.hover();
+  await page.getByRole("button", { name: "Delete note" }).click();
+  await note.waitFor({ state: "detached" });
 });
 
 await check("double-clicking a collection opens it", async () => {

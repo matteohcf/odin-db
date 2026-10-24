@@ -1,5 +1,6 @@
 import dagre from "@dagrejs/dagre";
 import type { DatabaseDiagram, DiagramCollection, DiagramLink } from "@odin-db/bindings";
+import { linkId } from "./annotations";
 
 export const NODE_WIDTH = 260;
 export const HEADER_HEIGHT = 40;
@@ -101,11 +102,13 @@ export interface GraphEdge {
 /**
  * Nodes and edges for the diagram, laid out left to right so references flow toward the
  * collections they point at. `saved` positions (dragged by the user) win over the layout.
+ * `layoutLinks` place the nodes, so references the user draws or hides do not move everything.
  */
 export function buildGraph(
   diagram: DatabaseDiagram,
   mode: FieldMode,
   saved: Readonly<Record<string, { x: number; y: number }>> = {},
+  layoutLinks: readonly DiagramLink[] = diagram.links,
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const incoming = new Map<string, number>();
   for (const link of diagram.links) incoming.set(link.to, (incoming.get(link.to) ?? 0) + 1);
@@ -129,7 +132,7 @@ export function buildGraph(
   for (const data of datas) {
     graph.setNode(data.name, { width: NODE_WIDTH, height: nodeHeight(data) });
   }
-  for (const link of diagram.links) {
+  for (const link of layoutLinks) {
     if (link.from !== link.to) graph.setEdge(link.from, link.to);
   }
   dagre.layout(graph);
@@ -146,7 +149,7 @@ export function buildGraph(
   const shown = new Map(datas.map((data) => [data.name, data.fields]));
   const edges = diagram.links.map(
     (link): GraphEdge => ({
-      id: `${link.from}.${link.field}->${link.to}`,
+      id: linkId(link),
       source: link.from,
       target: link.to,
       // A field cut by the row limit leaves from the node's header instead.

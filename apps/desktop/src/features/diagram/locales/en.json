@@ -42,5 +42,16 @@
   "matchOf": "{{current}} of {{total}}",
   "previousMatch": "Previous match (Shift+Enter)",
   "nextMatch": "Next match (Enter)",
-  "clearSearch": "Clear search"
+  "clearSearch": "Clear search",
+  "addNote": "Add a note",
+  "note": "Note",
+  "notePlaceholder": "Write a note…",
+  "removeNote": "Delete note",
+  "drawLink": "Drag to a collection to draw a reference from {{field}}",
+  "drawn": "drawn",
+  "removeLink": "Remove",
+  "hideLink": "Hide",
+  "hiddenLinks_one": "{{count}} reference hidden",
+  "hiddenLinks_other": "{{count}} references hidden",
+  "showHidden": "Show"
 }

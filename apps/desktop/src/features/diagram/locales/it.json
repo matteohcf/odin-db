@@ -42,5 +42,16 @@
   "matchOf": "{{current}} di {{total}}",
   "previousMatch": "Risultato precedente (Maiusc+Invio)",
   "nextMatch": "Risultato successivo (Invio)",
-  "clearSearch": "Cancella la ricerca"
+  "clearSearch": "Cancella la ricerca",
+  "addNote": "Aggiungi una nota",
+  "note": "Nota",
+  "notePlaceholder": "Scrivi una nota…",
+  "removeNote": "Elimina nota",
+  "drawLink": "Trascina su una collezione per tracciare un riferimento da {{field}}",
+  "drawn": "tracciato",
+  "removeLink": "Rimuovi",
+  "hideLink": "Nascondi",
+  "hiddenLinks_one": "{{count}} riferimento nascosto",
+  "hiddenLinks_other": "{{count}} riferimenti nascosti",
+  "showHidden": "Mostra"
 }

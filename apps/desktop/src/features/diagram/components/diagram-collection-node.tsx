@@ -1,5 +1,5 @@
 import { cn } from "@odin-db/ui/lib/utils";
-import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
+import { Handle, type Node, type NodeProps, Position, useConnection } from "@xyflow/react";
 import { ArrowUpRight, Clock, Eye, Folder, KeyRound, Link2 } from "lucide-react";
 import { memo, useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,11 @@ import { DiagramActions } from "./diagram-actions";
 const kindIcon = { collection: Folder, view: Eye, timeseries: Clock } as const;
 // Handles sit on the card's edge; React Flow needs them, the user does not.
 const handleClass = "!size-1.5 !min-h-0 !min-w-0 !border-0 !bg-transparent";
+// A field's handle shows on hover: dragging it draws a reference to another collection.
+const fieldHandleClass =
+  "!size-2 !min-h-0 !min-w-0 !border-0 !bg-transparent group-hover/row:!bg-primary !right-0";
+/** While a reference is being drawn, the whole card takes the drop. */
+const DROP_HANDLE = "drop";
 
 export type DiagramCollectionNode = Node<DiagramNodeData, "collection">;
 
@@ -30,12 +35,14 @@ export const DiagramCollectionNodeView = memo(function DiagramCollectionNodeView
   const { t, i18n } = useTranslation("diagram");
   const { onOpen } = useContext(DiagramActions);
   const Icon = kindIcon[data.kind];
+  const connecting = useConnection((connection) => connection.inProgress);
 
   return (
     <div
       className={cn(
         "group rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow",
         selected ? "border-primary ring-2 ring-primary/30" : "hover:shadow-md",
+        connecting && "hover:border-primary hover:ring-2 hover:ring-primary/30",
       )}
       style={{ width: NODE_WIDTH }}
     >
@@ -51,7 +58,18 @@ export const DiagramCollectionNodeView = memo(function DiagramCollectionNodeView
         position={Position.Right}
         className={handleClass}
         style={{ top: HEADER_HEIGHT / 2 }}
+        isConnectable={false}
       />
+      {connecting && (
+        <Handle
+          type="target"
+          id={DROP_HANDLE}
+          position={Position.Left}
+          isConnectableStart={false}
+          className="!min-h-0 !min-w-0 !border-0 !bg-transparent"
+          style={{ inset: 0, width: "100%", height: "100%", transform: "none", borderRadius: 8 }}
+        />
+      )}
       <div
         className="flex items-center gap-2 border-b px-3"
         style={{ height: HEADER_HEIGHT }}
@@ -83,7 +101,7 @@ export const DiagramCollectionNodeView = memo(function DiagramCollectionNodeView
           return (
             <li
               key={field.path}
-              className="relative flex items-center gap-1.5 pr-3"
+              className="group/row relative flex items-center gap-1.5 pr-3"
               style={{ height: ROW_HEIGHT, paddingLeft: 12 + field.depth * 12 }}
               title={
                 field.references
@@ -117,14 +135,13 @@ export const DiagramCollectionNodeView = memo(function DiagramCollectionNodeView
                   {field.type}
                 </span>
               )}
-              {field.references && (
-                <Handle
-                  type="source"
-                  id={field.path}
-                  position={Position.Right}
-                  className={handleClass}
-                />
-              )}
+              <Handle
+                type="source"
+                id={field.path}
+                position={Position.Right}
+                className={fieldHandleClass}
+                title={t("drawLink", { field: field.path })}
+              />
             </li>
           );
         })}
