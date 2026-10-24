@@ -24,13 +24,13 @@ export function AiModelsTable({ overview }: { overview: AiOverview }) {
               <th scope="col" className={`${head} pl-4`}>
                 {t("ai.table.model")}
               </th>
-              <th scope="col" className={`${head} hidden @2xl:table-cell`}>
+              <th scope="col" className={`${head} hidden @xl:table-cell`}>
                 {t("ai.table.accuracy")}
               </th>
-              <th scope="col" className={`${head} hidden @2xl:table-cell`}>
+              <th scope="col" className={`${head} hidden @xl:table-cell`}>
                 {t("ai.table.speed")}
               </th>
-              <th scope="col" className={`${head} hidden @2xl:table-cell`}>
+              <th scope="col" className={`${head} hidden @xl:table-cell`}>
                 {t("ai.table.size")}
               </th>
               <th scope="col" className={head}>

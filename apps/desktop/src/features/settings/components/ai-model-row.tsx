@@ -39,7 +39,7 @@ export function AiModelRow({ entry, recommended, memoryGib }: AiModelRowProps) {
           {recommended && <Badge>{t("ai.recommended")}</Badge>}
         </div>
         {/* Narrow sections drop the numeric columns; their values move under the name. */}
-        <div className="flex flex-wrap items-center gap-x-3 pt-1.5 text-xs @2xl:hidden">
+        <div className="flex flex-wrap items-center gap-x-3 pt-1.5 text-xs @xl:hidden">
           <AccuracyMeter accuracy={spec.benchmark?.accuracy} />
           <span className="text-muted-foreground tabular-nums">
             {speed} · {size(total)}
@@ -71,13 +71,13 @@ export function AiModelRow({ entry, recommended, memoryGib }: AiModelRowProps) {
           </p>
         )}
       </td>
-      <td className="hidden py-3 pr-4 text-xs @2xl:table-cell">
+      <td className="hidden py-3 pr-4 text-xs @xl:table-cell">
         <AccuracyMeter accuracy={spec.benchmark?.accuracy} />
       </td>
-      <td className="hidden whitespace-nowrap py-3 pr-4 text-xs tabular-nums @2xl:table-cell">
+      <td className="hidden whitespace-nowrap py-3 pr-4 text-xs tabular-nums @xl:table-cell">
         {speed}
       </td>
-      <td className="hidden whitespace-nowrap py-3 pr-4 text-xs tabular-nums @2xl:table-cell">
+      <td className="hidden whitespace-nowrap py-3 pr-4 text-xs tabular-nums @xl:table-cell">
         {size(total)}
       </td>
       <td className="py-2.5 pr-4">

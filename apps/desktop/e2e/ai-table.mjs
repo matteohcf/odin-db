@@ -27,8 +27,9 @@ await check("models are a table with accuracy, speed and size", async () => {
   for (const name of ["Model", "Accuracy", "Per query", "Download"])
     await table.getByRole("columnheader", { name }).waitFor();
   const row = table.getByRole("row").filter({ hasText: "Qwen2.5 Coder 1.5B" });
-  await row.getByText("85%").waitFor();
-  await row.getByText("2.9 s").waitFor();
+  // The compact layout repeats the numbers under the name, hidden at this width.
+  await row.getByText("85%").filter({ visible: true }).waitFor();
+  await row.getByText("2.9 s").filter({ visible: true }).waitFor();
   await row.getByText(/best balance of accuracy and speed/).waitFor();
   await page.getByText(/105 test requests/).waitFor();
   await page.screenshot({ path: "test-results/ai-table.png", fullPage: true });
