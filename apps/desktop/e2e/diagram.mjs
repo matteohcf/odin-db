@@ -93,6 +93,13 @@ await check("double-clicking a collection opens it", async () => {
   await page.getByRole("tab", { name: /users/ }).waitFor();
 });
 
+await check("the command palette opens a database's diagram", async () => {
+  await page.keyboard.press("Meta+k");
+  await page.keyboard.type("diagram of analytics");
+  await page.getByRole("option", { name: "Show diagram of analytics" }).click();
+  await page.getByRole("heading", { name: "Diagram of analytics" }).waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

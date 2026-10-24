@@ -138,6 +138,7 @@ function PaletteResults({
   const activate = useTabs((s) => s.activate);
   const openCollection = useTabs((s) => s.openCollection);
   const openShell = useTabs((s) => s.openShell);
+  const openDiagram = useTabs((s) => s.openDiagram);
   const openBackups = useTabs((s) => s.openBackups);
   const openSettings = useTabs((s) => s.openSettings);
   const connect = useConnect();
@@ -204,6 +205,16 @@ function PaletteResults({
       icon: SquareTerminal,
       run: () => openShell(connection.profileId),
     })),
+    ...connections.flatMap((connection, index) =>
+      (catalogs[index]?.data ?? []).map(({ database }) => ({
+        id: `diagram:${connection.id}/${database}`,
+        label: severalConnections
+          ? t("palette.openDiagramOn", { database, name: nameOf(connection.profileId) })
+          : t("palette.openDiagram", { database }),
+        icon: Waypoints,
+        run: () => openDiagram(connection.profileId, database),
+      })),
+    ),
     { id: "new", label: t("palette.newConnection"), icon: Plus, run: onNewConnection },
     { id: "backups", label: t("palette.backups"), icon: HardDriveDownload, run: openBackups },
     { id: "settings", label: t("palette.settings"), icon: Settings, run: () => openSettings() },

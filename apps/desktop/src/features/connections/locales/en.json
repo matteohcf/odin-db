@@ -167,7 +167,9 @@
     "usersTab": "Users · {{name}}",
     "settingsTab": "Settings",
     "settings": "Open settings",
-    "diagramTab": "Diagram · {{name}}"
+    "diagramTab": "Diagram · {{name}}",
+    "openDiagram": "Show diagram of {{database}}",
+    "openDiagramOn": "Show diagram of {{database}} on {{name}}"
   },
   "health": {
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",

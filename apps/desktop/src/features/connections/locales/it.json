@@ -167,7 +167,9 @@
     "usersTab": "Utenti · {{name}}",
     "settingsTab": "Impostazioni",
     "settings": "Apri le impostazioni",
-    "diagramTab": "Diagramma · {{name}}"
+    "diagramTab": "Diagramma · {{name}}",
+    "openDiagram": "Mostra diagramma di {{database}}",
+    "openDiagramOn": "Mostra diagramma di {{database}} su {{name}}"
   },
   "health": {
     "lost": "{{name}} ha smesso di rispondere. odin-db continua a riprovare in background.",
