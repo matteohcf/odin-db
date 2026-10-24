@@ -1,4 +1,4 @@
-import type { ConnectionId, Namespace } from "@odin-db/bindings";
+import type { ConnectionId, FieldSummary, Namespace } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Checkbox } from "@odin-db/ui/components/checkbox";
 import {
@@ -12,10 +12,13 @@ import {
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { CircleAlert } from "lucide-react";
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { FormField } from "@/components/form-field";
+import { QueryEditor } from "@/components/query-editor";
+import { useQueryCompletions } from "@/hooks/use-query-completions";
+import { useSampleFields } from "@/hooks/use-sample-fields";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument } from "@/lib/shell-syntax";
 import { useCreateIndex } from "../api/indexes";
@@ -30,6 +33,11 @@ interface CreateIndexDialogProps {
 
 type Flag = "unique" | "sparse" | "hidden";
 
+const NO_FIELDS: FieldSummary[] = [];
+/** The look of an input, around a single-line query editor. */
+const EDITOR_FRAME =
+  "flex h-9 items-center rounded-md border px-3 shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30";
+
 export function CreateIndexDialog({
   connectionId,
   namespace,
@@ -40,6 +48,10 @@ export function CreateIndexDialog({
   const id = useId();
   const create = useCreateIndex(connectionId, namespace);
   const [keys, setKeys] = useState(initialKeys);
+  const form = useRef<HTMLFormElement>(null);
+  // Keys read like a sort: field paths, then 1 or -1.
+  const fields = useSampleFields(connectionId, namespace);
+  const completionsFor = useQueryCompletions(fields.data ?? NO_FIELDS);
   const [name, setName] = useState("");
   const [flags, setFlags] = useState<Record<Flag, boolean>>({
     unique: false,
@@ -95,23 +107,24 @@ export function CreateIndexDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-xl">
-        <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+        <form ref={form} onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
           <DialogHeader>
             <DialogTitle>{t("create.title")}</DialogTitle>
             <DialogDescription>{t("create.description")}</DialogDescription>
           </DialogHeader>
 
           <FormField id={`${id}-keys`} label={t("create.keys")} hint={t("create.keysHint")}>
-            <Input
-              id={`${id}-keys`}
-              value={keys}
-              onChange={(event) => setKeys(event.target.value)}
-              placeholder="{ email: 1 }"
-              className="font-mono text-xs"
-              spellCheck={false}
-              autoComplete="off"
-              autoFocus
-            />
+            <div className={EDITOR_FRAME}>
+              <QueryEditor
+                value={keys}
+                onChange={setKeys}
+                onSubmit={() => form.current?.requestSubmit()}
+                completions={completionsFor("sort")}
+                placeholder="{ email: 1 }"
+                ariaLabel={t("create.keys")}
+                autoFocus
+              />
+            </div>
           </FormField>
 
           <FormField id={`${id}-name`} label={t("create.name")}>
@@ -144,15 +157,16 @@ export function CreateIndexDialog({
             label={t("create.partial")}
             hint={t("create.partialHint")}
           >
-            <Input
-              id={`${id}-partial`}
-              value={partial}
-              onChange={(event) => setPartial(event.target.value)}
-              placeholder='{ status: "active" }'
-              className="font-mono text-xs"
-              spellCheck={false}
-              autoComplete="off"
-            />
+            <div className={EDITOR_FRAME}>
+              <QueryEditor
+                value={partial}
+                onChange={setPartial}
+                onSubmit={() => form.current?.requestSubmit()}
+                completions={completionsFor("filter")}
+                placeholder='{ status: "active" }'
+                ariaLabel={t("create.partial")}
+              />
+            </div>
           </FormField>
 
           {error && (

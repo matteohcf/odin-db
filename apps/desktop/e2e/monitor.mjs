@@ -75,7 +75,7 @@ await check("the index advisor lists slow scans and creates the index", async ()
   await shot("advisor");
   await advisor.getByRole("button", { name: "Create index" }).first().click();
   const dialog = page.getByRole("dialog", { name: "Create index" });
-  const keys = await dialog.getByLabel("Keys").inputValue();
+  const keys = await dialog.getByRole("textbox", { name: "Keys" }).innerText();
   if (keys !== "{ status: 1, placedAt: -1 }") throw new Error(keys);
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await dialog.waitFor({ state: "detached" });

@@ -68,6 +68,23 @@ await check("copy every index at once", async () => {
   const text = await page.evaluate(() => navigator.clipboard.readText());
   if (text.includes("_id_") || text.split("\n").length < 2) throw new Error(text);
 });
+await check("create an index, picking its field from suggestions", async () => {
+  await page.getByRole("button", { name: "Create index" }).click();
+  const dialog = page.getByRole("dialog", { name: "Create index" });
+  const keys = dialog.getByRole("textbox", { name: "Keys" });
+  await keys.click();
+  await page.keyboard.type("{ ag");
+  await page.locator(".cm-tooltip-autocomplete").getByText("age", { exact: true }).waitFor();
+  await shot("keys-suggestions");
+  // Accepting writes "age: " and the brace is already closed.
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("-1");
+  if ((await keys.innerText()).replace(/\s+/g, " ").trim() !== "{ age: -1 }")
+    throw new Error(await keys.innerText());
+  await dialog.getByRole("button", { name: "Create index" }).click();
+  await page.getByRole("row", { name: /age_-1/ }).waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();
