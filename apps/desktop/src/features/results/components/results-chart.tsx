@@ -32,6 +32,7 @@ import {
   type TimeUnit,
 } from "../lib/chart";
 import { ChartPicker } from "./chart-picker";
+import { ResultsMap } from "./results-map";
 
 const AGGREGATES: readonly Aggregate[] = ["sum", "avg", "min", "max"];
 const COUNT = "\u0000count";
@@ -128,18 +129,20 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
           onChange={(x) => set({ x })}
           options={fields.map((field) => ({ value: field.path, label: field.path }))}
         />
-        <ChartPicker
-          label={t("chart.value")}
-          value={spec.y ?? COUNT}
-          onChange={(y) => set({ y: y === COUNT ? null : y })}
-          options={[
-            { value: COUNT, label: t("chart.count") },
-            ...fields
-              .filter((field) => field.role === "number")
-              .map((field) => ({ value: field.path, label: field.path })),
-          ]}
-        />
-        {spec.y !== null && role !== "number" && (
+        {role !== "geo" && (
+          <ChartPicker
+            label={t("chart.value")}
+            value={spec.y ?? COUNT}
+            onChange={(y) => set({ y: y === COUNT ? null : y })}
+            options={[
+              { value: COUNT, label: t("chart.count") },
+              ...fields
+                .filter((field) => field.role === "number")
+                .map((field) => ({ value: field.path, label: field.path })),
+            ]}
+          />
+        )}
+        {spec.y !== null && role !== "number" && role !== "geo" && (
           <ChartPicker
             label={t("chart.aggregate.label")}
             value={spec.aggregate}
@@ -166,6 +169,15 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
         <p className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
           {t("chart.empty", { field: spec.x })}
         </p>
+      ) : data.kind === "map" ? (
+        <div className="flex min-h-0 flex-1 flex-col px-4 pt-3 pb-4">
+          <p className="mb-2 font-medium text-sm">
+            {spec.x} <span className="font-normal text-muted-foreground">{t("chart.onMap")}</span>
+          </p>
+          <div className="min-h-0 flex-1">
+            <ResultsMap points={data.points} rows={rows} />
+          </div>
+        </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto px-4 pt-3 pb-4">
           <p className="mb-2 font-medium text-sm">

@@ -167,6 +167,12 @@
     "empty": "Nessun documento caricato ha un valore per {{field}}.",
     "noFields": "Niente da rappresentare: questi documenti non hanno campi numerici, data o testo.",
     "byField": "per {{field}}",
-    "against": "rispetto a {{field}}"
+    "against": "rispetto a {{field}}",
+    "onMap": "sulla mappa",
+    "map_one": "Mappa di {{count}} luogo",
+    "map_other": "Mappa di {{count}} luoghi",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Riduci",
+    "fit": "Adatta ai punti"
   }
 }

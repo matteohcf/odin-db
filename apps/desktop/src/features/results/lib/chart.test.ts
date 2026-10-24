@@ -78,3 +78,32 @@ describe("chartData", () => {
     expect(scatter.points).toContainEqual({ x: 7, y: 7 });
   });
 });
+
+describe("places", () => {
+  const point = (lon: number, lat: number) => ({
+    type: "Point",
+    coordinates: [{ $numberDouble: String(lon) }, { $numberInt: String(lat) }],
+  });
+  const stores: JsonObject[] = [
+    { name: "Duomo", location: point(9.19, 45) },
+    { name: "Colosseo", location: point(12.49, 41) },
+    { name: "Online" },
+  ];
+
+  it("takes a GeoJSON point field as a place, not as its parts", () => {
+    expect(chartFields(stores)).toContainEqual({ path: "location", role: "geo" });
+    expect(chartFields(stores).some((field) => field.path.startsWith("location."))).toBe(false);
+  });
+
+  it("puts each document with a point on the map", () => {
+    const data = chartData(stores, "geo", { x: "location", y: null, aggregate: "sum" });
+    expect(data).toEqual({
+      kind: "map",
+      points: [
+        { x: 9.19, y: 45, row: 0 },
+        { x: 12.49, y: 41, row: 1 },
+      ],
+      missing: 1,
+    });
+  });
+});

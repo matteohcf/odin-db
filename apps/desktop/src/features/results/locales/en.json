@@ -167,6 +167,12 @@
     "empty": "No loaded document has a value for {{field}}.",
     "noFields": "Nothing to chart: these documents have no number, date or text fields.",
     "byField": "by {{field}}",
-    "against": "against {{field}}"
+    "against": "against {{field}}",
+    "onMap": "on the map",
+    "map_one": "Map of {{count}} place",
+    "map_other": "Map of {{count}} places",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit to the points"
   }
 }

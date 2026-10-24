@@ -1,4 +1,5 @@
-// Quick charts of loaded results: over time, by category, histogram, scatter, back to the table.
+// Quick charts of loaded results: over time, by category, histogram, scatter, map, back to the
+// table.
 import { chromium } from "playwright";
 
 const scheme = process.env.SCHEME ?? "light";
@@ -70,6 +71,28 @@ await check("a number alone is a histogram, against another a scatter", async ()
   await pick("Value", "number");
   await chart.locator(".recharts-scatter-symbol").first().waitFor();
   await shot("04-scatter");
+});
+
+await check("GeoJSON points go on a map", async () => {
+  await page.getByRole("button", { name: /^users$/ }).click();
+  await page.getByRole("tab", { name: /users/ }).waitFor();
+  await pick("By", "address.location");
+  const map = page.getByRole("img", { name: /^Map of \d+ places$/ });
+  await map.waitFor();
+  if (await page.getByRole("combobox", { name: "Value" }).isVisible())
+    throw new Error("value picker on a map");
+  const dots = map.locator("circle[data-point]");
+  if ((await dots.count()) < 10) throw new Error(`${await dots.count()} dots`);
+  await page.waitForTimeout(200);
+  await shot("05-map");
+  await dots.first().hover({ force: true });
+  await map.getByText(/^\d+\.\d+, \d+\.\d+$/).waitFor();
+  await shot("06-map-hover");
+  const before = await map.locator("svg").getAttribute("viewBox");
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  if ((await map.locator("svg").getAttribute("viewBox")) === before) throw new Error("no zoom");
+  await page.getByRole("button", { name: "Fit to the points" }).click();
+  if ((await map.locator("svg").getAttribute("viewBox")) !== before) throw new Error("no fit");
 });
 
 await check("the table comes back", async () => {

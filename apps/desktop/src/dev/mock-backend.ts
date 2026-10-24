@@ -64,7 +64,28 @@ const firstNames = [
   "Guido",
 ];
 const cities = ["Milano", "Torino", "Bologna", "Roma", "Napoli", "Firenze", "Verona"];
+const cityCenters: [number, number][] = [
+  [9.19, 45.46],
+  [7.69, 45.07],
+  [11.34, 44.49],
+  [12.5, 41.9],
+  [14.27, 40.85],
+  [11.26, 43.77],
+  [10.99, 45.44],
+];
 const plans = ["free", "pro", "team", "enterprise"];
+
+/** A GeoJSON point a few kilometres from `center`, the same for the same `i`. */
+function pointNear([lon, lat]: [number, number], i: number): Doc {
+  const offset = (seed: number) => ((seed % 100) - 50) / 1000;
+  return {
+    type: "Point",
+    coordinates: [
+      { $numberDouble: String(Math.round((lon + offset(i * 37)) * 1e4) / 1e4) },
+      { $numberDouble: String(Math.round((lat + offset(i * 53)) * 1e4) / 1e4) },
+    ],
+  };
+}
 
 function user(i: number): Doc {
   const name = `${firstNames[i % firstNames.length]} ${String.fromCharCode(65 + (i % 26))}.`;
@@ -80,7 +101,11 @@ function user(i: number): Doc {
     loginCount: { $numberLong: String(i * 1_234_567) },
     createdAt: { $date: { $numberLong: String(1_672_531_200_000 + i * 3_600_000) } },
     tags: i % 3 === 0 ? ["beta", "newsletter"] : ["newsletter"],
-    address: { city: cities[i % cities.length] ?? "Milano", zip: String(20100 + (i % 90)) },
+    address: {
+      city: cities[i % cities.length] ?? "Milano",
+      zip: String(20100 + (i % 90)),
+      location: pointNear(cityCenters[i % cityCenters.length] ?? [9.19, 45.46], i),
+    },
   };
   if (i % 7 === 0) doc.referrer = null;
   if (i % 11 === 0) doc.avatar = { $binary: { base64: "iVBORw0KGgo=", subType: "00" } };

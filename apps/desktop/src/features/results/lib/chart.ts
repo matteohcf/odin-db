@@ -2,7 +2,7 @@ import type { JsonValue } from "@odin-db/bindings";
 import { isJsonObject, type JsonObject } from "@/lib/ejson-display";
 import { fieldPathsOf } from "@/lib/ejson-fields";
 
-export type FieldRole = "number" | "date" | "category";
+export type FieldRole = "number" | "date" | "category" | "geo";
 export interface ChartField {
   path: string;
   role: FieldRole;
@@ -31,12 +31,43 @@ const ROLES: Record<string, FieldRole> = {
   bool: "category",
 };
 
-/** Fields a chart can use, by what they hold in most documents. Arrays and documents cannot. */
+/**
+ * Fields a chart can use, by what they hold in most documents. Arrays and documents cannot,
+ * except GeoJSON points, which stand for a place rather than for their own fields.
+ */
 export function chartFields(rows: readonly JsonObject[]): ChartField[] {
-  return fieldPathsOf(rows).flatMap((field) => {
+  const summaries = fieldPathsOf(rows);
+  const places = summaries
+    .filter((field) => field.types[0] === "object" && isPlace(rows, field.path))
+    .map((field) => field.path);
+  const inPlace = (path: string) => places.some((place) => path.startsWith(`${place}.`));
+  return summaries.flatMap((field): ChartField[] => {
+    if (places.includes(field.path)) return [{ path: field.path, role: "geo" }];
     const role = ROLES[field.types[0] ?? ""];
-    return role && field.path !== "_id" ? [{ path: field.path, role }] : [];
+    return role && field.path !== "_id" && !inPlace(field.path) ? [{ path: field.path, role }] : [];
   });
+}
+
+/** Most documents that have the field hold a GeoJSON point in it. */
+function isPlace(rows: readonly JsonObject[], path: string): boolean {
+  let present = 0;
+  let points = 0;
+  for (const row of rows.slice(0, 200)) {
+    const value = valueAt(row, path);
+    if (value === undefined) continue;
+    present += 1;
+    if (pointOf(value)) points += 1;
+  }
+  return present > 0 && points * 2 >= present;
+}
+
+/** `[longitude, latitude]` of a GeoJSON point. */
+function pointOf(value: JsonValue | undefined): [number, number] | null {
+  if (!isJsonObject(value) || value.type !== "Point" || !Array.isArray(value.coordinates))
+    return null;
+  const [lon, lat] = value.coordinates.map((coordinate) => numberOf(coordinate));
+  if (lon == null || lat == null || Math.abs(lon) > 180 || Math.abs(lat) > 90) return null;
+  return [lon, lat];
 }
 
 /** A starting chart: something over time if there is a date, else the first category. */
@@ -44,7 +75,8 @@ export function defaultSpec(fields: readonly ChartField[]): ChartSpec | null {
   const x =
     fields.find((field) => field.role === "date") ??
     fields.find((field) => field.role === "category") ??
-    fields.find((field) => field.role === "number");
+    fields.find((field) => field.role === "number") ??
+    fields.find((field) => field.role === "geo");
   return x ? { x: x.path, y: null, aggregate: "sum" } : null;
 }
 
@@ -127,6 +159,8 @@ export interface ChartPoint {
   y: number | null;
   /** A histogram bin's upper bound. */
   to?: number;
+  /** The document a map point stands for, by its position in the results. */
+  row?: number;
 }
 
 export type TimeUnit = "hour" | "day" | "month" | "year";
@@ -135,7 +169,8 @@ export type ChartData =
   | { kind: "bar"; points: ChartPoint[]; other: boolean; missing: number }
   | { kind: "line"; unit: TimeUnit; points: ChartPoint[]; missing: number }
   | { kind: "histogram"; points: ChartPoint[]; missing: number }
-  | { kind: "scatter"; points: ChartPoint[]; missing: number };
+  | { kind: "scatter"; points: ChartPoint[]; missing: number }
+  | { kind: "map"; points: ChartPoint[]; missing: number };
 
 /** The chart a spec describes, from documents loaded in the results. */
 export function chartData(
@@ -144,6 +179,7 @@ export function chartData(
   spec: ChartSpec,
 ): ChartData {
   const yOf = (row: JsonObject) => (spec.y === null ? null : numberOf(valueAt(row, spec.y)));
+  if (role === "geo") return places(rows, spec);
   if (role === "date") return timeSeries(rows, spec, yOf);
   if (role === "number") return spec.y === null ? histogram(rows, spec) : scatter(rows, spec, yOf);
   return categories(rows, spec, yOf);
@@ -303,4 +339,14 @@ function scatter(
   }
   const missing = rows.length - points.length;
   return { kind: "scatter", points: points.slice(0, MAX_POINTS), missing };
+}
+
+/** Each document's point, longitude as x and latitude as y. */
+function places(rows: readonly JsonObject[], spec: ChartSpec): ChartData {
+  const points: ChartPoint[] = [];
+  rows.forEach((row, index) => {
+    const point = pointOf(valueAt(row, spec.x));
+    if (point) points.push({ x: point[0], y: point[1], row: index });
+  });
+  return { kind: "map", points, missing: rows.length - points.length };
 }

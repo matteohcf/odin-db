@@ -52,3 +52,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0046](0046-live-changes.md) | Live changes | Accepted |
 | [0047](0047-diagram-annotations.md) | Diagram annotations | Accepted |
 | [0048](0048-quick-charts.md) | Quick charts of results | Accepted |
+| [0049](0049-results-map.md) | Results on a map | Accepted |
