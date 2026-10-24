@@ -91,7 +91,11 @@ function DialogFooter({
   return (
     <div
       data-slot="dialog-footer"
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        // A footer bar across the bottom; globals.css pins it while a long dialog scrolls.
+        "-mx-6 -mb-6 mt-2 flex flex-col-reverse gap-2 rounded-b-lg border-t bg-muted px-6 py-3 sm:flex-row sm:justify-end",
+        className,
+      )}
       {...props}
     >
       {children}
