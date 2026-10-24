@@ -19,6 +19,7 @@ import type {
   JsonValue,
   ProfileInput,
   QueryOptions,
+  ReplicaSetStatus,
 } from "@odin-db/bindings";
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -2335,6 +2336,48 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const index = mockUsers.findIndex((u) => u.user === args.name && u.db === args.database);
     if (index >= 0) mockUsers.splice(index, 1);
     return null;
+  },
+  replica_set_status: (args) => {
+    serverOf(id("connectionId", args));
+    const uptime = Math.round(Date.now() / 1000) % 1_000_000;
+    return {
+      set: "rs0",
+      members: [
+        {
+          name: "localhost:27017",
+          state: "PRIMARY",
+          healthy: true,
+          isSelf: true,
+          uptimeSeconds: uptime,
+          pingMs: null,
+          lagSeconds: 0,
+          syncSource: null,
+          message: null,
+        },
+        {
+          name: "localhost:27018",
+          state: "SECONDARY",
+          healthy: true,
+          isSelf: false,
+          uptimeSeconds: uptime - 40,
+          pingMs: 2,
+          lagSeconds: 14,
+          syncSource: "localhost:27017",
+          message: null,
+        },
+        {
+          name: "localhost:27019",
+          state: "(not reachable/healthy)",
+          healthy: false,
+          isSelf: false,
+          uptimeSeconds: 0,
+          pingMs: null,
+          lagSeconds: null,
+          syncSource: null,
+          message: "Error connecting to localhost:27019 :: caused by :: Connection refused",
+        },
+      ],
+    } satisfies ReplicaSetStatus;
   },
   server_status: (args) => {
     serverOf(id("connectionId", args));

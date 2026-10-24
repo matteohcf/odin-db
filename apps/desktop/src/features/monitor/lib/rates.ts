@@ -29,3 +29,11 @@ export function rates(previous: ServerStatus, next: ServerStatus): Rates | null 
     bytesOutPerSecond: per(previous.networkBytesOut, next.networkBytesOut),
   };
 }
+
+/** A short duration such as `3d 4h` or `12m`. */
+export function uptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}

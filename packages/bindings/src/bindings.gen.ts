@@ -154,6 +154,10 @@ export const commands = {
 	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
 	setIndexHidden: (connectionId: ConnectionId, namespace: Namespace, name: string, hidden: boolean) => typedError<null, IpcError>(__TAURI_INVOKE("set_index_hidden", { connectionId, namespace, name, hidden })),
 	serverStatus: (connectionId: ConnectionId) => typedError<ServerStatus, IpcError>(__TAURI_INVOKE("server_status", { connectionId })),
+	replicaSetStatus: (connectionId: ConnectionId) => typedError<{
+	set: string,
+	members: ReplicaMember[],
+} | null, IpcError>(__TAURI_INVOKE("replica_set_status", { connectionId })),
 	profilingStatus: (connectionId: ConnectionId, database: string) => typedError<ProfilingStatus, IpcError>(__TAURI_INVOKE("profiling_status", { connectionId, database })),
 	setProfilingStatus: (connectionId: ConnectionId, database: string, status: ProfilingStatus) => typedError<null, IpcError>(__TAURI_INVOKE("set_profiling_status", { connectionId, database, status })),
 	profileEntries: (connectionId: ConnectionId, query: ProfileQuery) => typedError<ProfileEntry[], IpcError>(__TAURI_INVOKE("profile_entries", { connectionId, query })),
@@ -1101,6 +1105,29 @@ export type RecordError = {
 	/**  1-based position of the document or CSV row in the file. */
 	record: number | null,
 	message: string,
+};
+
+export type ReplicaMember = {
+	name: string,
+	/**  `PRIMARY`, `SECONDARY`, `ARBITER`, `RECOVERING`… */
+	state: string,
+	healthy: boolean,
+	/**  The member this connection talks to. */
+	isSelf: boolean,
+	uptimeSeconds: number | null,
+	/**  Round trip from the connected member; none for itself. */
+	pingMs: number | null,
+	/**  How far its oplog is behind the primary's; none without a primary or for arbiters. */
+	lagSeconds: number | null,
+	syncSource: string | null,
+	/**  Why a member is unreachable or unhealthy, as the server says. */
+	message: string | null,
+};
+
+/**  A replica set as the connected member sees it (`replSetGetStatus`). */
+export type ReplicaSetStatus = {
+	set: string,
+	members: ReplicaMember[],
 };
 
 export type RestoreRequest = {

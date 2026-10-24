@@ -49,6 +49,17 @@ await check("server status shows live rates", async () => {
   await shot("01-status");
 });
 
+await check("replica set members show state, lag and problems", async () => {
+  const section = page.getByRole("region", { name: "Replica set" });
+  await section.getByText("rs0").waitFor();
+  await section.getByText("PRIMARY", { exact: true }).waitFor();
+  await section.getByText("(this connection)").waitFor();
+  await section.getByText("14 s").waitFor();
+  await section.getByText(/Connection refused/).waitFor();
+  await section.scrollIntoViewIfNeeded();
+  await shot("replica-set");
+});
+
 await check("running operations are listed and can be killed", async () => {
   const table = page.getByRole("region", { name: "Running operations" });
   await table.getByText("analytics.events").waitFor();

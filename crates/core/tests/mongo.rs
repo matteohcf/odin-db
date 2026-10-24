@@ -3323,3 +3323,30 @@ async fn fields_are_renamed_removed_and_converted_by_filter() {
         Err(CoreError::ReadOnly)
     ));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn replica_set_members_are_reported_and_standalones_have_none() {
+    let standalone = Fixture::start().await;
+    let handle = standalone.connect(false).await;
+    assert_eq!(
+        odin_core::monitor::replica_set_status(&handle)
+            .await
+            .expect("status"),
+        None
+    );
+
+    let fx = Fixture::start_replica_set().await;
+    let handle = fx.connect(false).await;
+    let status = odin_core::monitor::replica_set_status(&handle)
+        .await
+        .expect("status")
+        .expect("a replica set");
+    assert_eq!(status.set, "rs");
+    let [member] = status.members.as_slice() else {
+        panic!("one member: {status:?}")
+    };
+    assert_eq!(member.state, "PRIMARY");
+    assert!(member.healthy && member.is_self);
+    assert_eq!(member.lag_seconds, Some(0.0));
+}

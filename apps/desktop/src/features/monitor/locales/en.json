@@ -93,5 +93,16 @@
     "copied": "createIndex command copied",
     "create": "Create index",
     "readOnly": "This connection is read-only"
+  },
+  "replica": {
+    "title": "Replica set",
+    "failed": "Could not read the replica set status: {{message}}",
+    "member": "Member",
+    "state": "State",
+    "lag": "Behind primary",
+    "ping": "Ping",
+    "uptime": "Uptime",
+    "syncSource": "Syncs from",
+    "self": "(this connection)"
   }
 }

@@ -159,6 +159,109 @@ async fn list_ops(
     Ok(ops)
 }
 
+/// A replica set as the connected member sees it (`replSetGetStatus`).
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ReplicaSetStatus {
+    pub set: String,
+    pub members: Vec<ReplicaMember>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ReplicaMember {
+    pub name: String,
+    /// `PRIMARY`, `SECONDARY`, `ARBITER`, `RECOVERING`…
+    pub state: String,
+    pub healthy: bool,
+    /// The member this connection talks to.
+    pub is_self: bool,
+    pub uptime_seconds: f64,
+    /// Round trip from the connected member; none for itself.
+    pub ping_ms: Option<f64>,
+    /// How far its oplog is behind the primary's; none without a primary or for arbiters.
+    pub lag_seconds: Option<f64>,
+    pub sync_source: Option<String>,
+    /// Why a member is unreachable or unhealthy, as the server says.
+    pub message: Option<String>,
+}
+
+/// The replica set's members, or `None` when the server is not part of one (standalone,
+/// mongos).
+pub async fn replica_set_status(
+    handle: &ConnectionHandle,
+) -> Result<Option<ReplicaSetStatus>, CoreError> {
+    const NOT_A_REPLICA_SET: [i32; 2] = [76, 59];
+    let status = match handle
+        .client
+        .database("admin")
+        .run_command(doc! { "replSetGetStatus": 1 })
+        .await
+    {
+        Err(error)
+            if matches!(*error.kind, mongodb::error::ErrorKind::Command(ref command)
+                if NOT_A_REPLICA_SET.contains(&command.code)) =>
+        {
+            return Ok(None);
+        }
+        result => result?,
+    };
+    Ok(Some(parse_replica_set(&status)))
+}
+
+fn parse_replica_set(status: &Document) -> ReplicaSetStatus {
+    let members: Vec<&Document> = status
+        .get_array("members")
+        .map(|members| members.iter().filter_map(Bson::as_document).collect())
+        .unwrap_or_default();
+    #[allow(clippy::cast_precision_loss)]
+    let optime = |member: &Document| {
+        member
+            .get_datetime("optimeDate")
+            .ok()
+            .map(|date| date.timestamp_millis() as f64)
+    };
+    let primary = members
+        .iter()
+        .find(|member| member.get_str("stateStr").ok() == Some("PRIMARY"))
+        .and_then(|member| optime(member));
+    let text = |member: &Document, key: &str| {
+        member
+            .get_str(key)
+            .ok()
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
+    };
+    ReplicaSetStatus {
+        set: status.get_str("set").unwrap_or_default().to_owned(),
+        members: members
+            .into_iter()
+            .map(|member| {
+                let state = member.get_str("stateStr").unwrap_or_default().to_owned();
+                ReplicaMember {
+                    name: member.get_str("name").unwrap_or_default().to_owned(),
+                    healthy: member.get("health").is_some_and(|h| number_of(h) >= 1.0),
+                    is_self: member.get_bool("self").unwrap_or(false),
+                    uptime_seconds: member.get("uptime").map_or(0.0, number_of),
+                    ping_ms: member.get("pingMs").map(number_of),
+                    lag_seconds: match (primary, optime(member)) {
+                        (Some(primary), Some(own)) if state != "ARBITER" => {
+                            Some(((primary - own) / 1000.0).max(0.0))
+                        }
+                        _ => None,
+                    },
+                    sync_source: text(member, "syncSourceHost"),
+                    message: text(member, "lastHeartbeatMessage")
+                        .or_else(|| text(member, "infoMessage")),
+                    state,
+                }
+            })
+            .collect(),
+    }
+}
+
 /// Asks the server to stop an operation. Read-only profiles cannot.
 pub async fn kill_op(handle: &ConnectionHandle, opid: EJsonValue) -> Result<(), CoreError> {
     handle.ensure_writable()?;
@@ -168,4 +271,36 @@ pub async fn kill_op(handle: &ConnectionHandle, opid: EJsonValue) -> Result<(), 
         .run_command(doc! { "killOp": 1, "op": Bson::try_from(opid)? })
         .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bson::DateTime;
+
+    #[test]
+    fn replica_members_get_their_lag_behind_the_primary() {
+        let at = |millis: i64| DateTime::from_millis(millis);
+        let status = doc! {
+            "set": "rs0",
+            "members": [
+                { "name": "a:27017", "stateStr": "PRIMARY", "health": 1.0, "self": true,
+                  "uptime": 100, "optimeDate": at(10_000) },
+                { "name": "b:27017", "stateStr": "SECONDARY", "health": 1.0, "uptime": 90,
+                  "pingMs": 3_i64, "optimeDate": at(7_500), "syncSourceHost": "a:27017" },
+                { "name": "c:27017", "stateStr": "(not reachable/healthy)", "health": 0.0,
+                  "lastHeartbeatMessage": "connection refused" },
+            ],
+        };
+        let parsed = parse_replica_set(&status);
+        assert_eq!(parsed.set, "rs0");
+        let [a, b, c] = parsed.members.as_slice() else {
+            panic!("three members")
+        };
+        assert!(a.is_self && a.healthy && a.lag_seconds == Some(0.0));
+        assert_eq!((b.lag_seconds, b.ping_ms), (Some(2.5), Some(3.0)));
+        assert_eq!(b.sync_source.as_deref(), Some("a:27017"));
+        assert!(!c.healthy && c.lag_seconds.is_none());
+        assert_eq!(c.message.as_deref(), Some("connection refused"));
+    }
 }

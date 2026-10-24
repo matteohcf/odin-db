@@ -30,9 +30,10 @@ import { toast } from "sonner";
 import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { call, errorMessage } from "@/lib/ipc";
-import { type Rates, rates } from "../lib/rates";
+import { type Rates, rates, uptime } from "../lib/rates";
 import { IndexAdvisorSection } from "./index-advisor-section";
 import { ProfilerSection } from "./profiler-section";
+import { ReplicaSetSection } from "./replica-set-section";
 import { Sparkline } from "./sparkline";
 
 const HISTORY = 60;
@@ -195,6 +196,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
           </div>
         )}
 
+        <ReplicaSetSection connection={connection} polling={polling} />
         <section className="mt-6 flex flex-col gap-2" aria-label={t("ops.title")}>
           <div className="flex items-baseline gap-2">
             <h2 className="font-semibold text-sm">{t("ops.title")}</h2>
@@ -308,13 +310,6 @@ function Stat({ label, value, children }: { label: string; value: string; childr
       {children}
     </div>
   );
-}
-
-function uptime(seconds: number): string {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
 /** Rates need two samples; until the second one, say so rather than show an empty card. */

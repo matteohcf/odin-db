@@ -93,5 +93,16 @@
     "copied": "Comando createIndex copiato",
     "create": "Crea indice",
     "readOnly": "Questa connessione è in sola lettura"
+  },
+  "replica": {
+    "title": "Replica set",
+    "failed": "Impossibile leggere lo stato del replica set: {{message}}",
+    "member": "Membro",
+    "state": "Stato",
+    "lag": "Ritardo sul primary",
+    "ping": "Ping",
+    "uptime": "Attivo da",
+    "syncSource": "Sincronizza da",
+    "self": "(questa connessione)"
   }
 }
