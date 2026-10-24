@@ -39,7 +39,14 @@ await check("grouped connections sit in an open folder, listed first", async () 
 });
 await check("a folder says how many of its connections are open", async () => {
   await row("Tenants cluster").click();
-  await row("Clients").getByText("1 open connection").waitFor({ state: "attached" });
+  await row("Clients").getByText("1 connection · 1 open connection").waitFor({ state: "attached" });
+  // One visible number: the folder's size.
+  const shown = await row("Clients").locator("[aria-hidden]").allInnerTexts();
+  if (shown.filter((text) => /\d/.test(text)).length !== 1) throw new Error(shown.join("|"));
+  await page.screenshot({
+    path: "test-results/group-count.png",
+    clip: { x: 0, y: 80, width: 300, height: 80 },
+  });
 });
 await check("disconnect all from the explorer menu", async () => {
   await page.getByRole("button", { name: "Connections menu" }).click();

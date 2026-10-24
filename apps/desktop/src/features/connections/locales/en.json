@@ -249,7 +249,9 @@
     "renameSubmit": "Rename",
     "open_one": "{{count}} open connection",
     "open_other": "{{count}} open connections",
-    "disconnectAll": "Disconnect all in this group"
+    "disconnectAll": "Disconnect all in this group",
+    "connections_one": "{{count}} connection",
+    "connections_other": "{{count}} connections"
   },
   "importPassphrase": {
     "title": "Password-protected file",

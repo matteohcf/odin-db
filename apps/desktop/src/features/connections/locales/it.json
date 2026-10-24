@@ -249,7 +249,9 @@
     "renameSubmit": "Rinomina",
     "open_one": "{{count}} connessione aperta",
     "open_other": "{{count}} connessioni aperte",
-    "disconnectAll": "Disconnetti tutte le connessioni del gruppo"
+    "disconnectAll": "Disconnetti tutte le connessioni del gruppo",
+    "connections_one": "{{count}} connessione",
+    "connections_other": "{{count}} connessioni"
   },
   "importPassphrase": {
     "title": "File protetto da password",

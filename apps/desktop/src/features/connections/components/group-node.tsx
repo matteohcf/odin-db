@@ -29,6 +29,10 @@ export function GroupNode({
   const open = members.filter((profile) =>
     connections.some((connection) => connection.profileId === profile.id),
   ).length;
+  const summary = [
+    t("group.connections", { count }),
+    ...(open > 0 ? [t("group.open", { count: open })] : []),
+  ].join(" · ");
   const setGroup = useSetGroup();
   const disconnectAll = useDisconnectAll();
   const [renaming, setRenaming] = useState(false);
@@ -42,15 +46,13 @@ export function GroupNode({
         icon={<Icon className="size-3.5" />}
         label={<span className="font-medium">{name}</span>}
         trailing={
-          <span className="flex items-center gap-1.5">
-            {open > 0 && (
-              <span className="flex items-center gap-1" title={t("group.open", { count: open })}>
-                <span className="size-1.5 rounded-full bg-success" />
-                <span className="sr-only">{t("group.open", { count: open })}</span>
-                <span aria-hidden>{open}</span>
-              </span>
-            )}
-            <span>{count}</span>
+          // One number, the folder's size; a dot says some of them are connected.
+          <span className="flex items-center gap-1.5" title={summary}>
+            {open > 0 && <span aria-hidden className="size-1.5 rounded-full bg-success" />}
+            <span aria-hidden className="tabular-nums">
+              {count}
+            </span>
+            <span className="sr-only">{summary}</span>
           </span>
         }
         menuLabel={t("group.actions", { name })}
