@@ -80,6 +80,34 @@ await check("no color removes every mark", async () => {
   await page.waitForFunction(() => !document.querySelector("header.border-t-2"));
 });
 
+await check("an open colored connection tints its whole subtree", async () => {
+  const tree = page.getByRole("complementary");
+  const rowOf = (name) =>
+    tree
+      .locator("li[data-index]")
+      .filter({ has: page.getByRole("button", { name }) })
+      .first();
+  const classOf = async (name) => (await rowOf(name).getAttribute("class")) ?? "";
+  // Earlier checks cleared Local dev's color; Production (Atlas) is red.
+  await page.keyboard.press("Escape");
+  await tree.getByRole("button", { name: /^Production \(Atlas\)/ }).click();
+  await tree
+    .getByRole("button", { name: /^analytics/ })
+    .nth(1)
+    .waitFor();
+  await page.waitForTimeout(300);
+  const production = await classOf(/^Production \(Atlas\)/);
+  if (!production.includes("bg-red-500/8")) throw new Error(`connection: ${production}`);
+  const database = await tree
+    .locator("li[data-index]")
+    .filter({ has: page.getByRole("button", { name: /^analytics/ }) })
+    .nth(1)
+    .getAttribute("class");
+  if (!database?.includes("bg-red-500/8")) throw new Error(`database: ${database}`);
+  if ((await classOf(/^Local dev/)).includes("/8")) throw new Error("uncolored connection tinted");
+  if ((await classOf(/^Staging/)).includes("/8")) throw new Error("closed connection tinted");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

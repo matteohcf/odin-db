@@ -1,4 +1,5 @@
 import type { ConnectionProfile } from "@odin-db/bindings";
+import { cn } from "@odin-db/ui/lib/utils";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   type KeyboardEvent,
@@ -10,6 +11,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { EDIT_SHORTCUTS, label, matches } from "@/lib/shortcuts";
 import { useConnections } from "../api/queries";
@@ -163,6 +165,20 @@ export function TreeList({
     return Boolean(target) || !copied;
   }
 
+  // Like Compass, an open connection's color tints its whole subtree.
+  function colorOf(row: TreeItem) {
+    const profileId =
+      row.kind === "profile"
+        ? row.profile.id
+        : row.kind === "database" || row.kind === "collection"
+          ? row.connection.profileId
+          : row.kind === "message"
+            ? row.key.split("/")[0]
+            : undefined;
+    const open = connections.some((connection) => connection.profileId === profileId);
+    return open ? profiles.find((profile) => profile.id === profileId)?.color : undefined;
+  }
+
   // Sticky scroll: while a database's collections fill the view, its row stays on top.
   const scrolled = virtualizer.scrollOffset ?? 0;
   const top = virtualizer.getVirtualItems().find((item) => item.end > scrolled + ROW_HEIGHT);
@@ -204,11 +220,12 @@ export function TreeList({
         {virtualizer.getVirtualItems().map((item) => {
           const row = rows[item.index];
           if (!row) return null;
+          const color = colorOf(row);
           return (
             <li
               key={item.key}
               data-index={item.index}
-              className="absolute inset-x-0 top-0"
+              className={cn("absolute inset-x-0 top-0", color && PROFILE_COLOR_CLASS[color].tint)}
               style={{ height: ROW_HEIGHT, transform: `translateY(${item.start - offset}px)` }}
             >
               <Row
