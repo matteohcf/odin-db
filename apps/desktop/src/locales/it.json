@@ -222,5 +222,12 @@
   },
   "operation": {
     "finished": "Completato."
+  },
+  "filePicker": {
+    "change": "Cambia",
+    "clear": "Rimuovi {{name}}",
+    "release": "Rilascia per usarlo",
+    "needsFolder": "Trascina qui una cartella, non un file.",
+    "needsFile": "Trascina qui un file, non una cartella."
   }
 }

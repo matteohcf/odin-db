@@ -30,7 +30,6 @@
     "directory": "Cartella di dump",
     "directoryHint": "Una cartella creata con mongodump --out.",
     "choose": "Scegli…",
-    "chosen": "Selezionato: {{name}}",
     "database": "Solo questo database",
     "databasePlaceholder": "Tutti i database nell'origine",
     "renameTo": "Ripristina come database",
@@ -47,7 +46,9 @@
     "readOnly": "Questa connessione è di sola lettura, quindi non è possibile ripristinarvi dati.",
     "renameNeedsOne": "Seleziona un solo database per rinominarlo",
     "oplogReplay": "Riesegui l'oplog",
-    "oplogReplayHint": "Per backup dell'intero server creati con uno snapshot point-in-time."
+    "oplogReplayHint": "Per backup dell'intero server creati con uno snapshot point-in-time.",
+    "dropArchive": "Trascina qui un archivio di mongodump",
+    "dropDirectory": "Trascina qui una cartella di dump"
   },
   "tools": {
     "checking": "Ricerca di MongoDB Database Tools…",

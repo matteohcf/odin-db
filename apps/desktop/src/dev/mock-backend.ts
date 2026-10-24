@@ -732,6 +732,8 @@ const mockAi = { installed: new Set<string>(), partial: new Map<string, number>(
 
 const importFiles = new Map<string, { rows: string[][]; headers: string[] }>();
 const importFolders = new Set<string>();
+/** Files dropped on the window, by token, like the backend keeps their paths. */
+const droppedFiles = new Map<string, { name: string; directory: boolean }>();
 
 const mockUsers = [
   {
@@ -1740,6 +1742,13 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const total = coll.docs.length;
     return simulateTransfer(args.channel, total, { documents: total, bytes: total * 412 }, 412);
   },
+  import_file_from_drop: (args) => {
+    const dropped = droppedFiles.get(id("token", args));
+    if (!dropped || dropped.directory || !/\.(json|ndjson|jsonl|csv)$/i.test(dropped.name))
+      return fail("validation", "not a JSON, NDJSON or CSV file");
+    const chosen = (handlers.choose_import_file as () => { name: string })();
+    return { ...chosen, name: dropped.name };
+  },
   choose_import_file: () => {
     const headers = ["email", "name", "age", "joined", "city"];
     const rows = Array.from({ length: 120 }, (_, i) => [
@@ -1889,6 +1898,17 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
         documents: Math.round(documents / Math.max(1, jobs.length)),
       }),
     );
+  },
+  import_folder_from_drop: (args) => {
+    const dropped = droppedFiles.get(id("token", args));
+    if (!dropped?.directory) return fail("validation", "drop a folder of JSON files");
+    const token = crypto.randomUUID();
+    importFolders.add(token);
+    return {
+      token,
+      path: `/Users/ada/Drops/${dropped.name}`,
+      collections: ["coupons", "suppliers"],
+    };
   },
   choose_import_folder: () => {
     const token = crypto.randomUUID();
@@ -2432,6 +2452,18 @@ export function installMockBackend() {
   // UI reviews and browser tests simulate a server going down or coming back.
   Object.assign(window, {
     odinMock: {
+      // Files dragged over the window, then dropped (or not), as the native drag and drop does.
+      dragFiles: (hovering: boolean) => void emit("file-drag-changed", { hovering }),
+      dropFiles: (files: { name: string; directory?: boolean }[]) => {
+        void emit("file-drag-changed", { hovering: false });
+        void emit("files-dropped", {
+          files: files.map((file) => {
+            const token = crypto.randomUUID();
+            droppedFiles.set(token, { name: file.name, directory: file.directory ?? false });
+            return { token, name: file.name, directory: file.directory ?? false };
+          }),
+        });
+      },
       requestQuit: (operations: number) => void emit("quit-requested", { operations }),
       setReachable: (profileName: string, reachable: boolean) => {
         const profile = profiles.find((p) => p.name === profileName);

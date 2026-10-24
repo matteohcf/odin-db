@@ -40,7 +40,6 @@
     "title": "Importa documenti",
     "description": "Importa documenti da un file JSON, NDJSON o CSV in {{namespace}}.",
     "choose": "Scegli file…",
-    "chooseAnother": "Scegli un altro file",
     "jsonPreview_one": "Primo documento di {{name}}",
     "jsonPreview_other": "Primi {{count}} documenti di {{name}}",
     "jsonEmpty": "{{name}} non contiene documenti.",
@@ -63,7 +62,13 @@
     "cancelled": "Importazione annullata. I documenti inseriti prima dell'annullamento restano nella collezione.",
     "failed": "Importazione non riuscita: {{message}}",
     "updated_one": "Aggiornato {{count, number}} documento esistente.",
-    "updated_other": "Aggiornati {{count, number}} documenti esistenti."
+    "updated_other": "Aggiornati {{count, number}} documenti esistenti.",
+    "dropTitle": "Trascina qui un file JSON, NDJSON o CSV",
+    "dropHint": "Prima vedi un'anteprima: niente viene scritto finché non importi.",
+    "csvDetail_one": "CSV · {{count}} colonna",
+    "csvDetail_other": "CSV · {{count}} colonne",
+    "jsonDetail_one": "JSON · {{count}} documento in anteprima",
+    "jsonDetail_other": "JSON · {{count}} documenti in anteprima"
   },
   "csvTypes": {
     "skip": "Ignora colonna",
@@ -124,7 +129,6 @@
       "title": "Importa nel database",
       "description": "Importa in {{database}} una cartella di file JSON o NDJSON: ogni file diventa la collezione con lo stesso nome.",
       "choose": "Scegli cartella…",
-      "chooseAnother": "Scegli un'altra cartella",
       "empty": "{{path}} non contiene file .json, .ndjson o .jsonl.",
       "files_one": "{{count}} collezione da {{path}}",
       "files_other": "{{count}} collezioni da {{path}}",
@@ -135,7 +139,11 @@
       "failedCount_one": "{{count, number}} documento non riuscito:",
       "failedCount_other": "{{count, number}} documenti non riusciti:",
       "cancelled": "Importazione annullata. I documenti importati prima dell'annullamento restano nel database.",
-      "failed": "Importazione non riuscita: {{message}}"
+      "failed": "Importazione non riuscita: {{message}}",
+      "dropTitle": "Trascina qui una cartella di file JSON",
+      "dropHint": "Ogni file diventa la collezione con il suo nome, come scritto da Esporta database.",
+      "folderDetail_one": "{{count}} collezione da importare",
+      "folderDetail_other": "{{count}} collezioni da importare"
     }
   },
   "copy": {

@@ -3,6 +3,7 @@ import {
   type CsvColumn,
   type CsvType,
   commands,
+  type DroppedFile,
   type FilePreview,
   type ImportSummary,
   type Namespace,
@@ -26,11 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@odin-db/ui/components/select";
-import { CircleAlert, FileUp } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FilePicker } from "@/components/file-picker";
 import { describeEJson } from "@/lib/ejson-display";
-import { call, errorMessage } from "@/lib/ipc";
+import { call } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
 import { DEFAULT_IMPORT_MODE, ImportModeFields, importModeReady } from "./import-mode-fields";
 import { TransferStatus } from "./transfer-status";
@@ -69,35 +70,40 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
   const [columns, setColumns] = useState<CsvColumn[]>([]);
   const [stopOnError, setStopOnError] = useState(false);
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
-  const [chooseError, setChooseError] = useState<string | null>(null);
   const transfer = useTransfer<ImportSummary>(t("import.title"));
   const { state } = transfer;
   const busy = state.status === "running";
   const done =
     state.status === "finished" || state.status === "cancelled" || state.status === "failed";
 
-  async function choose() {
-    setChooseError(null);
-    try {
-      const chosen = await call(commands.chooseImportFile());
-      if (!chosen) return;
-      setFile(chosen);
-      setColumns(
-        chosen.preview.kind === "csv"
-          ? chosen.preview.headers.map((header, index) => ({
-              header,
-              field: header,
-              kind:
-                chosen.preview.kind === "csv"
-                  ? (chosen.preview.suggested[index] ?? "string")
-                  : "string",
-            }))
-          : [],
-      );
-    } catch (error) {
-      setChooseError(errorMessage(error));
-    }
+  function apply(chosen: ChosenFile) {
+    setFile(chosen);
+    setColumns(
+      chosen.preview.kind === "csv"
+        ? chosen.preview.headers.map((header, index) => ({
+            header,
+            field: header,
+            kind:
+              chosen.preview.kind === "csv"
+                ? (chosen.preview.suggested[index] ?? "string")
+                : "string",
+          }))
+        : [],
+    );
   }
+
+  const picker = {
+    kind: "file" as const,
+    title: t("import.dropTitle"),
+    hint: t("import.dropHint"),
+    browseLabel: t("import.choose"),
+    onBrowse: async () => {
+      const chosen = await call(commands.chooseImportFile());
+      if (chosen) apply(chosen);
+    },
+    onDrop: async (dropped: DroppedFile) =>
+      apply(await call(commands.importFileFromDrop(dropped.token))),
+  };
 
   async function submit() {
     if (!file) return;
@@ -144,21 +150,20 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
             failedText={(message) => t("import.failed", { message })}
           />
         ) : !file ? (
-          <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-8 text-center">
-            <FileUp className="size-6 text-muted-foreground" />
-            <Button onClick={() => void choose()}>{t("import.choose")}</Button>
-            {chooseError && (
-              <p
-                role="alert"
-                className="flex items-start gap-2 text-destructive text-xs selectable"
-              >
-                <CircleAlert className="mt-px size-3.5 shrink-0" />
-                {chooseError}
-              </p>
-            )}
-          </div>
+          <FilePicker {...picker} />
         ) : (
           <div className="flex flex-col gap-4">
+            <FilePicker
+              {...picker}
+              selected={{
+                name: file.name,
+                detail:
+                  file.preview.kind === "csv"
+                    ? t("import.csvDetail", { count: file.preview.headers.length })
+                    : t("import.jsonDetail", { count: file.preview.documents.length }),
+              }}
+              onClear={() => setFile(null)}
+            />
             {file.preview.kind === "json" ? (
               <div className="flex flex-col gap-2">
                 <p className="font-medium text-sm">
@@ -287,11 +292,6 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
             <Button onClick={onClose}>{t("actions.close")}</Button>
           ) : (
             <>
-              {file && (
-                <Button variant="ghost" onClick={() => void choose()}>
-                  {t("import.chooseAnother")}
-                </Button>
-              )}
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={onClose}>
                   {t("actions.cancel")}

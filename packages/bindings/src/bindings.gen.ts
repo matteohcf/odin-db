@@ -162,6 +162,8 @@ export const commands = {
 	name: string,
 	preview: FilePreview,
 } | null, IpcError>(__TAURI_INVOKE("choose_import_file")),
+	/**  The same as a chosen file, for one dropped on the window (ADR-0051). */
+	importFileFromDrop: (token: string) => typedError<ImportFile, IpcError>(__TAURI_INVOKE("import_file_from_drop", { token })),
 	importDocuments: (connectionId: ConnectionId, namespace: Namespace, token: string, options: ImportOptions, channel: Channel<StreamEvent<TransferEvent<ImportSummary>>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_documents", { connectionId, namespace, token, options, channel })),
 	/**
 	 *  Asks for a folder, then exports every collection of `database` into it.
@@ -176,6 +178,8 @@ export const commands = {
 	/**  The collections the folder's JSON files would become. */
 	collections: string[],
 } | null, IpcError>(__TAURI_INVOKE("choose_import_folder")),
+	/**  The same as a chosen folder, for one dropped on the window (ADR-0051). */
+	importFolderFromDrop: (token: string) => typedError<ImportFolder, IpcError>(__TAURI_INVOKE("import_folder_from_drop", { token })),
 	importDatabase: (connectionId: ConnectionId, database: string, token: string, options: ImportOptions, channel: Channel<StreamEvent<DatabaseTransferEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("import_database", { connectionId, database, token, options, channel })),
 	/**  Copies a collection or a database from one connection to another, or within one. */
 	copyData: (sourceConnectionId: ConnectionId, targetConnectionId: ConnectionId, request: CopyRequest, channel: Channel<StreamEvent<DatabaseTransferEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("copy_data", { sourceConnectionId, targetConnectionId, request, channel })),
@@ -243,6 +247,8 @@ export const commands = {
 export const events = {
 	backupsChanged: makeEvent<BackupsChanged>("backups-changed"),
 	connectionHealthChanged: makeEvent<ConnectionHealthChanged>("connection-health-changed"),
+	fileDragChanged: makeEvent<FileDragChanged>("file-drag-changed"),
+	filesDropped: makeEvent<FilesDropped>("files-dropped"),
 	quitRequested: makeEvent<QuitRequested>("quit-requested"),
 };
 
@@ -629,6 +635,12 @@ export type DownloadProgress = {
 	total: number | null,
 };
 
+export type DroppedFile = {
+	token: string,
+	name: string,
+	directory: boolean,
+};
+
 /**
  *  A BSON document encoded as canonical Extended JSON v2 (ADR-0007).
  * 
@@ -707,6 +719,11 @@ export type FieldSummary = {
 	values: string[],
 };
 
+/**  Files are dragged over the window (`true`), or were dropped or dragged away (`false`). */
+export type FileDragChanged = {
+	hovering: boolean,
+};
+
 /**  Bytes moved so far, then exactly one `finished` with the result. */
 export type FileEvent<S> = { kind: "progress"; value: FileProgress } | { kind: "finished"; value: S };
 
@@ -716,6 +733,11 @@ export type FilePreview = { kind: "json"; documents: EJsonDocument[] } | { kind:
 export type FileProgress = {
 	done: number | null,
 	total: number | null,
+};
+
+/**  Files dropped on the window, each behind an opaque token like a picked file. */
+export type FilesDropped = {
+	files: DroppedFile[],
 };
 
 export type FindRequest = {

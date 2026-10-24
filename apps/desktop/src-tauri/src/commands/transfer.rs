@@ -94,31 +94,57 @@ pub async fn choose_import_file(
     let dialog = app
         .dialog()
         .file()
-        .add_filter("JSON, NDJSON or CSV", &["json", "ndjson", "jsonl", "csv"]);
+        .add_filter("JSON, NDJSON or CSV", &IMPORT_EXTENSIONS);
     let Some(path) = blocking_dialog(move || dialog.blocking_pick_file()).await? else {
         return Ok(None);
     };
     let path: PathBuf = path
         .into_path()
         .map_err(|error| CoreError::Validation(error.to_string()))?;
+    let token = super::backup::remember_path(&state, path.clone());
+    Ok(Some(import_file(&state, path, token).await?))
+}
+
+/// The same as a chosen file, for one dropped on the window (ADR-0051).
+#[tauri::command]
+#[specta::specta]
+pub async fn import_file_from_drop(
+    state: State<'_, Arc<AppState>>,
+    token: String,
+) -> Result<ImportFile, IpcError> {
+    let path = super::backup::picked_path(&state, &token, "dropped file")?;
+    if !path.is_file() || !importable_name(&path) {
+        return Err(CoreError::Validation("not a JSON, NDJSON or CSV file".into()).into());
+    }
+    Ok(import_file(&state, path, token).await?)
+}
+
+const IMPORT_EXTENSIONS: [&str; 4] = ["json", "ndjson", "jsonl", "csv"];
+
+/// Named like a file `import_documents` reads, whatever the case of its extension.
+fn importable_name(path: &std::path::Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            IMPORT_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str())
+        })
+}
+
+async fn import_file(
+    state: &Arc<AppState>,
+    path: PathBuf,
+    token: String,
+) -> Result<ImportFile, CoreError> {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
-
-    let preview_path = path.clone();
-    let preview = blocking(&state, move |_| transfer::preview_file(&preview_path)).await?;
-    let token = uuid::Uuid::now_v7();
-    state
-        .picked_files
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .insert(token, path);
-    Ok(Some(ImportFile {
-        token: token.to_string(),
+    let preview = blocking(state, move |_| transfer::preview_file(&path)).await?;
+    Ok(ImportFile {
+        token,
         name,
         preview,
-    }))
+    })
 }
 
 #[tauri::command]
@@ -225,15 +251,34 @@ pub async fn choose_import_folder(
     let folder = folder
         .into_path()
         .map_err(|error| CoreError::Validation(error.to_string()))?;
+    let token = super::backup::remember_path(&state, folder.clone());
+    Ok(Some(import_folder(folder, token)?))
+}
+
+/// The same as a chosen folder, for one dropped on the window (ADR-0051).
+#[tauri::command]
+#[specta::specta]
+pub async fn import_folder_from_drop(
+    state: State<'_, Arc<AppState>>,
+    token: String,
+) -> Result<ImportFolder, IpcError> {
+    let folder = super::backup::picked_path(&state, &token, "dropped folder")?;
+    if !folder.is_dir() {
+        return Err(CoreError::Validation("drop a folder of JSON files".into()).into());
+    }
+    Ok(import_folder(folder, token)?)
+}
+
+fn import_folder(folder: PathBuf, token: String) -> Result<ImportFolder, CoreError> {
     let collections = transfer::database_files(&folder)?
         .into_iter()
         .map(|(collection, _)| collection)
         .collect();
-    Ok(Some(ImportFolder {
+    Ok(ImportFolder {
         path: folder.display().to_string(),
-        token: super::backup::remember_path(&state, folder),
+        token,
         collections,
-    }))
+    })
 }
 
 #[tauri::command]
@@ -331,4 +376,18 @@ pub(crate) async fn blocking_dialog<T: Send + 'static>(
     tauri::async_runtime::spawn_blocking(open)
         .await
         .map_err(|error| CoreError::Internal(error.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::importable_name;
+    use std::path::Path;
+
+    #[test]
+    fn imports_json_ndjson_and_csv_files_only() {
+        assert!(importable_name(Path::new("/tmp/people.CSV")));
+        assert!(importable_name(Path::new("orders.jsonl")));
+        assert!(!importable_name(Path::new("notes.txt")));
+        assert!(!importable_name(Path::new("archive")));
+    }
 }

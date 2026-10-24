@@ -222,5 +222,12 @@
   },
   "operation": {
     "finished": "Finished."
+  },
+  "filePicker": {
+    "change": "Change",
+    "clear": "Remove {{name}}",
+    "release": "Release to use it",
+    "needsFolder": "Drop a folder here, not a file.",
+    "needsFile": "Drop a file here, not a folder."
   }
 }

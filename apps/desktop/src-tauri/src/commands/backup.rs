@@ -155,6 +155,22 @@ pub async fn choose_restore_source(
     }))
 }
 
+/// The path behind a token from a dialog or a drop; `what` names it in the error.
+pub(crate) fn picked_path(
+    state: &AppState,
+    token: &str,
+    what: &'static str,
+) -> Result<PathBuf, CoreError> {
+    let token = uuid::Uuid::parse_str(token).map_err(|_| CoreError::NotFound(what))?;
+    state
+        .picked_files
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&token)
+        .cloned()
+        .ok_or(CoreError::NotFound(what))
+}
+
 /// Keeps a path in the backend and returns the opaque token the UI uses for it.
 pub(crate) fn remember_path(state: &AppState, path: PathBuf) -> String {
     let token = uuid::Uuid::now_v7();

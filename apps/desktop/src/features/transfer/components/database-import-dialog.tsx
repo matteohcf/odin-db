@@ -3,6 +3,7 @@ import {
   commands,
   type DatabaseProgress,
   type DatabaseTransferSummary,
+  type DroppedFile,
 } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Checkbox } from "@odin-db/ui/components/checkbox";
@@ -15,10 +16,11 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { Label } from "@odin-db/ui/components/label";
-import { CircleAlert, FolderUp, Table2 } from "lucide-react";
+import { Table2 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { call, errorMessage } from "@/lib/ipc";
+import { FilePicker } from "@/components/file-picker";
+import { call } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
 import { DatabaseTransferResult } from "./database-transfer-result";
 import { DEFAULT_IMPORT_MODE, ImportModeFields, importModeReady } from "./import-mode-fields";
@@ -50,7 +52,6 @@ export function DatabaseImportDialog({
   const [folder, setFolder] = useState<ChosenFolder | null>(null);
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
   const [stopOnError, setStopOnError] = useState(false);
-  const [chooseError, setChooseError] = useState<string | null>(null);
   const transfer = useTransfer<DatabaseTransferSummary, DatabaseProgress>(
     t("database.import.title"),
   );
@@ -59,15 +60,18 @@ export function DatabaseImportDialog({
   const done =
     state.status === "finished" || state.status === "cancelled" || state.status === "failed";
 
-  async function choose() {
-    setChooseError(null);
-    try {
+  const picker = {
+    kind: "folder" as const,
+    title: t("database.import.dropTitle"),
+    hint: t("database.import.dropHint"),
+    browseLabel: t("database.import.choose"),
+    onBrowse: async () => {
       const chosen = await call(commands.chooseImportFolder());
       if (chosen) setFolder(chosen);
-    } catch (error) {
-      setChooseError(errorMessage(error));
-    }
-  }
+    },
+    onDrop: async (dropped: DroppedFile) =>
+      setFolder(await call(commands.importFolderFromDrop(dropped.token))),
+  };
 
   async function submit() {
     if (!folder) return;
@@ -121,21 +125,17 @@ export function DatabaseImportDialog({
             failedText={(message) => t("database.import.failed", { message })}
           />
         ) : !folder ? (
-          <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-8 text-center">
-            <FolderUp className="size-6 text-muted-foreground" />
-            <Button onClick={() => void choose()}>{t("database.import.choose")}</Button>
-            {chooseError && (
-              <p
-                role="alert"
-                className="flex items-start gap-2 text-destructive text-xs selectable"
-              >
-                <CircleAlert className="mt-px size-3.5 shrink-0" />
-                {chooseError}
-              </p>
-            )}
-          </div>
+          <FilePicker {...picker} />
         ) : (
           <div className="flex flex-col gap-4">
+            <FilePicker
+              {...picker}
+              selected={{
+                name: folder.path.split(/[\\/]/).at(-1) || folder.path,
+                detail: t("database.import.folderDetail", { count: folder.collections.length }),
+              }}
+              onClear={() => setFolder(null)}
+            />
             {folder.collections.length === 0 ? (
               <p className="text-muted-foreground text-sm selectable">
                 {t("database.import.empty", { path: folder.path })}
@@ -189,11 +189,6 @@ export function DatabaseImportDialog({
             <Button onClick={onClose}>{t("actions.close")}</Button>
           ) : (
             <>
-              {folder && (
-                <Button variant="ghost" onClick={() => void choose()}>
-                  {t("database.import.chooseAnother")}
-                </Button>
-              )}
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={onClose}>
                   {t("actions.cancel")}

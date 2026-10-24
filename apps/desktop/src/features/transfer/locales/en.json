@@ -40,7 +40,6 @@
     "title": "Import documents",
     "description": "Imports documents from a JSON, NDJSON or CSV file into {{namespace}}.",
     "choose": "Choose file…",
-    "chooseAnother": "Choose another file",
     "jsonPreview_one": "First document of {{name}}",
     "jsonPreview_other": "First {{count}} documents of {{name}}",
     "jsonEmpty": "{{name}} contains no documents.",
@@ -63,7 +62,13 @@
     "cancelled": "Import cancelled. Documents inserted before cancelling stay in the collection.",
     "failed": "Import failed: {{message}}",
     "updated_one": "Updated {{count, number}} existing document.",
-    "updated_other": "Updated {{count, number}} existing documents."
+    "updated_other": "Updated {{count, number}} existing documents.",
+    "dropTitle": "Drop a JSON, NDJSON or CSV file here",
+    "dropHint": "You see a preview first: nothing is written until you import.",
+    "csvDetail_one": "CSV · {{count}} column",
+    "csvDetail_other": "CSV · {{count}} columns",
+    "jsonDetail_one": "JSON · {{count}} document previewed",
+    "jsonDetail_other": "JSON · {{count}} documents previewed"
   },
   "csvTypes": {
     "skip": "Skip column",
@@ -124,7 +129,6 @@
       "title": "Import into database",
       "description": "Imports a folder of JSON or NDJSON files into {{database}}: each file becomes the collection named after it.",
       "choose": "Choose folder…",
-      "chooseAnother": "Choose another folder",
       "empty": "{{path}} contains no .json, .ndjson or .jsonl files.",
       "files_one": "{{count}} collection from {{path}}",
       "files_other": "{{count}} collections from {{path}}",
@@ -135,7 +139,11 @@
       "failedCount_one": "{{count, number}} document failed:",
       "failedCount_other": "{{count, number}} documents failed:",
       "cancelled": "Import cancelled. Documents imported before cancelling stay in the database.",
-      "failed": "Import failed: {{message}}"
+      "failed": "Import failed: {{message}}",
+      "dropTitle": "Drop a folder of JSON files here",
+      "dropHint": "Each file becomes the collection it is named after, as written by Export database.",
+      "folderDetail_one": "{{count}} collection to import",
+      "folderDetail_other": "{{count}} collections to import"
     }
   },
   "copy": {

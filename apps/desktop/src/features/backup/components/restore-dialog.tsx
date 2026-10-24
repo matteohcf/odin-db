@@ -1,4 +1,9 @@
-import { type ConnectionId, commands, type RestoreSource } from "@odin-db/bindings";
+import {
+  type ConnectionId,
+  commands,
+  type PickedFile,
+  type RestoreSource,
+} from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Checkbox } from "@odin-db/ui/components/checkbox";
 import {
@@ -15,7 +20,8 @@ import { RadioGroup, RadioGroupItem } from "@odin-db/ui/components/radio-group";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { call, errorMessage } from "@/lib/ipc";
+import { FilePicker } from "@/components/file-picker";
+import { call } from "@/lib/ipc";
 import { useToolRun } from "../hooks/use-tool-run";
 import { ArchiveContents } from "./archive-contents";
 import { ToolLog } from "./tool-log";
@@ -55,7 +61,6 @@ export function RestoreDialog({
   const [oplogReplay, setOplogReplay] = useState(false);
   const [drop, setDrop] = useState(false);
   const [confirmation, setConfirmation] = useState("");
-  const [pickError, setPickError] = useState<string | null>(null);
   const run = useToolRun(t("restore.title", { name: profileName }));
   const { state, summary } = run;
   const busy = state.status === "running";
@@ -74,17 +79,9 @@ export function RestoreDialog({
     setAllNamespaces(all);
   }, []);
 
-  async function choose() {
-    setPickError(null);
-    try {
-      const file = await call(commands.chooseRestoreSource(source));
-      if (file) {
-        setPicked(file);
-        setSelection(null);
-      }
-    } catch (error) {
-      setPickError(errorMessage(error));
-    }
+  function use(file: PickedFile) {
+    setPicked(file);
+    setSelection(null);
   }
 
   async function submit() {
@@ -146,18 +143,20 @@ export function RestoreDialog({
                       </div>
                     ))}
                   </RadioGroup>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" onClick={() => void choose()}>
-                      {t("restore.choose")}
-                    </Button>
-                    {picked && (
-                      <span className="truncate text-sm">
-                        {t("restore.chosen", { name: picked.name })}
-                      </span>
-                    )}
-                  </div>
-                  {pickError && <p className="text-destructive text-xs selectable">{pickError}</p>}
                 </fieldset>
+                <FilePicker
+                  kind={source === "archive" ? "file" : "folder"}
+                  title={t(source === "archive" ? "restore.dropArchive" : "restore.dropDirectory")}
+                  browseLabel={t("restore.choose")}
+                  onBrowse={async () => {
+                    const file = await call(commands.chooseRestoreSource(source));
+                    if (file) use(file);
+                  }}
+                  // The archive or dump is read next, by its contents; that reports what does not fit.
+                  onDrop={async (dropped) => use({ token: dropped.token, name: dropped.name })}
+                  selected={picked ? { name: picked.name } : null}
+                  onClear={() => setPicked(null)}
+                />
 
                 {picked && (
                   <ArchiveContents

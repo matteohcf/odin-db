@@ -67,7 +67,7 @@ docs/adr/                Architecture Decision Records
 - **Editable text is mongosh syntax** (`toShellSyntax` / `parseShellDocument`); display text is `describeEJson` / `compactEJson`. Never round-trip edits through the display format.
 - **Frontend state** (ADR-0010): TanStack Query for backend request/response data, Zustand for UI-only state. Streaming results live in per-tab stores, flushed once per animation frame. Never copy backend data into Zustand.
 - **Read-only mode and all safety checks are enforced in Rust**, never only in the UI (ADR-0017).
-- **File dialogs open from Rust** (`tauri-plugin-dialog`); the webview never sends a file path. Imports use an opaque token returned by `choose_import_file`.
+- **File dialogs open from Rust** (`tauri-plugin-dialog`); the webview never sends a file path. Imports use an opaque token returned by `choose_import_file`. Drops are native too (ADR-0051): Rust turns dropped paths into tokens (`FilesDropped`); choose files in the UI with `FilePicker`.
 - **Transfers write atomically**: exports go to `<file>.partial` and are renamed when complete.
 - **The shell is mongosh in a PTY** (ADR-0030), with credit-based flow control: the UI acknowledges output after xterm.js renders it, and sends input one write at a time. Read-only cannot be enforced inside mongosh, so the tab warns instead.
 - **Backups are recorded and schedulable** (ADR-0034): every mongodump goes through `src-tauri/src/backups.rs::run_backup`, which records it in the history before anything can fail; the scheduler lives there too.

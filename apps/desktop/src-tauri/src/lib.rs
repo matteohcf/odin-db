@@ -12,6 +12,7 @@ use tauri_specta::{Builder, collect_commands, collect_events};
 
 mod backups;
 mod commands;
+mod drops;
 mod events;
 mod ipc;
 mod quit;
@@ -103,9 +104,11 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::users::drop_user,
             commands::transfer::export_documents,
             commands::transfer::choose_import_file,
+            commands::transfer::import_file_from_drop,
             commands::transfer::import_documents,
             commands::transfer::export_database,
             commands::transfer::choose_import_folder,
+            commands::transfer::import_folder_from_drop,
             commands::transfer::import_database,
             commands::transfer::copy_data,
             commands::backup::database_tools_status,
@@ -139,7 +142,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
         .events(collect_events![
             events::ConnectionHealthChanged,
             events::BackupsChanged,
-            events::QuitRequested
+            events::QuitRequested,
+            events::FileDragChanged,
+            events::FilesDropped
         ])
 }
 
@@ -164,6 +169,9 @@ pub fn run() {
                 && quit::hold_for_confirmation(window.app_handle())
             {
                 api.prevent_close();
+            }
+            if let WindowEvent::DragDrop(drop) = event {
+                drops::on_drag_drop(window.app_handle(), drop);
             }
         })
         .invoke_handler(builder.invoke_handler())

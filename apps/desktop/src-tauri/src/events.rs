@@ -28,6 +28,25 @@ pub struct QuitRequested {
     pub operations: u32,
 }
 
+/// Files are dragged over the window (`true`), or were dropped or dragged away (`false`).
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
+pub struct FileDragChanged {
+    pub hovering: bool,
+}
+
+/// Files dropped on the window, each behind an opaque token like a picked file.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
+pub struct FilesDropped {
+    pub files: Vec<DroppedFile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct DroppedFile {
+    pub token: String,
+    pub name: String,
+    pub directory: bool,
+}
+
 /// Forwards core's health changes to the webview for the app's lifetime.
 pub fn forward_health_changes(app: AppHandle, state: &Arc<AppState>) {
     let mut changes = state.connections.health_changes();

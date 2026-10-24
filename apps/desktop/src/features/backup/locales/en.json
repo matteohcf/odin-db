@@ -30,7 +30,6 @@
     "directory": "Dump folder",
     "directoryHint": "A folder from mongodump --out.",
     "choose": "Choose…",
-    "chosen": "Selected: {{name}}",
     "database": "Only this database",
     "databasePlaceholder": "All databases in the source",
     "renameTo": "Restore as database",
@@ -47,7 +46,9 @@
     "readOnly": "This connection is read-only, so it cannot be restored into.",
     "renameNeedsOne": "Select a single database to rename it",
     "oplogReplay": "Replay the oplog",
-    "oplogReplayHint": "For whole-server backups made with a point-in-time snapshot."
+    "oplogReplayHint": "For whole-server backups made with a point-in-time snapshot.",
+    "dropArchive": "Drop a mongodump archive here",
+    "dropDirectory": "Drop a dump folder here"
   },
   "tools": {
     "checking": "Looking for MongoDB Database Tools…",
