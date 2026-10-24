@@ -16,12 +16,14 @@ import {
   HardDriveUpload,
   Plus,
   Trash2,
+  Waypoints,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconAction } from "@/components/icon-action";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
+import { useTabs } from "@/features/workspace";
 import { formatBytes } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
 import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
@@ -52,6 +54,7 @@ export function DatabaseNode({
 }) {
   const { t } = useTranslation("connections");
   const copyNode = useExplorer((s) => s.copy);
+  const openDiagram = useTabs((s) => s.openDiagram);
   const sizes = useSettings((s) => s.sidebarSizes);
   const copied = useExplorer((s) => s.copied);
   const paste = useExplorer((s) => s.paste);
@@ -77,18 +80,31 @@ export function DatabaseNode({
         label={<HighlightMatch text={database.name} query={filter} />}
         trailing={sizes && !database.empty ? formatBytes(database.sizeOnDisk ?? 0) : undefined}
         quickActions={
-          writable && (
+          <>
             <IconAction
-              label={t("catalog.createCollection")}
-              onClick={() => setToolDialog("createCollection")}
+              label={t("tree.diagram")}
+              onClick={() => openDiagram(connection.profileId, database.name)}
             >
-              <Plus />
+              <Waypoints />
             </IconAction>
-          )
+            {writable && (
+              <IconAction
+                label={t("catalog.createCollection")}
+                onClick={() => setToolDialog("createCollection")}
+              >
+                <Plus />
+              </IconAction>
+            )}
+          </>
         }
         menuLabel={t("tree.actions", { name: database.name })}
         menu={
           <>
+            <DropdownMenuItem onSelect={() => openDiagram(connection.profileId, database.name)}>
+              <Waypoints />
+              {t("tree.diagram")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             {writable && (
               <>
                 <DropdownMenuItem onSelect={() => setToolDialog("createCollection")}>

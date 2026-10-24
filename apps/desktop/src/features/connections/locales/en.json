@@ -60,7 +60,8 @@
     "count_one": "About {{count, number}} document",
     "count_other": "About {{count, number}} documents",
     "databases_one": "{{count, number}} database",
-    "databases_other": "{{count, number}} databases"
+    "databases_other": "{{count, number}} databases",
+    "diagram": "Show diagram"
   },
   "dialog": {
     "createTitle": "New connection",
@@ -165,7 +166,8 @@
     "serverTab": "Server status · {{name}}",
     "usersTab": "Users · {{name}}",
     "settingsTab": "Settings",
-    "settings": "Open settings"
+    "settings": "Open settings",
+    "diagramTab": "Diagram · {{name}}"
   },
   "health": {
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",

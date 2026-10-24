@@ -16,7 +16,9 @@ export function useWindowTitle() {
     ? null
     : tab.kind === "collection"
       ? `${tab.database}.${tab.collection}`
-      : t(`tabs.${tab.kind}`);
+      : tab.kind === "diagram"
+        ? t("tabs.diagram", { database: tab.database })
+        : t(`tabs.${tab.kind}`);
   const title = [subject, profile?.name, "odin-db"].filter(Boolean).join(" — ");
 
   useEffect(() => {

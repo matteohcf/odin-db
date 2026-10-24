@@ -32,6 +32,8 @@ export const commands = {
 	generateQuery: (engine: EngineChoice, request: QueryRequest, channel: Channel<StreamEvent<GeneratedQuery>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("generate_query", { engine, request, channel })),
 	/**  Compares two collections, possibly on different connections, as a cancellable operation. */
 	compareCollections: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: CompareRequest, channel: Channel<StreamEvent<CompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_collections", { leftConnectionId, rightConnectionId, request, channel })),
+	/**  Samples a database's collections and infers their references, as a cancellable operation. */
+	databaseDiagram: (connectionId: ConnectionId, database: string, channel: Channel<StreamEvent<DiagramEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("database_diagram", { connectionId, database, channel })),
 	/**  Both versions of one compared document. */
 	comparedPair: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, left: Namespace, right: Namespace, id: EJsonValue) => typedError<ComparedPair, IpcError>(__TAURI_INVOKE("compared_pair", { leftConnectionId, rightConnectionId, left, right, id })),
 	/**  Changes the right collection to match the left; read-only targets are refused. */
@@ -477,6 +479,11 @@ export type DatabaseCatalog = {
 	collections: CollectionInfo[],
 };
 
+export type DatabaseDiagram = {
+	collections: DiagramCollection[],
+	links: DiagramLink[],
+};
+
 export type DatabaseExportRequest = {
 	/**  JSON array or NDJSON; CSV does not fit a whole database. */
 	format: ExportFormat,
@@ -515,6 +522,36 @@ export type DatabaseTransferSummary = {
 	failed: number | null,
 	/**  Import only: the first errors, prefixed with their file. */
 	errors: string[],
+};
+
+export type DiagramCollection = {
+	name: string,
+	kind: CollectionKind,
+	/**  The server's estimate, cheap even on large collections. */
+	documents: number | null,
+	fields: FieldSummary[],
+	/**  Why the collection could not be sampled (e.g. not authorized). */
+	error: string | null,
+};
+
+/**  Collections sampled and references checked so far, then exactly one `finished`. */
+export type DiagramEvent = { kind: "progress"; value: DiagramProgress } | { kind: "finished"; value: DatabaseDiagram };
+
+export type DiagramLink = {
+	from: string,
+	/**  The referencing field's path, e.g. `customerId` or `items.productId`. */
+	field: string,
+	to: string,
+	/**  The field holds an array of references: one document points at many. */
+	many: boolean,
+	/**  Sampled values found as an `_id` of `to`, out of `checked`. */
+	matched: number | null,
+	checked: number | null,
+};
+
+export type DiagramProgress = {
+	done: number | null,
+	total: number | null,
 };
 
 export type DistinctValue = {

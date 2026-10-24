@@ -48,6 +48,7 @@ docs/adr/                Architecture Decision Records
   - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection;
   - `settings` (the settings tab) reads `results` and `documents` stores, uses `updates` for its update row and `ai` for model downloads; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `compare` (collection compare) uses `results` for the document diff;
+  - `diagram` (the database diagram tab) uses `connections` for the connection and `workspace` for its tab model;
   - `connections` may use `workspace` to open tabs, and `backup`, `transfer` and `compare` for its dialogs; only `src/app` wires the top level together.
 - Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
 
@@ -78,6 +79,7 @@ docs/adr/                Architecture Decision Records
 - **Query profiler** (ADR-0042): `profiler::{status, set_status, entries}` over the `profile` command and `system.profile`; changing the level needs a writable profile.
 - **Collection compare** (ADR-0041): `compare::compare` matches by `_id` in two bounded passes (left batches looked up on the right with `$in`, then right ids alone); field order is ignored, types are not. `compare::sync` reuses the same scan to insert, replace or delete on the right (read-only refused).
 - **AI query assistant** (ADR-0040): optional; llama.cpp in-process or Ollama, chosen in settings. Only field paths and types reach a model (`fieldHints`), output is grammar-constrained and checked in Rust (`parse_answer`), and fills the query bar without running. Catalog models are pinned by SHA-256.
+- **Database diagram** (ADR-0043): `diagram::database_diagram` samples each collection and infers references from data (ObjectId values found as `_id` elsewhere), not names. The tab draws it with React Flow and dagre, loaded lazily; dragged positions persist per database.
 - **Automatic updates** (ADR-0039): `check_for_update` at launch (setting `checkForUpdates`), `install_update` as a registered long operation; nothing installs without a click.
 - **Long operations in the UI** go through `useOperation` (`src/hooks`): it handles Stop before the id arrives and cancels on unmount. Progress events are lossy (`try_send`); results come in one final event.
 

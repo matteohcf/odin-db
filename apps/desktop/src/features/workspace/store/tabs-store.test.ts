@@ -60,10 +60,13 @@ describe("tabs store", () => {
     openCollection(target("users"));
     openCollection(target("orders"));
     openCollection({ ...target("logs"), database: "analytics" });
+    useTabs.getState().openDiagram("p1", "shop");
+    useTabs.getState().openDiagram("p1", "shop");
     useTabs.getState().closeCollections("p1", "shop", "users");
     expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual([
       "p1/shop/orders",
       "p1/analytics/logs",
+      "diagram:p1/shop",
     ]);
     useTabs.getState().closeCollections("p1", "shop");
     expect(useTabs.getState().tabs.map((tab) => tab.id)).toEqual(["p1/analytics/logs"]);

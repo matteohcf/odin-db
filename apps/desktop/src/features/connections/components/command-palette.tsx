@@ -31,6 +31,7 @@ import {
   Sun,
   Table2,
   UsersRound,
+  Waypoints,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,6 +48,7 @@ const tabIcon = {
   shell: SquareTerminal,
   server: Activity,
   users: UsersRound,
+  diagram: Waypoints,
   backups: HardDriveDownload,
   settings: Settings,
 } as const;
@@ -179,7 +181,9 @@ function PaletteResults({
         ? `${tab.collection} · ${tab.database}`
         : tab.kind === "backups" || tab.kind === "settings"
           ? t(`palette.${tab.kind}Tab`)
-          : t(`palette.${tab.kind}Tab`, { name: nameOf(tab.profileId) }),
+          : tab.kind === "diagram"
+            ? t("palette.diagramTab", { name: `${nameOf(tab.profileId)} / ${tab.database}` })
+            : t(`palette.${tab.kind}Tab`, { name: nameOf(tab.profileId) }),
     kind: tab.kind,
   }));
   const matchedTabs = rankMatches(tabEntries, query, (tab) => tab.label, 8);

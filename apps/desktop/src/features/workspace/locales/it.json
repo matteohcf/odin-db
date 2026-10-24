@@ -23,6 +23,7 @@
     "server": "Stato del server",
     "users": "Utenti",
     "all_one": "{{count}} scheda aperta",
-    "all_other": "Tutte le {{count}} schede aperte"
+    "all_other": "Tutte le {{count}} schede aperte",
+    "diagram": "Diagramma di {{database}}"
   }
 }

@@ -138,3 +138,25 @@ export function compactEJson(value: JsonValue): { kind: EJsonKind; text: string 
       return described;
   }
 }
+
+const BSON_TYPE_KINDS: Record<string, EJsonKind> = {
+  double: "number",
+  int: "number",
+  long: "number",
+  decimal: "number",
+  string: "string",
+  object: "document",
+  array: "array",
+  binData: "binary",
+  objectId: "objectId",
+  bool: "boolean",
+  date: "date",
+  timestamp: "date",
+  null: "null",
+  undefined: "null",
+};
+
+/** The display kind of a `$type` name (`"objectId"`, `"long"`), as sampled schemas report them. */
+export function kindOfBsonType(type: string): EJsonKind {
+  return BSON_TYPE_KINDS[type] ?? "other";
+}

@@ -961,6 +961,103 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   install_update: (args) =>
     // The real backend then restarts the app; here it just ends.
     streamProgress(args.channel, 18_000_000, (done, total) => ({ done, total })),
+  database_diagram: (args) => {
+    const field = (path: string, type: string, frequency = 1) => ({
+      path,
+      types: [type],
+      frequency,
+      values: [],
+    });
+    const node = (name: string, documents: number, fields: ReturnType<typeof field>[]) => ({
+      name,
+      kind: "collection" as const,
+      documents,
+      fields: [field("_id", "objectId"), ...fields],
+      error: null,
+    });
+    const link = (from: string, path: string, to: string, many = false) => ({
+      from,
+      field: path,
+      to,
+      many,
+      matched: 38,
+      checked: 40,
+    });
+    const diagram = {
+      collections: [
+        {
+          ...node("active_users", 412, [field("name", "string"), field("lastSeen", "date")]),
+          kind: "view" as const,
+        },
+        node("categories", 24, [
+          field("name", "string"),
+          field("parentId", "objectId", 0.6),
+          field("slug", "string"),
+        ]),
+        node("coupons", 58, [
+          field("code", "string"),
+          field("discount", "decimal"),
+          field("expiresAt", "date", 0.8),
+        ]),
+        node("orders", 350, [
+          field("number", "int"),
+          field("customerId", "objectId"),
+          field("status", "string"),
+          field("total", "decimal"),
+          field("items", "array"),
+          field("items.productId", "objectId"),
+          field("items.qty", "int"),
+          field("couponId", "objectId", 0.2),
+          field("placedAt", "date"),
+          field("shipping", "object"),
+          field("shipping.city", "string"),
+          field("shipping.zip", "string"),
+        ]),
+        node("products", 860, [
+          field("sku", "string"),
+          field("name", "string"),
+          field("price", "decimal"),
+          field("categoryId", "objectId"),
+          field("supplierId", "objectId", 0.9),
+          field("tags", "array", 0.7),
+          field("stock", "int"),
+        ]),
+        node("reviews", 2_140, [
+          field("userId", "objectId"),
+          field("productId", "objectId"),
+          field("rating", "int"),
+          field("text", "string", 0.7),
+          field("createdAt", "date"),
+        ]),
+        node("suppliers", 31, [
+          field("name", "string"),
+          field("country", "string"),
+          field("email", "string"),
+        ]),
+        node("users", 1_240, [
+          field("name", "string"),
+          field("email", "string"),
+          field("plan", "string"),
+          field("address", "object"),
+          field("address.city", "string"),
+          field("favoriteIds", "array", 0.4),
+          field("createdAt", "date"),
+        ]),
+      ],
+      links: [
+        link("categories", "parentId", "categories"),
+        link("orders", "customerId", "users"),
+        link("orders", "items.productId", "products", true),
+        link("orders", "couponId", "coupons"),
+        link("products", "categoryId", "categories"),
+        link("products", "supplierId", "suppliers"),
+        link("reviews", "userId", "users"),
+        link("reviews", "productId", "products"),
+        link("users", "favoriteIds", "products", true),
+      ],
+    };
+    return simulateTransfer(args.channel, 17, diagram, 1, (done) => ({ done, total: 17 }));
+  },
   compare_collections: (args) => {
     const oid = (n: number) => ({ $oid: `65f0a1c${String(n).padStart(17, "0")}` });
     const range = (from: number, count: number) =>

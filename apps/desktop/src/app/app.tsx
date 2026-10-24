@@ -5,6 +5,7 @@ import { ThemeMenu } from "@/components/theme-menu";
 import { BackupsTabLabel, BackupsView } from "@/features/backups";
 import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
+import { DiagramTabLabel } from "@/features/diagram";
 import { MonitorTab, MonitorTabLabel } from "@/features/monitor";
 import { useAutorunEnabled } from "@/features/perf-lab";
 import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
@@ -25,6 +26,11 @@ import { Welcome } from "./welcome";
 // Benchmarks (xterm.js, large fixtures) only load for `--perf-autorun`.
 const PerfLab = lazy(() =>
   import("@/features/perf-lab/components/perf-lab").then((m) => ({ default: m.PerfLab })),
+);
+
+// React Flow and the layout engine only load with a diagram tab (ADR-0043).
+const DiagramTab = lazy(() =>
+  import("@/features/diagram/components/diagram-tab").then((m) => ({ default: m.DiagramTab })),
 );
 
 /** Composition root: the only place that wires features together. */
@@ -81,6 +87,8 @@ function renderLabel(tab: WorkspaceTab, context: TabLabelContext) {
       return <MonitorTabLabel tab={tab} />;
     case "users":
       return <UsersTabLabel tab={tab} />;
+    case "diagram":
+      return <DiagramTabLabel tab={tab} />;
     case "backups":
       return <BackupsTabLabel />;
     case "settings":
@@ -98,6 +106,12 @@ function renderTab(tab: WorkspaceTab) {
       return <MonitorTab tab={tab} />;
     case "users":
       return <UsersTab tab={tab} />;
+    case "diagram":
+      return (
+        <Suspense fallback={null}>
+          <DiagramTab tab={tab} />
+        </Suspense>
+      );
     case "backups":
       return <BackupsView />;
     case "settings":

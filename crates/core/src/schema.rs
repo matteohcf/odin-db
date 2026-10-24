@@ -70,7 +70,7 @@ struct Seen {
     strings: Vec<String>,
 }
 
-fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
+pub(crate) fn summarize(documents: &[Document]) -> Vec<FieldSummary> {
     let mut paths: HashMap<String, PathStats> = HashMap::new();
     for document in documents {
         let mut seen = HashMap::new();

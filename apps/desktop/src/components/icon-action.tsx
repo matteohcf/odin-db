@@ -13,7 +13,7 @@ export function IconAction({
 }: {
   label: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
-  className?: string;
+  className?: string | undefined;
   disabled?: boolean;
   children: ReactNode;
 }) {

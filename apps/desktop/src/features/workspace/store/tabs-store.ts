@@ -43,6 +43,14 @@ export interface UsersTab {
   profileId: ProfileId;
 }
 
+/** The collections of a database and the references between them; one per database. */
+export interface DiagramTab {
+  kind: "diagram";
+  id: string;
+  profileId: ProfileId;
+  database: string;
+}
+
 /** Backup history and schedules of every connection; at most one is open. */
 interface BackupsTab {
   kind: "backups";
@@ -62,6 +70,7 @@ export type WorkspaceTab =
   | ShellTab
   | ServerTab
   | UsersTab
+  | DiagramTab
   | BackupsTab
   | SettingsTab;
 
@@ -90,6 +99,7 @@ interface TabsState {
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
   openUsers: (profileId: ProfileId) => void;
+  openDiagram: (profileId: ProfileId, database: string) => void;
   openBackups: () => void;
   openSettings: (page?: string) => void;
   activate: (id: string) => void;
@@ -219,6 +229,15 @@ export const useTabs = create<TabsState>()(
           if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
           return { tabs: [...state.tabs, { kind: "users", id, profileId }], activeTabId: id };
         }),
+      openDiagram: (profileId, database) =>
+        set((state) => {
+          const id = `diagram:${profileId}/${database}`;
+          if (state.tabs.some((tab) => tab.id === id)) return { activeTabId: id };
+          return {
+            tabs: [...state.tabs, { kind: "diagram", id, profileId, database }],
+            activeTabId: id,
+          };
+        }),
       openBackups: () =>
         set((state) =>
           state.tabs.some((tab) => tab.id === "backups")
@@ -319,10 +338,15 @@ export const useTabs = create<TabsState>()(
             state,
             (tab) =>
               !(
-                tab.kind === "collection" &&
-                tab.profileId === profileId &&
-                tab.database === database &&
-                (collection === undefined || tab.collection === collection)
+                (tab.kind === "collection" &&
+                  tab.profileId === profileId &&
+                  tab.database === database &&
+                  (collection === undefined || tab.collection === collection)) ||
+                // A dropped database takes its diagram with it.
+                (tab.kind === "diagram" &&
+                  collection === undefined &&
+                  tab.profileId === profileId &&
+                  tab.database === database)
               ),
             false,
           ),

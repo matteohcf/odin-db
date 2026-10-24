@@ -8,6 +8,7 @@ pub mod backups;
 pub mod catalog;
 pub mod compare;
 pub mod connections;
+pub mod diagram;
 pub mod documents;
 pub mod gridfs;
 pub mod indexes;

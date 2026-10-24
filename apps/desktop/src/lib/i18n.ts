@@ -16,6 +16,8 @@ import compare from "@/features/compare/locales/en.json";
 import compareIt from "@/features/compare/locales/it.json";
 import connections from "@/features/connections/locales/en.json";
 import connectionsIt from "@/features/connections/locales/it.json";
+import diagram from "@/features/diagram/locales/en.json";
+import diagramIt from "@/features/diagram/locales/it.json";
 import documents from "@/features/documents/locales/en.json";
 import documentsIt from "@/features/documents/locales/it.json";
 import indexes from "@/features/indexes/locales/en.json";
@@ -55,6 +57,7 @@ export const resources = {
     compare,
     common,
     connections,
+    diagram,
     documents,
     indexes,
     monitor,
@@ -78,6 +81,7 @@ export const resources = {
     compare: compareIt,
     common: commonIt,
     connections: connectionsIt,
+    diagram: diagramIt,
     documents: documentsIt,
     indexes: indexesIt,
     monitor: monitorIt,

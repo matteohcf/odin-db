@@ -5,6 +5,7 @@ pub mod browse;
 pub mod catalog;
 pub mod compare;
 pub mod connection;
+pub mod diagram;
 pub mod documents;
 pub mod ejson;
 pub mod error;

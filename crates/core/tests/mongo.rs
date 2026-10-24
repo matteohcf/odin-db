@@ -2788,3 +2788,63 @@ async fn profiles_slow_operations() {
     .await
     .expect("turns profiling off");
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn infers_references_between_collections_from_data() {
+    use odin_core::diagram;
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let db = handle.client.database("odin_diagram");
+    let customers: Vec<ObjectId> = (0..5).map(|_| ObjectId::new()).collect();
+    let products: Vec<ObjectId> = (0..5).map(|_| ObjectId::new()).collect();
+    db.collection::<Document>("customers")
+        .insert_many(customers.iter().map(|id| doc! { "_id": id, "name": "Ada" }))
+        .await
+        .expect("customers");
+    db.collection::<Document>("products")
+        .insert_many(products.iter().map(|id| doc! { "_id": id, "sku": "A-1" }))
+        .await
+        .expect("products");
+    db.collection::<Document>("orders")
+        .insert_many((0..20).map(|i| {
+            doc! {
+                "_id": ObjectId::new(),
+                // Named after nothing: found by its values alone.
+                "buyer": customers[i % 5],
+                "items": [{ "productId": products[i % 5], "qty": 1 }],
+                // Points nowhere: no edge.
+                "trackingId": ObjectId::new(),
+            }
+        }))
+        .await
+        .expect("orders");
+
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let found = diagram::database_diagram(&handle, "odin_diagram", tx, CancellationToken::new())
+        .await
+        .expect("diagram");
+    let names: Vec<_> = found.collections.iter().map(|c| c.name.as_str()).collect();
+    assert_eq!(names, ["customers", "orders", "products"]);
+    let orders = &found.collections[1];
+    assert!(
+        orders
+            .fields
+            .iter()
+            .any(|field| field.path == "items.productId")
+    );
+    let mut links: Vec<_> = found
+        .links
+        .iter()
+        .map(|link| (link.field.as_str(), link.to.as_str(), link.many))
+        .collect();
+    links.sort_unstable();
+    assert_eq!(
+        links,
+        [
+            ("buyer", "customers", false),
+            ("items.productId", "products", true)
+        ]
+    );
+}

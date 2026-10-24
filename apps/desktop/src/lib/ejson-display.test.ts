@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactEJson, describeEJson } from "./ejson-display";
+import { compactEJson, describeEJson, kindOfBsonType } from "./ejson-display";
 
 describe("describeEJson", () => {
   it.each([
@@ -49,5 +49,17 @@ describe("compactEJson", () => {
     [{ a: 1 }, "{ a: 1 }"],
   ] as const)("renders %j as %s", (input, text) => {
     expect(compactEJson(input).text).toBe(text);
+  });
+});
+
+describe("kindOfBsonType", () => {
+  it("maps $type names to display kinds", () => {
+    expect(["long", "objectId", "bool", "object", "regex"].map(kindOfBsonType)).toEqual([
+      "number",
+      "objectId",
+      "boolean",
+      "document",
+      "other",
+    ]);
   });
 });

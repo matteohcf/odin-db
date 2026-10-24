@@ -55,7 +55,9 @@ export function TabItem({
       ? tab.collection
       : tab.kind === "shell"
         ? t("tabs.shell")
-        : t(`tabs.${tab.kind}`);
+        : tab.kind === "diagram"
+          ? t("tabs.diagram", { database: tab.database })
+          : t(`tabs.${tab.kind}`);
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>

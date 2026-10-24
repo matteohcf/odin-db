@@ -23,6 +23,7 @@
     "server": "Server status",
     "users": "Users",
     "all_one": "{{count}} open tab",
-    "all_other": "All {{count}} open tabs"
+    "all_other": "All {{count}} open tabs",
+    "diagram": "Diagram of {{database}}"
   }
 }

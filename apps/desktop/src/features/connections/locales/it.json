@@ -60,7 +60,8 @@
     "count_one": "Circa {{count, number}} documento",
     "count_other": "Circa {{count, number}} documenti",
     "databases_one": "{{count, number}} database",
-    "databases_other": "{{count, number}} database"
+    "databases_other": "{{count, number}} database",
+    "diagram": "Mostra diagramma"
   },
   "dialog": {
     "createTitle": "Nuova connessione",
@@ -165,7 +166,8 @@
     "serverTab": "Stato del server · {{name}}",
     "usersTab": "Utenti · {{name}}",
     "settingsTab": "Impostazioni",
-    "settings": "Apri le impostazioni"
+    "settings": "Apri le impostazioni",
+    "diagramTab": "Diagramma · {{name}}"
   },
   "health": {
     "lost": "{{name}} ha smesso di rispondere. odin-db continua a riprovare in background.",
