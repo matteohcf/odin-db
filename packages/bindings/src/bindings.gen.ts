@@ -684,7 +684,9 @@ export type EngineChoice =
 { kind: "local"; model: string } | { kind: "ollama"; url: string; model: string };
 
 /**  Stable error classification exposed to the UI, which switches on it exhaustively. */
-export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | "database" | "storage" | "secretStore" | 
+export type ErrorKind = "cancelled" | "validation" | "notFound" | "notConnected" | "readOnly" | "auth" | "network" | "cursorExpired" | 
+/**  The server stopped the operation at its time limit (`maxTimeMS`). */
+"timeLimit" | "database" | "storage" | "secretStore" | 
 /**  A download failed verification: damaged in transit, or altered. */
 "integrity" | 
 /**  An SSH server presented a host key the profile does not trust yet. */

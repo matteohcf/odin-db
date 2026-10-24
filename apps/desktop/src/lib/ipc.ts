@@ -21,6 +21,10 @@ export function hostKeyError(error: unknown): { fingerprint: string; changed: bo
   return { fingerprint: error.detail, changed: error.kind === "hostKeyChanged" };
 }
 
+/** The server stopped the operation at its time limit (ADR-0052). */
+export const isTimeLimitError = (error: unknown) =>
+  error instanceof AppError && error.kind === "timeLimit";
+
 type CommandResult<T> = { status: "ok"; data: T } | { status: "error"; error: IpcError };
 
 /** Unwraps a generated command result, throwing `AppError` so TanStack Query sees failures. */

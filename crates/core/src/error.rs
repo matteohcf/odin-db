@@ -13,6 +13,8 @@ pub enum ErrorKind {
     Auth,
     Network,
     CursorExpired,
+    /// The server stopped the operation at its time limit (`maxTimeMS`).
+    TimeLimit,
     Database,
     Storage,
     SecretStore,
@@ -43,6 +45,8 @@ pub enum CoreError {
     Network(String),
     #[error("the result cursor expired on the server; run the query again")]
     CursorExpired,
+    #[error("the server stopped it at its time limit: {0}")]
+    TimeLimit(String),
     #[error("{0}")]
     Database(String),
     #[error("local storage error: {0}")]
@@ -82,6 +86,7 @@ impl CoreError {
             Self::Auth(_) => ErrorKind::Auth,
             Self::Network(_) => ErrorKind::Network,
             Self::CursorExpired => ErrorKind::CursorExpired,
+            Self::TimeLimit(_) => ErrorKind::TimeLimit,
             Self::Database(_) => ErrorKind::Database,
             Self::Storage(_) => ErrorKind::Storage,
             Self::SecretStore(_) => ErrorKind::SecretStore,
@@ -95,6 +100,8 @@ impl CoreError {
 
 /// Server error code for a cursor that no longer exists (e.g. idle timeout).
 const CURSOR_NOT_FOUND: i32 = 43;
+/// Server error code for an operation that ran past its `maxTimeMS`.
+const MAX_TIME_EXPIRED: i32 = 50;
 
 impl From<mongodb::error::Error> for CoreError {
     fn from(error: mongodb::error::Error) -> Self {
@@ -110,6 +117,9 @@ impl From<mongodb::error::Error> for CoreError {
             | Kind::InvalidTlsConfig { .. } => Self::Network(message),
             Kind::InvalidArgument { .. } => Self::Validation(message),
             Kind::Command(ref command) if command.code == CURSOR_NOT_FOUND => Self::CursorExpired,
+            Kind::Command(ref command) if command.code == MAX_TIME_EXPIRED => {
+                Self::TimeLimit(command.message.clone())
+            }
             Kind::Command(ref command) => Self::Database(command.message.clone()),
             Kind::Write(WriteFailure::WriteError(ref write)) => {
                 Self::Database(write.message.clone())

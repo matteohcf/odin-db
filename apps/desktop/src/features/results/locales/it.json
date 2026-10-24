@@ -178,5 +178,6 @@
     "zoomIn": "Ingrandisci",
     "zoomOut": "Riduci",
     "fit": "Adatta ai punti"
-  }
+  },
+  "timedOut": "Concedile più tempo in Opzioni → Tempo max (ms), o cambia il valore predefinito in Impostazioni → Dati e strumenti. 0 significa nessun limite."
 }

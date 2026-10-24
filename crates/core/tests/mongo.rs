@@ -3357,3 +3357,23 @@ async fn replica_set_members_are_reported_and_standalones_have_none() {
     assert!(member.healthy && member.is_self);
     assert_eq!(member.lag_seconds, Some(0.0));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn a_query_past_its_time_limit_is_reported_as_such() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("slow");
+    fx.seed(&handle, &ns, 50).await;
+    let request = FindRequest {
+        // Server-side JavaScript that sleeps on every document: far past one millisecond.
+        filter: EJsonDocument::from(doc! { "$where": "sleep(20) || true" }),
+        options: QueryOptions {
+            max_time_ms: Some(1),
+            ..QueryOptions::default()
+        },
+        ..find_all(10)
+    };
+    let result = CursorRegistry::default().find(&handle, &ns, request).await;
+    assert!(matches!(result, Err(CoreError::TimeLimit(_))), "{result:?}");
+}

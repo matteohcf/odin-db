@@ -178,5 +178,6 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "fit": "Fit to the points"
-  }
+  },
+  "timedOut": "Give it longer in Options → Max time (ms), or change the default in Settings → Data and tools. 0 means no limit."
 }

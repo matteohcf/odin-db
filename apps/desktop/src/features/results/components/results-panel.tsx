@@ -49,6 +49,7 @@ export function ResultsPanel({
   const columns = useResultsState(controller, (s) => s.columns);
   const status = useResultsState(controller, (s) => s.status);
   const error = useResultsState(controller, (s) => s.error);
+  const timedOut = useResultsState(controller, (s) => s.timedOut);
   const hasMore = useResultsState(controller, (s) => s.hasMore);
   const loadMore = useCallback(() => void controller.loadMore(), [controller]);
   const view = useResultsView((s) => s.view);
@@ -63,6 +64,7 @@ export function ResultsPanel({
           {t("failed")}
         </p>
         <p className="max-w-2xl text-muted-foreground text-xs selectable">{error}</p>
+        {timedOut && <p className="max-w-2xl text-xs">{t("timedOut")}</p>}
       </div>
     );
   }

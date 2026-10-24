@@ -1,7 +1,7 @@
 import type { CursorId, DocumentPage } from "@odin-db/bindings";
 import { createStore } from "zustand/vanilla";
 import { isJsonObject, type JsonObject } from "@/lib/ejson-display";
-import { errorMessage } from "@/lib/ipc";
+import { errorMessage, isTimeLimitError } from "@/lib/ipc";
 
 /** Opens a server cursor (a find, an aggregate…) and returns its first page. */
 export type OpenCursor = (batchSize: number) => Promise<DocumentPage>;
@@ -17,6 +17,8 @@ export interface ResultsState {
   columns: string[];
   status: "idle" | "loading" | "ready" | "error";
   error: string | null;
+  /** The error is the server's time limit, which the user can raise. */
+  timedOut: boolean;
   loadingMore: boolean;
   hasMore: boolean;
   /** The row cap was reached; more documents exist on the server. */
@@ -37,6 +39,7 @@ const initialState: ResultsState = {
   columns: [],
   status: "idle",
   error: null,
+  timedOut: false,
   loadingMore: false,
   hasMore: false,
   truncated: false,
@@ -116,7 +119,12 @@ export function createResultsController(
       store.setState({ status: "ready", durationMs: performance.now() - startedAt });
     } catch (error) {
       if (current === generation) {
-        store.setState({ ...initialState, status: "error", error: errorMessage(error) });
+        store.setState({
+          ...initialState,
+          status: "error",
+          error: errorMessage(error),
+          timedOut: isTimeLimitError(error),
+        });
       }
     }
   }

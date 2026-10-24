@@ -2241,8 +2241,8 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
     if (request.options?.maxTimeMs === 1)
       return fail(
-        "database",
-        "Executor error during find command :: caused by :: operation exceeded time limit",
+        "timeLimit",
+        "the server stopped it at its time limit: Executor error during find command :: caused by :: operation exceeded time limit",
       );
     const caseless = ignoresCase(request.options);
     let docs = coll.docs.filter((doc) => matchesFilter(doc, request.filter as Doc, caseless));

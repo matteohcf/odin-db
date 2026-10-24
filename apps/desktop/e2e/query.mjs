@@ -209,6 +209,7 @@ await check("collation, hint and time limit go with the query", async () => {
     .getByText(/operation exceeded time limit/)
     .first()
     .waitFor();
+  await page.getByText(/Give it longer in Options → Max time/).waitFor();
   await shot("05-options");
   await page.getByRole("textbox", { name: "Max time (ms)" }).fill("abc");
   await page.getByRole("button", { name: /^Run/ }).click();
