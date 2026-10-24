@@ -13,13 +13,24 @@ export interface CollectionTab {
   collectionKind: CollectionKind;
   /** A query to run in the tab, e.g. a slow one from the profiler; a new nonce runs it again. */
   query?: TabQuery;
+  /** A pipeline (mongosh text) to load in the aggregation view; a new nonce loads it again. */
+  pipeline?: { text: string; nonce: string };
 }
 
 /** Query bar text (mongosh syntax) handed to a collection tab. */
 interface TabQuery {
   filter: string;
   sort: string;
+  projection?: string;
+  skip?: string;
+  limit?: string;
   nonce: string;
+}
+
+/** Saved queries and pipelines of every connection; at most one is open. */
+interface QueriesTab {
+  kind: "queries";
+  id: "queries";
 }
 
 /** A mongosh session for a profile. Several can be open at once. */
@@ -71,6 +82,7 @@ export type WorkspaceTab =
   | ServerTab
   | UsersTab
   | DiagramTab
+  | QueriesTab
   | BackupsTab
   | SettingsTab;
 
@@ -92,15 +104,21 @@ interface TabsState {
   recent: RecentCollection[];
   /** Focuses the collection's tab, or opens one; `newTab` always opens another. */
   openCollection: (
-    target: Omit<CollectionTab, "kind" | "id" | "query">,
+    target: Omit<CollectionTab, "kind" | "id" | "query" | "pipeline">,
     newTab?: boolean,
     query?: Omit<TabQuery, "nonce">,
+  ) => void;
+  /** Opens the collection's tab on its aggregation view with `text` as the pipeline. */
+  openPipeline: (
+    target: Omit<CollectionTab, "kind" | "id" | "query" | "pipeline">,
+    text: string,
   ) => void;
   openShell: (profileId: ProfileId) => void;
   openServer: (profileId: ProfileId) => void;
   openUsers: (profileId: ProfileId) => void;
   openDiagram: (profileId: ProfileId, database: string) => void;
   openBackups: () => void;
+  openQueries: () => void;
   openSettings: (page?: string) => void;
   activate: (id: string) => void;
   /** A second, independent tab on the same collection, right after this one. */
@@ -197,6 +215,18 @@ export const useTabs = create<TabsState>()(
             recent,
           };
         }),
+      openPipeline: (target, text) =>
+        set((state) => {
+          const id = collectionTabId(target.profileId, target.database, target.collection);
+          const pipeline = { text, nonce: crypto.randomUUID() };
+          const open = state.tabs.some((tab) => tab.id === id);
+          return {
+            tabs: open
+              ? state.tabs.map((tab) => (tab.id === id ? { ...tab, pipeline } : tab))
+              : [...state.tabs, { kind: "collection", id, ...target, pipeline }],
+            activeTabId: id,
+          };
+        }),
       duplicate: (id) =>
         set((state) => {
           const index = state.tabs.findIndex((tab) => tab.id === id);
@@ -238,6 +268,12 @@ export const useTabs = create<TabsState>()(
             activeTabId: id,
           };
         }),
+      openQueries: () =>
+        set((state) =>
+          state.tabs.some((tab) => tab.id === "queries")
+            ? { activeTabId: "queries" }
+            : { tabs: [...state.tabs, { kind: "queries", id: "queries" }], activeTabId: "queries" },
+        ),
       openBackups: () =>
         set((state) =>
           state.tabs.some((tab) => tab.id === "backups")

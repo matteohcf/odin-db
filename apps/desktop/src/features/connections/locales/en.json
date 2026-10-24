@@ -169,7 +169,9 @@
     "settings": "Open settings",
     "diagramTab": "Diagram · {{name}}",
     "openDiagram": "Show diagram of {{database}}",
-    "openDiagramOn": "Show diagram of {{database}} on {{name}}"
+    "openDiagramOn": "Show diagram of {{database}} on {{name}}",
+    "queriesTab": "My queries",
+    "queries": "Open my queries"
   },
   "health": {
     "lost": "{{name}} stopped answering. odin-db keeps retrying in the background.",

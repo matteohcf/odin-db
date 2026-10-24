@@ -1,0 +1,21 @@
+{
+  "title": "My queries",
+  "count_one": "{{count}} saved",
+  "count_other": "{{count}} saved",
+  "search": "Search saved queries and pipelines",
+  "empty": "Nothing saved yet",
+  "emptyHint": "Save a query with the star in its history, or a pipeline from the aggregation builder's Saved menu: they all show up here, for every connection.",
+  "noMatch": "Nothing matches “{{query}}”.",
+  "kind": {
+    "query": "Query",
+    "pipeline": "Pipeline"
+  },
+  "sort": "sort",
+  "projection": "projection",
+  "limit": "limit",
+  "open": "Open",
+  "remove": "Remove",
+  "removed": "Removed from your saved queries",
+  "undo": "Undo",
+  "button": "Queries"
+}

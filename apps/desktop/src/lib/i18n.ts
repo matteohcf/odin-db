@@ -28,6 +28,8 @@ import monitor from "@/features/monitor/locales/en.json";
 import monitorIt from "@/features/monitor/locales/it.json";
 import perfLab from "@/features/perf-lab/locales/en.json";
 import perfLabIt from "@/features/perf-lab/locales/it.json";
+import queries from "@/features/queries/locales/en.json";
+import queriesIt from "@/features/queries/locales/it.json";
 import results from "@/features/results/locales/en.json";
 import resultsIt from "@/features/results/locales/it.json";
 import schema from "@/features/schema/locales/en.json";
@@ -65,6 +67,7 @@ export const resources = {
     indexes,
     monitor,
     perfLab,
+    queries,
     results,
     schema,
     settings,
@@ -90,6 +93,7 @@ export const resources = {
     indexes: indexesIt,
     monitor: monitorIt,
     perfLab: perfLabIt,
+    queries: queriesIt,
     results: resultsIt,
     schema: schemaIt,
     settings: settingsIt,

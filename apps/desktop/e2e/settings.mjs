@@ -40,7 +40,7 @@ await check("switching to Italian translates the interface and persists", async 
   await page.getByLabel("Language").click();
   await page.getByRole("option", { name: "Italiano" }).click();
   await page.getByRole("heading", { name: "Generale", level: 2 }).waitFor();
-  await page.getByRole("button", { name: "Aspetto" }).waitFor();
+  await page.getByRole("button", { name: "Aspetto", exact: true }).waitFor();
   await page.reload();
   await page.getByText("Connessioni").first().waitFor();
   await page.getByRole("button", { name: "Impostazioni" }).first().click();
@@ -52,7 +52,7 @@ await check("switching to Italian translates the interface and persists", async 
 });
 
 await check("zoom from the page and with shortcuts", async () => {
-  await page.getByRole("button", { name: "Appearance" }).click();
+  await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page.getByLabel("Zoom").click();
   await page.getByRole("option", { name: "125%" }).click();
   const zoom = () => page.evaluate(() => document.documentElement.style.zoom);
@@ -144,7 +144,7 @@ await check("sizes in the sidebar are off by default and can be shown", async ()
   await page.mouse.move(900, 500);
   if ((await shop.innerText()).includes("kB")) throw new Error("size shown by default");
   await page.keyboard.press("Meta+,");
-  await page.getByRole("button", { name: "Appearance" }).click();
+  await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page.getByRole("switch", { name: "Sizes in the sidebar" }).click();
   await page.mouse.move(900, 500);
   if (!(await shop.innerText()).includes("kB")) throw new Error("size not shown");

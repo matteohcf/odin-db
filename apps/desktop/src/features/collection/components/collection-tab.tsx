@@ -14,7 +14,7 @@ import {
   Unplug,
   Workflow,
 } from "lucide-react";
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useExplorer, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
@@ -116,6 +116,12 @@ function CollectionWorkspace({
   const [visited, setVisited] = useState<ReadonlySet<View>>(() => new Set(["documents"]));
 
   const clearIndexDraft = useCallback(() => setIndexDraft(null), []);
+  // A pipeline handed to the tab opens the aggregation view.
+  const pipelineNonce = tab.pipeline?.nonce;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only a new pipeline switches the view.
+  useEffect(() => {
+    if (pipelineNonce) select("aggregation");
+  }, [pipelineNonce]);
   const { data: stats } = useCollectionStats(connection.id, namespace, !isView);
   const badges: Partial<Record<View, string>> = stats
     ? {
@@ -232,6 +238,7 @@ function CollectionWorkspace({
                   connection={connection}
                   namespace={namespace}
                   active={tabActive && view === "aggregation"}
+                  pendingPipeline={tab.pipeline}
                 />
               ) : value === "schema" ? (
                 <SchemaView connection={connection} namespace={namespace} />

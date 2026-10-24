@@ -18,6 +18,7 @@ import {
 import { useTheme } from "@odin-db/ui/components/theme-provider";
 import {
   Activity,
+  BookMarked,
   Clock,
   Eye,
   HardDriveDownload,
@@ -49,6 +50,7 @@ const tabIcon = {
   server: Activity,
   users: UsersRound,
   diagram: Waypoints,
+  queries: BookMarked,
   backups: HardDriveDownload,
   settings: Settings,
 } as const;
@@ -140,6 +142,7 @@ function PaletteResults({
   const openShell = useTabs((s) => s.openShell);
   const openDiagram = useTabs((s) => s.openDiagram);
   const openBackups = useTabs((s) => s.openBackups);
+  const openQueries = useTabs((s) => s.openQueries);
   const openSettings = useTabs((s) => s.openSettings);
   const connect = useConnect();
   const { setTheme } = useTheme();
@@ -180,7 +183,7 @@ function PaletteResults({
     label:
       tab.kind === "collection"
         ? `${tab.collection} · ${tab.database}`
-        : tab.kind === "backups" || tab.kind === "settings"
+        : tab.kind === "backups" || tab.kind === "settings" || tab.kind === "queries"
           ? t(`palette.${tab.kind}Tab`)
           : tab.kind === "diagram"
             ? t("palette.diagramTab", { name: `${nameOf(tab.profileId)} / ${tab.database}` })
@@ -217,6 +220,7 @@ function PaletteResults({
     ),
     { id: "new", label: t("palette.newConnection"), icon: Plus, run: onNewConnection },
     { id: "backups", label: t("palette.backups"), icon: HardDriveDownload, run: openBackups },
+    { id: "queries", label: t("palette.queries"), icon: BookMarked, run: openQueries },
     { id: "settings", label: t("palette.settings"), icon: Settings, run: () => openSettings() },
     {
       id: "shortcuts",

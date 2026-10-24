@@ -93,7 +93,16 @@ interface DocumentsViewProps {
   /** Whether this view is the one on screen, which takes the rerun shortcut. */
   active: boolean;
   /** A query handed over from elsewhere (the profiler); runs whenever its nonce changes. */
-  pendingQuery?: { filter: string; sort: string; nonce: string } | undefined;
+  pendingQuery?:
+    | {
+        filter: string;
+        sort: string;
+        projection?: string;
+        skip?: string;
+        limit?: string;
+        nonce: string;
+      }
+    | undefined;
 }
 
 const matchAll: FindQuery = { filter: {}, sort: null, projection: null, skip: null, limit: null };
@@ -251,7 +260,14 @@ export function DocumentsView({
   const runPending = useEffectEvent(() => {
     if (!pendingQuery || appliedQuery.current === pendingQuery.nonce) return false;
     appliedQuery.current = pendingQuery.nonce;
-    void runForm({ ...emptyQueryForm, filter: pendingQuery.filter, sort: pendingQuery.sort });
+    void runForm({
+      ...emptyQueryForm,
+      filter: pendingQuery.filter,
+      sort: pendingQuery.sort,
+      projection: pendingQuery.projection ?? "",
+      skip: pendingQuery.skip ?? "",
+      limit: pendingQuery.limit ?? "",
+    });
     return true;
   });
 

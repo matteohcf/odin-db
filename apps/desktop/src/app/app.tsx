@@ -8,6 +8,7 @@ import { ConnectionExplorer } from "@/features/connections";
 import { DiagramTabLabel } from "@/features/diagram";
 import { MonitorTab, MonitorTabLabel } from "@/features/monitor";
 import { useAutorunEnabled } from "@/features/perf-lab";
+import { QueriesTabLabel, QueriesView } from "@/features/queries";
 import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
 import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { useUpdateNotifier } from "@/features/updates";
@@ -15,6 +16,7 @@ import { UsersTab, UsersTabLabel } from "@/features/users";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
 import { clampSidebarWidth, useSettings } from "@/lib/settings";
 import { BackupsButton } from "./backups-button";
+import { QueriesButton } from "./queries-button";
 import { QuitDialog } from "./quit-dialog";
 import { SettingsButton } from "./settings-button";
 import { SidebarResizer } from "./sidebar-resizer";
@@ -65,6 +67,7 @@ export function App() {
         <SidebarResizer />
         <footer className="flex h-9 shrink-0 items-center gap-1 border-t px-1.5">
           <ThemeMenu />
+          <QueriesButton />
           <BackupsButton />
           <SettingsButton />
         </footer>
@@ -90,6 +93,8 @@ function renderLabel(tab: WorkspaceTab, context: TabLabelContext) {
       return <UsersTabLabel tab={tab} />;
     case "diagram":
       return <DiagramTabLabel tab={tab} />;
+    case "queries":
+      return <QueriesTabLabel />;
     case "backups":
       return <BackupsTabLabel />;
     case "settings":
@@ -113,6 +118,8 @@ function renderTab(tab: WorkspaceTab) {
           <DiagramTab tab={tab} />
         </Suspense>
       );
+    case "queries":
+      return <QueriesView />;
     case "backups":
       return <BackupsView />;
     case "settings":

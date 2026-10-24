@@ -23,11 +23,13 @@ export function ThemeMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 px-2 text-muted-foreground text-xs"
+          size="icon"
+          // An icon alone: the sidebar footer has room for it at its narrowest.
+          className="size-7 text-muted-foreground"
+          aria-label={`${t("theme.label")}: ${t(`theme.${theme}`)}`}
+          title={`${t("theme.label")}: ${t(`theme.${theme}`)}`}
         >
           <Icon className="size-3.5" />
-          {t(`theme.${theme}`)}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-40">

@@ -1,0 +1,21 @@
+{
+  "title": "Le mie query",
+  "count_one": "{{count}} salvata",
+  "count_other": "{{count}} salvate",
+  "search": "Cerca tra query e pipeline salvate",
+  "empty": "Ancora niente di salvato",
+  "emptyHint": "Salva una query con la stella nella sua cronologia, o una pipeline dal menu Salvate dell'aggregation: compaiono tutte qui, per ogni connessione.",
+  "noMatch": "Nessun risultato per “{{query}}”.",
+  "kind": {
+    "query": "Query",
+    "pipeline": "Pipeline"
+  },
+  "sort": "ordinamento",
+  "projection": "proiezione",
+  "limit": "limite",
+  "open": "Apri",
+  "remove": "Rimuovi",
+  "removed": "Rimossa dalle query salvate",
+  "undo": "Annulla",
+  "button": "Query"
+}
