@@ -16,7 +16,8 @@
     "network": "Rete",
     "inOut": "In {{in}}/s · out {{out}}/s",
     "memory": "Memoria (residente)",
-    "uptime": "Attivo da {{duration}}"
+    "uptime": "Attivo da {{duration}}",
+    "measuring": "In misurazione…"
   },
   "ops": {
     "title": "Operazioni in corso",

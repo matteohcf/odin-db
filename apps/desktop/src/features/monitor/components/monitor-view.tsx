@@ -144,6 +144,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
               value={currentRates ? `${number(currentRates.totalOps)}/s` : "—"}
             >
               <Sparkline values={opsSeries} label={t("stats.operations")} />
+              {!currentRates && <Measuring />}
               {currentRates && (
                 <p className="text-muted-foreground text-[11px] tabular-nums">
                   {(["query", "insert", "update", "delete", "getmore", "command"] as const)
@@ -171,6 +172,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
               }
             >
               <Sparkline values={netSeries} label={t("stats.network")} />
+              {!currentRates && <Measuring />}
               {currentRates && (
                 <p className="text-muted-foreground text-[11px] tabular-nums">
                   {t("stats.inOut", {
@@ -210,15 +212,16 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-xs">
+              {/* Fixed columns: a long command truncates instead of pushing Kill out of view. */}
+              <table className="w-full min-w-3xl table-fixed text-xs">
                 <thead className="bg-muted/40 text-left text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2 font-medium">{t("ops.op")}</th>
-                    <th className="px-3 py-2 font-medium">{t("ops.namespace")}</th>
-                    <th className="px-3 py-2 text-right font-medium">{t("ops.running")}</th>
-                    <th className="px-3 py-2 font-medium">{t("ops.client")}</th>
+                    <th className="w-36 px-3 py-2 font-medium">{t("ops.op")}</th>
+                    <th className="w-40 px-3 py-2 font-medium">{t("ops.namespace")}</th>
+                    <th className="w-20 px-3 py-2 text-right font-medium">{t("ops.running")}</th>
+                    <th className="w-44 px-3 py-2 font-medium">{t("ops.client")}</th>
                     <th className="px-3 py-2 font-medium">{t("ops.commandColumn")}</th>
-                    <th className="px-3 py-2">
+                    <th className="w-24 px-3 py-2">
                       <span className="sr-only">{t("ops.actions")}</span>
                     </th>
                   </tr>
@@ -234,15 +237,17 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
                             <span className="ml-1.5 text-warning">{t("ops.waiting")}</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 font-mono">{op.ns || "—"}</td>
+                        <td className="truncate px-3 py-2 font-mono" title={op.ns}>
+                          {op.ns || "—"}
+                        </td>
                         <td className="px-3 py-2 text-right tabular-nums">
                           {number(op.secsRunning ?? 0)} s
                         </td>
-                        <td className="px-3 py-2 text-muted-foreground">
+                        <td className="px-3 py-2 text-muted-foreground [overflow-wrap:anywhere]">
                           {[op.appName, op.client].filter(Boolean).join(" · ") || op.description}
                         </td>
                         <td
-                          className="max-w-md truncate px-3 py-2 font-mono text-muted-foreground"
+                          className="truncate px-3 py-2 font-mono text-muted-foreground"
                           title={command}
                         >
                           {command}
@@ -310,4 +315,10 @@ function uptime(seconds: number): string {
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+/** Rates need two samples; until the second one, say so rather than show an empty card. */
+function Measuring() {
+  const { t } = useTranslation("monitor");
+  return <p className="text-muted-foreground text-xs">{t("stats.measuring")}</p>;
 }

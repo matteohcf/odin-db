@@ -36,12 +36,23 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
   useEffect(() => {
     const bar = tabList.current;
     if (!bar) return;
-    const update = () => setOverflowing(bar.scrollWidth > bar.clientWidth + 1);
+    const update = () => {
+      setOverflowing(bar.scrollWidth > bar.clientWidth + 1);
+      // Ends hiding tabs fade out instead of cutting a label off. Set on the element directly:
+      // scrolling must not re-render every tab.
+      const start = bar.scrollLeft > 1 ? "transparent" : "black";
+      const end = bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 1 ? "transparent" : "black";
+      bar.style.maskImage = `linear-gradient(to right, ${start}, black 28px, black calc(100% - 28px), ${end})`;
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(bar);
     for (const child of bar.children) observer.observe(child);
-    return () => observer.disconnect();
+    bar.addEventListener("scroll", update, { passive: true });
+    return () => {
+      observer.disconnect();
+      bar.removeEventListener("scroll", update);
+    };
   }, [tabs]);
 
   // A tab opened from the sidebar or the palette may sit past the edge of a long tab bar.

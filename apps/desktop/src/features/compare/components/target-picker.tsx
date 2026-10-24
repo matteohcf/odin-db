@@ -57,7 +57,7 @@ export function TargetPicker({
           disabled={disabled}
         >
           <SelectTrigger id={`${id}-connection`} size="sm" className="w-full">
-            <SelectValue />
+            <SelectValue placeholder={t("target.pickConnection")} />
           </SelectTrigger>
           <SelectContent>
             {targets.map((target) => (
@@ -80,7 +80,7 @@ export function TargetPicker({
           disabled={disabled || !databases.data}
         >
           <SelectTrigger id={`${id}-database`} size="sm" className="w-full">
-            <SelectValue />
+            <SelectValue placeholder={t("target.pickDatabase")} />
           </SelectTrigger>
           <SelectContent>
             {databases.data?.map((entry) => (
@@ -102,7 +102,7 @@ export function TargetPicker({
             disabled={disabled || !collections.data}
           >
             <SelectTrigger id={`${id}-collection`} size="sm" className="w-full">
-              <SelectValue />
+              <SelectValue placeholder={t("target.pickCollection")} />
             </SelectTrigger>
             <SelectContent>
               {collections.data

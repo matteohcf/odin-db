@@ -5,7 +5,10 @@
   "target": {
     "connection": "With connection",
     "database": "Database",
-    "collection": "Collection"
+    "collection": "Collection",
+    "pickConnection": "Choose a connection",
+    "pickDatabase": "Choose a database",
+    "pickCollection": "Choose a collection"
   },
   "filter": "Only documents matching (optional)",
   "filterPlaceholder": "{ status: \"active\" }",

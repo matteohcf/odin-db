@@ -16,7 +16,8 @@
     "network": "Network",
     "inOut": "In {{in}}/s · out {{out}}/s",
     "memory": "Memory (resident)",
-    "uptime": "Up for {{duration}}"
+    "uptime": "Up for {{duration}}",
+    "measuring": "Measuring…"
   },
   "ops": {
     "title": "Running operations",
