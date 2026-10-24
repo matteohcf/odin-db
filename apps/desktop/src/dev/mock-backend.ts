@@ -112,6 +112,12 @@ function user(i: number): Doc {
   return doc;
 }
 
+/** Orders over about four months, more of them as time goes on, at varied hours. */
+function placedAt(i: number): number {
+  const day = Math.floor(120 * (i / 350) ** 0.6);
+  return 1_700_000_000_000 + day * 86_400_000 + ((i * 7) % 24) * 3_600_000;
+}
+
 function order(i: number): Doc {
   return {
     _id: oid(),
@@ -122,7 +128,7 @@ function order(i: number): Doc {
       sku: `SKU-${n}`,
       qty: { $numberInt: "1" },
     })),
-    placedAt: { $date: { $numberLong: String(1_700_000_000_000 + i * 86_400_000) } },
+    placedAt: { $date: { $numberLong: String(placedAt(i)) } },
     tracking: `https://track.example.com/${10_000 + i}`,
   };
 }

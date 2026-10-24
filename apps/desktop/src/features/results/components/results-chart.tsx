@@ -6,15 +6,15 @@ import {
   ChartTooltipContent,
 } from "@odin-db/ui/components/chart";
 import { ChartNoAxesColumn } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   Scatter,
   ScatterChart,
   XAxis,
@@ -55,6 +55,14 @@ interface ResultsChartProps {
 export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
   const { t, i18n } = useTranslation("results");
   const fields = useMemo(() => chartFields(rows), [rows]);
+  // Without the punctuation useId adds, which `url(#…)` does not accept.
+  const fadeId = `fade${useId().replace(/[^\w-]/g, "")}`;
+  // Marks grow in once, unless the system asks for less motion.
+  const [motion] = useState(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? { isAnimationActive: false }
+      : { isAnimationActive: true, animationDuration: 450, animationEasing: "ease-out" as const },
+  );
   const [chosen, setChosen] = useState<ChartSpec | null>(null);
   // A field picked for earlier results may be gone from these ones.
   const spec =
@@ -221,7 +229,7 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
                   fill="var(--color-y)"
                   radius={[0, 4, 4, 0]}
                   barSize={16}
-                  isAnimationActive={false}
+                  {...motion}
                 >
                   {points.map((point) => (
                     <Cell
@@ -233,7 +241,13 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
                 </Bar>
               </BarChart>
             ) : data.kind === "line" ? (
-              <LineChart data={points} margin={{ left: 8, right: 24, top: 8 }}>
+              <AreaChart data={points} margin={{ left: 8, right: 24, top: 8 }}>
+                <defs>
+                  <linearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-y)" stopOpacity={0.32} />
+                    <stop offset="100%" stopColor="var(--color-y)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid vertical={false} stroke="var(--border)" />
                 <XAxis dataKey="label" {...axis} minTickGap={24} />
                 <YAxis
@@ -243,30 +257,26 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
                   tickFormatter={(v) => numbers.format(v)}
                 />
                 {tooltip}
-                <Line
+                <Area
                   dataKey="y"
                   type="linear"
+                  fill={`url(#${fadeId})`}
                   stroke="var(--color-y)"
                   strokeWidth={2}
                   dot={
                     points.length <= 40 ? { r: 3, strokeWidth: 0, fill: "var(--color-y)" } : false
                   }
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)" }}
-                  isAnimationActive={false}
+                  {...motion}
                 />
-              </LineChart>
+              </AreaChart>
             ) : data.kind === "histogram" ? (
               <BarChart data={points} margin={{ left: 8, right: 24, top: 8 }} barCategoryGap={2}>
                 <CartesianGrid vertical={false} stroke="var(--border)" />
                 <XAxis dataKey="label" {...axis} minTickGap={16} />
                 <YAxis {...axis} width={56} allowDecimals={false} />
                 {tooltip}
-                <Bar
-                  dataKey="y"
-                  fill="var(--color-y)"
-                  radius={[4, 4, 0, 0]}
-                  isAnimationActive={false}
-                />
+                <Bar dataKey="y" fill="var(--color-y)" radius={[4, 4, 0, 0]} {...motion} />
               </BarChart>
             ) : (
               <ScatterChart margin={{ left: 8, right: 24, top: 8 }}>
@@ -290,12 +300,7 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
                 />
                 <ZAxis range={[64, 64]} />
                 {tooltip}
-                <Scatter
-                  data={points}
-                  fill="var(--color-y)"
-                  fillOpacity={0.7}
-                  isAnimationActive={false}
-                />
+                <Scatter data={points} fill="var(--color-y)" fillOpacity={0.7} {...motion} />
               </ScatterChart>
             )}
           </ChartContainer>

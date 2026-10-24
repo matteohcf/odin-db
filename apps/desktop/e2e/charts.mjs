@@ -39,8 +39,8 @@ await page.locator("tbody tr").first().waitFor();
 
 await check("the chart view starts with documents over time", async () => {
   await page.getByRole("radio", { name: "Chart" }).click();
-  // Attached, not visible: a flat line has no height.
-  await chart.locator(".recharts-line").waitFor({ state: "attached" });
+  // Attached, not visible: a flat series has no height.
+  await chart.locator(".recharts-area").waitFor({ state: "attached" });
   await page.getByRole("combobox", { name: "By" }).filter({ hasText: "placedAt" }).waitFor();
   await page.getByText(/^From \d+ loaded documents/).waitFor();
   await page.getByText("Count of documents by placedAt").waitFor();
