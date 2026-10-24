@@ -40,7 +40,13 @@ export function TryLocalhostButton() {
   }
 
   return (
-    <Button size="sm" variant="outline" disabled={busy} onClick={() => void tryLocalhost()}>
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-auto min-h-8 whitespace-normal"
+      disabled={busy}
+      onClick={() => void tryLocalhost()}
+    >
       {busy ? <Loader2 className="animate-spin" /> : <Zap />}
       {t("explorer.localhost")}
     </Button>

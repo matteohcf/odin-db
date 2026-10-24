@@ -8,7 +8,7 @@ const KEY_STEP = 16;
 /** The sidebar's right edge: drag, or focus and use the arrow keys, to resize it. */
 export function SidebarResizer() {
   const { t } = useTranslation("app");
-  const width = useSettings((s) => s.sidebarWidth);
+  const width = clampSidebarWidth(useSettings((s) => s.sidebarWidth));
   const update = useSettings((s) => s.update);
   const [dragging, setDragging] = useState(false);
 

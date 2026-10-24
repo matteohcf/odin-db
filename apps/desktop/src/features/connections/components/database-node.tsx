@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IconAction } from "@/components/icon-action";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
@@ -89,24 +88,6 @@ export function DatabaseNode({
         icon={<Database className="size-3.5" />}
         label={<HighlightMatch text={database.name} query={filter} />}
         trailing={sizes && !database.empty ? formatBytes(database.sizeOnDisk ?? 0) : undefined}
-        quickActions={
-          <>
-            <IconAction
-              label={t("tree.diagram")}
-              onClick={() => openDiagram(connection.profileId, database.name)}
-            >
-              <Waypoints />
-            </IconAction>
-            {writable && (
-              <IconAction
-                label={t("catalog.createCollection")}
-                onClick={() => setToolDialog("createCollection")}
-              >
-                <Plus />
-              </IconAction>
-            )}
-          </>
-        }
         menuLabel={t("tree.actions", { name: database.name })}
         menu={
           <>

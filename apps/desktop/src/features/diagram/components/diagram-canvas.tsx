@@ -16,14 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { toPng } from "html-to-image";
-import {
-  ClipboardCopy,
-  ImageDown,
-  LayoutGrid,
-  Map as MapIcon,
-  Maximize,
-  Search,
-} from "lucide-react";
+import { ClipboardCopy, ImageDown, LayoutGrid, Map as MapIcon, Maximize } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -34,6 +27,7 @@ import { toMermaid } from "../lib/mermaid";
 import { usePositions } from "../store/positions-store";
 import { DiagramActions } from "./diagram-actions";
 import { type DiagramCollectionNode, DiagramCollectionNodeView } from "./diagram-collection-node";
+import { DiagramSearch } from "./diagram-search";
 
 const nodeTypes = { collection: DiagramCollectionNodeView };
 const EDGE_STROKE = "color-mix(in oklab, var(--muted-foreground) 60%, transparent)";
@@ -88,29 +82,45 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
 
   // The hovered or selected collection lights up its references; the rest steps back.
   const lit = focus ?? nodes.find((node) => node.selected)?.id ?? null;
-  const edges: Edge[] = graph.edges.map((edge) => {
-    const active = lit !== null && (edge.source === lit || edge.target === lit);
-    const { link } = edge.data;
-    return {
-      ...edge,
-      type: "smoothstep",
-      animated: active,
-      label: active ? `${link.field}${link.many ? " · 1:N" : ""}` : undefined,
-      labelStyle: { fontSize: 11, fill: "var(--foreground)" },
-      labelBgStyle: { fill: "var(--card)" },
-      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
-      style: {
-        strokeWidth: active ? 2 : 1.25,
-        // Explicit, not inherited from the canvas, so the saved image keeps the lines.
-        stroke: active ? "var(--primary)" : EDGE_STROKE,
-        opacity: lit === null || active ? 1 : 0.25,
-      },
-    };
-  });
+  const edges: Edge[] = useMemo(
+    () =>
+      graph.edges.map((edge) => {
+        const active = lit !== null && (edge.source === lit || edge.target === lit);
+        const { link } = edge.data;
+        return {
+          ...edge,
+          type: "smoothstep",
+          animated: active,
+          label: active ? `${link.field}${link.many ? " · 1:N" : ""}` : undefined,
+          labelStyle: { fontSize: 11, fill: "var(--foreground)" },
+          labelBgStyle: { fill: "var(--card)" },
+          markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+          style: {
+            strokeWidth: active ? 2 : 1.25,
+            // Explicit, not inherited from the canvas, so the saved image keeps the lines.
+            stroke: active ? "var(--primary)" : EDGE_STROKE,
+            opacity: lit === null || active ? 1 : 0.25,
+          },
+        };
+      }),
+    [graph.edges, lit],
+  );
 
-  const matches = query.trim()
-    ? diagram.collections.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
-    : [];
+  const matchIds = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return needle
+      ? diagram.collections.filter((c) => c.name.toLowerCase().includes(needle)).map((c) => c.name)
+      : [];
+  }, [diagram, query]);
+  const [current, setCurrent] = useState(0);
+  // While searching, everything but the matches steps back.
+  const shownNodes = useMemo(() => {
+    if (query.trim() === "") return nodes;
+    const matched = new Set(matchIds);
+    return nodes.map((node) =>
+      matched.has(node.id) ? node : { ...node, className: "opacity-30 transition-opacity" },
+    );
+  }, [nodes, matchIds, query]);
   async function saveImage() {
     const viewport = document.querySelector<HTMLElement>(".react-flow__viewport");
     if (!viewport) return;
@@ -140,17 +150,23 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
     }
   }
 
-  function findCollection() {
-    const [first] = matches;
-    if (!first) return;
-    setNodes((current) => current.map((node) => ({ ...node, selected: node.id === first.name })));
-    void flow.fitView({ nodes: [{ id: first.name }], duration: 300, maxZoom: 1.2 });
+  function focusMatch(index: number) {
+    const id = matchIds[index];
+    if (!id) return;
+    setCurrent(index);
+    setNodes((list) => list.map((node) => ({ ...node, selected: node.id === id })));
+    void flow.fitView({ nodes: [{ id }], duration: 250, maxZoom: 1.2 });
   }
+  // The first match comes into view as soon as the query finds one.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only a new list of matches moves the view.
+  useEffect(() => {
+    if (matchIds.length > 0) focusMatch(0);
+  }, [matchIds]);
 
   return (
     <DiagramActions.Provider value={{ onOpen }}>
       <ReactFlow
-        nodes={nodes}
+        nodes={shownNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
@@ -167,33 +183,22 @@ export function DiagramCanvas({ diagram, database, storageKey, onOpen }: Diagram
         proOptions={{ hideAttribution: true }}
         nodesConnectable={false}
         edgesFocusable={false}
+        // A diagram only shows the database: no key removes anything from it.
+        deleteKeyCode={null}
+        onlyRenderVisibleElements
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} />
         {minimap && <MiniMap pannable zoomable className="!rounded-md !border" />}
         <Panel position="top-left" className="!m-3 flex items-center gap-2">
-          <form
-            className="relative"
-            onSubmit={(event) => {
-              event.preventDefault();
-              findCollection();
-            }}
-          >
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("search")}
-              aria-label={t("search")}
-              list={`${storageKey}-collections`}
-              className="h-8 w-56 rounded-md border bg-card pr-2 pl-8 text-[13px] shadow-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            />
-            <datalist id={`${storageKey}-collections`}>
-              {matches.slice(0, 20).map((collection) => (
-                <option key={collection.name} value={collection.name} />
-              ))}
-            </datalist>
-          </form>
+          <DiagramSearch
+            query={query}
+            onQueryChange={setQuery}
+            matches={matchIds.length}
+            current={current}
+            onStep={(direction) =>
+              focusMatch((current + direction + matchIds.length) % Math.max(matchIds.length, 1))
+            }
+          />
           <ToggleGroup
             type="single"
             variant="outline"

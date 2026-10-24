@@ -73,7 +73,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shellScrollback: 10_000,
   queryHistorySize: 50,
   queryCodeLanguage: "javascript",
-  sidebarWidth: 256,
+  sidebarWidth: 288,
   accent: "indigo",
   darkStyle: "graphite",
   uiFont: "plex",
@@ -92,7 +92,8 @@ export const DEFAULT_SETTINGS: Settings = {
   aiOllamaModel: "",
 };
 
-export const SIDEBAR_WIDTH = { min: 200, max: 520 } as const;
+// The header's title and actions need the minimum; narrower would push them out.
+export const SIDEBAR_WIDTH = { min: 264, max: 520 } as const;
 
 export const clampSidebarWidth = (width: number) =>
   Math.round(Math.min(SIDEBAR_WIDTH.max, Math.max(SIDEBAR_WIDTH.min, width)));

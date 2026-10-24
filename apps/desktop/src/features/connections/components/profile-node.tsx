@@ -14,7 +14,6 @@ import {
   Lock,
   Pencil,
   Plug,
-  Plus,
   RefreshCw,
   SquareTerminal,
   Trash2,
@@ -24,8 +23,6 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { IconAction } from "@/components/icon-action";
-import { ProfileColorMark } from "@/components/profile-color-mark";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { useTabs } from "@/features/workspace";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
@@ -125,12 +122,7 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
             />
           </span>
         }
-        label={
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate font-medium">{profile.name}</span>
-            <ProfileColorMark color={profile.color} />
-          </span>
-        }
+        label={<span className="truncate font-medium">{profile.name}</span>}
         trailing={
           (sizes && databaseCount !== undefined) || profile.readOnly ? (
             <span className="flex items-center gap-1.5">
@@ -147,27 +139,6 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
               {profile.readOnly && <Lock className="size-3" aria-label={t("profile.readOnly")} />}
             </span>
           ) : undefined
-        }
-        quickActions={
-          connection ? (
-            <>
-              {!connection.readOnly && (
-                <IconAction
-                  label={t("profile.createDatabase")}
-                  onClick={() => setToolDialog("createDatabase")}
-                >
-                  <Plus />
-                </IconAction>
-              )}
-              <IconAction label={t("profile.openShell")} onClick={() => openShell(profile.id)}>
-                <SquareTerminal />
-              </IconAction>
-            </>
-          ) : (
-            <IconAction label={t("profile.edit")} onClick={onEdit}>
-              <Pencil />
-            </IconAction>
-          )
         }
         menuLabel={t("profile.actions", { name: profile.name })}
         menu={

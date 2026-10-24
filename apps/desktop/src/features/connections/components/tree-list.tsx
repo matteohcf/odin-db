@@ -165,7 +165,7 @@ export function TreeList({
     return Boolean(target) || !copied;
   }
 
-  // Like Compass, an open connection's color tints its whole subtree.
+  // Like Compass, a connection's color tints its row, and its whole subtree once open.
   function colorOf(row: TreeItem) {
     const profileId =
       row.kind === "profile"
@@ -175,7 +175,9 @@ export function TreeList({
           : row.kind === "message"
             ? row.key.split("/")[0]
             : undefined;
-    const open = connections.some((connection) => connection.profileId === profileId);
+    const open =
+      row.kind === "profile" ||
+      connections.some((connection) => connection.profileId === profileId);
     return open ? profiles.find((profile) => profile.id === profileId)?.color : undefined;
   }
 

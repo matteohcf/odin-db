@@ -132,7 +132,7 @@ export function ConnectionExplorer() {
       style={{ "--tree-row": `${TREE_ROW_HEIGHTS[density]}px` } as CSSProperties}
     >
       <div className="flex h-10 shrink-0 items-center justify-between pr-2 pl-3">
-        <h2 className="flex items-baseline gap-1 font-semibold text-[11px] text-foreground uppercase tracking-wide">
+        <h2 className="flex min-w-0 items-baseline gap-1 truncate font-semibold text-[11px] text-foreground uppercase tracking-wide">
           {t("explorer.title")}
           {profiles && profiles.length > 0 && (
             <span className="font-normal text-muted-foreground tabular-nums">
@@ -140,7 +140,7 @@ export function ConnectionExplorer() {
             </span>
           )}
         </h2>
-        <div className="flex items-center">
+        <div className="flex shrink-0 items-center">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -305,7 +305,7 @@ export function ConnectionExplorer() {
             {t("explorer.loadFailed", { message: error.message })}
           </p>
         ) : isPending ? null : profiles.length === 0 ? (
-          <div className="flex flex-col items-start gap-3 px-2 py-6">
+          <div className="flex flex-col items-start gap-3 px-3 py-6">
             <Server className="size-5 text-muted-foreground" />
             <div className="flex flex-col gap-1">
               <p className="font-medium">{t("explorer.emptyTitle")}</p>
@@ -314,7 +314,11 @@ export function ConnectionExplorer() {
               </p>
             </div>
             <div className="flex flex-col items-stretch gap-2 self-stretch">
-              <Button size="sm" onClick={() => setDialog({ type: "create" })}>
+              <Button
+                size="sm"
+                className="h-auto min-h-8 whitespace-normal"
+                onClick={() => setDialog({ type: "create" })}
+              >
                 <Plus />
                 {t("explorer.new")}
               </Button>

@@ -37,5 +37,10 @@
   "mermaidCopied": "Copiato come diagramma Mermaid: incollalo in un README, una wiki o una pull request",
   "saveImage": "Salva come immagine…",
   "saved": "Salvato in {{path}}",
-  "saveFailed": "Impossibile salvare l'immagine: {{message}}"
+  "saveFailed": "Impossibile salvare l'immagine: {{message}}",
+  "noMatch": "Nessun risultato",
+  "matchOf": "{{current}} di {{total}}",
+  "previousMatch": "Risultato precedente (Maiusc+Invio)",
+  "nextMatch": "Risultato successivo (Invio)",
+  "clearSearch": "Cancella la ricerca"
 }

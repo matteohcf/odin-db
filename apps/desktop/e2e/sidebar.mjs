@@ -98,7 +98,7 @@ await check("the sidebar resizes by drag, keys and double-click, and remembers",
   await page.waitForSelector("text=Local development");
   if (Math.abs((await width()) - 344) > 4) throw new Error(`reload ${await width()}`);
   await page.getByRole("separator", { name: "Resize the sidebar" }).dblclick();
-  if (Math.abs((await width()) - 256) > 4) throw new Error(`reset ${await width()}`);
+  if (Math.abs((await width()) - 288) > 4) throw new Error(`reset ${await width()}`);
 });
 
 await check("the filter matches connection names and explains no match", async () => {
@@ -119,29 +119,28 @@ await check("the filter matches connection names and explains no match", async (
   await page.getByText("Nothing matches “zzz-nothing”.").waitFor();
   await input.fill("");
 });
-await check(
-  "hovering a connection shows quick actions; right-click opens the row menu",
-  async () => {
-    await page.keyboard.press("Escape");
-    const connection = aside()
-      .getByRole("button", { name: /^Local development/ })
-      .first();
-    // Earlier checks may leave it closed.
-    if (!(await aside().getByRole("button", { name: /^shop/ }).count())) await connection.click();
-    await aside().getByRole("button", { name: /^shop/ }).first().click();
-    await connection.hover();
-    await aside().getByRole("button", { name: "Open shell" }).first().waitFor();
-    await aside().getByRole("button", { name: "Create database…" }).first().waitFor();
-    await shot("hover-actions");
-    await aside()
-      .getByRole("button", { name: /^orders/ })
-      .first()
-      .click({ button: "right" });
-    await page.getByRole("menuitem", { name: "Copy to…" }).waitFor();
-    await shot("context-menu");
-    await page.keyboard.press("Escape");
-  },
-);
+await check("hovering a row shows its menu button; right-click opens the row menu", async () => {
+  await page.keyboard.press("Escape");
+  const connection = aside()
+    .getByRole("button", { name: /^Local development/ })
+    .first();
+  // Earlier checks may leave it closed.
+  if (!(await aside().getByRole("button", { name: /^shop/ }).count())) await connection.click();
+  await aside().getByRole("button", { name: /^shop/ }).first().click();
+  await connection.hover();
+  // Only the "…" menu shows on hover: every action lives in it.
+  await aside().getByRole("button", { name: "Actions for Local development" }).waitFor();
+  if (await aside().getByRole("button", { name: "Open shell" }).count())
+    throw new Error("inline action");
+  await shot("hover-actions");
+  await aside()
+    .getByRole("button", { name: /^orders/ })
+    .first()
+    .click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Copy to…" }).waitFor();
+  await shot("context-menu");
+  await page.keyboard.press("Escape");
+});
 
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));

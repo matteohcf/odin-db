@@ -37,5 +37,10 @@
   "mermaidCopied": "Copied as a Mermaid diagram: paste it in a README, wiki or pull request",
   "saveImage": "Save as image…",
   "saved": "Saved to {{path}}",
-  "saveFailed": "Couldn't save the image: {{message}}"
+  "saveFailed": "Couldn't save the image: {{message}}",
+  "noMatch": "No match",
+  "matchOf": "{{current}} of {{total}}",
+  "previousMatch": "Previous match (Shift+Enter)",
+  "nextMatch": "Next match (Enter)",
+  "clearSearch": "Clear search"
 }

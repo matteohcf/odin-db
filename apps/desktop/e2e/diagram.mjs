@@ -35,13 +35,9 @@ await tree
   .click();
 
 await check("the database row opens its diagram", async () => {
-  const shop = tree.getByRole("button", { name: /^shop/ }).first();
-  await shop.hover();
-  await tree
-    .locator("li[data-index]")
-    .filter({ has: page.getByRole("button", { name: /^shop/ }) })
-    .getByRole("button", { name: "Show diagram" })
-    .click();
+  await tree.getByRole("button", { name: /^shop/ }).first().hover();
+  await tree.getByRole("button", { name: "Actions for shop" }).first().click();
+  await page.getByRole("menuitem", { name: "Show diagram" }).click();
   await page.getByRole("heading", { name: "Diagram of shop" }).waitFor();
   await nodes.first().waitFor({ timeout: 15000 });
   if ((await nodes.count()) !== 8) throw new Error(`${await nodes.count()} nodes`);
@@ -71,9 +67,19 @@ await check("keys only lists _id and references", async () => {
 });
 
 await check("searching selects and centers a collection", async () => {
-  await page.getByRole("combobox", { name: "Find a collection" }).fill("supp");
-  await page.getByRole("combobox", { name: "Find a collection" }).press("Enter");
+  const search = page.getByRole("textbox", { name: "Find a collection" });
+  await search.fill("s");
+  await page.getByText(/^1 of \d+$/).waitFor();
+  await search.fill("supp");
+  await page.getByText("1 of 1").waitFor();
   await page.locator(".react-flow__node.selected").filter({ hasText: "suppliers" }).waitFor();
+  // Everything else steps back while searching.
+  if (!(await node("orders").getAttribute("class"))?.includes("opacity-30"))
+    throw new Error("not dimmed");
+  await shot("04-search");
+  await search.press("Escape");
+  if ((await node("orders").getAttribute("class"))?.includes("opacity-30"))
+    throw new Error("still dimmed");
 });
 
 await check("the diagram copies as Mermaid and saves as an image", async () => {
@@ -84,6 +90,15 @@ await check("the diagram copies as Mermaid and saves as an image", async () => {
     throw new Error(text.slice(0, 200));
   await page.getByRole("button", { name: "Save as image…" }).click();
   await page.getByText("Saved to /Users/ada/Downloads/shop-diagram.png").waitFor();
+});
+
+await check("no key removes a collection from the diagram", async () => {
+  await page.getByRole("button", { name: "Fit to screen" }).click();
+  await page.waitForTimeout(400);
+  await node("coupons").click();
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Delete");
+  if ((await nodes.count()) !== 8) throw new Error(`${await nodes.count()} nodes`);
 });
 
 await check("double-clicking a collection opens it", async () => {

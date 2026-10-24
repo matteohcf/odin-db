@@ -13,7 +13,7 @@ import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { useUpdateNotifier } from "@/features/updates";
 import { UsersTab, UsersTabLabel } from "@/features/users";
 import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
-import { useSettings } from "@/lib/settings";
+import { clampSidebarWidth, useSettings } from "@/lib/settings";
 import { BackupsButton } from "./backups-button";
 import { QuitDialog } from "./quit-dialog";
 import { SettingsButton } from "./settings-button";
@@ -38,7 +38,8 @@ export function App() {
   const { t } = useTranslation("app");
   const { data: perfAutorun } = useAutorunEnabled();
   useApplySettings();
-  const sidebarWidth = useSettings((s) => s.sidebarWidth);
+  // Widths saved before the minimum grew are clamped too.
+  const sidebarWidth = clampSidebarWidth(useSettings((s) => s.sidebarWidth));
   usePruneRestoredTabs();
   useReconnectRestoredTabs();
   useWindowTitle();

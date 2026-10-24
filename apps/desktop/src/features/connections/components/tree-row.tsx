@@ -16,8 +16,6 @@ interface TreeRowProps {
   /** `DropdownMenuItem`s, shown by the "…" button and on right-click. */
   menu?: ReactNode;
   menuLabel?: string;
-  /** One-click actions (`IconAction`) shown on hover before the "…" button. */
-  quickActions?: ReactNode;
   muted?: boolean;
   /** The row of what the active tab shows. */
   active?: boolean;
@@ -37,14 +35,13 @@ export function TreeRow({
   trailing,
   menu,
   menuLabel = "",
-  quickActions,
   muted,
   active,
   onActivate,
   onAuxActivate,
   title,
 }: TreeRowProps) {
-  const hasActions = Boolean(menu || quickActions);
+  const hasActions = Boolean(menu);
   const pointerMenu = usePointerMenu();
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: right-click is a pointer shortcut; the "…" button opens the same menu from the keyboard.
@@ -54,7 +51,7 @@ export function TreeRow({
       className={cn(
         // The sidebar sets --tree-row from the density setting.
         // Full-width rows like Compass: hover and selection span the whole sidebar.
-        "group relative flex h-(--tree-row) items-center text-[13px] hover:bg-accent data-[state=open]:bg-accent",
+        "group relative flex h-(--tree-row) items-center text-[13px] hover:bg-accent has-[[data-state=open]]:bg-accent data-[state=open]:bg-accent",
         muted ? "text-muted-foreground" : "text-foreground",
         active && "bg-accent font-semibold",
       )}
@@ -98,12 +95,13 @@ export function TreeRow({
       {hasActions && (
         <div
           className={cn(
-            "absolute inset-y-0 right-0 flex items-center gap-0.5 bg-accent pr-2 pl-1 opacity-0",
+            "absolute inset-y-0 right-0 flex items-center gap-0.5 pr-2 pl-1 opacity-0",
+            // Opaque only over a hovered row, so it never covers a connection's tint.
+            "group-hover:bg-accent has-[[data-state=open]]:bg-accent",
             // Hidden visually only, so screen readers and Tab still reach the actions.
             "group-hover:opacity-100 group-has-focus-visible:opacity-100 has-[[data-state=open]]:opacity-100",
           )}
         >
-          {quickActions}
           {menu && <MenuButton label={menuLabel}>{menu}</MenuButton>}
         </div>
       )}
