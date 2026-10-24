@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { matches, SHORTCUTS, type ShortcutId } from "@/lib/shortcuts";
+import { keybinding } from "@/lib/keybindings";
+import { matches, type ShortcutId } from "@/lib/shortcuts";
 
 type Handler = () => void;
 const handlers = new Map<ShortcutId, Set<{ current: Handler }>>();
@@ -10,7 +11,8 @@ function onKeyDown(event: KeyboardEvent) {
   // An editor already handled the key (e.g. CodeMirror's own search).
   if (event.defaultPrevented) return;
   for (const [id, registered] of handlers) {
-    if (registered.size === 0 || !matches(SHORTCUTS[id], event)) continue;
+    // Read now, so a shortcut the user just changed applies at once.
+    if (registered.size === 0 || !matches(keybinding(id), event)) continue;
     event.preventDefault();
     // The most recently mounted handler wins, like a stack of focus scopes.
     [...registered].at(-1)?.current();
@@ -18,7 +20,7 @@ function onKeyDown(event: KeyboardEvent) {
   }
 }
 
-/** Binds a global shortcut from the registry while the component is mounted. */
+/** Binds a global shortcut (as the user set it) while the component is mounted. */
 export function useShortcut(id: ShortcutId, handler: Handler, enabled = true) {
   const ref = useRef(handler);
   ref.current = handler;

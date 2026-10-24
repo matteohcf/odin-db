@@ -11,9 +11,10 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { keybinding } from "@/lib/keybindings";
 import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
-import { EDIT_SHORTCUTS, label, matches } from "@/lib/shortcuts";
+import { label, matches } from "@/lib/shortcuts";
 import { useConnections } from "../api/queries";
 import { useTreeRows } from "../hooks/use-tree-rows";
 import { pasteTargetOf } from "../lib/paste-target";
@@ -141,7 +142,7 @@ export function TreeList({
 
   // ⌘C copies a collection or database, ⌘V on a database (or anything in it) pastes it there.
   function clipboardKey(event: KeyboardEvent, row: TreeItem) {
-    if (matches(EDIT_SHORTCUTS.copy, event)) {
+    if (matches(keybinding("copy"), event)) {
       const node =
         row.kind === "collection"
           ? { connection: row.connection, database: row.database, collection: row.collection.name }
@@ -153,12 +154,12 @@ export function TreeList({
       toast.success(
         t("clipboard.copied", {
           name: node.collection ?? node.database,
-          key: label(EDIT_SHORTCUTS.paste),
+          key: label(keybinding("paste")),
         }),
       );
       return true;
     }
-    if (!matches(EDIT_SHORTCUTS.paste, event)) return false;
+    if (!matches(keybinding("paste"), event)) return false;
     const target = pasteTargetOf(row, copied, connections);
     if (!copied) toast.info(t("clipboard.empty"));
     else if (target) paste(target);

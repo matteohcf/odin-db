@@ -19,10 +19,10 @@ import { useTranslation } from "react-i18next";
 import { useConnect, useConnectionOf, useExplorer, useProfile } from "@/features/connections";
 import { DocumentsView } from "@/features/documents";
 import { type CollectionTab as CollectionTabModel, useTabs } from "@/features/workspace";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { formatCompact } from "@/lib/format";
 import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { useCollectionStats } from "../api/use-collection-stats";
 import { CollectionStats } from "./collection-stats";
 
@@ -100,6 +100,7 @@ function CollectionWorkspace({
   color: ProfileColor | null;
   connection: ConnectionInfo;
 }) {
+  const revealInSidebarKeys = useKeybindingLabel("revealInSidebar");
   const { t, i18n } = useTranslation("collection");
   const namespace = useMemo(
     () => ({ database: tab.database, collection: tab.collection }),
@@ -166,7 +167,11 @@ function CollectionWorkspace({
             <button
               type="button"
               onClick={reveal}
-              title={`${t("header.reveal")} (${label(SHORTCUTS.revealInSidebar)})`}
+              title={
+                revealInSidebarKeys
+                  ? `${t("header.reveal")} (${revealInSidebarKeys})`
+                  : t("header.reveal")
+              }
               className="max-w-full truncate rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
             >
               {tab.collection}

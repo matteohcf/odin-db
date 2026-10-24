@@ -5,8 +5,8 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { ACCENTS, useSettings, ZOOM_LEVELS } from "@/lib/settings";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { OptionSelect } from "./option-select";
 import { SettingRow } from "./setting-row";
 import { SettingsSection } from "./settings-section";
@@ -18,6 +18,8 @@ const THEMES = [
 ] as const;
 
 export function AppearanceSection() {
+  const resetZoomKeys = useKeybindingLabel("resetZoom");
+  const zoomOutKeys = useKeybindingLabel("zoomOut");
   const { t } = useTranslation("settings");
   const id = useId();
   const { theme, setTheme } = useTheme();
@@ -147,8 +149,8 @@ export function AppearanceSection() {
         id={`${id}-zoom`}
         label={t("appearance.zoom")}
         description={t("appearance.zoomHint", {
-          zoomOut: label(SHORTCUTS.zoomOut),
-          reset: label(SHORTCUTS.resetZoom),
+          zoomOut: zoomOutKeys,
+          reset: resetZoomKeys,
         })}
       >
         <OptionSelect

@@ -31,10 +31,10 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useTabs } from "@/features/workspace";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { call, errorMessage } from "@/lib/ipc";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { useDisconnectAll, useExportConnections, useImportConnections } from "../api/mutations";
 import { useConnections, useProfiles } from "../api/queries";
 import { useHealthEvents } from "../hooks/use-health-events";
@@ -58,6 +58,9 @@ type DialogState =
 
 /** Sidebar: saved connections, expanding into databases and collections. */
 export function ConnectionExplorer() {
+  const filterSidebarKeys = useKeybindingLabel("filterSidebar");
+  const paletteKeys = useKeybindingLabel("palette");
+  const revealInSidebarKeys = useKeybindingLabel("revealInSidebar");
   const { t } = useTranslation("connections");
   const { data: profiles, error, isPending } = useProfiles();
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
@@ -162,7 +165,7 @@ export function ConnectionExplorer() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {t("explorer.locate")} <Kbd>{label(SHORTCUTS.revealInSidebar)}</Kbd>
+              {t("explorer.locate")} {revealInSidebarKeys && <Kbd>{revealInSidebarKeys}</Kbd>}
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -199,7 +202,7 @@ export function ConnectionExplorer() {
             </TooltipTrigger>
             <TooltipContent className="flex items-center gap-2">
               {t("palette.hint")}
-              <Kbd>{label(SHORTCUTS.palette)}</Kbd>
+              {paletteKeys && <Kbd>{paletteKeys}</Kbd>}
             </TooltipContent>
           </Tooltip>
           <DropdownMenu>
@@ -281,7 +284,11 @@ export function ConnectionExplorer() {
               }
             }}
             placeholder={t("explorer.filter")}
-            title={`${t("explorer.filterLabel")} (${label(SHORTCUTS.filterSidebar)})`}
+            title={
+              filterSidebarKeys
+                ? `${t("explorer.filterLabel")} (${filterSidebarKeys})`
+                : t("explorer.filterLabel")
+            }
             aria-label={t("explorer.filterLabel")}
             spellCheck={false}
             className="h-8 w-full rounded-md border border-input bg-background pr-7 pl-7.5 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"

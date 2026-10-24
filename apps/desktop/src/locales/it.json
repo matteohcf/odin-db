@@ -145,7 +145,10 @@
       "general": "Generali",
       "query": "Editor di query",
       "results": "Risultati",
-      "view": "Vista"
+      "view": "Vista",
+      "tabs": "Schede",
+      "edit": "Modifica",
+      "builtIn": "Predefinite"
     },
     "actions": {
       "palette": "Riquadro comandi",
@@ -166,7 +169,6 @@
       "zoomOut": "Riduci",
       "resetZoom": "Dimensioni reali",
       "reopenTab": "Riapri la scheda chiusa",
-      "goToTab": "Vai alla scheda 1–8",
       "lastTab": "Vai all'ultima scheda",
       "filterSidebar": "Filtra la barra laterale",
       "revealInSidebar": "Mostra la collezione nella barra laterale",
@@ -176,14 +178,35 @@
       "inlineEdit": "Modifica un valore in linea",
       "preview": "Anteprima del documento selezionato",
       "nextField": "Salva e modifica il valore successivo",
-      "copyRows": "Copia i documenti selezionati",
-      "duplicateRow": "Duplica il documento selezionato",
       "focusFilter": "Vai al filtro",
-      "askAi": "Descrivi una query all'assistente AI"
+      "askAi": "Descrivi una query all'assistente AI",
+      "goToTabN": "Vai alla scheda {{n}}",
+      "submit": "Esegui o salva, negli editor",
+      "copy": "Copia la selezione",
+      "paste": "Incolla",
+      "duplicate": "Duplica la selezione",
+      "selectAll": "Seleziona tutto",
+      "zoomInPlus": "Ingrandisci"
     },
     "keys": {
       "doubleClick": "Doppio clic sul valore"
-    }
+    },
+    "recorder": {
+      "none": "Nessuna",
+      "press": "Premi la nuova scorciatoia…",
+      "hint": "Esc annulla, ⌫ rimuove la scorciatoia",
+      "needsModifier": "Aggiungi {{mod}} (o un tasto funzione)",
+      "noAlt": "Option/Alt non si può usare",
+      "change": "Cambia la scorciatoia per {{action}}",
+      "reset": "Ripristina {{keys}}",
+      "conflict": "{{keys}} è già usata da {{actions}}.",
+      "reassign": "Usala qui",
+      "cancel": "Annulla"
+    },
+    "customize": "Personalizza…",
+    "resetAll": "Ripristina tutte le scorciatoie",
+    "changed_one": "{{count}} modificata",
+    "changed_other": "{{count}} modificate"
   },
   "queryCode": {
     "title": "Codice della query",

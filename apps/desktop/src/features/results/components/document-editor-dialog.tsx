@@ -26,10 +26,10 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/code-editor";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { isJsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
-import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { compareDocuments } from "../lib/compare";
 
 export type EditorMode = "edit" | "view" | "insert";
@@ -103,6 +103,7 @@ function DocumentEditor({
   completions,
   template,
 }: DocumentEditorDialogProps & { onDirtyChange: (dirty: boolean) => void }) {
+  const submitKeys = useKeybindingLabel("submit");
   const { t } = useTranslation("results");
   const [text, setText] = useState(initialText);
   // Remounts the editor when its content is replaced, e.g. by Format.
@@ -183,7 +184,9 @@ function DocumentEditor({
         <DialogDescription>
           {readOnly
             ? t("editor.viewDescription", { namespace })
-            : t("editor.description", { namespace, shortcut: label(EDIT_SHORTCUTS.submit) })}
+            : submitKeys
+              ? t("editor.description", { namespace, shortcut: submitKeys })
+              : t("editor.descriptionNoShortcut", { namespace })}
         </DialogDescription>
       </DialogHeader>
       <div className="-mb-2 flex items-center gap-1">

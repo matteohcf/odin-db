@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { Keybindings } from "./keybindings";
 import type { CodeLanguage } from "./query-code";
 
 /**
@@ -52,6 +53,8 @@ export interface Settings {
   aiLocalModel: string;
   aiOllamaUrl: string;
   aiOllamaModel: string;
+  /** Shortcuts the user changed; the rest keep their defaults. */
+  keybindings: Keybindings;
 }
 
 /** Sidebar row heights in pixels; the tree adds a 1px gap between rows. */
@@ -90,6 +93,7 @@ export const DEFAULT_SETTINGS: Settings = {
   aiLocalModel: "",
   aiOllamaUrl: "http://localhost:11434",
   aiOllamaModel: "",
+  keybindings: {},
 };
 
 // The header's title and actions need the minimum; narrower would push them out.

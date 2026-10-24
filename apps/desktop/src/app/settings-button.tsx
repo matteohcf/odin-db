@@ -3,11 +3,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/
 import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTabs } from "@/features/workspace";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useShortcut } from "@/hooks/use-shortcut";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
 
 /** Sidebar footer entry to the settings, also bound to Mod+,. */
 export function SettingsButton() {
+  const settingsKeys = useKeybindingLabel("settings");
   const { t } = useTranslation("settings");
   const openSettings = useTabs((s) => s.openSettings);
   useShortcut("settings", () => openSettings());
@@ -25,7 +26,7 @@ export function SettingsButton() {
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top">
-        {t("open")} <span className="ml-1 opacity-70">{label(SHORTCUTS.settings)}</span>
+        {t("open")} {settingsKeys && <span className="ml-1 opacity-70">{settingsKeys}</span>}
       </TooltipContent>
     </Tooltip>
   );

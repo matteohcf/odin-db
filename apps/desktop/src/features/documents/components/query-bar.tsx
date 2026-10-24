@@ -8,8 +8,8 @@ import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
 import { AskAiButton } from "@/features/ai";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
-import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
 import { useQueryHistory } from "../store/query-history-store";
 import { QueryFieldFrame } from "./query-field-frame";
@@ -63,6 +63,7 @@ export function QueryBar({
   focusSignal,
   askSignal,
 }: QueryBarProps) {
+  const submitKeys = useKeybindingLabel("submit");
   const { t } = useTranslation("documents");
   const hasOptions = hasOptionsIn(form);
   const isEmpty = !hasOptions && form.filter.trim() === "";
@@ -192,9 +193,11 @@ export function QueryBar({
         <Button size="sm" onClick={onRun} disabled={running} title={t("query.runShortcut")}>
           <Play className="fill-current" />
           {t("query.run")}
-          <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground @3xl:inline-flex">
-            {label(EDIT_SHORTCUTS.submit)}
-          </Kbd>
+          {submitKeys && (
+            <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground @3xl:inline-flex">
+              {submitKeys}
+            </Kbd>
+          )}
         </Button>
         {actions && (
           <>

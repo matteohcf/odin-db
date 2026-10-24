@@ -14,6 +14,7 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { useEffect, useRef } from "react";
 import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
+import { submitOnKeybinding } from "@/lib/editor-keybindings";
 import { reopensCompletion } from "@/lib/query-completion";
 
 // A query is one expression, not a script: `{ a: 1 }` is an object, not a block.
@@ -22,8 +23,11 @@ const queryLanguage = new LanguageSupport(
 );
 
 /** Newlines (typed or pasted) become spaces: the editor is a single line. */
-// Mod-I (select parent syntax) would swallow the app's "Ask AI" shortcut in the query bar.
-const editingKeymap = defaultKeymap.filter((binding) => binding.key !== "Mod-i");
+// Mod-I (select parent syntax) and Mod-/ (toggle comment) would swallow the app's "Ask AI" and
+// shortcuts-overview keys; neither is of use in a one-line query field.
+const editingKeymap = defaultKeymap.filter(
+  (binding) => binding.key !== "Mod-i" && binding.key !== "Mod-/",
+);
 
 const singleLine = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.newDoc.lines === 1) return tr;
@@ -60,7 +64,7 @@ const theme = EditorView.theme({
 export interface QueryEditorProps {
   value: string;
   onChange: (value: string) => void;
-  /** Enter (when no suggestion is open) and Mod-Enter. */
+  /** Enter (when no suggestion is open) and the "run / save" shortcut. */
   onSubmit: () => void;
   completions?: CompletionSource;
   placeholder?: string;
@@ -109,6 +113,7 @@ export default function QueryEditorView({
           history(),
           drawSelection(),
           closeBrackets(),
+          submitOnKeybinding(submit),
           autocompletion({
             override: completions ? [completions] : [],
             icons: false,
@@ -120,7 +125,6 @@ export default function QueryEditorView({
               { key: "Tab", run: acceptCompletion },
               // Enter runs the query unless a suggestion is open (the completion keymap wins then).
               { key: "Enter", run: submit },
-              { key: "Mod-Enter", run: submit },
               // Like a shell; the suggestion list keeps the arrows while it is open.
               { key: "ArrowUp", run: () => callbacks.current.onHistory?.(1) ?? false },
               { key: "ArrowDown", run: () => callbacks.current.onHistory?.(-1) ?? false },

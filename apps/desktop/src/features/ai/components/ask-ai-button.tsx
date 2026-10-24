@@ -6,8 +6,8 @@ import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useSettings } from "@/lib/settings";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
 import { engineFrom } from "../lib/engine";
 import type { QueryText } from "../lib/query-text";
 import { AiSetupHint } from "./ai-setup-hint";
@@ -24,6 +24,7 @@ interface AskAiButtonProps {
 
 /** "Ask AI" in the query bar; hidden when the assistant is turned off in settings. */
 export function AskAiButton({ collection, fields, onApply, openSignal }: AskAiButtonProps) {
+  const askAiKeys = useKeybindingLabel("askAi");
   const { t } = useTranslation("ai");
   const enabled = useSettings((s) => s.aiEnabled);
   const engine = useSettings(useShallow(engineFrom));
@@ -51,7 +52,7 @@ export function AskAiButton({ collection, fields, onApply, openSignal }: AskAiBu
           </PopoverTrigger>
         </TooltipTrigger>
         <TooltipContent>
-          {t("ask.open")} <span className="ml-1 opacity-70">{label(SHORTCUTS.askAi)}</span>
+          {t("ask.open")} {askAiKeys && <span className="ml-1 opacity-70">{askAiKeys}</span>}
         </TooltipContent>
       </Tooltip>
       <PopoverContent align="end" className="w-[34rem]">

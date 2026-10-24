@@ -27,9 +27,10 @@ import { useTranslation } from "react-i18next";
 import { BackupDialog } from "@/features/backup";
 import { ExportDialog, ImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { formatCompact } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
-import { EDIT_SHORTCUTS, isModClick, label } from "@/lib/shortcuts";
+import { isModClick } from "@/lib/shortcuts";
 import { connectionKeys } from "../api/keys";
 import { useCollectionCounts, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
@@ -57,6 +58,7 @@ export function CollectionNode({
   database: string;
   collection: CollectionInfo;
 }) {
+  const copyKeys = useKeybindingLabel("copy");
   const { t, i18n: translation } = useTranslation("connections");
   const copyNode = useExplorer((s) => s.copy);
   const sizes = useSettings((s) => s.sidebarSizes);
@@ -155,7 +157,7 @@ export function CollectionNode({
               >
                 <Copy />
                 {t("clipboard.copyCollection")}
-                <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.copy)}</DropdownMenuShortcut>
+                {copyKeys && <DropdownMenuShortcut>{copyKeys}</DropdownMenuShortcut>}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />

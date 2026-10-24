@@ -4,9 +4,11 @@ import { Kbd } from "@odin-db/ui/components/kbd";
 import { Code2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import type { JsonObject } from "@/lib/ejson-display";
+import { keybinding } from "@/lib/keybindings";
 import { parseShellDocument } from "@/lib/shell-syntax";
-import { EDIT_SHORTCUTS, label, matches } from "@/lib/shortcuts";
+import { matches } from "@/lib/shortcuts";
 import {
   checkDraft,
   type DraftField,
@@ -31,6 +33,7 @@ export function DocumentCardEditor({
   /** Switches to the full code editor, e.g. for bulk changes. */
   onOpenEditor: () => void;
 }) {
+  const submitKeys = useKeybindingLabel("submit");
   const { t } = useTranslation("results");
   const [draft, setDraft] = useState(() => toDraft(row));
   const [problems, setProblems] = useState<ReadonlyMap<string, string>>(new Map());
@@ -96,7 +99,7 @@ export function DocumentCardEditor({
     <div
       ref={container}
       onKeyDown={(event) => {
-        if (matches(EDIT_SHORTCUTS.submit, event)) {
+        if (matches(keybinding("submit"), event)) {
           event.preventDefault();
           void save();
         } else if (event.key === "Escape") {
@@ -137,9 +140,9 @@ export function DocumentCardEditor({
         </Button>
         <Button size="sm" disabled={saving} onClick={() => void save()}>
           {t("edit.update")}
-          <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-            {label(EDIT_SHORTCUTS.submit)}
-          </Kbd>
+          {submitKeys && (
+            <Kbd className="bg-primary-foreground/15 text-primary-foreground">{submitKeys}</Kbd>
+          )}
         </Button>
       </div>
     </div>

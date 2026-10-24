@@ -2,12 +2,13 @@ import { autocompletion, type CompletionSource } from "@codemirror/autocomplete"
 import { javascript } from "@codemirror/lang-javascript";
 import { syntaxHighlighting } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { cn } from "@odin-db/ui/lib/utils";
 import { basicSetup } from "codemirror";
 import { useEffect, useRef } from "react";
 import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
+import { submitOnKeybinding } from "@/lib/editor-keybindings";
 import { reopensCompletion } from "@/lib/query-completion";
 
 // Colors come from the design tokens, so the editor follows light/dark automatically.
@@ -41,7 +42,7 @@ const theme = EditorView.theme({
 export interface CodeEditorProps {
   initialValue: string;
   onChange?: (value: string) => void;
-  /** Bound to Mod-Enter. */
+  /** Bound to the "run / save" shortcut. */
   onSubmit?: () => void;
   readOnly?: boolean;
   autoFocus?: boolean;
@@ -80,15 +81,7 @@ export default function CodeEditorView({
       state: EditorState.create({
         doc: initialValue,
         extensions: [
-          keymap.of([
-            {
-              key: "Mod-Enter",
-              run: () => {
-                callbacks.current.onSubmit?.();
-                return true;
-              },
-            },
-          ]),
+          submitOnKeybinding(() => callbacks.current.onSubmit?.()),
           basicSetup,
           javascript(),
           completions

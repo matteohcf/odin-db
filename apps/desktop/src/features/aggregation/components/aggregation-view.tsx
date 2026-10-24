@@ -42,10 +42,10 @@ import {
   useResultsState,
 } from "@/features/results";
 import { ExportDialog } from "@/features/transfer";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useShortcut } from "@/hooks/use-shortcut";
 import { call, errorMessage } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
-import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { isWriteOperator } from "../lib/operators";
 import { buildPipeline, pipelineFromText, pipelineToText } from "../lib/pipeline";
 import { createPipelineStore } from "../store/pipeline-store";
@@ -69,6 +69,7 @@ export function AggregationView({
   active,
   pendingPipeline,
 }: AggregationViewProps) {
+  const submitKeys = useKeybindingLabel("submit");
   const { t } = useTranslation("aggregation");
   const [store] = useState(createPipelineStore);
   const stages = useStore(store, (s) => s.stages);
@@ -293,9 +294,11 @@ export function AggregationView({
         <Button size="sm" onClick={() => void run()} title={t("toolbar.runHint")}>
           <Play className="fill-current" />
           {t("toolbar.run")}
-          <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground @3xl:inline-flex">
-            {label(EDIT_SHORTCUTS.submit)}
-          </Kbd>
+          {submitKeys && (
+            <Kbd className="hidden bg-primary-foreground/15 text-primary-foreground @3xl:inline-flex">
+              {submitKeys}
+            </Kbd>
+          )}
         </Button>
       </div>
 

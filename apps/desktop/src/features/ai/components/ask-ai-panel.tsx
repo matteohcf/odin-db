@@ -4,7 +4,9 @@ import { Kbd } from "@odin-db/ui/components/kbd";
 import { CircleAlert, Loader2, Sparkles, Square } from "lucide-react";
 import { useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { EDIT_SHORTCUTS, label, matches } from "@/lib/shortcuts";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
+import { keybinding } from "@/lib/keybindings";
+import { matches } from "@/lib/shortcuts";
 import { useGenerateQuery } from "../hooks/use-generate-query";
 import { examplePrompts } from "../lib/example-prompts";
 import { type QueryText, toQueryText } from "../lib/query-text";
@@ -29,6 +31,7 @@ export function AskAiPanel({
   onPromptChange,
   onApply,
 }: AskAiPanelProps) {
+  const submitKeys = useKeybindingLabel("submit");
   const { t } = useTranslation("ai");
   const id = useId();
   const { state, query, generate, cancel } = useGenerateQuery();
@@ -75,7 +78,7 @@ export function AskAiPanel({
           }
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            if (text && matches(EDIT_SHORTCUTS.submit, event)) onApply(text, true);
+            if (text && matches(keybinding("submit"), event)) onApply(text, true);
             else ask();
           }
         }}
@@ -136,9 +139,9 @@ export function AskAiPanel({
             </Button>
             <Button size="sm" onClick={() => onApply(text, true)}>
               {t("ask.applyAndRun")}
-              <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-                {label(EDIT_SHORTCUTS.submit)}
-              </Kbd>
+              {submitKeys && (
+                <Kbd className="bg-primary-foreground/15 text-primary-foreground">{submitKeys}</Kbd>
+              )}
             </Button>
           </>
         ) : (

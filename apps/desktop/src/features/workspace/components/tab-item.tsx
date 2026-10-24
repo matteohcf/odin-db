@@ -10,9 +10,8 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { Copy, CopyPlus, Pin, PinOff, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useTabs, type WorkspaceTab } from "../store/tabs-store";
-
 import type { TabLabelContext } from "./workspace-tabs";
 
 interface TabItemProps {
@@ -38,6 +37,7 @@ export function TabItem({
   renderLabel,
   context,
 }: TabItemProps) {
+  const reopenTabKeys = useKeybindingLabel("reopenTab");
   const { t } = useTranslation("workspace");
   const isPinned = useTabs((s) => s.pinned.includes(tab.id));
   const activate = useTabs((s) => s.activate);
@@ -168,7 +168,7 @@ export function TabItem({
         <ContextMenuItem onSelect={closeAll}>{t("tabs.menu.closeAll")}</ContextMenuItem>
         <ContextMenuItem onSelect={reopenClosed}>
           {t("tabs.menu.reopen")}
-          <ContextMenuShortcut>{label(SHORTCUTS.reopenTab)}</ContextMenuShortcut>
+          {reopenTabKeys && <ContextMenuShortcut>{reopenTabKeys}</ContextMenuShortcut>}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

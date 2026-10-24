@@ -38,7 +38,8 @@
     "discard": "Discard",
     "changed_one": "Valid · changes {{fields}}",
     "changed_other": "Valid · {{count}} changes: {{fields}}",
-    "fromSchema": "Fill from schema"
+    "fromSchema": "Fill from schema",
+    "descriptionNoShortcut": "Document in {{namespace}}, written in mongosh syntax."
   },
   "cell": {
     "copy": "Copy {{field}} value",

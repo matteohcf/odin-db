@@ -145,7 +145,10 @@
       "general": "General",
       "query": "Query editors",
       "results": "Results",
-      "view": "View"
+      "view": "View",
+      "tabs": "Tabs",
+      "edit": "Editing",
+      "builtIn": "Built in"
     },
     "actions": {
       "palette": "Command palette",
@@ -166,7 +169,6 @@
       "zoomOut": "Zoom out",
       "resetZoom": "Actual size",
       "reopenTab": "Reopen the closed tab",
-      "goToTab": "Go to tab 1–8",
       "lastTab": "Go to the last tab",
       "filterSidebar": "Filter the sidebar",
       "revealInSidebar": "Reveal the collection in the sidebar",
@@ -176,14 +178,35 @@
       "inlineEdit": "Edit a value in place",
       "preview": "Preview the selected document",
       "nextField": "Save and edit the next value",
-      "copyRows": "Copy the selected documents",
-      "duplicateRow": "Duplicate the selected document",
       "focusFilter": "Focus the filter",
-      "askAi": "Describe a query to the AI assistant"
+      "askAi": "Describe a query to the AI assistant",
+      "goToTabN": "Go to tab {{n}}",
+      "submit": "Run or save, in editors",
+      "copy": "Copy the selection",
+      "paste": "Paste",
+      "duplicate": "Duplicate the selection",
+      "selectAll": "Select all",
+      "zoomInPlus": "Zoom in"
     },
     "keys": {
       "doubleClick": "Double-click a value"
-    }
+    },
+    "recorder": {
+      "none": "None",
+      "press": "Press the new shortcut…",
+      "hint": "Esc cancels, ⌫ removes the shortcut",
+      "needsModifier": "Add {{mod}} (or a function key)",
+      "noAlt": "Option/Alt can't be used",
+      "change": "Change the shortcut for {{action}}",
+      "reset": "Reset to {{keys}}",
+      "conflict": "{{keys}} is already used by {{actions}}.",
+      "reassign": "Use it here",
+      "cancel": "Cancel"
+    },
+    "customize": "Customize…",
+    "resetAll": "Reset all shortcuts",
+    "changed_one": "{{count}} changed",
+    "changed_other": "{{count}} changed"
   },
   "queryCode": {
     "title": "Query code",

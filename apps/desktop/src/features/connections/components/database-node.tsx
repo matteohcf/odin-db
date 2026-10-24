@@ -24,9 +24,9 @@ import { useTranslation } from "react-i18next";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
 import { useTabs } from "@/features/workspace";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { formatBytes } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
-import { EDIT_SHORTCUTS, label } from "@/lib/shortcuts";
 import { connectionKeys } from "../api/keys";
 import { useCollections, useProfile } from "../api/queries";
 import { copyName } from "../lib/copy-name";
@@ -53,6 +53,8 @@ export function DatabaseNode({
   open: boolean;
   loading: boolean;
 }) {
+  const copyKeys = useKeybindingLabel("copy");
+  const pasteKeys = useKeybindingLabel("paste");
   const { t } = useTranslation("connections");
   const copyNode = useExplorer((s) => s.copy);
   const openDiagram = useTabs((s) => s.openDiagram);
@@ -112,7 +114,7 @@ export function DatabaseNode({
             <DropdownMenuItem onSelect={() => copyNode({ connection, database: database.name })}>
               <Copy />
               {t("clipboard.copyDatabase")}
-              <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.copy)}</DropdownMenuShortcut>
+              {copyKeys && <DropdownMenuShortcut>{copyKeys}</DropdownMenuShortcut>}
             </DropdownMenuItem>
             {copied && writable && (
               <DropdownMenuItem
@@ -120,7 +122,7 @@ export function DatabaseNode({
               >
                 <ClipboardPaste />
                 {t("clipboard.paste", { name: copied.collection ?? copied.database })}
-                <DropdownMenuShortcut>{label(EDIT_SHORTCUTS.paste)}</DropdownMenuShortcut>
+                {pasteKeys && <DropdownMenuShortcut>{pasteKeys}</DropdownMenuShortcut>}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onSelect={() => setToolDialog("backup")}>

@@ -38,7 +38,8 @@
     "discard": "Scarta",
     "changed_one": "Valido · modifica {{fields}}",
     "changed_other": "Valido · {{count}} modifiche: {{fields}}",
-    "fromSchema": "Compila dallo schema"
+    "fromSchema": "Compila dallo schema",
+    "descriptionNoShortcut": "Documento in {{namespace}}, scritto in sintassi mongosh."
   },
   "cell": {
     "copy": "Copia valore di {{field}}",

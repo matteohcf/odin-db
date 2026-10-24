@@ -13,7 +13,12 @@ import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/set
 import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { useUpdateNotifier } from "@/features/updates";
 import { UsersTab, UsersTabLabel } from "@/features/users";
-import { type TabLabelContext, type WorkspaceTab, WorkspaceTabs } from "@/features/workspace";
+import {
+  type TabLabelContext,
+  useTabs,
+  type WorkspaceTab,
+  WorkspaceTabs,
+} from "@/features/workspace";
 import { clampSidebarWidth, useSettings } from "@/lib/settings";
 import { BackupsButton } from "./backups-button";
 import { QueriesButton } from "./queries-button";
@@ -39,6 +44,7 @@ const DiagramTab = lazy(() =>
 export function App() {
   const { t } = useTranslation("app");
   const { data: perfAutorun } = useAutorunEnabled();
+  const openSettings = useTabs((s) => s.openSettings);
   useApplySettings();
   // Widths saved before the minimum grew are clamped too.
   const sidebarWidth = clampSidebarWidth(useSettings((s) => s.sidebarWidth));
@@ -75,7 +81,7 @@ export function App() {
       <main className="min-w-0 flex-1">
         <WorkspaceTabs renderTab={renderTab} renderLabel={renderLabel} emptyState={<Welcome />} />
       </main>
-      <ShortcutsDialog />
+      <ShortcutsDialog onCustomize={() => openSettings("keyboard")} />
       <QuitDialog />
     </div>
   );

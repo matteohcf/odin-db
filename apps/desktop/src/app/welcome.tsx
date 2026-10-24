@@ -6,11 +6,12 @@ import { OdinAppIcon } from "@/components/odin-app-icon";
 import { ProfileColorMark } from "@/components/profile-color-mark";
 import { useExplorer, useOpenCollection, useProfiles } from "@/features/connections";
 import { useTabs } from "@/features/workspace";
-import { label, SHORTCUTS } from "@/lib/shortcuts";
+import { useKeybindingLabel } from "@/hooks/use-keybinding";
 
 const kindIcon = { collection: Table2, view: Eye, timeseries: Clock } as const;
 
 export function Welcome() {
+  const paletteKeys = useKeybindingLabel("palette");
   const { t } = useTranslation("app");
   const recent = useTabs((s) => s.recent);
   const openCollection = useOpenCollection();
@@ -73,14 +74,16 @@ export function Welcome() {
           </ul>
         </section>
       )}
-      <p className="text-muted-foreground text-xs">
-        <Trans
-          t={t}
-          i18nKey="welcome.palette"
-          values={{ shortcut: label(SHORTCUTS.palette) }}
-          components={{ kbd: <Kbd /> }}
-        />
-      </p>
+      {paletteKeys && (
+        <p className="text-muted-foreground text-xs">
+          <Trans
+            t={t}
+            i18nKey="welcome.palette"
+            values={{ shortcut: paletteKeys }}
+            components={{ kbd: <Kbd /> }}
+          />
+        </p>
+      )}
     </div>
   );
 }

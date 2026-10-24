@@ -62,7 +62,8 @@ export function isModClick(event: Pick<MouseEvent, "metaKey" | "ctrlKey">, mac =
 
 type KeyPress = Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "shiftKey" | "altKey">;
 
-export function matches(shortcut: Shortcut, event: KeyPress, mac = isMac): boolean {
+export function matches(shortcut: Shortcut | null, event: KeyPress, mac = isMac): boolean {
+  if (!shortcut) return false;
   const mod = shortcut.mod === true;
   const wantsMeta = mac && mod;
   const wantsCtrl = shortcut.ctrl === true || (!mac && mod);
@@ -75,10 +76,20 @@ export function matches(shortcut: Shortcut, event: KeyPress, mac = isMac): boole
   );
 }
 
-const KEY_LABELS: Record<string, string> = { Enter: "↵" };
+const KEY_LABELS: Record<string, string> = {
+  Enter: "↵",
+  ArrowUp: "↑",
+  ArrowDown: "↓",
+  ArrowLeft: "←",
+  ArrowRight: "→",
+  Escape: "Esc",
+  Backspace: "⌫",
+  " ": "Space",
+};
 
-/** How the shortcut reads on this platform, e.g. "⌘ K" or "Ctrl K". */
-export function label(shortcut: Shortcut, mac = isMac): string {
+/** How the shortcut reads on this platform, e.g. "⌘ K" or "Ctrl K"; empty for none. */
+export function label(shortcut: Shortcut | null, mac = isMac): string {
+  if (!shortcut) return "";
   const parts: string[] = [];
   if (shortcut.ctrl) parts.push(mac ? "⌃" : "Ctrl");
   if (shortcut.mod) parts.push(mac ? "⌘" : "Ctrl");
