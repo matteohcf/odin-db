@@ -56,6 +56,8 @@ impl Fixture {
         let tag = std::env::var("MONGO_VERSION").unwrap_or_else(|_| "8.0".into());
         let container = image
             .with_tag(tag)
+            // A replica set elects itself before it accepts writes, slower with tests in parallel.
+            .with_startup_timeout(std::time::Duration::from_secs(180))
             .start()
             .await
             .expect("mongo container starts");
