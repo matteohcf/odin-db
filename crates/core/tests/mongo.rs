@@ -12,6 +12,7 @@ use odin_core::backup::{
 };
 use odin_core::catalog::{CollectionOptions, NewCollectionKind};
 use odin_core::connection::{ConnectionHandle, ConnectionManager, test_connection};
+use odin_core::documents::{ConvertTarget, FieldChange};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::indexes::{self, CreateIndexRequest};
 use odin_core::profiles::{self, ConnectionProfile, ProfileInput};
@@ -3245,4 +3246,80 @@ async fn listed_options(handle: &ConnectionHandle, database: &str, name: &str) -
         .and_then(|spec| spec.get_document("options").ok())
         .cloned()
         .unwrap_or_else(|| panic!("{name} listed"))
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn fields_are_renamed_removed_and_converted_by_filter() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("reshape");
+    let collection = handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection);
+    collection
+        .insert_many([
+            doc! { "_id": 1, "price": "1.5", "old": 1 },
+            doc! { "_id": 2, "price": "abc", "old": 2 },
+            doc! { "_id": 3, "price": 2.5 },
+            doc! { "_id": 4 },
+        ])
+        .await
+        .expect("seeded");
+    let all = || EJsonDocument::from(doc! {});
+    let change = |field: &'static str, change: FieldChange| {
+        let handle = handle.clone();
+        let ns = ns.clone();
+        async move {
+            documents::change_field(&handle, &ns, all(), field, &change)
+                .await
+                .expect("changed")
+        }
+    };
+
+    let converted = change(
+        "price",
+        FieldChange::Convert {
+            to: ConvertTarget::Double,
+        },
+    )
+    .await;
+    assert_eq!(
+        (converted.matched, converted.modified),
+        (2.0, 1.0),
+        "abc is kept"
+    );
+    let first = collection
+        .find_one(doc! { "_id": 1 })
+        .await
+        .expect("found")
+        .expect("one");
+    assert_eq!(first.get_f64("price").ok(), Some(1.5));
+
+    let renamed = change(
+        "old",
+        FieldChange::Rename {
+            to: "legacy".into(),
+        },
+    )
+    .await;
+    assert_eq!(renamed.modified, 2.0);
+    let removed = change("legacy", FieldChange::Remove).await;
+    assert_eq!(removed.modified, 2.0);
+    assert_eq!(
+        collection
+            .count_documents(
+                doc! { "$or": [{ "old": { "$exists": true } }, { "legacy": { "$exists": true } }] }
+            )
+            .await
+            .expect("counts"),
+        0
+    );
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        documents::change_field(&read_only, &ns, all(), "price", &FieldChange::Remove).await,
+        Err(CoreError::ReadOnly)
+    ));
 }

@@ -1,5 +1,5 @@
 import type { CompletionSource } from "@codemirror/autocomplete";
-import { type ConnectionId, commands, type EJsonDocument, type Namespace } from "@odin-db/bindings";
+import type { ConnectionId, EJsonDocument, Namespace } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import {
   Dialog,
@@ -9,18 +9,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
-import { Input } from "@odin-db/ui/components/input";
-import { Label } from "@odin-db/ui/components/label";
-import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, Loader2 } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { CircleAlert } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/code-editor";
 import { isJsonObject } from "@/lib/ejson-display";
-import { call, errorMessage } from "@/lib/ipc";
-import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
+import { errorMessage } from "@/lib/ipc";
+import { parseShellDocument } from "@/lib/shell-syntax";
 import { useDeleteDocuments, useUpdateDocuments } from "../api/mutations";
+import { useMatchingCount } from "../api/queries";
+import { ConfirmCollectionName } from "./confirm-collection-name";
+import { MatchingDocuments } from "./matching-documents";
 
 const NEW_UPDATE = "{\n  $set: {\n    \n  }\n}";
 
@@ -49,7 +49,6 @@ export function BulkWriteDialog({
   onClose,
 }: BulkWriteDialogProps) {
   const { t } = useTranslation("documents");
-  const id = useId();
   const update = useRef(NEW_UPDATE);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState("");
@@ -57,11 +56,7 @@ export function BulkWriteDialog({
   const deleteMany = useDeleteDocuments();
   const pending = updateMany.isPending || deleteMany.isPending;
   const matchAll = isJsonObject(filter) && Object.keys(filter).length === 0;
-  const count = useQuery({
-    queryKey: ["bulk-count", connectionId, namespace, filter],
-    queryFn: () => call(commands.countDocuments(connectionId, namespace, filter, null)),
-    gcTime: 0,
-  });
+  const count = useMatchingCount(connectionId, namespace, filter);
   const matching = count.data ?? null;
   // Every document of the collection: the name must be typed, as when dropping.
   const needsConfirmation = matchAll && (matching ?? 0) > 0;
@@ -107,27 +102,7 @@ export function BulkWriteDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-1.5">
-          <span className="font-medium text-sm">{t("bulk.filter")}</span>
-          <code className="truncate rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs selectable">
-            {matchAll ? t("bulk.allDocuments") : toShellSyntax(filter, 0)}
-          </code>
-          <p
-            role="status"
-            className="flex items-center gap-1.5 text-muted-foreground text-xs tabular-nums"
-          >
-            {count.isPending ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" />
-                {t("bulk.counting")}
-              </>
-            ) : count.error ? (
-              t("bulk.countFailed", { message: errorMessage(count.error) })
-            ) : (
-              t("bulk.matching", { count: matching ?? 0 })
-            )}
-          </p>
-        </div>
+        <MatchingDocuments filter={filter} count={count} />
 
         {mode === "update" && (
           <div className="flex flex-col gap-1.5">
@@ -148,19 +123,12 @@ export function BulkWriteDialog({
         )}
 
         {needsConfirmation && (
-          <div className="flex flex-col gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 p-2.5">
-            <Label htmlFor={`${id}-confirm`} className="text-destructive text-xs">
-              {t("bulk.confirmAll", { name: namespace.collection, count: matching ?? 0 })}
-            </Label>
-            <Input
-              id={`${id}-confirm`}
-              value={confirmation}
-              onChange={(event) => setConfirmation(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              className="h-8 font-mono text-xs"
-            />
-          </div>
+          <ConfirmCollectionName
+            namespace={namespace}
+            count={matching ?? 0}
+            value={confirmation}
+            onChange={setConfirmation}
+          />
         )}
 
         {error && (

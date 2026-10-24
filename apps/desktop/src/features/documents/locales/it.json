@@ -200,5 +200,44 @@
     "uploading": "Caricamento di un file…",
     "cancel": "Annulla",
     "cancelled": "Trasferimento annullato"
+  },
+  "fieldChange": {
+    "rename": {
+      "title": "Rinomina {{field}}",
+      "description": "Ogni documento corrispondente che ha {{field}} prende il nuovo nome.",
+      "to": "Nuovo nome",
+      "hint": "Usa i punti per i campi annidati. Un campo che ha già quel nome viene sovrascritto.",
+      "submit": "Rinomina",
+      "done_one": "{{field}} rinominato in {{to}} in {{count, number}} documento",
+      "done_other": "{{field}} rinominato in {{to}} in {{count, number}} documenti"
+    },
+    "convert": {
+      "title": "Cambia il tipo di {{field}}",
+      "description": "{{field}} viene convertito in ogni documento corrispondente, come fa $convert.",
+      "to": "Nuovo tipo",
+      "hint": "I valori che non si possono convertire restano come sono.",
+      "submit": "Converti",
+      "done_one": "{{field}} convertito in {{count, number}} documento",
+      "done_other": "{{field}} convertito in {{count, number}} documenti"
+    },
+    "remove": {
+      "title": "Rimuovi {{field}}",
+      "description": "{{field}} viene eliminato da ogni documento corrispondente. Non si può annullare.",
+      "submit": "Rimuovi campo",
+      "done_one": "{{field}} rimosso da {{count, number}} documento",
+      "done_other": "{{field}} rimosso da {{count, number}} documenti"
+    },
+    "convertedSome_one": "{{count, number}} valore convertito; {{kept, number}} non convertibili sono rimasti com'erano",
+    "convertedSome_other": "{{count, number}} valori convertiti; {{kept, number}} non convertibili sono rimasti com'erano",
+    "types": {
+      "string": "String",
+      "int": "Int32",
+      "long": "Int64",
+      "double": "Double",
+      "decimal": "Decimal128",
+      "bool": "Boolean",
+      "date": "Date",
+      "objectId": "ObjectId"
+    }
   }
 }

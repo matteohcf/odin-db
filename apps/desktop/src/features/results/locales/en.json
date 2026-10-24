@@ -83,7 +83,10 @@
     "copied": "Copied {{field}}",
     "pin": "Pin to the left",
     "unpin": "Unpin",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "renameField": "Rename field…",
+    "convertField": "Change type…",
+    "removeField": "Remove field…"
   },
   "rows": {
     "copy_one": "Copy {{count}} document",

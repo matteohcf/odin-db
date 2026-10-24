@@ -99,6 +99,8 @@ export interface ColumnActions {
   ) => void;
   /** Shows the field's distinct values among the matching documents. */
   onDistinct?: (field: string) => void;
+  /** Renames, converts or removes the field in the matching documents; absent when read-only. */
+  onChangeField?: ((field: string, kind: "rename" | "convert" | "remove") => void) | undefined;
 }
 
 interface ResultsGridProps {

@@ -14,10 +14,13 @@ import {
   EyeOff,
   ListChecks,
   MoveHorizontal,
+  PenLine,
   Pin,
   PinOff,
+  Shapes,
   SquareCheck,
   SquareDashed,
+  Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -93,6 +96,26 @@ export function ColumnMenu({
                 {t("cell.distinct", { field })}
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {columnActions?.onChangeField && field !== "_id" && (
+          <>
+            <DropdownMenuItem onSelect={() => columnActions.onChangeField?.(field, "rename")}>
+              <PenLine />
+              {t("column.renameField")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => columnActions.onChangeField?.(field, "convert")}>
+              <Shapes />
+              {t("column.convertField")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => columnActions.onChangeField?.(field, "remove")}
+            >
+              <Trash2 />
+              {t("column.removeField")}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}

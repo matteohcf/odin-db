@@ -200,5 +200,44 @@
     "uploading": "Uploading a file…",
     "cancel": "Cancel",
     "cancelled": "Transfer cancelled"
+  },
+  "fieldChange": {
+    "rename": {
+      "title": "Rename {{field}}",
+      "description": "Every matching document that has {{field}} gets the new name.",
+      "to": "New name",
+      "hint": "Use dots for embedded fields. A field already called that is overwritten.",
+      "submit": "Rename",
+      "done_one": "Renamed {{field}} to {{to}} in {{count, number}} document",
+      "done_other": "Renamed {{field}} to {{to}} in {{count, number}} documents"
+    },
+    "convert": {
+      "title": "Change the type of {{field}}",
+      "description": "Every matching document's {{field}} is converted, like $convert does.",
+      "to": "New type",
+      "hint": "Values that cannot be converted stay as they are.",
+      "submit": "Convert",
+      "done_one": "Converted {{field}} in {{count, number}} document",
+      "done_other": "Converted {{field}} in {{count, number}} documents"
+    },
+    "remove": {
+      "title": "Remove {{field}}",
+      "description": "{{field}} is deleted from every matching document. This cannot be undone.",
+      "submit": "Remove field",
+      "done_one": "Removed {{field}} from {{count, number}} document",
+      "done_other": "Removed {{field}} from {{count, number}} documents"
+    },
+    "convertedSome_one": "Converted {{count, number}} value; {{kept, number}} could not be converted and were kept",
+    "convertedSome_other": "Converted {{count, number}} values; {{kept, number}} could not be converted and were kept",
+    "types": {
+      "string": "String",
+      "int": "Int32",
+      "long": "Int64",
+      "double": "Double",
+      "decimal": "Decimal128",
+      "bool": "Boolean",
+      "date": "Date",
+      "objectId": "ObjectId"
+    }
   }
 }

@@ -83,7 +83,10 @@
     "copied": "Copiato {{field}}",
     "pin": "Fissa a sinistra",
     "unpin": "Sblocca",
-    "pinned": "Fissata"
+    "pinned": "Fissata",
+    "renameField": "Rinomina campo…",
+    "convertField": "Cambia tipo…",
+    "removeField": "Rimuovi campo…"
   },
   "rows": {
     "copy_one": "Copia {{count}} documento",

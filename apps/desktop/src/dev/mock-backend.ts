@@ -10,8 +10,10 @@ import type {
   CollectionOptions,
   ConnectionInfo,
   ConnectionProfile,
+  ConvertTarget,
   DatabaseInfo,
   DocumentPage,
+  FieldChange,
   FindRequest,
   IpcError,
   JsonValue,
@@ -2449,6 +2451,46 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       for (const field of Object.keys(update.$unset ?? {})) delete doc[field];
     }
     return { matched: matched.length, modified: matched.length };
+  },
+  change_field: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    const field = args.field as string;
+    const change = args.change as FieldChange;
+    if (field === "_id") fail("validation", "invalid input: _id cannot be changed");
+    if (change.kind === "rename" && (!change.to.trim() || change.to.trim() === field))
+      fail("validation", `invalid input: ${field} is already called ${change.to}`);
+    // Top-level fields only, and the simplest conversions: enough for the dialogs.
+    const convert = (value: JsonValue, to: ConvertTarget): JsonValue | undefined => {
+      const plain = scalarOf(value);
+      if (to === "string") return typeof plain === "string" ? undefined : String(plain);
+      const number = Number(plain);
+      if (to === "bool") return typeof plain === "boolean" ? undefined : Boolean(plain);
+      if (Number.isNaN(number) || typeof plain === "boolean") return value;
+      if (to === "int" && Number.isInteger(number)) return { $numberInt: String(number) };
+      if (to === "double") return { $numberDouble: String(number) };
+      return value;
+    };
+    let matched = 0;
+    let modified = 0;
+    for (const doc of coll.docs.filter((d) => matchesFilter(d, args.filter as Doc))) {
+      const value = doc[field];
+      if (value === undefined) continue;
+      if (change.kind === "convert") {
+        const next = convert(value, change.to);
+        if (next === undefined) continue;
+        matched += 1;
+        if (next === value) continue;
+        doc[field] = next;
+      } else {
+        matched += 1;
+        if (change.kind === "rename") doc[change.to.trim()] = value;
+        delete doc[field];
+      }
+      modified += 1;
+    }
+    return { matched, modified };
   },
   delete_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };

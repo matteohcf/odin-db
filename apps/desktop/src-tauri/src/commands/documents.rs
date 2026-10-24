@@ -179,6 +179,20 @@ pub async fn update_documents(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn change_field(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    filter: EJsonDocument,
+    field: String,
+    change: documents::FieldChange,
+) -> Result<UpdateManyResult, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(documents::change_field(&handle, &namespace, filter, &field, &change).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn delete_documents(
     state: State<'_, Arc<AppState>>,
     connection_id: ConnectionId,

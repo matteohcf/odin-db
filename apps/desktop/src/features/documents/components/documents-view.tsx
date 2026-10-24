@@ -70,6 +70,7 @@ import {
 import { schemaTemplate } from "../lib/schema-template";
 import { historyKey, useQueryHistory } from "../store/query-history-store";
 import { BulkWriteDialog } from "./bulk-write-dialog";
+import { ChangeFieldDialog, type FieldChangeKind } from "./change-field-dialog";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DistinctValuesDialog } from "./distinct-values-dialog";
 import { EditFieldDialog } from "./edit-field-dialog";
@@ -138,6 +139,11 @@ export function DocumentsView({
     }
   }
   const [distinct, setDistinct] = useState<{ field: string; filter: EJsonDocument } | null>(null);
+  const [fieldChange, setFieldChange] = useState<{
+    kind: FieldChangeKind;
+    field: string;
+    filter: EJsonDocument;
+  } | null>(null);
   const [bulk, setBulk] = useState<{
     mode: "update" | "delete";
     filter: EJsonDocument;
@@ -473,6 +479,12 @@ export function DocumentsView({
             void runForm({ ...form, filter: addFilterCondition(form.filter, field, condition) });
           },
           onDistinct: (field) => void openDistinct(field),
+          onChangeField: editable
+            ? (field, kind) =>
+                void currentQuery().then(
+                  (query) => query && setFieldChange({ kind, field, filter: query.filter }),
+                )
+            : undefined,
         }}
         label={t("results.label", { collection: namespace.collection })}
         selectedIndex={selectedIndex}
@@ -652,6 +664,15 @@ export function DocumentsView({
             });
           }}
           onClose={() => setDistinct(null)}
+        />
+      )}
+      {fieldChange && (
+        <ChangeFieldDialog
+          {...fieldChange}
+          connectionId={connection.id}
+          namespace={namespace}
+          onDone={() => refresh(true)}
+          onClose={() => setFieldChange(null)}
         />
       )}
       {bulk && (

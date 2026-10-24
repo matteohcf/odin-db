@@ -128,6 +128,7 @@ export const commands = {
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
 	distinctValues: (connectionId: ConnectionId, namespace: Namespace, field: string, filter: EJsonDocument, limit: number) => typedError<DistinctValue[], IpcError>(__TAURI_INVOKE("distinct_values", { connectionId, namespace, field, filter, limit })),
 	updateDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, update: EJsonDocument) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("update_documents", { connectionId, namespace, filter, update })),
+	changeField: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, field: string, change: FieldChange) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("change_field", { connectionId, namespace, filter, field, change })),
 	deleteDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("delete_documents", { connectionId, namespace, filter })),
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
 	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
@@ -496,6 +497,9 @@ export type ConnectionsFile = {
 	needsPassphrase: boolean,
 };
 
+/**  BSON types a field can be converted to; the names are `$convert`'s. */
+export type ConvertTarget = "string" | "int" | "long" | "double" | "decimal" | "bool" | "date" | "objectId";
+
 export type CopyRequest = {
 	sourceDatabase: string,
 	/**  One collection, or `None` for every collection and view of the database. */
@@ -704,6 +708,11 @@ export type ExportRequest = {
 };
 
 export type ExportSource = { kind: "find"; request: FindRequest } | { kind: "aggregate"; pipeline: EJsonDocument[] };
+
+/**  What to do to one field across many documents (ADR-0054). */
+export type FieldChange = { kind: "rename"; to: string } | { kind: "remove" } | 
+/**  Values that cannot be converted are left as they are. */
+{ kind: "convert"; to: ConvertTarget };
 
 export type FieldDifference = {
 	path: string,

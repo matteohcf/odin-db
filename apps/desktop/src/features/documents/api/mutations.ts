@@ -4,6 +4,7 @@ import {
   type EJsonDocument,
   type EJsonValue,
   type ExplainRequest,
+  type FieldChange,
   type Namespace,
   type QueryOptions,
 } from "@odin-db/bindings";
@@ -78,6 +79,20 @@ export function useSetDocumentField() {
           ? commands.unsetDocumentField(connectionId, namespace, id, field)
           : commands.setDocumentField(connectionId, namespace, id, field, value),
       ),
+    meta: { handlesErrors: true },
+  });
+}
+
+export function useChangeField() {
+  return useMutation({
+    mutationFn: ({
+      connectionId,
+      namespace,
+      filter,
+      field,
+      change,
+    }: Target & { filter: EJsonDocument; field: string; change: FieldChange }) =>
+      call(commands.changeField(connectionId, namespace, filter, field, change)),
     meta: { handlesErrors: true },
   });
 }
