@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const wanted = process.argv.slice(2);
 const scripts = readdirSync(here)
-  .filter((file) => file.endsWith(".mjs") && file !== "run.mjs")
+  // `_name.mjs` scripts are local scratch (screenshots, experiments), not checks.
+  .filter((file) => file.endsWith(".mjs") && file !== "run.mjs" && !file.startsWith("_"))
   .filter((file) => wanted.length === 0 || wanted.includes(basename(file, ".mjs")));
 
 const server = await fetch("http://localhost:1420/").catch(() => null);

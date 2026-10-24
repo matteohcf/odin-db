@@ -17,3 +17,4 @@ apps/desktop/src-tauri/binaries/
 
 # Playwright screenshots
 apps/desktop/test-results/
+apps/desktop/e2e/_*.mjs

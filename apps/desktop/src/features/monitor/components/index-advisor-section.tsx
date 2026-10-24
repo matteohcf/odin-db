@@ -128,7 +128,7 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
                 </IconAction>
                 <Button
                   size="sm"
-                  variant={advice.existing ? "outline" : "default"}
+                  variant="outline"
                   disabled={connection.readOnly}
                   title={connection.readOnly ? t("advisor.readOnly") : undefined}
                   onClick={() => setCreating(advice)}
