@@ -1,6 +1,6 @@
 import { Toggle } from "@odin-db/ui/components/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
-import { Braces, CircleAlert, List, Loader2, PanelRight, Table2 } from "lucide-react";
+import { Braces, ChartColumn, CircleAlert, List, Loader2, PanelRight, Table2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { formatCount } from "@/lib/format";
@@ -105,6 +105,14 @@ export function ResultsStatusBar({
             className="h-6 px-1.5"
           >
             <Braces className="size-3.5" />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="chart"
+            aria-label={t("view.chart")}
+            title={t("view.chart")}
+            className="h-6 px-1.5"
+          >
+            <ChartColumn className="size-3.5" />
           </ToggleGroupItem>
         </ToggleGroup>
       </span>

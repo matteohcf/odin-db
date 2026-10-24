@@ -59,7 +59,8 @@
     "list": "List",
     "expandAll": "Expand all fields",
     "collapseAll": "Collapse fields",
-    "json": "JSON"
+    "json": "JSON",
+    "chart": "Chart"
   },
   "columns": {
     "choose": "Choose columns",
@@ -144,5 +145,28 @@
     "duplicate": "Another field has this name",
     "problems_one": "{{count}} field to fix",
     "problems_other": "{{count}} fields to fix"
+  },
+  "chart": {
+    "by": "By",
+    "value": "Value",
+    "count": "Count of documents",
+    "of": "{{aggregate}} of {{field}}",
+    "aggregate": {
+      "label": "Aggregate",
+      "sum": "Sum",
+      "avg": "Average",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "other": "Other",
+    "loaded_one": "From {{count}} loaded document",
+    "loaded_other": "From {{count}} loaded documents",
+    "missing_one": "{{count}} without {{field}}",
+    "missing_other": "{{count}} without {{field}}",
+    "loadMore": "Load more",
+    "empty": "No loaded document has a value for {{field}}.",
+    "noFields": "Nothing to chart: these documents have no number, date or text fields.",
+    "byField": "by {{field}}",
+    "against": "against {{field}}"
   }
 }

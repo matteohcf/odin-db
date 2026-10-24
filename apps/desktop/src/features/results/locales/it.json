@@ -59,7 +59,8 @@
     "list": "Elenco",
     "expandAll": "Espandi tutti i campi",
     "collapseAll": "Comprimi i campi",
-    "json": "JSON"
+    "json": "JSON",
+    "chart": "Grafico"
   },
   "columns": {
     "choose": "Scegli colonne",
@@ -144,5 +145,28 @@
     "duplicate": "Un altro campo ha questo nome",
     "problems_one": "{{count}} campo da correggere",
     "problems_other": "{{count}} campi da correggere"
+  },
+  "chart": {
+    "by": "Per",
+    "value": "Valore",
+    "count": "Numero di documenti",
+    "of": "{{aggregate}} di {{field}}",
+    "aggregate": {
+      "label": "Aggregazione",
+      "sum": "Somma",
+      "avg": "Media",
+      "min": "Minimo",
+      "max": "Massimo"
+    },
+    "other": "Altro",
+    "loaded_one": "Da {{count}} documento caricato",
+    "loaded_other": "Da {{count}} documenti caricati",
+    "missing_one": "{{count}} senza {{field}}",
+    "missing_other": "{{count}} senza {{field}}",
+    "loadMore": "Carica altri",
+    "empty": "Nessun documento caricato ha un valore per {{field}}.",
+    "noFields": "Niente da rappresentare: questi documenti non hanno campi numerici, data o testo.",
+    "byField": "per {{field}}",
+    "against": "rispetto a {{field}}"
   }
 }

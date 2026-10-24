@@ -1,6 +1,6 @@
 import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback } from "react";
+import { lazy, Suspense, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsState } from "../hooks/use-results";
 import type { ResultsController } from "../lib/results-controller";
@@ -23,6 +23,11 @@ interface ResultsPanelProps {
   /** Remembers the table's column arrangement under this key. */
   layoutKey?: string | undefined;
 }
+
+// Charts bring recharts along: loaded the first time someone looks at one.
+const ResultsChart = lazy(() =>
+  import("./results-chart").then((module) => ({ default: module.ResultsChart })),
+);
 
 const SKELETON_ROWS = Array.from({ length: 14 }, (_, index) => index);
 const SKELETON_COLUMNS = [150, 110, 170, 60, 90, 120];
@@ -96,6 +101,13 @@ export function ResultsPanel({
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
         {empty}
       </div>
+    );
+  }
+  if (view === "chart") {
+    return (
+      <Suspense fallback={<div className="flex-1" />}>
+        <ResultsChart rows={rows} hasMore={hasMore} onLoadMore={loadMore} />
+      </Suspense>
     );
   }
   if (view === "list" || view === "json") {
