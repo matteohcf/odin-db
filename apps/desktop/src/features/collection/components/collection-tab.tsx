@@ -9,6 +9,7 @@ import {
   Eye,
   ListTree,
   Lock,
+  RadioTower,
   ShieldCheck,
   Unplug,
   Workflow,
@@ -39,7 +40,11 @@ const ValidationView = lazy(() =>
   import("@/features/schema").then((module) => ({ default: module.ValidationView })),
 );
 
-const VIEWS = ["documents", "aggregation", "schema", "indexes", "validation"] as const;
+const ChangesView = lazy(() =>
+  import("@/features/changes").then((module) => ({ default: module.ChangesView })),
+);
+
+const VIEWS = ["documents", "aggregation", "schema", "indexes", "validation", "live"] as const;
 type View = (typeof VIEWS)[number];
 const viewIcon = {
   documents: Braces,
@@ -47,6 +52,7 @@ const viewIcon = {
   schema: ChartBarBig,
   indexes: ListTree,
   validation: ShieldCheck,
+  live: RadioTower,
 } as const;
 
 /** A collection tab: binds it to its profile's live connection and hosts its views. */
@@ -229,6 +235,8 @@ function CollectionWorkspace({
                 />
               ) : value === "schema" ? (
                 <SchemaView connection={connection} namespace={namespace} />
+              ) : value === "live" ? (
+                <ChangesView connection={connection} namespace={namespace} />
               ) : value === "validation" ? (
                 <ValidationView connection={connection} namespace={namespace} editable={editable} />
               ) : (

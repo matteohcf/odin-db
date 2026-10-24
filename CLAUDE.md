@@ -42,7 +42,7 @@ docs/adr/                Architecture Decision Records
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
   - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `documents` shows `ai`'s Ask button; `indexes` stands alone;
   - `ai` (the query assistant) uses `workspace` only, to open its settings page;
-  - `collection` (the collection tab) composes `documents`, `aggregation`, `schema` and `indexes` with `connections`;
+  - `collection` (the collection tab) composes `documents`, `aggregation`, `schema`, `indexes` and `changes` (the live feed) with `connections`;
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
   - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection; `monitor` opens `indexes`' create dialog for the index advisor;
@@ -79,6 +79,7 @@ docs/adr/                Architecture Decision Records
 - **Query profiler** (ADR-0042): `profiler::{status, set_status, entries}` over the `profile` command and `system.profile`; changing the level needs a writable profile.
 - **Collection compare** (ADR-0041): `compare::compare` matches by `_id` in two bounded passes (left batches looked up on the right with `$in`, then right ids alone); field order is ignored, types are not. `compare::sync` reuses the same scan to insert, replace or delete on the right (read-only refused).
 - **AI query assistant** (ADR-0040): optional; llama.cpp in-process or Ollama, chosen in settings. Only field paths and types reach a model (`fieldHints`), output is grammar-constrained and checked in Rust (`parse_answer`), and fills the query bar without running. Catalog models are pinned by SHA-256.
+- **Live changes** (ADR-0046): `changes::watch` streams a collection's change stream, lossy (dropped events are counted) and as a passive operation that quitting does not ask about.
 - **Schema compare** (ADR-0045): `schema_compare::compare_schemas` matches two databases' collections by name, fields by sampled path and types, indexes by keys and options; missing indexes can be created on the other side.
 - **Index advisor** (ADR-0044): `advisor::advise` reads slow operations from `getLog` and any profiler that is on, keeps scans, groups them by the ESR index they need and flags existing indexes the planner ignores.
 - **Database diagram** (ADR-0043): `diagram::database_diagram` samples each collection and infers references from data (ObjectId values found as `_id` elsewhere), not names. The tab draws it with React Flow and dagre, loaded lazily; dragged positions persist per database.

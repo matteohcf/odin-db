@@ -96,6 +96,8 @@ export const commands = {
 	listCatalog: (connectionId: ConnectionId) => typedError<DatabaseCatalog[], IpcError>(__TAURI_INVOKE("list_catalog", { connectionId })),
 	collectionStats: (connectionId: ConnectionId, namespace: Namespace) => typedError<CollectionStats, IpcError>(__TAURI_INVOKE("collection_stats", { connectionId, namespace })),
 	collectionCounts: (connectionId: ConnectionId, database: string) => typedError<CollectionCount[], IpcError>(__TAURI_INVOKE("collection_counts", { connectionId, database })),
+	/**  Streams a collection's changes until stopped; quitting does not ask about it. */
+	watchChanges: (connectionId: ConnectionId, namespace: Namespace, channel: Channel<StreamEvent<ChangeFeed>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("watch_changes", { connectionId, namespace, channel })),
 	findDocuments: (connectionId: ConnectionId, namespace: Namespace, request: FindRequest) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("find_documents", { connectionId, namespace, request })),
 	fetchMoreDocuments: (cursorId: CursorId, batchSize: number) => typedError<DocumentPage, IpcError>(__TAURI_INVOKE("fetch_more_documents", { cursorId, batchSize })),
 	closeCursor: (cursorId: CursorId) => __TAURI_INVOKE<void>("close_cursor", { cursorId }),
@@ -343,6 +345,23 @@ export type Benchmark = {
 	accuracy: number | null,
 	secondsPerQuery: number | null,
 };
+
+export type ChangeEvent = {
+	/**  `insert`, `update`, `replace`, `delete`, `drop`, `rename`, `invalidate`… */
+	operation: string,
+	/**  Milliseconds since the epoch, when the server reports it. */
+	at: number | null,
+	/**  `{ _id: … }` of the changed document. */
+	key: EJsonDocument | null,
+	/**  The document after the change (inserts, replaces, and updates looked up afterwards). */
+	document: EJsonDocument | null,
+	/**  What an update set, and which fields it removed. */
+	updated: EJsonDocument | null,
+	removed: string[],
+};
+
+/**  What the feed sends: changes, and how many were dropped because the UI fell behind. */
+export type ChangeFeed = { kind: "change"; value: ChangeEvent } | { kind: "skipped"; value: number | null };
 
 export type CollectionComparison = {
 	name: string,

@@ -20,16 +20,28 @@ impl OperationId {
 /// Tracks running operations so they can be cancelled by id.
 #[derive(Debug, Default)]
 pub struct OperationRegistry {
-    running: Mutex<HashMap<OperationId, CancellationToken>>,
+    /// Each operation's token, and whether quitting should wait for it.
+    running: Mutex<HashMap<OperationId, (CancellationToken, bool)>>,
 }
 
 impl OperationRegistry {
     /// Registers a new operation. It stays cancellable until the returned guard is dropped.
     #[must_use]
     pub fn start(self: &Arc<Self>) -> OperationGuard {
+        self.register(true)
+    }
+
+    /// An open-ended operation, such as a live feed: cancellable and cancelled on quit,
+    /// but quitting does not ask about it.
+    #[must_use]
+    pub fn start_passive(self: &Arc<Self>) -> OperationGuard {
+        self.register(false)
+    }
+
+    fn register(self: &Arc<Self>, counted: bool) -> OperationGuard {
         let id = OperationId::new();
         let token = CancellationToken::new();
-        self.lock().insert(id, token.clone());
+        self.lock().insert(id, (token.clone(), counted));
         OperationGuard {
             id,
             token,
@@ -41,21 +53,21 @@ impl OperationRegistry {
     pub fn cancel(&self, id: OperationId) -> bool {
         self.lock()
             .get(&id)
-            .map(CancellationToken::cancel)
+            .map(|(token, _)| token.cancel())
             .is_some()
     }
 
     /// Cancels every running operation, e.g. before quitting.
     pub fn cancel_all(&self) {
-        self.lock().values().for_each(CancellationToken::cancel);
+        self.lock().values().for_each(|(token, _)| token.cancel());
     }
 
-    /// How many operations are in flight, e.g. to confirm quitting.
+    /// How many operations are in flight, e.g. to confirm quitting; passive ones do not count.
     pub fn running(&self) -> usize {
-        self.lock().len()
+        self.lock().values().filter(|(_, counted)| *counted).count()
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<OperationId, CancellationToken>> {
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<OperationId, (CancellationToken, bool)>> {
         // The map holds no invariants a panicking thread could break, so poisoning is ignored.
         self.running.lock().unwrap_or_else(PoisonError::into_inner)
     }
@@ -112,5 +124,15 @@ mod tests {
         let (a, b) = (registry.start(), registry.start());
         registry.cancel_all();
         assert!(a.token().is_cancelled() && b.token().is_cancelled());
+    }
+
+    #[test]
+    fn passive_operations_are_cancelled_but_not_counted() {
+        let registry = Arc::new(OperationRegistry::default());
+        let feed = registry.start_passive();
+        let export = registry.start();
+        assert_eq!(registry.running(), 1);
+        registry.cancel_all();
+        assert!(feed.token().is_cancelled() && export.token().is_cancelled());
     }
 }

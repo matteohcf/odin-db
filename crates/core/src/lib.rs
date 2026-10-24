@@ -4,6 +4,7 @@ pub mod advisor;
 pub mod backup;
 pub mod browse;
 pub mod catalog;
+pub mod changes;
 pub mod compare;
 pub mod connection;
 pub mod diagram;

@@ -59,6 +59,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::connections::list_catalog,
             commands::connections::collection_stats,
             commands::connections::collection_counts,
+            commands::documents::watch_changes,
             commands::documents::find_documents,
             commands::documents::fetch_more_documents,
             commands::documents::close_cursor,

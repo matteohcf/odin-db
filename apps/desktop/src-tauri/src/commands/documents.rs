@@ -1,16 +1,19 @@
 use std::sync::Arc;
 
+use odin_core::changes::{self, ChangeFeed};
 use odin_core::connection::ConnectionId;
 use odin_core::documents::{self, UpdateManyResult};
 use odin_core::ejson::{EJsonDocument, EJsonValue};
 use odin_core::explain::{self, ExplainRequest, QueryPlan};
+use odin_core::operations::{OperationId, OperationRegistry};
 use odin_core::query::{
     self, AggregateRequest, CursorId, DistinctValue, DocumentPage, FindRequest, Namespace,
 };
 use odin_core::schema::{self, FieldSummary};
 use tauri::State;
+use tauri::ipc::Channel;
 
-use crate::ipc::IpcError;
+use crate::ipc::{IpcError, StreamEvent, spawn_passive_streaming_operation};
 use crate::state::AppState;
 
 #[tauri::command]
@@ -211,4 +214,22 @@ pub async fn preview_aggregation(
 ) -> Result<Vec<EJsonDocument>, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(query::preview_aggregation(&handle, &namespace, pipeline, limit).await?)
+}
+
+/// Streams a collection's changes until stopped; quitting does not ask about it.
+#[tauri::command]
+#[specta::specta]
+pub async fn watch_changes(
+    state: State<'_, Arc<AppState>>,
+    registry: State<'_, Arc<OperationRegistry>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    channel: Channel<StreamEvent<ChangeFeed>>,
+) -> Result<OperationId, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(spawn_passive_streaming_operation(
+        &registry,
+        channel,
+        move |tx, cancel| async move { changes::watch(&handle, &namespace, tx, cancel).await },
+    ))
 }

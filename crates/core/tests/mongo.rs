@@ -44,8 +44,17 @@ struct Fixture {
 
 impl Fixture {
     async fn start() -> Self {
+        Self::start_with(Mongo::default()).await
+    }
+
+    /// A one-node replica set, for what standalone servers cannot do (change streams).
+    async fn start_replica_set() -> Self {
+        Self::start_with(Mongo::repl_set()).await
+    }
+
+    async fn start_with(image: Mongo) -> Self {
         let tag = std::env::var("MONGO_VERSION").unwrap_or_else(|_| "8.0".into());
-        let container = Mongo::default()
+        let container = image
             .with_tag(tag)
             .start()
             .await
@@ -2962,4 +2971,59 @@ async fn compares_two_databases_structurally() {
     assert_eq!(fields, ["email", "nickname"]);
     assert_eq!(users.indexes.len(), 1);
     assert!(users.indexes[0].left.is_none() && users.indexes[0].right.is_some());
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn streams_a_collections_changes_live() {
+    use odin_core::changes::{self, ChangeFeed};
+
+    let fx = Fixture::start_replica_set().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("live");
+    fx.seed(&handle, &ns, 1).await;
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    let cancel = CancellationToken::new();
+    let watching = {
+        let (handle, ns, cancel) = (Arc::clone(&handle), ns.clone(), cancel.clone());
+        tokio::spawn(async move { changes::watch(&handle, &ns, tx, cancel).await })
+    };
+    // The stream opens asynchronously; changes before it are not reported.
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    let collection = handle
+        .client
+        .database("odin_test")
+        .collection::<Document>("live");
+    collection
+        .insert_one(doc! { "_id": 42, "status": "new" })
+        .await
+        .expect("insert");
+    collection
+        .update_one(
+            doc! { "_id": 42 },
+            doc! { "$set": { "status": "paid" }, "$unset": { "draft": "" } },
+        )
+        .await
+        .expect("update");
+    collection
+        .delete_one(doc! { "_id": 42 })
+        .await
+        .expect("delete");
+
+    let mut operations = Vec::new();
+    while operations.len() < 3 {
+        let next = tokio::time::timeout(std::time::Duration::from_secs(10), rx.recv())
+            .await
+            .expect("a change in time")
+            .expect("feed open");
+        if let ChangeFeed::Change(change) = next {
+            if change.operation == "update" {
+                assert!(change.updated.is_some());
+            }
+            operations.push(change.operation);
+        }
+    }
+    assert_eq!(operations, ["insert", "update", "delete"]);
+    cancel.cancel();
+    watching.await.expect("joined").expect("stopped cleanly");
 }

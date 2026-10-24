@@ -5,7 +5,8 @@
     "aggregation": "Aggregation",
     "indexes": "Indexes",
     "schema": "Schema",
-    "validation": "Validation"
+    "validation": "Validation",
+    "live": "Live"
   },
   "header": {
     "readOnly": "Read-only",

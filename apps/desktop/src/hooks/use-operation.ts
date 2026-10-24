@@ -25,7 +25,8 @@ export function useOperation<E>(
 ) {
   const [state, setState] = useState<OperationStatus>({ status: "idle" });
   const operation = useRef<OperationId | null>(null);
-  const cancelRequested = useRef(false);
+  // The latest start; cancelling marks it, and an older start that resolves late is ignored.
+  const latest = useRef<{ cancelled: boolean } | null>(null);
 
   useEffect(
     () => () => {
@@ -37,7 +38,8 @@ export function useOperation<E>(
   /** Returns false if nothing started (dialog dismissed). */
   const start = useCallback(
     async (begin: Begin<E>, onEvent: (event: E) => void): Promise<boolean> => {
-      cancelRequested.current = false;
+      const run = { cancelled: false };
+      latest.current = run;
       setState({ status: "running" });
       try {
         let started = false;
@@ -47,13 +49,18 @@ export function useOperation<E>(
           return id ?? "";
         }, onEvent);
         if (!started) {
-          setState({ status: "idle" });
+          if (latest.current === run) setState({ status: "idle" });
           return false;
         }
-        operation.current = handle.id;
-        if (cancelRequested.current) void commands.cancelOperation(handle.id);
+        // Stopped (or superseded) before the backend answered: stop it now.
+        if (run.cancelled || latest.current !== run) {
+          void commands.cancelOperation(handle.id);
+        } else {
+          operation.current = handle.id;
+        }
         const outcome = await handle.done;
-        operation.current = null;
+        if (operation.current === handle.id) operation.current = null;
+        if (latest.current !== run) return true;
         // The user stopped it, so they know; the backend skips it while odin-db has focus.
         if (title && outcome.status !== "cancelled") {
           void commands.notifyIfUnfocused(
@@ -69,7 +76,7 @@ export function useOperation<E>(
             : { status: outcome.status },
         );
       } catch (error) {
-        setState({ status: "failed", error: errorMessage(error) });
+        if (latest.current === run) setState({ status: "failed", error: errorMessage(error) });
       }
       return true;
     },
@@ -77,7 +84,7 @@ export function useOperation<E>(
   );
 
   const cancel = useCallback(() => {
-    cancelRequested.current = true;
+    if (latest.current) latest.current.cancelled = true;
     if (operation.current) void commands.cancelOperation(operation.current);
   }, []);
 

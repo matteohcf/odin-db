@@ -1182,6 +1182,57 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     };
     return simulateTransfer(args.channel, 6, result, 1, (done) => ({ done, total: 6 }));
   },
+  watch_changes: (args) => {
+    const send = channelSender(args.channel);
+    const operationId = crypto.randomUUID();
+    const operation = { cancelled: false };
+    operations.set(operationId, operation);
+    let n = 0;
+    const id = (i: number) => ({ _id: { $oid: `65f0a1c${String(9000 + i).padStart(17, "0")}` } });
+    const events = [
+      (i: number) => ({
+        operation: "insert",
+        key: id(i),
+        document: { ...id(i), status: "pending", total: { $numberDecimal: "19.90" } },
+        updated: null,
+        removed: [],
+      }),
+      (i: number) => ({
+        operation: "update",
+        key: id(i - 1),
+        document: { ...id(i - 1), status: "paid" },
+        updated: { status: "paid", paidAt: { $date: { $numberLong: String(Date.now()) } } },
+        removed: ["draft"],
+      }),
+      (i: number) => ({
+        operation: "replace",
+        key: id(i - 2),
+        document: { ...id(i - 2), status: "shipped", carrier: "DHL" },
+        updated: null,
+        removed: [],
+      }),
+      (i: number) => ({
+        operation: "delete",
+        key: id(i - 3),
+        document: null,
+        updated: null,
+        removed: [],
+      }),
+    ];
+    const tick = () => {
+      if (operation.cancelled) {
+        send({ event: "cancelled" });
+        operations.delete(operationId);
+        return;
+      }
+      const make = events[n % events.length] as (i: number) => object;
+      send({ event: "data", data: { kind: "change", value: { at: Date.now(), ...make(n) } } });
+      n += 1;
+      setTimeout(tick, 700);
+    };
+    setTimeout(tick, 400);
+    return operationId;
+  },
   compare_collections: (args) => {
     const oid = (n: number) => ({ $oid: `65f0a1c${String(n).padStart(17, "0")}` });
     const range = (from: number, count: number) =>

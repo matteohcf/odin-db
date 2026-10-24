@@ -1,0 +1,26 @@
+{
+  "tab": "Live",
+  "live": "Live",
+  "paused": "Paused",
+  "stopped": "Stopped",
+  "count_one": "{{count}} change",
+  "count_other": "{{count}} changes",
+  "skipped_one": "{{count}} skipped: too fast to show",
+  "skipped_other": "{{count}} skipped: too fast to show",
+  "filter": "Show these changes",
+  "pause": "Pause",
+  "resume": "Resume",
+  "clear": "Clear",
+  "removed": "Removed",
+  "waiting": "Waiting for changes…",
+  "waitingHint": "Inserts, updates and deletes on this collection appear here as they happen, newest first.",
+  "operations": {
+    "insert": "Insert",
+    "update": "Update",
+    "replace": "Replace",
+    "delete": "Delete",
+    "drop": "Drop",
+    "rename": "Rename",
+    "invalidate": "Ended"
+  }
+}

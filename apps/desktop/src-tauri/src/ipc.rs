@@ -3,7 +3,7 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use odin_core::operations::{CancellationToken, OperationId, OperationRegistry};
+use odin_core::operations::{CancellationToken, OperationGuard, OperationId, OperationRegistry};
 use odin_core::{CoreError, ErrorKind};
 use serde::Serialize;
 use tauri::ipc::Channel;
@@ -52,7 +52,33 @@ where
     F: FnOnce(mpsc::Sender<T>, CancellationToken) -> Fut,
     Fut: Future<Output = Result<(), CoreError>> + Send + 'static,
 {
-    let guard = registry.start();
+    spawn_with_guard(registry.start(), channel, run)
+}
+
+/// Like `spawn_streaming_operation`, for an open-ended feed that quitting need not ask about.
+pub fn spawn_passive_streaming_operation<T, F, Fut>(
+    registry: &Arc<OperationRegistry>,
+    channel: Channel<StreamEvent<T>>,
+    run: F,
+) -> OperationId
+where
+    T: Serialize + Clone + Send + 'static,
+    F: FnOnce(mpsc::Sender<T>, CancellationToken) -> Fut,
+    Fut: Future<Output = Result<(), CoreError>> + Send + 'static,
+{
+    spawn_with_guard(registry.start_passive(), channel, run)
+}
+
+fn spawn_with_guard<T, F, Fut>(
+    guard: OperationGuard,
+    channel: Channel<StreamEvent<T>>,
+    run: F,
+) -> OperationId
+where
+    T: Serialize + Clone + Send + 'static,
+    F: FnOnce(mpsc::Sender<T>, CancellationToken) -> Fut,
+    Fut: Future<Output = Result<(), CoreError>> + Send + 'static,
+{
     let id = guard.id();
     let (tx, mut rx) = mpsc::channel(STREAM_BUFFER);
     let producer = run(tx, guard.token());
