@@ -17,37 +17,39 @@ export function AiModelsTable({ overview }: { overview: AiOverview }) {
 
   return (
     <SettingsSection title={t("ai.models")} description={t("ai.table.guide")}>
-      <table className="w-full">
-        <thead className="border-b">
-          <tr>
-            <th scope="col" className={`${head} pl-4`}>
-              {t("ai.table.model")}
-            </th>
-            <th scope="col" className={head}>
-              {t("ai.table.accuracy")}
-            </th>
-            <th scope="col" className={head}>
-              {t("ai.table.speed")}
-            </th>
-            <th scope="col" className={head}>
-              {t("ai.table.size")}
-            </th>
-            <th scope="col" className={head}>
-              <span className="sr-only">{t("ai.table.actions")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {models.map((entry) => (
-            <AiModelRow
-              key={entry.spec.id}
-              entry={entry}
-              recommended={entry.spec.id === overview.recommended}
-              memoryGib={memoryGib}
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="@container overflow-x-auto">
+        <table className="w-full">
+          <thead className="border-b">
+            <tr>
+              <th scope="col" className={`${head} pl-4`}>
+                {t("ai.table.model")}
+              </th>
+              <th scope="col" className={`${head} hidden @2xl:table-cell`}>
+                {t("ai.table.accuracy")}
+              </th>
+              <th scope="col" className={`${head} hidden @2xl:table-cell`}>
+                {t("ai.table.speed")}
+              </th>
+              <th scope="col" className={`${head} hidden @2xl:table-cell`}>
+                {t("ai.table.size")}
+              </th>
+              <th scope="col" className={head}>
+                <span className="sr-only">{t("ai.table.actions")}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {models.map((entry) => (
+              <AiModelRow
+                key={entry.spec.id}
+                entry={entry}
+                recommended={entry.spec.id === overview.recommended}
+                memoryGib={memoryGib}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="border-t px-4 py-2.5 text-muted-foreground text-xs">
         {t("ai.modelsHint", {
           memory: memoryGib,

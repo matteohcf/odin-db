@@ -25,6 +25,9 @@ export function AiModelRow({ entry, recommended, memoryGib }: AiModelRowProps) {
   const received =
     download?.progress?.received ?? (state.state === "partial" ? state.received : 0) ?? 0;
   const seconds = spec.benchmark?.secondsPerQuery;
+  const speed = seconds
+    ? t("ai.table.seconds", { seconds: seconds.toLocaleString(i18n.language) })
+    : "—";
   const needsMore = memoryGib > 0 && memoryGib < spec.minMemoryGib;
 
   return (
@@ -35,12 +38,19 @@ export function AiModelRow({ entry, recommended, memoryGib }: AiModelRowProps) {
           <Badge variant="outline">{t(`ai.tiers.${spec.tier}`)}</Badge>
           {recommended && <Badge>{t("ai.recommended")}</Badge>}
         </div>
+        {/* Narrow sections drop the numeric columns; their values move under the name. */}
+        <div className="flex flex-wrap items-center gap-x-3 pt-1.5 text-xs @2xl:hidden">
+          <AccuracyMeter accuracy={spec.benchmark?.accuracy} />
+          <span className="text-muted-foreground tabular-nums">
+            {speed} · {size(total)}
+          </span>
+        </div>
         {download ? (
           <div className="flex flex-col gap-1.5 pt-2">
             <Progress
               value={total > 0 ? (received / total) * 100 : null}
               aria-label={t("ai.downloading", { name: spec.name })}
-              className="h-1.5 w-56"
+              className="h-1.5 w-full max-w-56"
             />
             <span className="text-muted-foreground text-xs tabular-nums">
               {t("ai.progress", { received: size(received), total: size(total) })}
@@ -61,13 +71,15 @@ export function AiModelRow({ entry, recommended, memoryGib }: AiModelRowProps) {
           </p>
         )}
       </td>
-      <td className="py-3 pr-4 text-xs">
+      <td className="hidden py-3 pr-4 text-xs @2xl:table-cell">
         <AccuracyMeter accuracy={spec.benchmark?.accuracy} />
       </td>
-      <td className="whitespace-nowrap py-3 pr-4 text-xs tabular-nums">
-        {seconds ? t("ai.table.seconds", { seconds: seconds.toLocaleString(i18n.language) }) : "—"}
+      <td className="hidden whitespace-nowrap py-3 pr-4 text-xs tabular-nums @2xl:table-cell">
+        {speed}
       </td>
-      <td className="whitespace-nowrap py-3 pr-4 text-xs tabular-nums">{size(total)}</td>
+      <td className="hidden whitespace-nowrap py-3 pr-4 text-xs tabular-nums @2xl:table-cell">
+        {size(total)}
+      </td>
       <td className="py-2.5 pr-4">
         <AiModelActions entry={entry} />
       </td>

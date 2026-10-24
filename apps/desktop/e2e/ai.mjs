@@ -134,6 +134,21 @@ await check("dark theme renders the settings page", async () => {
   await page.getByRole("switch", { name: "Show the assistant" }).click();
   await page.screenshot({ path: "test-results/ai-dark.png" });
 });
+await check("in a narrow window the models table stays inside its section", async () => {
+  await page.setViewportSize({ width: 900, height: 900 });
+  await page.getByRole("combobox", { name: "Model runs in" }).click();
+  await page.getByRole("option", { name: "On this computer" }).click();
+  const table = page.locator("table").filter({ hasText: "Qwen2.5 Coder 0.5B" });
+  await table.scrollIntoViewIfNeeded();
+  // The bordered card around the scrolling wrapper.
+  const section = table.locator("xpath=../..");
+  const [inner, outer] = await Promise.all([table.boundingBox(), section.boundingBox()]);
+  if (!inner || !outer) throw new Error("table not shown");
+  if (inner.x + inner.width > outer.x + outer.width + 1) {
+    throw new Error(`table ${inner.x + inner.width} overflows section ${outer.x + outer.width}`);
+  }
+  await page.screenshot({ path: "test-results/ai-narrow.png" });
+});
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();
