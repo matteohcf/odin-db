@@ -74,7 +74,8 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
                   <div className="flex min-w-0 items-center gap-2">
                     <button
                       type="button"
-                      className="truncate font-medium text-sm hover:underline"
+                      // The collection stays readable; the keys and notes give way first.
+                      className="max-w-[40%] shrink-0 truncate font-medium text-sm hover:underline"
                       onClick={() =>
                         openCollection({
                           profileId: connection.profileId,
@@ -86,7 +87,7 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
                     >
                       {advice.database}.{advice.collection}
                     </button>
-                    <code className="truncate rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs selectable">
+                    <code className="min-w-0 truncate rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs selectable">
                       {keys}
                     </code>
                     {advice.collectionScan && (
@@ -95,7 +96,11 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
                       </Badge>
                     )}
                     {advice.existing && (
-                      <Badge variant="outline" className="shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="block min-w-0 shrink-[4] truncate"
+                        title={t("advisor.existing", { name: advice.existing })}
+                      >
                         {t("advisor.existing", { name: advice.existing })}
                       </Badge>
                     )}
