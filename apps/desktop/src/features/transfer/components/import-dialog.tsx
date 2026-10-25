@@ -9,7 +9,6 @@ import {
   type Namespace,
 } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { Checkbox } from "@odin-db/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +18,6 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { Input } from "@odin-db/ui/components/input";
-import { Label } from "@odin-db/ui/components/label";
 import {
   Select,
   SelectContent,
@@ -27,8 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@odin-db/ui/components/select";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckboxField } from "@/components/checkbox-field";
 import { FilePicker } from "@/components/file-picker";
 import { describeEJson } from "@/lib/ejson-display";
 import { call } from "@/lib/ipc";
@@ -65,7 +64,6 @@ const CSV_TYPES: CsvType[] = [
 
 export function ImportDialog({ connectionId, namespace, onImported, onClose }: ImportDialogProps) {
   const { t } = useTranslation("transfer");
-  const id = useId();
   const [file, setFile] = useState<ChosenFile | null>(null);
   const [columns, setColumns] = useState<CsvColumn[]>([]);
   const [stopOnError, setStopOnError] = useState(false);
@@ -267,37 +265,19 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
               target={namespace.collection}
             />
 
-            <div className="flex items-start gap-2.5">
-              <Checkbox
-                id={`${id}-stop`}
-                checked={stopOnError}
-                onCheckedChange={(checked) => setStopOnError(checked === true)}
-                className="mt-0.5"
-              />
-              <div className="flex flex-col gap-0.5">
-                <Label htmlFor={`${id}-stop`} className="font-normal">
-                  {t("import.stopOnError")}
-                </Label>
-                <span className="text-muted-foreground text-xs">{t("import.stopOnErrorHint")}</span>
-              </div>
-            </div>
+            <CheckboxField
+              checked={stopOnError}
+              onCheckedChange={setStopOnError}
+              label={t("import.stopOnError")}
+              hint={t("import.stopOnErrorHint")}
+            />
             {file?.preview.kind === "csv" && (
-              <div className="flex items-start gap-2.5">
-                <Checkbox
-                  id={`${id}-empty`}
-                  checked={ignoreEmptyStrings}
-                  onCheckedChange={(checked) => setIgnoreEmptyStrings(checked === true)}
-                  className="mt-0.5"
-                />
-                <div className="flex flex-col gap-0.5">
-                  <Label htmlFor={`${id}-empty`} className="font-normal">
-                    {t("import.ignoreEmpty")}
-                  </Label>
-                  <span className="text-muted-foreground text-xs">
-                    {t("import.ignoreEmptyHint")}
-                  </span>
-                </div>
-              </div>
+              <CheckboxField
+                checked={ignoreEmptyStrings}
+                onCheckedChange={setIgnoreEmptyStrings}
+                label={t("import.ignoreEmpty")}
+                hint={t("import.ignoreEmptyHint")}
+              />
             )}
           </div>
         )}

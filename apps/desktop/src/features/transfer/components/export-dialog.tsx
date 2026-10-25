@@ -23,6 +23,7 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckboxField } from "@/components/checkbox-field";
 import { formatBytes } from "@/lib/format";
 import { call } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
@@ -197,22 +198,12 @@ export function ExportDialog({
                   ))}
                 </div>
                 <p className="text-muted-foreground text-xs">{t("export.fieldsHint")}</p>
-                <div className="flex items-start gap-2 pt-1">
-                  <Checkbox
-                    id={`${id}-escape`}
-                    checked={escapeFormulas}
-                    onCheckedChange={(checked) => setEscapeFormulas(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex flex-col gap-0.5">
-                    <Label htmlFor={`${id}-escape`} className="font-normal text-sm">
-                      {t("export.escapeFormulas")}
-                    </Label>
-                    <p className="text-muted-foreground text-xs">
-                      {t("export.escapeFormulasHint")}
-                    </p>
-                  </div>
-                </div>
+                <CheckboxField
+                  checked={escapeFormulas}
+                  onCheckedChange={setEscapeFormulas}
+                  label={t("export.escapeFormulas")}
+                  hint={t("export.escapeFormulasHint")}
+                />
               </fieldset>
             ) : (
               <fieldset className="flex flex-col gap-2">

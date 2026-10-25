@@ -5,7 +5,6 @@ import {
   type DatabaseTransferSummary,
 } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { Checkbox } from "@odin-db/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +26,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CircleAlert } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckboxField } from "@/components/checkbox-field";
 import { InlineError } from "@/components/inline-error";
 import { SuggestInput } from "@/components/suggest-input";
 import { call } from "@/lib/ipc";
@@ -260,20 +260,12 @@ export function CopyDialog({
             </p>
             {ontoItself && <InlineError>{t("copy.ontoItself")}</InlineError>}
 
-            <div className="flex items-start gap-2.5">
-              <Checkbox
-                id={`${id}-indexes`}
-                checked={copyIndexes}
-                onCheckedChange={(checked) => setCopyIndexes(checked === true)}
-                className="mt-0.5"
-              />
-              <div className="flex flex-col gap-0.5">
-                <Label htmlFor={`${id}-indexes`} className="font-normal">
-                  {t("copy.indexes")}
-                </Label>
-                <span className="text-muted-foreground text-xs">{t("copy.indexesHint")}</span>
-              </div>
-            </div>
+            <CheckboxField
+              checked={copyIndexes}
+              onCheckedChange={setCopyIndexes}
+              label={t("copy.indexes")}
+              hint={t("copy.indexesHint")}
+            />
 
             <ImportModeFields
               value={mode}

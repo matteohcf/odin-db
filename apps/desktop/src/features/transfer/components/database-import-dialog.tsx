@@ -6,7 +6,6 @@ import {
   type DroppedFile,
 } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { Checkbox } from "@odin-db/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -15,10 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
-import { Label } from "@odin-db/ui/components/label";
 import { Table2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckboxField } from "@/components/checkbox-field";
 import { FilePicker } from "@/components/file-picker";
 import { call } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
@@ -48,7 +47,6 @@ export function DatabaseImportDialog({
   onClose,
 }: DatabaseImportDialogProps) {
   const { t } = useTranslation("transfer");
-  const id = useId();
   const [folder, setFolder] = useState<ChosenFolder | null>(null);
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
   const [stopOnError, setStopOnError] = useState(false);
@@ -161,20 +159,12 @@ export function DatabaseImportDialog({
 
             <ImportModeFields value={mode} onChange={setMode} scope="database" target={database} />
 
-            <div className="flex items-start gap-2.5">
-              <Checkbox
-                id={`${id}-stop`}
-                checked={stopOnError}
-                onCheckedChange={(checked) => setStopOnError(checked === true)}
-                className="mt-0.5"
-              />
-              <div className="flex flex-col gap-0.5">
-                <Label htmlFor={`${id}-stop`} className="font-normal">
-                  {t("import.stopOnError")}
-                </Label>
-                <span className="text-muted-foreground text-xs">{t("import.stopOnErrorHint")}</span>
-              </div>
-            </div>
+            <CheckboxField
+              checked={stopOnError}
+              onCheckedChange={setStopOnError}
+              label={t("import.stopOnError")}
+              hint={t("import.stopOnErrorHint")}
+            />
           </div>
         )}
 

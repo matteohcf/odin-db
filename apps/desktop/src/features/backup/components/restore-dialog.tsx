@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@odin-db/ui/components/radio-group";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckboxField } from "@/components/checkbox-field";
 import { FilePicker } from "@/components/file-picker";
 import { call } from "@/lib/ipc";
 import { useToolRun } from "../hooks/use-tool-run";
@@ -185,22 +186,12 @@ export function RestoreDialog({
                   />
                 </div>
 
-                <div className="flex items-start gap-2.5">
-                  <Checkbox
-                    id={`${id}-oplog`}
-                    checked={oplogReplay}
-                    onCheckedChange={(checked) => setOplogReplay(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex flex-col gap-0.5">
-                    <Label htmlFor={`${id}-oplog`} className="font-normal">
-                      {t("restore.oplogReplay")}
-                    </Label>
-                    <span className="text-muted-foreground text-xs">
-                      {t("restore.oplogReplayHint")}
-                    </span>
-                  </div>
-                </div>
+                <CheckboxField
+                  checked={oplogReplay}
+                  onCheckedChange={setOplogReplay}
+                  label={t("restore.oplogReplay")}
+                  hint={t("restore.oplogReplayHint")}
+                />
 
                 <div className="flex flex-col gap-2 rounded-md border p-3">
                   <div className="flex items-start gap-2.5">
