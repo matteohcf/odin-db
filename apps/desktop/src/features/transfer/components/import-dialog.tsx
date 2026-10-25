@@ -297,24 +297,22 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
           ) : done ? (
             <Button onClick={onClose}>{t("actions.close")}</Button>
           ) : (
-            <>
-              <div className="flex gap-2">
-                <Button variant="ghost" onClick={onClose}>
-                  {t("actions.cancel")}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                {t("actions.cancel")}
+              </Button>
+              {file && (
+                <Button
+                  onClick={() => void submit()}
+                  disabled={
+                    (file.preview.kind === "json" && file.preview.documents.length === 0) ||
+                    !importModeReady(mode, namespace.collection)
+                  }
+                >
+                  {t("import.submit")}
                 </Button>
-                {file && (
-                  <Button
-                    onClick={() => void submit()}
-                    disabled={
-                      (file.preview.kind === "json" && file.preview.documents.length === 0) ||
-                      !importModeReady(mode, namespace.collection)
-                    }
-                  >
-                    {t("import.submit")}
-                  </Button>
-                )}
-              </div>
-            </>
+              )}
+            </div>
           )}
         </DialogFooter>
       </DialogContent>
