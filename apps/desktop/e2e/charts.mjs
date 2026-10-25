@@ -58,6 +58,9 @@ await check("a category counts, then sums a number", async () => {
   await pick("Value", "total");
   await pick("Aggregate", "Average");
   await page.getByText("Average of total by status").waitFor();
+  // Each bar is labelled with its value.
+  await chart.locator(".recharts-label-list").first().waitFor();
+  await page.waitForTimeout(1200);
   await shot("02-category");
 });
 

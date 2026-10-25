@@ -15,6 +15,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Scatter,
   ScatterChart,
   XAxis,
@@ -216,7 +217,7 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
             }}
           >
             {data.kind === "bar" ? (
-              <BarChart data={points} layout="vertical" margin={{ left: 8, right: 24 }}>
+              <BarChart data={points} layout="vertical" margin={{ left: 8, right: 56 }}>
                 <CartesianGrid horizontal={false} stroke="var(--border)" />
                 <XAxis
                   type="number"
@@ -247,6 +248,14 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
                       fillOpacity={point.other ? 0.4 : 1}
                     />
                   ))}
+                  <LabelList
+                    dataKey="y"
+                    position="right"
+                    offset={6}
+                    className="fill-muted-foreground tabular-nums"
+                    fontSize={11}
+                    formatter={(v: unknown) => (typeof v === "number" ? numbers.format(v) : "")}
+                  />
                 </Bar>
               </BarChart>
             ) : data.kind === "line" ? (
