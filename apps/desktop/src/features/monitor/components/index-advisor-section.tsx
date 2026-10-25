@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { IconAction } from "@/components/icon-action";
+import { InlineError } from "@/components/inline-error";
 import { CreateIndexDialog } from "@/features/indexes";
 import { useTabs } from "@/features/workspace";
 import { formatCount } from "@/lib/format";
@@ -53,9 +54,7 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
       }
     >
       {report.error ? (
-        <p role="alert" className="text-destructive text-xs selectable">
-          {report.error.message}
-        </p>
+        <InlineError>{report.error.message}</InlineError>
       ) : !report.data ? (
         <SectionNote>{t("advisor.loading")}</SectionNote>
       ) : readable.length === 0 ? (

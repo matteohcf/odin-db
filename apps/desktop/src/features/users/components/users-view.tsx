@@ -42,6 +42,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { PageHeader } from "@/components/page-header";
 import { call, errorMessage } from "@/lib/ipc";
 import { generatePassword } from "../lib/password";
@@ -268,11 +269,7 @@ function PasswordDialog({
           spellCheck={false}
           autoComplete="new-password"
         />
-        {error && (
-          <p role="alert" className="text-destructive text-xs selectable">
-            {error}
-          </p>
-        )}
+        {error && <InlineError>{error}</InlineError>}
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             {t("actions.cancel", { ns: "common" })}

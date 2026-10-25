@@ -27,6 +27,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { useTabs } from "@/features/workspace";
 import { call, errorMessage } from "@/lib/ipc";
 import { indexHint } from "../lib/profile";
@@ -164,9 +165,9 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
       }
     >
       {status.error ? (
-        <p role="alert" className="text-destructive text-xs selectable">
+        <InlineError>
           {t("profiler.unavailable", { message: errorMessage(status.error) })}
-        </p>
+        </InlineError>
       ) : entries.data?.length === 0 ? (
         <SectionNote>{recording ? t("profiler.empty") : t("profiler.off")}</SectionNote>
       ) : (

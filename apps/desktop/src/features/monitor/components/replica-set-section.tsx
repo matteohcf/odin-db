@@ -11,6 +11,7 @@ import {
 import { cn } from "@odin-db/ui/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
 import { uptime } from "../lib/rates";
 import { MonitorSection } from "./monitor-section";
@@ -45,9 +46,7 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
       }
     >
       {status.error ? (
-        <p role="alert" className="text-destructive text-xs selectable">
-          {t("replica.failed", { message: errorMessage(status.error) })}
-        </p>
+        <InlineError>{t("replica.failed", { message: errorMessage(status.error) })}</InlineError>
       ) : (
         <div className="overflow-hidden rounded-lg border">
           <Table className="min-w-3xl table-fixed">

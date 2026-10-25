@@ -19,6 +19,7 @@ import { Switch } from "@odin-db/ui/components/switch";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { useOperation } from "@/hooks/use-operation";
 import { call, errorMessage } from "@/lib/ipc";
 import { indexRequestOf } from "../lib/index-request";
@@ -171,11 +172,7 @@ export function CompareSchemaDialog({ left, targets, onClose }: CompareSchemaDia
             </Button>
           </div>
         )}
-        {operation.state.status === "failed" && (
-          <p role="alert" className="text-destructive text-xs selectable">
-            {operation.state.error}
-          </p>
-        )}
+        {operation.state.status === "failed" && <InlineError>{operation.state.error}</InlineError>}
         {result && counts && (
           <>
             <div className="flex items-center gap-3">

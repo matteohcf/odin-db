@@ -10,6 +10,7 @@ import {
 } from "@odin-db/ui/components/table";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { compactEJson } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
 import { MonitorSection } from "./monitor-section";
@@ -48,9 +49,7 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
       }
     >
       {status.error ? (
-        <p role="alert" className="text-destructive text-xs selectable">
-          {t("sharding.failed", { message: errorMessage(status.error) })}
-        </p>
+        <InlineError>{t("sharding.failed", { message: errorMessage(status.error) })}</InlineError>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="overflow-hidden rounded-lg border">

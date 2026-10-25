@@ -35,6 +35,7 @@ import { Activity, CircleAlert, OctagonX, Pause, Play } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { PageHeader } from "@/components/page-header";
 import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
@@ -219,9 +220,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
           }
         >
           {ops.error ? (
-            <p role="alert" className="text-destructive text-xs selectable">
-              {errorMessage(ops.error)}
-            </p>
+            <InlineError>{errorMessage(ops.error)}</InlineError>
           ) : ops.data?.length === 0 ? (
             <SectionNote>{t("ops.none")}</SectionNote>
           ) : (

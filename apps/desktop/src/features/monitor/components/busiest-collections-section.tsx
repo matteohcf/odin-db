@@ -10,6 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
 import { type ActivityRate, activityRates } from "../lib/activity";
 import { MonitorSection } from "./monitor-section";
@@ -52,9 +53,7 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
       detail={<span className="text-muted-foreground text-xs">{t("busiest.hint")}</span>}
     >
       {activity.error ? (
-        <p role="alert" className="text-destructive text-xs selectable">
-          {t("busiest.failed", { message: errorMessage(activity.error) })}
-        </p>
+        <InlineError>{t("busiest.failed", { message: errorMessage(activity.error) })}</InlineError>
       ) : rates === null ? (
         <SectionNote>{t("stats.measuring")}</SectionNote>
       ) : rates.length === 0 ? (
