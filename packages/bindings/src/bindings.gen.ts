@@ -196,6 +196,10 @@ export const commands = {
 	setUserRoles: (connectionId: ConnectionId, database: string, name: string, roles: RoleRef[]) => typedError<null, IpcError>(__TAURI_INVOKE("set_user_roles", { connectionId, database, name, roles })),
 	changeUserPassword: (connectionId: ConnectionId, database: string, name: string, password: Secret) => typedError<null, IpcError>(__TAURI_INVOKE("change_user_password", { connectionId, database, name, password })),
 	dropUser: (connectionId: ConnectionId, database: string, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_user", { connectionId, database, name })),
+	listCustomRoles: (connectionId: ConnectionId) => typedError<CustomRole[], IpcError>(__TAURI_INVOKE("list_custom_roles", { connectionId })),
+	createRole: (connectionId: ConnectionId, database: string, name: string, privileges: Privilege[], roles: RoleRef[]) => typedError<null, IpcError>(__TAURI_INVOKE("create_role", { connectionId, database, name, privileges, roles })),
+	updateRole: (connectionId: ConnectionId, database: string, name: string, privileges: Privilege[], roles: RoleRef[]) => typedError<null, IpcError>(__TAURI_INVOKE("update_role", { connectionId, database, name, privileges, roles })),
+	dropRole: (connectionId: ConnectionId, database: string, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_role", { connectionId, database, name })),
 	/**  Asks where to save, then exports in the background. `None` if the user cancels. */
 	exportDocuments: (connectionId: ConnectionId, namespace: Namespace, request: ExportRequest, channel: Channel<StreamEvent<TransferEvent<TransferSummary>>>) => typedError<string | null, IpcError>(__TAURI_INVOKE("export_documents", { connectionId, namespace, request, channel })),
 	/**  Asks for a JSON, NDJSON or CSV file and previews it. `None` if the user cancels. */
@@ -597,6 +601,14 @@ export type CurrentOp = {
 };
 
 export type CursorId = string;
+
+export type CustomRole = {
+	role: string,
+	db: string,
+	privileges: Privilege[],
+	/**  Roles it inherits privileges from. */
+	roles: RoleRef[],
+};
 
 /**  One database's collections, as listed by [`catalog`]. */
 export type DatabaseCatalog = {
@@ -1075,6 +1087,11 @@ export type PlanStep = {
 
 export type Presence = "both" | "leftOnly" | "rightOnly";
 
+export type Privilege = {
+	resource: Resource,
+	actions: string[],
+};
+
 /**  A label color, like Compass's, so production never looks like development. */
 export type ProfileColor = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink" | "gray";
 
@@ -1213,6 +1230,16 @@ export type ReplicaSetStatus = {
 	set: string,
 	members: ReplicaMember[],
 };
+
+/**  What a privilege applies to. */
+export type Resource = 
+/**
+ *  A collection, every collection of `db` when `collection` is empty, or of
+ *  every database when both are.
+ */
+{ kind: "namespace"; db: string; collection: string } | { kind: "cluster" } | 
+/**  Every resource; only built-in roles have it, but a custom role can inherit it. */
+{ kind: "any" };
 
 export type RestoreRequest = {
 	source: RestoreSource,

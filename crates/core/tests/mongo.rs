@@ -2539,6 +2539,101 @@ async fn manages_users_and_their_roles() {
 
 #[tokio::test]
 #[ignore = "requires Docker"]
+async fn manages_custom_roles() {
+    use odin_core::users::{
+        Privilege, Resource, RoleRef, create_role, drop_role, list_custom_roles, list_roles,
+        update_role,
+    };
+
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let role = |role: &str, db: &str| RoleRef {
+        role: role.into(),
+        db: db.into(),
+    };
+    let reports = Privilege {
+        resource: Resource::Namespace {
+            db: "shop".into(),
+            collection: "reports".into(),
+        },
+        actions: vec!["find".into(), "insert".into()],
+    };
+    create_role(
+        &handle,
+        "shop",
+        "reportWriter",
+        std::slice::from_ref(&reports),
+        &[role("read", "shop")],
+    )
+    .await
+    .expect("role created");
+    let custom = list_custom_roles(&handle).await.expect("custom roles");
+    let writer = custom
+        .iter()
+        .find(|r| r.role == "reportWriter")
+        .expect("listed");
+    assert_eq!(
+        (
+            writer.db.as_str(),
+            writer.privileges.clone(),
+            writer.roles.clone()
+        ),
+        ("shop", vec![reports], vec![role("read", "shop")])
+    );
+    assert!(
+        list_roles(&handle, "shop")
+            .await
+            .expect("roles")
+            .iter()
+            .any(|r| r.role == "reportWriter" && !r.built_in),
+        "a custom role can be granted"
+    );
+    update_role(&handle, "admin", "monitor", &[], &[])
+        .await
+        .expect_err("an unknown role is reported");
+    update_role(
+        &handle,
+        "shop",
+        "reportWriter",
+        &[Privilege {
+            resource: Resource::Namespace {
+                db: "shop".into(),
+                collection: String::new(),
+            },
+            actions: vec!["listCollections".into()],
+        }],
+        &[],
+    )
+    .await
+    .expect("role updated");
+    let writer = list_custom_roles(&handle)
+        .await
+        .expect("custom roles")
+        .into_iter()
+        .find(|r| r.role == "reportWriter")
+        .expect("listed");
+    assert_eq!(writer.privileges[0].actions, ["listCollections"]);
+    assert_eq!(writer.roles.len(), 0);
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        drop_role(&read_only, "shop", "reportWriter").await,
+        Err(CoreError::ReadOnly)
+    ));
+    drop_role(&handle, "shop", "reportWriter")
+        .await
+        .expect("role dropped");
+    assert!(
+        !list_custom_roles(&handle)
+            .await
+            .expect("custom roles")
+            .iter()
+            .any(|r| r.role == "reportWriter")
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
 async fn uploads_and_downloads_gridfs_files_byte_for_byte() {
     let fx = Fixture::start().await;
     let handle = fx.connect(false).await;

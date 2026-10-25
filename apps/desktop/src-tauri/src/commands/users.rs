@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use odin_core::connection::ConnectionId;
 use odin_core::secrets::Secret;
-use odin_core::users::{self, RoleInfo, RoleRef, UserInfo};
+use odin_core::users::{self, CustomRole, Privilege, RoleInfo, RoleRef, UserInfo};
 use tauri::State;
 
 use crate::ipc::IpcError;
@@ -81,4 +81,54 @@ pub async fn drop_user(
 ) -> Result<(), IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(users::drop_user(&handle, &database, &name).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn list_custom_roles(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+) -> Result<Vec<CustomRole>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(users::list_custom_roles(&handle).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn create_role(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    database: String,
+    name: String,
+    privileges: Vec<Privilege>,
+    roles: Vec<RoleRef>,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(users::create_role(&handle, &database, &name, &privileges, &roles).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_role(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    database: String,
+    name: String,
+    privileges: Vec<Privilege>,
+    roles: Vec<RoleRef>,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(users::update_role(&handle, &database, &name, &privileges, &roles).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn drop_role(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    database: String,
+    name: String,
+) -> Result<(), IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(users::drop_role(&handle, &database, &name).await?)
 }

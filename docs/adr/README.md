@@ -60,3 +60,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0054](0054-field-changes.md) | Renaming, converting and removing a field across documents | Accepted |
 | [0055](0055-value-search.md) | Searching values across collections | Accepted |
 | [0056](0056-undo-bulk-updates.md) | Undoing bulk updates and field changes | Accepted |
+| [0057](0057-custom-roles.md) | Custom roles | Accepted |
