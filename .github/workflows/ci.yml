@@ -19,8 +19,40 @@ env:
   LEFTHOOK: 0
 
 jobs:
+  # Which areas a change touches, so untouched ones skip their slow jobs. Fails open: when
+  # the diff cannot be worked out, everything runs.
+  changes:
+    name: Changed areas
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.areas.outputs.code }}
+      rust: ${{ steps.areas.outputs.rust }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: areas
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null \
+            || ! files=$(git diff --name-only "$BASE" HEAD); then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s\n' "$files"
+          code=false
+          rust=false
+          if printf '%s\n' "$files" | grep -qvE '^(docs/|branding/|[^/]+\.md$|LICENSE)'; then code=true; fi
+          if printf '%s\n' "$files" | grep -qE '^(crates/|apps/desktop/src-tauri/|Cargo\.|rust-toolchain\.toml|deny\.toml|clippy\.toml|\.github/)'; then rust=true; fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "rust=$rust" >> "$GITHUB_OUTPUT"
+
   check:
     name: Lint, typecheck, test
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,6 +83,8 @@ jobs:
 
   integration:
     name: Integration (MongoDB ${{ matrix.mongo }})
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -89,6 +123,8 @@ jobs:
 
   deny:
     name: cargo-deny
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -96,6 +132,8 @@ jobs:
 
   build:
     name: Build (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -130,3 +168,18 @@ jobs:
       - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The one status to require: green when every job passed or was skipped as untouched.
+  ok:
+    name: CI ok
+    if: always()
+    needs: [changes, check, integration, deny, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for result in $RESULTS; do
+            case "$result" in success|skipped) ;; *) exit 1 ;; esac
+          done
