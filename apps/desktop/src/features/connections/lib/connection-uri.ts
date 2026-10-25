@@ -2,6 +2,8 @@ export const AUTH_MECHANISMS = [
   "SCRAM-SHA-256",
   "SCRAM-SHA-1",
   "MONGODB-X509",
+  // LDAP: the user is checked by an LDAP server, through $external.
+  "PLAIN",
   "MONGODB-AWS",
   "MONGODB-OIDC",
 ] as const;

@@ -103,7 +103,7 @@ export function ConnectionFormFields({
               <SelectItem value={DEFAULT}>{t("form.automatic")}</SelectItem>
               {AUTH_MECHANISMS.map((mechanism) => (
                 <SelectItem key={mechanism} value={mechanism}>
-                  {mechanism}
+                  {mechanism === "PLAIN" ? "PLAIN (LDAP)" : mechanism}
                 </SelectItem>
               ))}
             </SelectContent>
