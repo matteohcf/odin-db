@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
 use crate::ejson::{EJsonDocument, number_of};
-use crate::query::Namespace;
+use crate::query::{Namespace, parse_collation};
 
 const ID_INDEX: &str = "_id_";
 
@@ -46,6 +46,9 @@ pub struct CreateIndexRequest {
     pub hidden: bool,
     pub expire_after_seconds: Option<u32>,
     pub partial_filter: Option<EJsonDocument>,
+    /// How strings compare in the index; queries use it only with the same collation.
+    #[serde(default)]
+    pub collation: Option<EJsonDocument>,
 }
 
 /// An index build running on the collection, as `$currentOp` reports it.
@@ -195,6 +198,7 @@ pub async fn create(
                 .map(|s| Duration::from_secs(u64::from(s))),
         )
         .partial_filter_expression(partial_filter)
+        .collation(parse_collation(request.collation)?)
         .build();
     let result = namespace
         .collection(handle)?

@@ -601,6 +601,7 @@ async fn creates_lists_and_drops_indexes() {
             hidden: false,
             expire_after_seconds: None,
             partial_filter: Some(EJsonDocument::from(doc! { "n": { "$gt": 2 } })),
+            collation: None,
         },
     )
     .await
@@ -616,6 +617,50 @@ async fn creates_lists_and_drops_indexes() {
     assert!(created.unique);
     assert!(created.partial_filter.is_some());
     assert!(created.size.is_some(), "sizes come from $collStats");
+
+    // A case-insensitive index carries its collation.
+    let name = indexes::create(
+        &handle,
+        &ns,
+        CreateIndexRequest {
+            keys: EJsonDocument::from(doc! { "name": 1 }),
+            name: None,
+            unique: false,
+            sparse: false,
+            hidden: false,
+            expire_after_seconds: None,
+            partial_filter: None,
+            collation: Some(EJsonDocument::from(doc! { "locale": "en", "strength": 2 })),
+        },
+    )
+    .await
+    .expect("create with a collation");
+    let listed = indexes::list(&handle, &ns).await.expect("list");
+    let caseless = listed.iter().find(|i| i.name == name).expect("listed");
+    let definition = Document::try_from(caseless.definition.clone()).expect("document");
+    let collation = definition
+        .get_document("collation")
+        .expect("collation kept");
+    assert_eq!(collation.get_str("locale").ok(), Some("en"));
+    assert!(matches!(
+        indexes::create(
+            &handle,
+            &ns,
+            CreateIndexRequest {
+                keys: EJsonDocument::from(doc! { "other": 1 }),
+                name: None,
+                unique: false,
+                sparse: false,
+                hidden: false,
+                expire_after_seconds: None,
+                partial_filter: None,
+                collation: Some(EJsonDocument::from(doc! { "strength": "strong" })),
+            },
+        )
+        .await,
+        Err(CoreError::Validation(_))
+    ));
+    indexes::drop(&handle, &ns, &name).await.expect("drop");
 
     assert!(matches!(
         indexes::drop(&handle, &ns, "_id_").await,
@@ -1321,6 +1366,7 @@ async fn explains_collection_and_index_scans() {
             hidden: false,
             expire_after_seconds: None,
             partial_filter: None,
+            collation: None,
         },
     )
     .await
@@ -1865,6 +1911,7 @@ async fn copies_a_collection_with_options_and_indexes_to_another_connection() {
             hidden: false,
             expire_after_seconds: None,
             partial_filter: None,
+            collation: None,
         },
     )
     .await
@@ -2200,6 +2247,7 @@ async fn hides_and_unhides_an_index() {
             hidden: false,
             expire_after_seconds: None,
             partial_filter: None,
+            collation: None,
         },
     )
     .await

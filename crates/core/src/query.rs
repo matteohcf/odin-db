@@ -82,15 +82,21 @@ pub struct QueryOptions {
     pub max_time_ms: Option<u32>,
 }
 
+/// A collation document (`{ locale: "en", strength: 2 }`) as the driver's options take it.
+pub(crate) fn parse_collation(
+    collation: Option<EJsonDocument>,
+) -> Result<Option<Collation>, CoreError> {
+    collation
+        .map(|collation| {
+            bson::deserialize_from_document::<Collation>(Document::try_from(collation)?)
+                .map_err(|error| CoreError::Validation(format!("collation: {error}")))
+        })
+        .transpose()
+}
+
 impl QueryOptions {
     pub(crate) fn collation(&self) -> Result<Option<Collation>, CoreError> {
-        self.collation
-            .clone()
-            .map(|collation| {
-                bson::deserialize_from_document::<Collation>(Document::try_from(collation)?)
-                    .map_err(|error| CoreError::Validation(format!("collation: {error}")))
-            })
-            .transpose()
+        parse_collation(self.collation.clone())
     }
 
     pub(crate) fn hint(&self) -> Result<Option<Hint>, CoreError> {

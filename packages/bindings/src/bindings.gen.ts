@@ -573,6 +573,8 @@ export type CreateIndexRequest = {
 	hidden: boolean,
 	expireAfterSeconds: number | null,
 	partialFilter: EJsonDocument | null,
+	/**  How strings compare in the index; queries use it only with the same collation. */
+	collation?: EJsonDocument | null,
 };
 
 export type CsvColumn = {
