@@ -83,6 +83,14 @@ await check("the whole connection can be searched", async () => {
   await page.keyboard.press("Escape");
 });
 
+await check("the command palette opens a search", async () => {
+  await page.keyboard.press("Meta+k");
+  await page.keyboard.type("search values");
+  await page.getByRole("option", { name: /Search values in Local development/ }).click();
+  await dialog.getByText("every database").waitFor();
+  await page.keyboard.press("Escape");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();

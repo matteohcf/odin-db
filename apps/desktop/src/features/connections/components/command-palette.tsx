@@ -31,6 +31,7 @@ import {
   SquareTerminal,
   Sun,
   Table2,
+  TextSearch,
   UsersRound,
   Waypoints,
 } from "lucide-react";
@@ -42,6 +43,7 @@ import { useShortcutsDialog } from "@/hooks/use-shortcuts-dialog";
 import { useConnect } from "../api/mutations";
 import { useCatalogs, useConnections, useProfiles } from "../api/queries";
 import { rankMatches } from "../lib/palette-search";
+import { ValueSearchDialog } from "./value-search-dialog";
 
 const MAX_COLLECTIONS = 50;
 const tabIcon = {
@@ -78,6 +80,8 @@ export function CommandPalette({
   const [search, setSearch] = useState("");
   // Controlled, so the best match is selected after every keystroke.
   const [selected, setSelected] = useState("");
+  // Outlives the palette, which closes as the search opens.
+  const [searchIn, setSearchIn] = useState<ConnectionInfo | null>(null);
 
   useShortcut("palette", () => onOpenChange(!open));
 
@@ -86,38 +90,42 @@ export function CommandPalette({
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{t("palette.title")}</DialogTitle>
-        <DialogDescription>{t("palette.description")}</DialogDescription>
-      </DialogHeader>
-      <DialogContent
-        className="top-[20%] translate-y-0 overflow-hidden p-0 sm:max-w-xl"
-        showCloseButton={false}
-      >
-        {/* Filtering is ours: catalogs can hold thousands of collections. */}
-        <Command
-          shouldFilter={false}
-          value={selected}
-          onValueChange={setSelected}
-          className="[&_[cmdk-group-heading]]:text-muted-foreground"
+    <>
+      {searchIn && <ValueSearchDialog connection={searchIn} onClose={() => setSearchIn(null)} />}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{t("palette.title")}</DialogTitle>
+          <DialogDescription>{t("palette.description")}</DialogDescription>
+        </DialogHeader>
+        <DialogContent
+          className="top-[20%] translate-y-0 overflow-hidden p-0 sm:max-w-xl"
+          showCloseButton={false}
         >
-          <CommandInput
-            value={search}
-            onValueChange={setSearch}
-            placeholder={t("palette.placeholder")}
-          />
-          {open && (
-            <PaletteResults
-              search={search}
-              onNewConnection={onNewConnection}
-              onFirstResult={setSelected}
-              close={() => onOpenChange(false)}
+          {/* Filtering is ours: catalogs can hold thousands of collections. */}
+          <Command
+            shouldFilter={false}
+            value={selected}
+            onValueChange={setSelected}
+            className="[&_[cmdk-group-heading]]:text-muted-foreground"
+          >
+            <CommandInput
+              value={search}
+              onValueChange={setSearch}
+              placeholder={t("palette.placeholder")}
             />
-          )}
-        </Command>
-      </DialogContent>
-    </Dialog>
+            {open && (
+              <PaletteResults
+                search={search}
+                onNewConnection={onNewConnection}
+                onFirstResult={setSelected}
+                onSearchValues={setSearchIn}
+                close={() => onOpenChange(false)}
+              />
+            )}
+          </Command>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -125,10 +133,12 @@ function PaletteResults({
   search,
   onNewConnection,
   onFirstResult,
+  onSearchValues,
   close,
 }: {
   search: string;
   onNewConnection: () => void;
+  onSearchValues: (connection: ConnectionInfo) => void;
   /** Reports the top result's value whenever it changes. */
   onFirstResult: (value: string) => void;
   close: () => void;
@@ -207,6 +217,12 @@ function PaletteResults({
       label: t("palette.openShell", { name: nameOf(connection.profileId) }),
       icon: SquareTerminal,
       run: () => openShell(connection.profileId),
+    })),
+    ...connections.map((connection) => ({
+      id: `search:${connection.id}`,
+      label: t("palette.searchValues", { name: nameOf(connection.profileId) }),
+      icon: TextSearch,
+      run: () => onSearchValues(connection),
     })),
     ...connections.flatMap((connection, index) =>
       (catalogs[index]?.data ?? []).map(({ database }) => ({

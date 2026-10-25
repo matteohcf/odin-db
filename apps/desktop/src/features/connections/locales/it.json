@@ -220,7 +220,8 @@
     "openDiagram": "Mostra diagramma di {{database}}",
     "openDiagramOn": "Mostra diagramma di {{database}} su {{name}}",
     "queriesTab": "Le mie query",
-    "queries": "Apri le mie query"
+    "queries": "Apri le mie query",
+    "searchValues": "Cerca valori in {{name}}…"
   },
   "health": {
     "lost": "{{name}} ha smesso di rispondere. odin-db continua a riprovare in background.",
