@@ -72,6 +72,7 @@ await check("a number alone is a histogram, against another a scatter", async ()
   await shot("03-histogram");
   await pick("Value", "number");
   await chart.locator(".recharts-scatter-symbol").first().waitFor();
+  await page.waitForTimeout(1200);
   await shot("04-scatter");
 });
 
