@@ -31,6 +31,12 @@ await page
   .click();
 await page.getByRole("tab", { name: "Indexes" }).click();
 
+await check("view tabs are named by their text and count", async () => {
+  // The count shown beside the name is part of the tab's name, for screen readers.
+  await page.getByRole("tab", { name: /^Indexes ?3$/ }).waitFor();
+  await page.getByRole("tab", { name: /^Documents ?1\.2K$/ }).waitFor();
+});
+
 await check("unused indexes are flagged", async () => {
   await page
     .getByText(/^Unused since /)
