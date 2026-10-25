@@ -3560,3 +3560,14 @@ async fn a_mongod_has_no_sharding_status() {
         None
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn no_index_build_runs_on_an_idle_collection() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("idle_builds");
+    fx.seed(&handle, &ns, 5).await;
+    let builds = indexes::builds(&handle, &ns).await.expect("builds");
+    assert_eq!(builds, Vec::new());
+}

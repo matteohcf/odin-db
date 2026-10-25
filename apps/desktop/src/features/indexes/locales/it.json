@@ -66,5 +66,11 @@
     "confirm": "Elimina indice",
     "dropped": "Indice {{name}} eliminato"
   },
-  "readOnly": "Sola lettura: gli indici possono essere visualizzati ma non modificati."
+  "readOnly": "Sola lettura: gli indici possono essere visualizzati ma non modificati.",
+  "builds": {
+    "label": "Creazioni di indici in corso",
+    "building": "Creazione di {{names}}",
+    "seconds_one": "{{count}} s",
+    "seconds_other": "{{count}} s"
+  }
 }

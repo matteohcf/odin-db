@@ -22,7 +22,7 @@ import {
   RotateCw,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { describeEJson } from "@/lib/ejson-display";
@@ -30,6 +30,7 @@ import { formatBytes } from "@/lib/format";
 import { useDropIndex, useIndexes, useSetIndexHidden } from "../api/indexes";
 import { createIndexCommand } from "../lib/create-index-command";
 import { CreateIndexDialog } from "./create-index-dialog";
+import { IndexBuilds } from "./index-builds";
 
 interface IndexesViewProps {
   connection: ConnectionInfo;
@@ -61,6 +62,7 @@ export function IndexesView({
     }
   }, [draftKeys, editable, onDraftOpened]);
   const [toDrop, setToDrop] = useState<string | null>(null);
+  const refetchIndexes = useCallback(() => void indexes.refetch(), [indexes.refetch]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -101,6 +103,12 @@ export function IndexesView({
         </Button>
       </div>
 
+      <IndexBuilds
+        connectionId={connection.id}
+        namespace={namespace}
+        onFinished={refetchIndexes}
+        watching={creating !== false}
+      />
       <div className="min-h-0 flex-1 overflow-auto">
         {indexes.isPending ? (
           <p className="flex items-center gap-2 p-6 text-muted-foreground">

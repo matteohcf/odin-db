@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use odin_core::advisor::{self, AdvisorReport};
 use odin_core::connection::ConnectionId;
-use odin_core::indexes::{self, CreateIndexRequest, IndexInfo};
+use odin_core::indexes::{self, CreateIndexRequest, IndexBuild, IndexInfo};
 use odin_core::query::Namespace;
 use tauri::State;
 
@@ -18,6 +18,17 @@ pub async fn list_indexes(
 ) -> Result<Vec<IndexInfo>, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(indexes::list(&handle, &namespace).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn index_builds(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+) -> Result<Vec<IndexBuild>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(indexes::builds(&handle, &namespace).await?)
 }
 
 /// Returns the name of the new index.

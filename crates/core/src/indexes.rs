@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
-use crate::ejson::EJsonDocument;
+use crate::ejson::{EJsonDocument, number_of};
 use crate::query::Namespace;
 
 const ID_INDEX: &str = "_id_";
@@ -46,6 +46,99 @@ pub struct CreateIndexRequest {
     pub hidden: bool,
     pub expire_after_seconds: Option<u32>,
     pub partial_filter: Option<EJsonDocument>,
+}
+
+/// An index build running on the collection, as `$currentOp` reports it.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct IndexBuild {
+    pub names: Vec<String>,
+    /// What the build is doing, e.g. "Index Build: scanning collection".
+    pub phase: Option<String>,
+    pub done: Option<f64>,
+    pub total: Option<f64>,
+    pub seconds: f64,
+}
+
+/// Index builds running on the collection. Other users' builds need the `inprog` privilege;
+/// without it, only the user's own are seen.
+pub async fn builds(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+) -> Result<Vec<IndexBuild>, CoreError> {
+    let pipeline = |all_users: bool| {
+        vec![
+            doc! { "$currentOp": { "allUsers": all_users, "idleConnections": false } },
+            doc! { "$match": {
+                "command.createIndexes": &namespace.collection,
+                "$or": [
+                    { "command.$db": &namespace.database },
+                    { "ns": { "$regex": format!("^{}\\.", regex_escape(&namespace.database)) } },
+                ],
+            } },
+        ]
+    };
+    let admin = handle.client.database("admin");
+    let mut cursor = match admin.aggregate(pipeline(true)).await {
+        Err(error)
+            if matches!(*error.kind, mongodb::error::ErrorKind::Command(ref command)
+                if command.code == 13) =>
+        {
+            admin.aggregate(pipeline(false)).await?
+        }
+        result => result?,
+    };
+    let mut ops = Vec::new();
+    while cursor.advance().await? {
+        ops.push(cursor.deserialize_current()?);
+    }
+    Ok(merge_builds(&ops))
+}
+
+fn regex_escape(text: &str) -> String {
+    text.chars()
+        .flat_map(|c| {
+            let special = "\\.+*?()|[]{}^$".contains(c);
+            special
+                .then_some('\\')
+                .into_iter()
+                .chain(std::iter::once(c))
+        })
+        .collect()
+}
+
+/// One entry per build: the client waiting on a build and the thread doing it both show up,
+/// and only the latter reports progress.
+fn merge_builds(ops: &[Document]) -> Vec<IndexBuild> {
+    let mut builds: Vec<IndexBuild> = Vec::new();
+    for op in ops {
+        let names: Vec<String> = op
+            .get_document("command")
+            .and_then(|command| command.get_array("indexes"))
+            .map(|indexes| {
+                indexes
+                    .iter()
+                    .filter_map(Bson::as_document)
+                    .filter_map(|index| index.get_str("name").ok().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let progress = op.get_document("progress").ok();
+        let build = IndexBuild {
+            names,
+            phase: op.get_str("msg").ok().map(str::to_owned),
+            done: progress.and_then(|p| p.get("done")).map(number_of),
+            total: progress.and_then(|p| p.get("total")).map(number_of),
+            seconds: op.get("secs_running").map_or(0.0, number_of),
+        };
+        match builds.iter_mut().find(|known| known.names == build.names) {
+            Some(known) if known.total.is_none() => *known = build,
+            Some(_) => {}
+            None => builds.push(build),
+        }
+    }
+    builds
 }
 
 pub async fn list(
@@ -260,5 +353,26 @@ mod tests {
             Some(EJsonDocument::from(doc! { "active": true }))
         );
         assert_eq!(info.definition, EJsonDocument::from(spec));
+    }
+
+    #[test]
+    fn builds_merge_the_waiting_client_with_the_building_thread() {
+        let command = doc! { "createIndexes": "orders", "indexes": [{ "name": "status_1" }] };
+        let builds = merge_builds(&[
+            doc! { "command": command.clone(), "secs_running": 4_i64 },
+            doc! {
+                "command": command,
+                "msg": "Index Build: scanning collection",
+                "progress": { "done": 450_i64, "total": 1000_i64 },
+                "secs_running": 4_i64,
+            },
+        ]);
+        assert_eq!(builds.len(), 1);
+        assert_eq!(builds[0].names, ["status_1"]);
+        assert_eq!(
+            (builds[0].done, builds[0].total),
+            (Some(450.0), Some(1000.0))
+        );
+        assert_eq!(regex_escape("a.b"), "a\\.b");
     }
 }

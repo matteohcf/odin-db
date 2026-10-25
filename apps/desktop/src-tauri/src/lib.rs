@@ -91,6 +91,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::documents::preview_aggregation,
             commands::indexes::index_advice,
             commands::indexes::list_indexes,
+            commands::indexes::index_builds,
             commands::indexes::create_index,
             commands::indexes::drop_index,
             commands::indexes::set_index_hidden,

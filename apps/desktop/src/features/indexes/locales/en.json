@@ -66,5 +66,11 @@
     "confirm": "Drop index",
     "dropped": "Index {{name}} dropped"
   },
-  "readOnly": "Read-only: indexes can be viewed but not changed."
+  "readOnly": "Read-only: indexes can be viewed but not changed.",
+  "builds": {
+    "label": "Index builds in progress",
+    "building": "Building {{names}}",
+    "seconds_one": "{{count}} s",
+    "seconds_other": "{{count}} s"
+  }
 }

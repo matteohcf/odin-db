@@ -23,10 +23,15 @@ export function useCreateIndex(connectionId: ConnectionId, namespace: Namespace)
     mutationFn: (request: CreateIndexRequest) =>
       call(commands.createIndex(connectionId, namespace, request)),
     meta: { handlesErrors: true },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: indexKeys(connectionId, namespace) }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: indexKeys(connectionId, namespace) });
+      void queryClient.invalidateQueries({ queryKey: indexBuildsKey(connectionId, namespace) });
+    },
   });
 }
+
+export const indexBuildsKey = (connectionId: ConnectionId, namespace: Namespace) =>
+  ["index-builds", connectionId, namespace.database, namespace.collection] as const;
 
 export function useDropIndex(connectionId: ConnectionId, namespace: Namespace) {
   const queryClient = useQueryClient();

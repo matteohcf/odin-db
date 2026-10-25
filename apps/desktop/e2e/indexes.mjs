@@ -85,6 +85,14 @@ await check("create an index, picking its field from suggestions", async () => {
   await page.getByRole("row", { name: /age_-1/ }).waitFor();
 });
 
+await check("a build in progress shows its progress, then goes away", async () => {
+  const builds = page.getByRole("list", { name: "Index builds in progress" });
+  await builds.getByText("Building age_-1").waitFor({ timeout: 20_000 });
+  await builds.getByText(/scanning collection/).waitFor();
+  await shot("build");
+  await builds.waitFor({ state: "detached", timeout: 30_000 });
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

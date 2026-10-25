@@ -160,6 +160,7 @@ export const commands = {
 	/**  Indexes the server's slow operations call for, from its log and any profiler that is on. */
 	indexAdvice: (connectionId: ConnectionId) => typedError<AdvisorReport, IpcError>(__TAURI_INVOKE("index_advice", { connectionId })),
 	listIndexes: (connectionId: ConnectionId, namespace: Namespace) => typedError<IndexInfo[], IpcError>(__TAURI_INVOKE("list_indexes", { connectionId, namespace })),
+	indexBuilds: (connectionId: ConnectionId, namespace: Namespace) => typedError<IndexBuild[], IpcError>(__TAURI_INVOKE("index_builds", { connectionId, namespace })),
 	/**  Returns the name of the new index. */
 	createIndex: (connectionId: ConnectionId, namespace: Namespace, request: CreateIndexRequest) => typedError<string, IpcError>(__TAURI_INVOKE("create_index", { connectionId, namespace, request })),
 	dropIndex: (connectionId: ConnectionId, namespace: Namespace, name: string) => typedError<null, IpcError>(__TAURI_INVOKE("drop_index", { connectionId, namespace, name })),
@@ -913,6 +914,16 @@ export type IndexAdvice = {
 	example: EJsonDocument,
 	/**  An existing index that already starts with these keys: the planner chose not to use it. */
 	existing: string | null,
+};
+
+/**  An index build running on the collection, as `$currentOp` reports it. */
+export type IndexBuild = {
+	names: string[],
+	/**  What the build is doing, e.g. "Index Build: scanning collection". */
+	phase: string | null,
+	done: number | null,
+	total: number | null,
+	seconds: number | null,
 };
 
 export type IndexDifference = {

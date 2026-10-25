@@ -46,6 +46,10 @@ const fail = (kind: IpcError["kind"], message: string, detail: string | null = n
   throw { kind, message, detail } satisfies IpcError;
 };
 
+/** Index builds the mock pretends to run, as `create_index` starts them. */
+const indexBuilds: { key: string; name: string; startedAt: number }[] = [];
+const MOCK_BUILD_MS = 6_000;
+
 /** What the fake bastion presents, as an SSH server's SHA-256 host key fingerprint. */
 const BASTION_KEY = "SHA256:q6z8m1Kc0rTQ3o5vY2bX9eW4nJ7hLsF0aUuD1pG8kM4";
 
@@ -1848,7 +1852,23 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       spec.expireAfterSeconds = num(request.expireAfterSeconds);
     if (request.partialFilter) spec.partialFilterExpression = request.partialFilter;
     indexesOf(coll).push(spec);
+    indexBuilds.push({ key: `${ns.database}.${ns.collection}`, name, startedAt: Date.now() });
     return name;
+  },
+  index_builds: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const now = Date.now();
+    // A build "takes" a few seconds, long enough to see its progress.
+    return indexBuilds
+      .filter((build) => build.key === `${ns.database}.${ns.collection}`)
+      .filter((build) => now - build.startedAt < MOCK_BUILD_MS)
+      .map((build) => ({
+        names: [build.name],
+        phase: "Index Build: scanning collection",
+        done: Math.round(((now - build.startedAt) / MOCK_BUILD_MS) * 1000),
+        total: 1000,
+        seconds: Math.round((now - build.startedAt) / 1000),
+      }));
   },
   get_validation: (args) => {
     const ns = args.namespace as { database: string; collection: string };
