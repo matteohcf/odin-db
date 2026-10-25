@@ -2,6 +2,7 @@ import { BookMarked, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { pipelineToText, useSavedPipelines } from "@/features/aggregation";
 import { useOpenCollection, useProfiles } from "@/features/connections";
@@ -97,11 +98,9 @@ export function QueriesView() {
         </div>
       </PageHeader>
       {items.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <BookMarked className="size-5 text-muted-foreground" />
-          <p className="font-medium text-sm">{t("empty")}</p>
-          <p className="max-w-sm text-muted-foreground text-xs">{t("emptyHint")}</p>
-        </div>
+        <EmptyState icon={BookMarked} title={t("empty")}>
+          {t("emptyHint")}
+        </EmptyState>
       ) : shown.length === 0 ? (
         <p className="p-6 text-center text-muted-foreground text-sm">{t("noMatch", { query })}</p>
       ) : (

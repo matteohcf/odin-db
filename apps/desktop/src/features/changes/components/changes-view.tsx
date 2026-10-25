@@ -11,6 +11,7 @@ import { cn } from "@odin-db/ui/lib/utils";
 import { Pause, Play, RadioTower, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { EmptyState } from "@/components/empty-state";
 import { useOperation } from "@/hooks/use-operation";
 import { createFrameBatcher } from "@/lib/frame-batcher";
 import { call } from "@/lib/ipc";
@@ -135,16 +136,15 @@ export function ChangesView({
         </Button>
       </div>
       {status === "failed" ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <RadioTower className="size-5 text-muted-foreground" />
-          <p className="max-w-md text-muted-foreground text-sm selectable">{feed.state.error}</p>
-        </div>
+        <EmptyState icon={RadioTower}>{feed.state.error}</EmptyState>
       ) : visible.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <RadioTower className={cn("size-5 text-muted-foreground", live && "animate-pulse")} />
-          <p className="font-medium text-sm">{t("waiting")}</p>
-          <p className="max-w-md text-muted-foreground text-xs">{t("waitingHint")}</p>
-        </div>
+        <EmptyState
+          icon={RadioTower}
+          iconClassName={live ? "animate-pulse" : undefined}
+          title={t("waiting")}
+        >
+          {t("waitingHint")}
+        </EmptyState>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto">
           {visible.map(({ seq, change }) => (

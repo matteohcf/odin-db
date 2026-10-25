@@ -21,6 +21,7 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import { EmptyState } from "@/components/empty-state";
 import type { JsonObject } from "@/lib/ejson-display";
 import {
   type Aggregate,
@@ -79,12 +80,7 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
   );
 
   if (!spec || !role || !data) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
-        <ChartNoAxesColumn className="size-5" />
-        <p className="max-w-sm text-sm">{t("chart.noFields")}</p>
-      </div>
-    );
+    return <EmptyState icon={ChartNoAxesColumn}>{t("chart.noFields")}</EmptyState>;
   }
 
   const numbers = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 2 });

@@ -2,9 +2,10 @@ import type { ConnectionInfo, FieldSummary, JsonValue, Namespace } from "@odin-d
 import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import { cn } from "@odin-db/ui/lib/utils";
-import { CircleAlert, Loader2, RotateCw } from "lucide-react";
+import { CircleAlert, FileSearch, Loader2, RotateCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { EmptyState } from "@/components/empty-state";
 import { describeEJson, isJsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { SCHEMA_SAMPLE, useSchema } from "../api/use-schema";
@@ -64,7 +65,7 @@ export function SchemaView({
             {t("failed", { message: errorMessage(schema.error) })}
           </p>
         ) : fields.length === 0 ? (
-          <p className="p-10 text-center text-muted-foreground">{t("empty")}</p>
+          <EmptyState icon={FileSearch}>{t("empty")}</EmptyState>
         ) : (
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-sidebar text-left text-muted-foreground text-xs">
