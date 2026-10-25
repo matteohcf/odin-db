@@ -3,7 +3,7 @@
 Open source desktop client for MongoDB (free alternative to Studio 3T).
 Tauri 2 (Rust) + React + TypeScript. Windows, macOS, Linux.
 
-**Status: pre-release.** V1 features are built; release packaging is next (platform spike results in `docs/milestone-0.md`). Every structural decision is recorded in `docs/adr/`.
+**Status: released.** Versions are cut by release-please and ship signed updates (`docs/releasing.md`); installers are not code-signed yet. Every structural decision is recorded in `docs/adr/`.
 Read the relevant ADR before touching an area. A change that contradicts an ADR
 requires a new ADR that supersedes it — never silently diverge.
 

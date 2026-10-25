@@ -9,26 +9,26 @@
 
 Open source desktop client for MongoDB. A free alternative to Studio 3T, built with Tauri 2 (Rust) and React.
 
-> **Status: pre-release.** The v1 feature set works; it has not been through real-world use yet. Not ready for production data.
+> **Status: early releases.** Installers ship for every platform and update themselves. Every feature is covered by tests against MongoDB 6.0, 7.0 and 8.0, but the project is young: keep backups of data you care about, and use read-only connections for production.
 
 ## Features
 
-- **Connections**: connection string or form (SRV, TLS, auth, replica sets), passwords in the OS keychain, SSH tunnels through a bastion (password or private key, host keys pinned), read-only profiles enforced in the backend, a color per connection shown on its tabs and collections, import and export of connections (also from MongoDB Compass), live status when a server stops answering; a resizable sidebar with a filter and favorite collections.
-- **Queries**: filter, sort and projection editors that suggest the collection's fields, operators, BSON constructors and the values of enum-like fields; saved and recent queries; Explain with index suggestions; a visual filter builder; SQL SELECT queries translated to MongoDB; Query Code turns a query or pipeline into mongosh, Node.js, Python, Java, C# or Go.
-- **Results**: a fast virtualized table (resize, hide and sort columns, Shift-click for multi-field sorts, edit or filter by a single value, distinct values with counts) a list of expandable document trees, or the documents as highlighted text (JSON view); documents edited in mongosh syntax that keeps every BSON type; update or delete every document matching a filter.
-- **AI query assistant** (optional): describe the documents in plain language and a small model writes the find query, shown for review before it runs. Models run offline inside the app (downloaded on request, with a recommendation for your machine) or in your Ollama; only field names and types reach the model, never your data.
-- **Aggregation builder**: stages with live previews and suggestions based on the previous stage's output; saved pipelines.
-- **Collections**: schema analysis, validation rules (with a $jsonSchema generated from the documents), storage stats, indexes (usage, unused ones flagged, hide before dropping), and creating, renaming and dropping databases and collections.
-- **Settings**: language (English, Italian), theme, zoom, editor and shell fonts, result paging, query history.
-- **Data movement**: JSON and CSV import (insert, replace or merge by `_id`) and export of collections and whole databases; copy of collections and databases between connections, with options, views and indexes; compare two collections, also across connections, document by document, and sync the differences; backup and restore with the bundled mongodump and mongorestore, selective restores, scheduled backups with retention and history.
+- **Connections**: connection string or form (SRV, TLS with certificate files, SCRAM, X.509, LDAP, AWS and OIDC authentication, replica sets), passwords in the OS keychain, SSH tunnels through a bastion (host keys pinned), read-only profiles enforced in the backend, a color per connection on its tree, tabs and collections, a connection manager (⌘O / Ctrl+O), folders, import and export of connections (also from MongoDB Compass), live status when a server stops answering.
+- **Queries**: filter, sort and projection editors that suggest fields, operators, BSON constructors and values; collation, hint and time limit; saved and recent queries; Explain with a visual plan and index suggestions; a visual filter builder; SQL SELECT translated to MongoDB; Query Code turns a query or pipeline into mongosh, Node.js, Python, Java, C# or Go.
+- **Results**: a fast virtualized table (resize, pin, hide and sort columns, step into nested fields, edit a value in place, filter by a value, distinct values), expandable document trees, a JSON view and quick charts (lines over time, bars, histograms, scatter plots, points on a map); edit documents in mongosh syntax that keeps every BSON type; update, delete, rename, convert or remove a field across the documents matching a filter, with Undo.
+- **AI query assistant** (optional): describe the documents in plain language and a small model writes the find query, shown for review before it runs. Models run offline inside the app or in your Ollama; only field names and types reach the model, never your data.
+- **Aggregation builder**: stages with live previews and suggestions from the previous stage's output, Explain, saved pipelines, a text mode, and creating a view from the pipeline.
+- **Collections**: schema analysis (of a filter's documents too), validation rules with a `$jsonSchema` generated from the documents and a search for documents breaking them, indexes (usage, unused ones flagged, hide before dropping, TTL, partial, collation, builds in progress), capped, time series and clustered collections, views, live changes, GridFS files, and creating, renaming and dropping databases and collections.
+- **Data movement**: JSON and CSV import and export of collections and whole databases; copy collections and databases between connections; compare two collections document by document and sync the differences; compare two databases' schema and indexes; backup and restore with the bundled mongodump and mongorestore, scheduled backups with retention and history; search a value across every collection.
+- **Database diagram**: collections and the references between them, inferred from the data, with notes and areas; copy as Mermaid or save as an image.
 - **Shell**: the real mongosh in a tab, downloaded and verified on request.
-- **Users and roles**: list every user with their roles, create users with generated passwords, edit roles, change passwords.
-- **Server monitor**: live operations per second, connections, network and memory, the running operations with a kill button, and a query profiler that lists slow queries and flags those missing an index.
-- **Everywhere**: command palette (⌘K / Ctrl+K), keyboard shortcuts (⌘/ / Ctrl+/), light and dark themes, Windows, macOS and Linux.
+- **Users and roles**: users with their roles, generated passwords, custom roles with their privileges.
+- **Server monitor**: operations per second, connections, network and memory, replica set members and lag, sharding, the busiest collections, running operations with a kill button, an index advisor from the server's slow operations, and a query profiler.
+- **Everywhere**: command palette (⌘K / Ctrl+K), customizable keyboard shortcuts, light and dark themes, English and Italian, automatic updates, accessible (WCAG 2.2 AA contrast, full keyboard use), Windows, macOS and Linux.
 
 ## Installing
 
-Installers for macOS (Apple silicon and Intel), Windows and Linux (AppImage, deb, rpm) are attached to each [release](https://github.com/matteohcf/odin-db/releases). mongodump and mongorestore are included. The shell uses your installed [mongosh](https://www.mongodb.com/try/download/shell), or downloads and verifies it in one click.
+Installers for macOS (Apple silicon and Intel), Windows and Linux (AppImage, deb, rpm) are attached to each [release](https://github.com/matteohcf/odin-db/releases), with `SHA256SUMS.txt` to check a download. mongodump and mongorestore are included. The shell uses your installed [mongosh](https://www.mongodb.com/try/download/shell), or downloads and verifies it in one click. Once installed, the app offers new versions itself (signed updates, nothing installs without a click).
 
 Early builds are not code-signed yet:
 
