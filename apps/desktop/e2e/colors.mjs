@@ -97,16 +97,16 @@ await check("an open colored connection tints its whole subtree", async () => {
     .waitFor();
   await page.waitForTimeout(300);
   const production = await classOf(/^Production \(Atlas\)/);
-  if (!production.includes("bg-red-500/14")) throw new Error(`connection: ${production}`);
+  if (!production.includes("bg-red-500/10")) throw new Error(`connection: ${production}`);
   const database = await tree
     .locator("li[data-index]")
     .filter({ has: page.getByRole("button", { name: /^analytics/ }) })
     .nth(1)
     .getAttribute("class");
-  if (!database?.includes("bg-red-500/14")) throw new Error(`database: ${database}`);
-  if ((await classOf(/^Local dev/)).includes("/14")) throw new Error("uncolored connection tinted");
+  if (!database?.includes("bg-red-500/10")) throw new Error(`database: ${database}`);
+  if ((await classOf(/^Local dev/)).includes("/10")) throw new Error("uncolored connection tinted");
   // Like Compass, a colored connection is tinted even while closed.
-  if (!(await classOf(/^Staging/)).includes("bg-orange-500/14"))
+  if (!(await classOf(/^Staging/)).includes("bg-orange-500/10"))
     throw new Error("closed connection not tinted");
 });
 
