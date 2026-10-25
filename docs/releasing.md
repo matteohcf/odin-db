@@ -12,6 +12,7 @@ Releases are driven by Conventional Commits (ADR-0022) and built by `.github/wor
 1. Every push to `main` updates a **release PR** with the next version (from `feat:` / `fix:` / breaking changes) and the changelog.
 2. Merging that PR tags `vX.Y.Z` and creates the GitHub release.
 3. The build matrix then uploads the installers to it: macOS `.dmg` (Apple silicon and Intel), Windows `.msi` and NSIS `.exe`, Linux `.AppImage`, `.deb` and `.rpm`. mongodump and mongorestore are built from source and bundled (ADR-0033).
+4. A last job adds `SHA256SUMS.txt` with every file's SHA-256, so a download can be checked: `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`.
 
 ## Checking packaging without releasing
 
