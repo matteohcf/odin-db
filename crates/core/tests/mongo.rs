@@ -124,6 +124,36 @@ impl Fixture {
         self.manager.get(info.id).await.expect("registered")
     }
 
+    /// Connects as `user`, for a server started with access control.
+    async fn connect_as(&self, user: &str, password: &str) -> Arc<ConnectionHandle> {
+        let profile = profiles::create(
+            &self.storage,
+            &self.secrets,
+            ProfileInput {
+                name: format!("test {user}"),
+                connection_string: format!(
+                    "{}&authSource=admin",
+                    self.uri
+                        .replace("mongodb://", &format!("mongodb://{user}@"))
+                ),
+                password: None,
+                read_only: false,
+                color: None,
+                ssh: None,
+                ssh_secret: None,
+                ssh_host_key: None,
+                group: None,
+            },
+        )
+        .expect("profile created");
+        let info = self
+            .manager
+            .connect(&profile, Some(Secret::new(password)), None)
+            .await
+            .expect("connects");
+        self.manager.get(info.id).await.expect("registered")
+    }
+
     async fn seed(&self, handle: &ConnectionHandle, ns: &Namespace, count: i32) {
         let docs: Vec<Document> = (0..count).map(|i| doc! { "n": i }).collect();
         handle
@@ -2534,6 +2564,65 @@ async fn manages_users_and_their_roles() {
             .expect("users")
             .iter()
             .any(|u| u.user == "reporter")
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn lists_the_custom_roles_a_user_may_view() {
+    use odin_core::users::{Privilege, Resource, create_role, create_user, list_custom_roles};
+
+    let fx = Fixture::start_with(
+        Mongo::default()
+            .with_env_var("MONGO_INITDB_ROOT_USERNAME", "root")
+            .with_env_var("MONGO_INITDB_ROOT_PASSWORD", "root-pw"),
+    )
+    .await;
+    let root = fx.connect_as("root", "root-pw").await;
+    for database in ["shop", "analytics"] {
+        root.client
+            .database(database)
+            .collection::<Document>("things")
+            .insert_one(doc! { "n": 1 })
+            .await
+            .expect("seeded");
+    }
+    let find_orders = Privilege {
+        resource: Resource::Namespace {
+            db: "shop".into(),
+            collection: "orders".into(),
+        },
+        actions: vec!["find".into()],
+    };
+    create_role(&root, "shop", "ordersReader", &[find_orders], &[])
+        .await
+        .expect("role created");
+    // Lists every database, but may view the roles of shop only.
+    let roles = [
+        odin_core::users::RoleRef {
+            role: "readAnyDatabase".into(),
+            db: "admin".into(),
+        },
+        odin_core::users::RoleRef {
+            role: "userAdmin".into(),
+            db: "shop".into(),
+        },
+    ];
+    create_user(
+        &root,
+        "admin",
+        "shop-admin",
+        &Secret::new("shop-pw"),
+        &roles,
+    )
+    .await
+    .expect("user created");
+
+    let limited = fx.connect_as("shop-admin", "shop-pw").await;
+    let listed = list_custom_roles(&limited).await.expect("listed");
+    assert_eq!(
+        listed.iter().map(|r| r.role.as_str()).collect::<Vec<_>>(),
+        ["ordersReader"]
     );
 }
 

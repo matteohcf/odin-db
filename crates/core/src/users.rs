@@ -267,12 +267,23 @@ pub async fn list_custom_roles(handle: &ConnectionHandle) -> Result<Vec<CustomRo
     names.sort();
     names.dedup();
     let mut roles = Vec::new();
+    // Roles of the databases the user may not view are left out; an error only when it is all.
+    let mut refused = None;
+    let mut read_any = false;
     for name in names {
-        let reply = handle
+        let reply = match handle
             .client
             .database(&name)
             .run_command(doc! { "rolesInfo": 1, "showPrivileges": true })
-            .await?;
+            .await
+        {
+            Err(error) if unauthorized(&error) => {
+                refused = Some(error);
+                continue;
+            }
+            result => result?,
+        };
+        read_any = true;
         if let Ok(found) = reply.get_array("roles") {
             roles.extend(
                 found
@@ -282,8 +293,15 @@ pub async fn list_custom_roles(handle: &ConnectionHandle) -> Result<Vec<CustomRo
             );
         }
     }
+    if let (false, Some(error)) = (read_any, refused) {
+        return Err(error.into());
+    }
     roles.sort_by(|a, b| (&a.db, &a.role).cmp(&(&b.db, &b.role)));
     Ok(roles)
+}
+
+fn unauthorized(error: &mongodb::error::Error) -> bool {
+    matches!(*error.kind, mongodb::error::ErrorKind::Command(ref command) if command.code == 13)
 }
 
 fn to_custom_role(role: &Document) -> CustomRole {
