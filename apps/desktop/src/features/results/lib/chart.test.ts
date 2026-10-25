@@ -97,7 +97,13 @@ describe("chartData", () => {
     const data = chartData(orders, "number", { x: "total", y: null, aggregate: "sum" });
     expect(data.kind).toBe("histogram");
     expect(data.points.reduce((sum, point) => sum + (point.y ?? 0), 0)).toBe(4);
-    expect(data.points.at(-1)?.to).toBe(10);
+    expect(data.points.at(-1)).toMatchObject({ x: 10, to: 10.5, y: 1 });
+    // Round edges, whatever the range.
+    const totals = [3.2, 45.6, 893.9].map((total) => ({ total: { $numberDouble: String(total) } }));
+    const bins = chartData(totals, "number", { x: "total", y: null, aggregate: "sum" }).points;
+    expect(bins[0]).toMatchObject({ x: 0, to: 50, y: 2 });
+    expect(bins.at(-1)).toMatchObject({ x: 850, to: 900, y: 1 });
+    expect(bins).toHaveLength(18);
     const scatter = chartData(orders, "number", { x: "total", y: "total", aggregate: "sum" });
     expect(scatter.points).toContainEqual({ x: 7, y: 7 });
   });

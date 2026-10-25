@@ -324,6 +324,18 @@ function timeSeries(
   return { kind: "line", unit, points, missing };
 }
 
+/** The smallest 1, 2 or 5 times a power of ten that is at least `raw`. */
+function niceStep(raw: number): number {
+  const power = 10 ** Math.floor(Math.log10(raw));
+  return ([1, 2, 5, 10].find((m) => m * power >= raw) ?? 10) * power;
+}
+
+/** Drops the float noise of adding steps (0.30000000000000004), keeping the step's precision. */
+function round(value: number, step: number): number {
+  const digits = Math.max(0, -Math.floor(Math.log10(step)));
+  return Number(value.toFixed(digits));
+}
+
 function histogram(rows: readonly JsonObject[], spec: ChartSpec): ChartData {
   const values: number[] = [];
   for (const row of rows) {
@@ -333,16 +345,18 @@ function histogram(rows: readonly JsonObject[], spec: ChartSpec): ChartData {
   const missing = rows.length - values.length;
   if (values.length === 0) return { kind: "histogram", points: [], missing };
   const [low, high] = range(values);
-  const bins = high === low ? 1 : HISTOGRAM_BINS;
-  const width = (high - low) / bins || 1;
+  // Round bin edges (0–50, 50–100) rather than fractions of the range.
+  const width = niceStep((high - low) / HISTOGRAM_BINS || 1);
+  const start = Math.floor(low / width) * width;
+  const bins = Math.floor((high - start) / width) + 1;
   const counts = new Array<number>(bins).fill(0);
   for (const value of values) {
-    const index = Math.min(Math.floor((value - low) / width), bins - 1);
+    const index = Math.min(Math.floor((value - start) / width), bins - 1);
     counts[index] = (counts[index] ?? 0) + 1;
   }
   const points = counts.map((count, index) => ({
-    x: low + index * width,
-    to: low + (index + 1) * width,
+    x: round(start + index * width, width),
+    to: round(start + (index + 1) * width, width),
     y: count,
   }));
   return { kind: "histogram", points, missing };

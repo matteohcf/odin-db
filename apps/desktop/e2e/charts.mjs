@@ -67,6 +67,8 @@ await check("a number alone is a histogram, against another a scatter", async ()
   await chart.locator(".recharts-bar-rectangle").first().waitFor();
   if (await page.getByRole("combobox", { name: "Aggregate" }).isVisible())
     throw new Error("aggregate on a histogram");
+  // Past the bars' grow-in animation.
+  await page.waitForTimeout(1200);
   await shot("03-histogram");
   await pick("Value", "number");
   await chart.locator(".recharts-scatter-symbol").first().waitFor();
