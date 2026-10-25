@@ -51,7 +51,9 @@ export const useAnnotations = create<AnnotationsState>()(
             links: current.links.filter((link) => linkId(link) !== id),
           })),
         hideLink: (key, id) =>
-          edit(key, (current) => ({ ...current, hidden: [...current.hidden, id] })),
+          edit(key, (current) =>
+            current.hidden.includes(id) ? current : { ...current, hidden: [...current.hidden, id] },
+          ),
         showHidden: (key) => edit(key, (current) => ({ ...current, hidden: [] })),
         addNote: (key, note) =>
           edit(key, (current) => ({ ...current, notes: [...current.notes, note] })),
