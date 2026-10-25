@@ -20,6 +20,14 @@ import {
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
 import { Input } from "@odin-db/ui/components/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CircleAlert,
@@ -99,77 +107,83 @@ export function UsersView({
             {t("none")}
           </div>
         ) : (
-          <table className="w-full overflow-hidden rounded-lg border text-sm">
-            <thead className="bg-muted/40 text-left text-muted-foreground text-xs">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t("table.user")}</th>
-                <th className="px-3 py-2 font-medium">{t("table.database")}</th>
-                <th className="px-3 py-2 font-medium">{t("table.roles")}</th>
-                <th className="px-3 py-2">
-                  <span className="sr-only">{t("columns.actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.data.map((user) => (
-                <tr key={`${user.db}.${user.user}`} className="group border-t align-top">
-                  <td className="px-3 py-2.5 font-medium selectable">{user.user}</td>
-                  <td className="px-3 py-2.5 font-mono text-muted-foreground text-xs">{user.db}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles.length === 0 ? (
-                        <span className="text-muted-foreground text-xs">{t("table.noRoles")}</span>
-                      ) : (
-                        user.roles.map((role) => (
-                          <Badge
-                            key={`${role.role}@${role.db}`}
-                            variant="secondary"
-                            className="font-mono text-[11px]"
-                          >
-                            {role.role}
-                            <span className="text-muted-foreground">@{role.db}</span>
-                          </Badge>
-                        ))
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5 text-right">
-                    {writable && (
-                      <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          aria-label={t("actions.roles", { name: user.user })}
-                          onClick={() => setEditing({ kind: "roles", user })}
-                        >
-                          <Pencil />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          aria-label={t("actions.password", { name: user.user })}
-                          onClick={() => setEditing({ kind: "password", user })}
-                        >
-                          <KeyRound />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 hover:text-destructive"
-                          aria-label={t("actions.drop", { name: user.user })}
-                          onClick={() => setEditing({ kind: "drop", user })}
-                        >
-                          <Trash2 />
-                        </Button>
+          <div className="overflow-hidden rounded-lg border">
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>{t("table.user")}</TableHead>
+                  <TableHead>{t("table.database")}</TableHead>
+                  <TableHead>{t("table.roles")}</TableHead>
+                  <TableHead>
+                    <span className="sr-only">{t("columns.actions")}</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.data.map((user) => (
+                  <TableRow key={`${user.db}.${user.user}`} className="group align-top">
+                    <TableCell className="py-2.5 font-medium selectable">{user.user}</TableCell>
+                    <TableCell className="py-2.5 font-mono text-muted-foreground text-xs">
+                      {user.db}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles.length === 0 ? (
+                          <span className="text-muted-foreground text-xs">
+                            {t("table.noRoles")}
+                          </span>
+                        ) : (
+                          user.roles.map((role) => (
+                            <Badge
+                              key={`${role.role}@${role.db}`}
+                              variant="secondary"
+                              className="font-mono text-[11px]"
+                            >
+                              {role.role}
+                              <span className="text-muted-foreground">@{role.db}</span>
+                            </Badge>
+                          ))
+                        )}
                       </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </TableCell>
+                    <TableCell className="px-2 py-1.5 text-right">
+                      {writable && (
+                        <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            aria-label={t("actions.roles", { name: user.user })}
+                            onClick={() => setEditing({ kind: "roles", user })}
+                          >
+                            <Pencil />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            aria-label={t("actions.password", { name: user.user })}
+                            onClick={() => setEditing({ kind: "password", user })}
+                          >
+                            <KeyRound />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 hover:text-destructive"
+                            aria-label={t("actions.drop", { name: user.user })}
+                            onClick={() => setEditing({ kind: "drop", user })}
+                          >
+                            <Trash2 />
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
 

@@ -36,7 +36,6 @@ export function PlanTree({ steps, plansConsidered }: PlanTreeProps) {
           return (
             // Steps are positional; the same stage can appear twice.
             <li
-              // biome-ignore lint/suspicious/noArrayIndexKey: steps have no identity besides order.
               key={index}
               className="flex items-center gap-3 border-t px-3 py-1.5 text-xs first:border-t-0"
               style={{ paddingLeft: `${0.75 + step.depth * 1.25}rem` }}

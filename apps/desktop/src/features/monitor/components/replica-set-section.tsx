@@ -1,5 +1,13 @@
 import { type ConnectionInfo, commands, type ReplicaMember } from "@odin-db/bindings";
 import { Badge } from "@odin-db/ui/components/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -39,22 +47,22 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
           {t("replica.failed", { message: errorMessage(status.error) })}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-3xl table-fixed text-xs">
-            <thead className="bg-muted/40 text-left text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t("replica.member")}</th>
-                <th className="w-32 px-3 py-2 font-medium">{t("replica.state")}</th>
-                <th className="w-28 px-3 py-2 text-right font-medium">{t("replica.lag")}</th>
-                <th className="w-20 px-3 py-2 text-right font-medium">{t("replica.ping")}</th>
-                <th className="w-24 px-3 py-2 text-right font-medium">{t("replica.uptime")}</th>
-                <th className="w-48 px-3 py-2 font-medium">{t("replica.syncSource")}</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-lg border">
+          <Table className="min-w-3xl table-fixed">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>{t("replica.member")}</TableHead>
+                <TableHead className="w-32">{t("replica.state")}</TableHead>
+                <TableHead className="w-28 text-right">{t("replica.lag")}</TableHead>
+                <TableHead className="w-20 text-right">{t("replica.ping")}</TableHead>
+                <TableHead className="w-24 text-right">{t("replica.uptime")}</TableHead>
+                <TableHead className="w-48">{t("replica.syncSource")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {status.data.members.map((member) => (
-                <tr key={member.name} className="border-t align-top">
-                  <td className="px-3 py-2">
+                <TableRow key={member.name} className="align-top">
+                  <TableCell>
                     <span className="font-mono">{member.name}</span>
                     {member.isSelf && (
                       <span className="ml-1.5 text-muted-foreground">{t("replica.self")}</span>
@@ -64,31 +72,31 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
                         {member.message}
                       </p>
                     )}
-                  </td>
-                  <td className="px-3 py-1.5">
+                  </TableCell>
+                  <TableCell className="py-1.5">
                     <MemberState member={member} />
-                  </td>
-                  <td
+                  </TableCell>
+                  <TableCell
                     className={cn(
                       "px-3 py-2 text-right tabular-nums",
                       (member.lagSeconds ?? 0) >= LAG_WARNING && "font-medium text-warning",
                     )}
                   >
                     {member.lagSeconds == null ? "—" : `${number(member.lagSeconds)} s`}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {member.pingMs == null ? "—" : `${number(member.pingMs)} ms`}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {member.healthy ? uptime(member.uptimeSeconds ?? 0) : "—"}
-                  </td>
-                  <td className="truncate px-3 py-2 font-mono text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="truncate font-mono text-muted-foreground">
                     {member.syncSource ?? "—"}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </section>

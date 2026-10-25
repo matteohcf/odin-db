@@ -119,7 +119,6 @@ export function ExplainDialog({
             <ol className="flex flex-col overflow-hidden rounded-md border">
               {plan.pipeline?.map((step, index) => (
                 <li
-                  // biome-ignore lint/suspicious/noArrayIndexKey: stages are positional.
                   key={index}
                   className="flex items-center gap-3 border-t px-3 py-1.5 text-xs first:border-t-0"
                 >

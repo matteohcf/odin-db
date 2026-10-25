@@ -22,6 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@odin-db/ui/components/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, CircleAlert, OctagonX, Pause, Play } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
@@ -216,48 +224,48 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
               {t("ops.none")}
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-hidden rounded-lg border">
               {/* Fixed columns: a long command truncates instead of pushing Kill out of view. */}
-              <table className="w-full min-w-3xl table-fixed text-xs">
-                <thead className="bg-muted/40 text-left text-muted-foreground">
-                  <tr>
-                    <th className="w-36 px-3 py-2 font-medium">{t("ops.op")}</th>
-                    <th className="w-40 px-3 py-2 font-medium">{t("ops.namespace")}</th>
-                    <th className="w-20 px-3 py-2 text-right font-medium">{t("ops.running")}</th>
-                    <th className="w-44 px-3 py-2 font-medium">{t("ops.client")}</th>
-                    <th className="px-3 py-2 font-medium">{t("ops.commandColumn")}</th>
-                    <th className="w-24 px-3 py-2">
+              <Table className="min-w-3xl table-fixed">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-36">{t("ops.op")}</TableHead>
+                    <TableHead className="w-40">{t("ops.namespace")}</TableHead>
+                    <TableHead className="w-20 text-right">{t("ops.running")}</TableHead>
+                    <TableHead className="w-44">{t("ops.client")}</TableHead>
+                    <TableHead>{t("ops.commandColumn")}</TableHead>
+                    <TableHead className="w-24">
                       <span className="sr-only">{t("ops.actions")}</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {ops.data?.map((op) => {
                     const command = op.command ? compactEJson(op.command).text : "";
                     return (
-                      <tr key={JSON.stringify(op.opid)} className="border-t align-top">
-                        <td className="px-3 py-2 font-medium">
+                      <TableRow key={JSON.stringify(op.opid)} className="align-top">
+                        <TableCell className="font-medium">
                           {op.op}
                           {op.waitingForLock && (
                             <span className="ml-1.5 text-warning">{t("ops.waiting")}</span>
                           )}
-                        </td>
-                        <td className="truncate px-3 py-2 font-mono" title={op.ns}>
+                        </TableCell>
+                        <TableCell className="truncate px-3 py-2 font-mono" title={op.ns}>
                           {op.ns || "—"}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {number(op.secsRunning ?? 0)} s
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground [overflow-wrap:anywhere]">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground [overflow-wrap:anywhere]">
                           {[op.appName, op.client].filter(Boolean).join(" · ") || op.description}
-                        </td>
-                        <td
+                        </TableCell>
+                        <TableCell
                           className="truncate px-3 py-2 font-mono text-muted-foreground"
                           title={command}
                         >
                           {command}
-                        </td>
-                        <td className="px-3 py-1.5 text-right">
+                        </TableCell>
+                        <TableCell className="py-1.5 text-right">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -269,12 +277,12 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
                             <OctagonX />
                             {t("kill.button")}
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </section>

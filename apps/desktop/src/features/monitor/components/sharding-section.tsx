@@ -1,5 +1,13 @@
 import { type ConnectionInfo, commands } from "@odin-db/bindings";
 import { Badge } from "@odin-db/ui/components/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { compactEJson } from "@/lib/ejson-display";
@@ -45,68 +53,71 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="overflow-hidden rounded-lg border">
-            <table className="w-full table-fixed text-xs">
-              <thead className="bg-muted/40 text-left text-muted-foreground">
-                <tr>
-                  <th className="w-32 px-3 py-2 font-medium">
+            <Table className="table-fixed">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-32">
                     {t("sharding.shards", { count: status.data.shards.length })}
-                  </th>
-                  <th className="px-3 py-2 font-medium">{t("sharding.hosts")}</th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                  <TableHead>{t("sharding.hosts")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {status.data.shards.map((shard) => (
-                  <tr key={shard.id} className="border-t align-top">
-                    <td className="px-3 py-2 font-mono">
+                  <TableRow key={shard.id} className="align-top">
+                    <TableCell className="font-mono">
                       {shard.id}
                       {shard.draining && (
                         <span className="ml-1.5 font-sans text-warning">
                           {t("sharding.draining")}
                         </span>
                       )}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-muted-foreground [overflow-wrap:anywhere]">
+                    </TableCell>
+                    <TableCell className="font-mono text-muted-foreground [overflow-wrap:anywhere]">
                       {shard.host}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="overflow-hidden rounded-lg border">
-            <table className="w-full table-fixed text-xs">
-              <thead className="bg-muted/40 text-left text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 font-medium">
+            <Table className="table-fixed">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>
                     {t("sharding.collections", { count: status.data.collections.length })}
-                  </th>
-                  <th className="w-1/2 px-3 py-2 font-medium">{t("sharding.key")}</th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                  <TableHead className="w-1/2">{t("sharding.key")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {status.data.collections.length === 0 ? (
-                  <tr>
-                    <td colSpan={2} className="px-3 py-4 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={2} className="px-3 py-4 text-center text-muted-foreground">
                       {t("sharding.noCollections")}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   status.data.collections.map((collection) => (
-                    <tr key={collection.namespace} className="border-t">
-                      <td className="truncate px-3 py-2 font-mono" title={collection.namespace}>
+                    <TableRow key={collection.namespace}>
+                      <TableCell
+                        className="truncate px-3 py-2 font-mono"
+                        title={collection.namespace}
+                      >
                         {collection.namespace}
-                      </td>
-                      <td className="truncate px-3 py-2 font-mono text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="truncate font-mono text-muted-foreground">
                         {compactEJson(collection.key).text}
                         {collection.unique && (
                           <span className="ml-1.5 font-sans">{t("sharding.unique")}</span>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}

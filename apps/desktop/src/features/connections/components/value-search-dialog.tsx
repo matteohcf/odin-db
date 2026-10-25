@@ -210,7 +210,6 @@ export function ValueSearchDialog({
               <ul className="flex flex-col">
                 {hits.map((hit, index) => (
                   // A document can match twice at different paths; order is stable.
-                  // biome-ignore lint/suspicious/noArrayIndexKey: hits have no identity besides order.
                   <li key={index}>
                     <button
                       type="button"
@@ -229,7 +228,6 @@ export function ValueSearchDialog({
                             {hit.quoted && '"'}
                             {highlightParts(hit.preview, pattern).map((part, at) =>
                               part.match ? (
-                                // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional.
                                 <mark key={at} className="rounded-sm bg-warning/25 text-foreground">
                                   {part.text}
                                 </mark>

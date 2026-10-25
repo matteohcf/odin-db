@@ -1,4 +1,12 @@
 import { type CollectionActivity, type ConnectionInfo, commands } from "@odin-db/bindings";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -55,23 +63,23 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
           {t("busiest.idle")}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-2xl table-fixed text-xs">
-            <thead className="bg-muted/40 text-left text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t("busiest.collection")}</th>
-                <th className="w-64 px-3 py-2 font-medium">{t("busiest.time")}</th>
-                <th className="w-28 px-3 py-2 text-right font-medium">{t("busiest.reads")}</th>
-                <th className="w-28 px-3 py-2 text-right font-medium">{t("busiest.writes")}</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-lg border">
+          <Table className="min-w-2xl table-fixed">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>{t("busiest.collection")}</TableHead>
+                <TableHead className="w-64">{t("busiest.time")}</TableHead>
+                <TableHead className="w-28 text-right">{t("busiest.reads")}</TableHead>
+                <TableHead className="w-28 text-right">{t("busiest.writes")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rates.map((rate) => (
-                <tr key={rate.namespace} className="border-t">
-                  <td className="truncate px-3 py-2 font-mono" title={rate.namespace}>
+                <TableRow key={rate.namespace}>
+                  <TableCell className="truncate px-3 py-2 font-mono" title={rate.namespace}>
                     {rate.namespace}
-                  </td>
-                  <td className="px-3 py-2">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
@@ -83,17 +91,17 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
                         {t("busiest.msPerSecond", { value: number(rate.busyMs) })}
                       </span>
                     </div>
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {number(rate.readsPerSecond)}/s
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {number(rate.writesPerSecond)}/s
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </section>
