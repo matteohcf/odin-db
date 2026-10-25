@@ -1,7 +1,11 @@
 {
   "sample_one": "Analizzato un campione casuale di al massimo {{count}} documento",
   "sample_other": "Analizzato un campione casuale di al massimo {{count, number}} documenti",
-  "resample": "Analizza di nuovo",
+  "filter": "Filtro",
+  "filterPlaceholder": "Tutti i documenti, oppure ad es. { status: \"active\" }",
+  "analyze": "Analizza",
+  "sampleMatching_one": "Analizzato un campione casuale di al massimo {{count}} documento corrispondente",
+  "sampleMatching_other": "Analizzato un campione casuale di al massimo {{count, number}} documenti corrispondenti",
   "analyzing": "Analisi di un campione della collezione…",
   "failed": "Impossibile analizzare la collezione: {{message}}",
   "empty": "Il campione non contiene documenti.",

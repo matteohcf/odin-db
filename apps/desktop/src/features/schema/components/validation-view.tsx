@@ -51,7 +51,7 @@ export function ValidationView({
     queryKey: key,
     queryFn: () => call(commands.getValidation(connection.id, namespace)),
   });
-  const schema = useSchema(connection.id, namespace);
+  const schema = useSchema(connection.id, namespace, null);
   const completionsFor = useQueryCompletions(schema.data ?? []);
   const [text, setText] = useState<string | null>(null);
   // Remounts the editor when its content is replaced from outside.

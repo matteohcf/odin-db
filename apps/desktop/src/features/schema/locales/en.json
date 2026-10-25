@@ -1,7 +1,11 @@
 {
   "sample_one": "Analyzed a random sample of up to {{count}} document",
   "sample_other": "Analyzed a random sample of up to {{count, number}} documents",
-  "resample": "Analyze again",
+  "filter": "Filter",
+  "filterPlaceholder": "All documents, or e.g. { status: \"active\" }",
+  "analyze": "Analyze",
+  "sampleMatching_one": "Analyzed a random sample of up to {{count}} matching document",
+  "sampleMatching_other": "Analyzed a random sample of up to {{count, number}} matching documents",
   "analyzing": "Analyzing a sample of the collection…",
   "failed": "Couldn't analyze the collection: {{message}}",
   "empty": "The sample has no documents.",

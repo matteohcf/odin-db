@@ -34,8 +34,34 @@ await check("number and date fields show their range", async () => {
   await age.getByText(/^\d+ – \d+$/).waitFor();
 });
 await check("analyze again resamples", async () => {
-  await page.getByRole("button", { name: "Analyze again" }).click();
+  await page.getByRole("button", { name: "Analyze", exact: true }).click();
   await page.locator("tbody tr", { hasText: "plan" }).first().waitFor();
+});
+await check("a filter analyzes the matching documents only", async () => {
+  const filter = page.getByRole("textbox", { name: "Filter" });
+  await filter.click();
+  await page.keyboard.type('plan: "pro"');
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Enter");
+  await page.getByText(/matching documents/).waitFor();
+  const plan = page.locator("tbody tr", { hasText: "plan" }).first();
+  await plan.getByRole("button", { name: '"pro"' }).waitFor();
+  await plan.getByRole("button", { name: '"free"' }).waitFor({ state: "detached" });
+  await page.screenshot({ path: `test-results/${scheme}-schema-filtered.png` });
+  // A broken filter is reported, and the last analysis stays.
+  await filter.click();
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.type("plan: ");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Enter");
+  await page.getByRole("alert").waitFor();
+  await plan.getByRole("button", { name: '"pro"' }).waitFor();
+  // Clearing it analyzes the whole collection again.
+  await filter.click();
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Enter");
+  await plan.getByRole("button", { name: '"free"' }).waitFor();
 });
 await check("a field stored with several types shows how they split", async () => {
   const row = page.getByRole("row", { name: /^score/ });

@@ -2466,7 +2466,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   sample_fields: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
-    return fieldPathsOf(coll.docs.slice(0, args.size as number));
+    const filter = args.filter as Doc | null;
+    const docs = filter ? coll.docs.filter((doc) => matchesFilter(doc, filter)) : coll.docs;
+    return fieldPathsOf(docs.slice(0, args.size as number));
   },
   find_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };

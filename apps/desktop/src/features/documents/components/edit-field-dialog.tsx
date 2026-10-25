@@ -12,10 +12,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InlineError } from "@/components/inline-error";
 import { QueryEditor } from "@/components/query-editor";
+import { QueryFieldFrame } from "@/components/query-field-frame";
 import { describeEJson } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { parseShellDocument, toShellSyntax } from "@/lib/shell-syntax";
-import { QueryFieldFrame } from "./query-field-frame";
 
 interface EditFieldDialogProps {
   field: string;

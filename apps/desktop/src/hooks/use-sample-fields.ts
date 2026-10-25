@@ -14,7 +14,7 @@ export function useSampleFields(connectionId: ConnectionId, namespace: Namespace
       namespace.database,
       namespace.collection,
     ] as const,
-    queryFn: () => call(commands.sampleFields(connectionId, namespace, SAMPLE_SIZE)),
+    queryFn: () => call(commands.sampleFields(connectionId, namespace, SAMPLE_SIZE, null)),
     staleTime: 5 * 60_000,
   });
 }

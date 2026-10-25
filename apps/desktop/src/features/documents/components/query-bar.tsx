@@ -7,12 +7,12 @@ import { ChevronDown, Gauge, Loader2, Play, SlidersHorizontal, X } from "lucide-
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QueryEditor } from "@/components/query-editor";
+import { QueryFieldFrame } from "@/components/query-field-frame";
 import { AskAiButton } from "@/features/ai";
 import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { emptyQueryForm, type QueryField, type QueryForm } from "../lib/query-form";
 import { useQueryHistory } from "../store/query-history-store";
-import { QueryFieldFrame } from "./query-field-frame";
 import { QueryHistoryMenu } from "./query-history-menu";
 import { VisualQueryBuilder } from "./visual-query-builder";
 
