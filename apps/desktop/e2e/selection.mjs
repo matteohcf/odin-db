@@ -1,5 +1,6 @@
 // Selecting values as text: dragging in the grid, double-clicking in the list view.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -29,7 +30,7 @@ const selectedText = () => page.evaluate(() => window.getSelection()?.toString()
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.removeItem("odin-results-view"));
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.locator("tbody tr").first().waitFor();

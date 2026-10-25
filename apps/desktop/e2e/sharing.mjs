@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { sidebarReady } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -22,8 +23,10 @@ const check = async (name, fn) => {
   }
 };
 const aside = () => page.getByRole("complementary");
+// Imported connections are saved, not open: they show in the connection manager (ADR-0058).
+const manager = page.getByRole("dialog", { name: "Connections" });
 await page.goto("http://localhost:1420/");
-await page.waitForSelector("text=Local development");
+await sidebarReady(page);
 
 await check("import connections from a file", async () => {
   await aside().getByRole("button", { name: "Connections menu" }).click();
@@ -31,25 +34,19 @@ await check("import connections from a file", async () => {
   await shot("01-menu");
   await page.getByRole("menuitem", { name: "Import connections…" }).click();
   await page.getByText("Imported 2 connections (0 already there).").waitFor();
-  await aside()
-    .getByRole("button", { name: /^Staging(?! \()/ })
-    .waitFor();
-  await aside()
-    .getByRole("button", { name: /^Reporting replica/ })
-    .waitFor();
+  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await manager.getByRole("button", { name: /^Staging(?! \()/ }).waitFor();
+  await manager.getByRole("button", { name: /^Reporting replica/ }).waitFor();
 });
 
 await check("export all or one connection", async () => {
-  await aside().getByRole("button", { name: "Connections menu" }).click();
+  await manager.getByRole("button", { name: "Connections menu" }).click();
   await page.getByRole("menuitem", { name: "Export all connections…" }).click();
   await page
     .getByText(/Saved to \/Users\/ada\/odin-db-connections\.json/)
     .first()
     .waitFor();
-  await aside()
-    .getByRole("button", { name: /^Staging(?! \()/ })
-    .hover();
-  await aside().getByRole("button", { name: "Actions for Staging", exact: true }).click();
+  await manager.getByRole("button", { name: "Actions for Staging", exact: true }).click();
   await page.getByRole("menuitem", { name: "Export…" }).click();
   await page
     .getByText(/Passwords are not included/)

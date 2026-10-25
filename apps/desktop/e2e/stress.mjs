@@ -1,5 +1,6 @@
 // Stress: heavy shapes through every view.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch({ args: ["--enable-precise-memory-info"] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -25,7 +26,7 @@ const panel = () => page.getByRole("tabpanel").filter({ visible: true }).first()
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await tree
   .getByRole("button", { name: /^analytics/ })
   .first()

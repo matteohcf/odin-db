@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -24,12 +25,10 @@ const check = async (name, fn) => {
 const aside = () => page.getByRole("complementary");
 const KEY = "SHA256:q6z8m1Kc0rTQ3o5vY2bX9eW4nJ7hLsF0aUuD1pG8kM4";
 await page.goto("http://localhost:1420/");
-await page.waitForSelector("text=Staging (bastion)");
+await sidebarReady(page);
 
 await check("first connection asks to trust the host key", async () => {
-  await aside()
-    .getByRole("button", { name: /^Staging \(bastion\)/ })
-    .click();
+  await connect(page, "Staging (bastion)", { wait: false });
   const dialog = page.getByRole("alertdialog", { name: "Trust this SSH server?" });
   await dialog.getByText(KEY).waitFor();
   await page.waitForTimeout(150);
@@ -54,9 +53,7 @@ await check("a changed key needs explicit confirmation", async () => {
   await aside().getByRole("button", { name: /^shop/ }).waitFor({ state: "detached" });
   // Let the disconnect finish: until then a click only folds the tree.
   await page.waitForTimeout(600);
-  await aside()
-    .getByRole("button", { name: /^Staging \(bastion\)/ })
-    .click();
+  await connect(page, "Staging (bastion)", { wait: false });
   const dialog = page.getByRole("alertdialog", { name: "The SSH server's key has changed" });
   await dialog.waitFor();
   const trust = dialog.getByRole("button", { name: "Trust the new key" });
@@ -64,10 +61,13 @@ await check("a changed key needs explicit confirmation", async () => {
   await page.waitForTimeout(150);
   await shot("02-changed");
   await dialog.getByRole("button", { name: "Cancel" }).click();
+  // The connection manager stays open behind a cancelled prompt.
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog", { name: "Connections" }).waitFor({ state: "detached" });
 });
 
 await check("set up an SSH tunnel in a new connection and test it", async () => {
-  await aside().getByRole("button", { name: "New connection" }).click();
+  await aside().getByRole("button", { name: "New connection" }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Name").fill("Reports (bastion)");
   await dialog

@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -23,7 +24,7 @@ const check = async (name, fn) => {
 };
 const aside = () => page.getByRole("complementary");
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("the filter narrows collections across databases and highlights matches", async () => {
@@ -95,23 +96,23 @@ await check("the sidebar resizes by drag, keys and double-click, and remembers",
   await page.waitForTimeout(150);
   await shot("02-wide");
   await page.reload();
-  await page.waitForSelector("text=Local development");
+  await sidebarReady(page);
   if (Math.abs((await width()) - 344) > 4) throw new Error(`reload ${await width()}`);
   await page.getByRole("separator", { name: "Resize the sidebar" }).dblclick();
   if (Math.abs((await width()) - 288) > 4) throw new Error(`reset ${await width()}`);
 });
 
 await check("the filter matches connection names and explains no match", async () => {
+  // Only open connections are in the tree (ADR-0058).
+  await connect(page, "Production (Atlas)");
   const input = page.getByRole("searchbox", { name: "Filter databases and collections" });
-  await input.fill("staging");
-  await page
-    .getByRole("complementary")
-    .getByRole("button", { name: /^Staging/ })
+  await input.fill("production");
+  await aside()
+    .getByRole("button", { name: /^Production \(Atlas\)/ })
     .waitFor();
   if (
-    await page
-      .getByRole("complementary")
-      .getByRole("button", { name: /^Production/ })
+    await aside()
+      .getByRole("button", { name: /^Local development/ })
       .count()
   )
     throw new Error("unfiltered");
@@ -124,8 +125,8 @@ await check("hovering a row shows its menu button; right-click opens the row men
   const connection = aside()
     .getByRole("button", { name: /^Local development/ })
     .first();
-  // Earlier checks may leave it closed.
-  if (!(await aside().getByRole("button", { name: /^shop/ }).count())) await connection.click();
+  // The reload above disconnected it; connecting again opens it expanded.
+  await connect(page);
   await aside().getByRole("button", { name: /^shop/ }).first().click();
   await connection.hover();
   // Only the "…" menu shows on hover: every action lives in it.

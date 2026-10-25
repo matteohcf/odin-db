@@ -1,5 +1,6 @@
 // Keyboard navigation in the connection tree.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -21,18 +22,25 @@ await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 const tree = page.getByRole("complementary", { name: /Connections/ });
+// Only open connections are in the tree (ADR-0058); connecting opens it expanded.
+await connect(page);
 await tree
   .getByRole("button", { name: /^Local development/ })
   .first()
   .focus();
 
-await check("ArrowRight connects and expands, ArrowDown moves into it", async () => {
-  await page.keyboard.press("ArrowRight");
-  await tree.getByRole("button", { name: /^admin/ }).waitFor();
-  await page.keyboard.press("ArrowDown");
-  await page.waitForTimeout(100);
-  if (!(await focused()).startsWith("admin")) throw new Error(await focused());
-});
+await check(
+  "ArrowLeft collapses a connection, ArrowRight expands it, ArrowDown moves in",
+  async () => {
+    await page.keyboard.press("ArrowLeft");
+    await tree.getByRole("button", { name: /^admin/ }).waitFor({ state: "detached" });
+    await page.keyboard.press("ArrowRight");
+    await tree.getByRole("button", { name: /^admin/ }).waitFor();
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(100);
+    if (!(await focused()).startsWith("admin")) throw new Error(await focused());
+  },
+);
 await check("ArrowRight on a database expands, then steps into it", async () => {
   await page.keyboard.press("ArrowDown"); // analytics
   await page.keyboard.press("ArrowRight");
@@ -55,12 +63,20 @@ await check("Enter opens a collection", async () => {
   await page.locator("[role=grid] tbody tr").first().waitFor();
 });
 await check("End and Home jump across a huge tree", async () => {
-  await tree.getByRole("button", { name: /^Tenants cluster/ }).click();
+  await connect(page, "Tenants cluster");
   await tree.getByRole("button", { name: /^tenant_001/ }).waitFor();
   await tree.getByRole("button", { name: /^Tenants cluster/ }).focus();
   await page.keyboard.press("End");
   await page.waitForTimeout(200);
-  if (!(await focused()).startsWith("Staging")) throw new Error(await focused());
+  // The last row of the tree, past Tenants cluster's 320 databases.
+  const last = await page.evaluate(() => {
+    const indexes = [...document.querySelectorAll("aside li[data-index]")].map((li) =>
+      Number(li.dataset.index),
+    );
+    const active = document.activeElement?.closest("li[data-index]");
+    return active && Number(active.dataset.index) === Math.max(...indexes);
+  });
+  if (!last) throw new Error(await focused());
   await page.keyboard.press("Home");
   await page.waitForTimeout(200);
   if (!(await focused()).startsWith("Clients")) throw new Error(await focused());

@@ -41,6 +41,7 @@ function HostKeyContent({ prompt, onDone }: { prompt: HostKeyPrompt; onDone: () 
   const connect = useConnect();
   const [confirmed, setConfirmed] = useState(false);
   const setExpanded = useExplorer((s) => s.setExpanded);
+  const setManagerOpen = useExplorer((s) => s.setManagerOpen);
   const Icon = prompt.changed ? ShieldAlert : ShieldQuestion;
 
   async function onTrust() {
@@ -52,10 +53,13 @@ function HostKeyContent({ prompt, onDone }: { prompt: HostKeyPrompt; onDone: () 
     }
     onDone();
     // The dialog unmounts now, so per-call callbacks would never run: await instead.
-    // Like any connect from the sidebar, a success shows the databases; failures
-    // are reported by `useConnect` and the app-wide error toast.
+    // Like any connect from the connection manager, a success closes it and shows the
+    // databases; failures are reported by `useConnect` and the app-wide error toast.
     await connect.mutateAsync(prompt.profileId).then(
-      () => setExpanded(prompt.profileId, true),
+      () => {
+        setExpanded(prompt.profileId, true);
+        setManagerOpen(false);
+      },
       () => {},
     );
   }

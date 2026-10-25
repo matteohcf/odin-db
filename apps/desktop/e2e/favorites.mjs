@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -33,7 +34,7 @@ const menuFor = async (name) => {
     .click();
 };
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await aside().getByRole("button", { name: /^shop/ }).first().click();
 await aside()
   .getByRole("button", { name: /^analytics/ })
@@ -61,9 +62,7 @@ await check("a favorite opens its collection, even after a restart", async () =>
 });
 
 await check("renaming and unstarring keep favorites in sync", async () => {
-  await aside()
-    .getByRole("button", { name: /^Local development/ })
-    .click();
+  await connect(page, "Local development");
   await aside().getByRole("button", { name: /^shop/ }).first().click();
   await aside()
     .getByRole("button", { name: /^orders/ })

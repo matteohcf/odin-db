@@ -1,5 +1,6 @@
 // Forty open collection tabs.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -35,7 +36,7 @@ const inView = (locator) =>
     return box.left >= bar.left - 1 && box.right <= bar.right + 1;
   });
 await page.goto("http://localhost:1420/");
-await page.click("text=Tenants cluster");
+await connect(page, "Tenants cluster");
 await tree.getByRole("button", { name: /^archive\b/ }).click();
 await tree
   .getByRole("button", { name: /^audit_log\b/ })

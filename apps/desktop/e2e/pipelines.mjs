@@ -1,5 +1,6 @@
 // Aggregation builder and index management flows against the mock backend.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-pipe-${name}.png` });
@@ -27,7 +28,7 @@ const typeInEditor = async (editor, text) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.removeItem("odin-saved-pipelines"));
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^orders$/ }).click();
 await page.getByRole("tab", { name: "Aggregation" }).click();

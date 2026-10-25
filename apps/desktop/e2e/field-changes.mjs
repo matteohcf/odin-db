@@ -1,5 +1,6 @@
 // Field changes from the column menu: rename, convert and remove a field in matching documents.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-field-${name}.png` });
@@ -24,7 +25,7 @@ const columnMenu = (field) => header(field).click({ button: "right" });
 const dialog = page.getByRole("dialog");
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");

@@ -1,5 +1,6 @@
 // Query bar: autocompletion, history, reset.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-health-${name}.png` });
@@ -20,7 +21,7 @@ const check = async (name, fn) => {
 };
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("a server that stops answering is flagged and announced", async () => {

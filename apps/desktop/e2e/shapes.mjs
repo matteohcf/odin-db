@@ -1,5 +1,6 @@
 // Wide (300 fields) and deep, array-heavy documents.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -28,7 +29,7 @@ const check = async (name, fn, budget) => {
 const tree = page.getByRole("complementary");
 const panel = () => page.getByRole("tabpanel").filter({ visible: true });
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await tree.getByRole("button", { name: /^analytics\b/ }).click();
 
 await check(

@@ -25,10 +25,13 @@ await page.evaluate(() => {
   localStorage.setItem("odin-mock-many", "1");
 });
 await page.reload();
-const tree = page.getByRole("complementary", { name: /Connections/ });
+// Saved connections live in the connection manager (ADR-0058).
+const tree = page.getByRole("dialog", { name: "Connections" });
+const search = page.getByRole("searchbox", { name: "Search saved connections" });
 await check(
   "104 connections render, grouped",
   async () => {
+    await page.getByRole("button", { name: "Open connection…" }).first().click();
     await tree
       .getByRole("button", { name: /^Region 1\b/ })
       .first()
@@ -39,11 +42,9 @@ await check(
   3000,
 );
 await check(
-  "filter finds one customer instantly",
+  "search finds one customer instantly",
   async () => {
-    await page
-      .getByRole("searchbox", { name: "Filter databases and collections" })
-      .fill("customer 042");
+    await search.fill("customer 042");
     await tree.getByRole("button", { name: /^Customer 042/ }).waitFor();
     const shown = await tree.getByRole("button", { name: /^Customer \d+/ }).count();
     if (shown !== 1) throw new Error(`${shown} customers`);
@@ -52,12 +53,19 @@ await check(
   1500,
 );
 await check("collapse all leaves only the folders", async () => {
-  await page.getByRole("searchbox", { name: "Filter databases and collections" }).fill("");
+  await search.fill("");
+  await page.keyboard.press("Escape");
+  await tree.waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Collapse all" }).click();
-  await page.waitForTimeout(200);
+  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await tree
+    .getByRole("button", { name: /^Region 1\b/ })
+    .first()
+    .waitFor();
   const customers = await tree.getByRole("button", { name: /^Customer \d+/ }).count();
   if (customers !== 0) throw new Error(`${customers} customers`);
   await page.screenshot({ path: "test-results/many-collapsed.png" });
+  await page.keyboard.press("Escape");
 });
 await check("the palette offers connecting to any of them", async () => {
   await page.keyboard.press("Meta+k");

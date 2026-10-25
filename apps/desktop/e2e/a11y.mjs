@@ -1,6 +1,7 @@
 // Accessibility: axe-core finds no violations on the main screens.
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const axePath = fileURLToPath(import.meta.resolve("axe-core/axe.min.js"));
 const scheme = process.env.SCHEME ?? "light";
@@ -39,7 +40,11 @@ const profileMenu = async (name, item) => {
 
 await page.goto("http://localhost:1420/");
 await audit("welcome");
-await page.click("text=Local development");
+await page.getByRole("button", { name: "Open connection…" }).first().click();
+await page.getByRole("dialog", { name: "Connections" }).getByText("Local development").waitFor();
+await audit("connection manager");
+await page.keyboard.press("Escape");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");
@@ -70,10 +75,8 @@ await page.keyboard.press("Escape");
 await profileMenu("shop", "Show diagram");
 await page.locator(".react-flow__node").first().waitFor();
 await audit("diagram");
-await aside()
-  .getByRole("button", { name: /^Production \(Atlas\)/ })
-  .click();
-// Its databases list below the open ones, once it is connected.
+await connect(page, "Production (Atlas)");
+// Its databases list below the open ones.
 await page.waitForFunction(
   () =>
     [...document.querySelectorAll("aside button")].filter((b) => /^shop/.test(b.textContent ?? ""))
@@ -81,7 +84,7 @@ await page.waitForFunction(
 );
 await aside().getByRole("button", { name: /^shop/ }).last().click();
 await aside().getByText("system.views").nth(1).waitFor();
-// Rows tinted with the connection's color, muted text included.
+// Rows tinted and written in the connection's color, muted text included.
 await audit("tinted connection rows");
 await profileMenu("Local development", "Server status");
 await audit("server status");

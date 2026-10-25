@@ -1,5 +1,6 @@
 // Update check at launch and from settings.
 import { chromium } from "playwright";
+import { sidebarReady } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -19,7 +20,7 @@ const check = async (name, fn) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.getByText("Local development").first().waitFor();
+await sidebarReady(page);
 await check("no update, no toast; settings says up to date", async () => {
   await page.waitForTimeout(800);
   if (await page.getByText(/is available/).count()) throw new Error("toast shown");
@@ -46,7 +47,7 @@ await check("turning the launch check off keeps it quiet", async () => {
     localStorage.setItem("odin-settings", JSON.stringify(s));
   });
   await page.reload();
-  await page.getByText("Local development").first().waitFor();
+  await sidebarReady(page);
   await page.waitForTimeout(800);
   if (await page.getByText(/is available/).count()) throw new Error("toast shown");
   await page.evaluate(() => localStorage.removeItem("odin-mock-update"));

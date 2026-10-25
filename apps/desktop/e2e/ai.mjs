@@ -1,5 +1,6 @@
 // AI query assistant: setup from the query bar, model downloads, generate and apply.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -21,10 +22,7 @@ await page.evaluate(() => localStorage.clear());
 await page.reload();
 const tree = page.getByRole("complementary", { name: /Connections/ });
 const openUsers = async () => {
-  await tree
-    .getByRole("button", { name: /^Local development/ })
-    .first()
-    .click();
+  await connect(page, "Local development");
   await tree.getByRole("button", { name: /^shop/ }).first().click();
   await tree
     .getByRole("button", { name: /^users/ })

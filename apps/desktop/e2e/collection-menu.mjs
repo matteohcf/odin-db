@@ -1,5 +1,6 @@
 // A collection's sidebar menu: new tab, export and import without opening the collection first.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-colmenu2-${name}.png` });
@@ -31,7 +32,7 @@ const menuFor = async (name) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 
 await check("the menu exports a collection", async () => {

@@ -1,5 +1,6 @@
 // Opening and closing many tabs must give memory back.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch({
   args: ["--js-flags=--expose-gc", "--enable-precise-memory-info"],
@@ -18,7 +19,7 @@ await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 const tree = page.getByRole("complementary", { name: /Connections/ });
-await page.click("text=Tenants cluster");
+await connect(page, "Tenants cluster");
 await tree.getByRole("button", { name: /^archive\b/ }).click();
 await tree
   .getByRole("button", { name: /^audit_log\b/ })

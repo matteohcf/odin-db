@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -23,7 +24,7 @@ const check = async (name, fn) => {
 };
 const mod = "Meta";
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("the footer button opens a single settings tab", async () => {
@@ -135,10 +136,7 @@ await check("search finds settings across pages", async () => {
 });
 await check("sizes in the sidebar are off by default and can be shown", async () => {
   const tree = page.getByRole("complementary", { name: /Connections/ });
-  await tree
-    .getByRole("button", { name: /^Local development/ })
-    .first()
-    .click();
+  await connect(page, "Local development");
   const shop = tree.getByRole("button", { name: /^shop/ }).first();
   await shop.waitFor();
   await page.mouse.move(900, 500);

@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1300, height: 800 } });
@@ -14,7 +15,7 @@ const check = async (name, fn) => {
   }
 };
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 for (const name of ["users", "orders"])
   await page.getByRole("button", { name: new RegExp(`^${name}$`) }).click();

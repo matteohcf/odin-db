@@ -9,6 +9,8 @@ export const SHORTCUTS = {
   rerun: { key: "r", mod: true },
   focusFilter: { key: "f", mod: true },
   askAi: { key: "i", mod: true },
+  // Like Studio 3T's Connection Manager: every saved connection, to pick one.
+  connectionManager: { key: "o", mod: true },
   filterSidebar: { key: "f", mod: true, shift: true },
   // Like VS Code's "Reveal in Explorer".
   revealInSidebar: { key: "e", mod: true, shift: true },

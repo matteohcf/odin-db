@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -32,10 +33,10 @@ const menuFor = async (name) => {
     .click();
 };
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 // A read-only connection must show up as a disabled target.
-await page.click("text=Production (Atlas)");
+await connect(page, "Production (Atlas)");
 await page.waitForTimeout(800);
 
 await check("copy a collection within the same connection under a new name", async () => {

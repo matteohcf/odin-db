@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -32,7 +33,7 @@ await page.evaluate(() => {
   localStorage.setItem("odin-settings", JSON.stringify(saved));
 });
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await aside().getByRole("button", { name: /^shop/ }).first().click();
 
 await check("collections show their document counts", async () => {

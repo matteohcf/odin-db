@@ -1,5 +1,6 @@
 // Compare collections: from the sidebar, progress, summary, document diff.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -20,10 +21,7 @@ await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 const tree = page.getByRole("complementary", { name: /Connections/ });
-await tree
-  .getByRole("button", { name: /^Local development/ })
-  .first()
-  .click();
+await connect(page, "Local development");
 await tree.getByRole("button", { name: /^shop/ }).first().click();
 const dialog = page.getByRole("dialog");
 await check("Compare with… opens from the collection menu", async () => {

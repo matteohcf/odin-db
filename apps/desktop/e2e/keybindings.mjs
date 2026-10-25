@@ -1,5 +1,6 @@
 // Customizable shortcuts: record, use at once, resolve a conflict, reset one or all, persist.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-keybindings-${name}.png` });
@@ -101,7 +102,7 @@ await check("changes persist and reset one by one or all at once", async () => {
 await check("the run shortcut can change too", async () => {
   await recorder("Run or save, in editors").click();
   await page.keyboard.press("Meta+Shift+Enter");
-  await page.click("text=Local development");
+  await connect(page);
   await page.click("text=shop");
   await page.getByRole("button", { name: /^orders$/ }).click();
   await page.locator("tbody tr").first().waitFor();

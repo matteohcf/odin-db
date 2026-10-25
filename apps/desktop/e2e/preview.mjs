@@ -1,5 +1,6 @@
 // Document preview beside the table.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -26,7 +27,7 @@ const check = async (name, fn) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 const tree = page.getByRole("complementary", { name: /Connections/ });
 await tree.getByRole("button", { name: /^analytics/ }).click();
 await tree.getByRole("button", { name: /^nested/ }).click();

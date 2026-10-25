@@ -1,6 +1,7 @@
 // Quick charts of loaded results: over time, by category, histogram, scatter, map, back to the
 // table.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-charts-${name}.png` });
@@ -32,7 +33,7 @@ const chart = page.locator("[data-slot=chart]");
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.removeItem("odin-results-view"));
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^orders$/ }).click();
 await page.locator("tbody tr").first().waitFor();

@@ -347,5 +347,15 @@
     "none": "Nothing matches.",
     "open": "Open this document",
     "fieldName": "field name"
+  },
+  "manager": {
+    "title": "Connections",
+    "description": "Your saved connections. Pick one to open it in the sidebar.",
+    "open": "Open connection…",
+    "search": "Search saved connections",
+    "connected": "Connected",
+    "noneOpenTitle": "No open connections",
+    "noneOpenBody_one": "Your saved connection is in the connection manager. Open it to browse its databases here.",
+    "noneOpenBody_other": "Your {{count}} saved connections are in the connection manager. Open one to browse its databases here."
   }
 }

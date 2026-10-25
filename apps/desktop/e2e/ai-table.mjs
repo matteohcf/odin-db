@@ -1,5 +1,6 @@
 // The AI models table: benchmarks, guide, memory warning, search.
 import { chromium } from "playwright";
+import { sidebarReady } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -19,7 +20,7 @@ const check = async (name, fn) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.getByText("Local development").first().waitFor();
+await sidebarReady(page);
 await page.keyboard.press("Meta+,");
 await page.getByRole("button", { name: "AI assistant" }).click();
 const table = page.getByRole("table");

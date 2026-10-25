@@ -1,5 +1,6 @@
 // Out-of-order answers and rapid actions.
 import { chromium } from "playwright";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -21,8 +22,8 @@ const check = async (name, fn) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.getByText("Local development").waitFor();
-await page.click("text=Local development");
+await sidebarReady(page);
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })

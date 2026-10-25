@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -33,7 +34,7 @@ const profileMenu = async (name) => {
     .click();
 };
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("server status shows live rates", async () => {
@@ -109,9 +110,7 @@ await check("pause stops polling", async () => {
 });
 
 await check("read-only connections cannot kill", async () => {
-  await aside()
-    .getByRole("button", { name: /^Production \(Atlas\)/ })
-    .click();
+  await connect(page, "Production (Atlas)");
   await page.waitForTimeout(800);
   await profileMenu("Production (Atlas)");
   await page.getByRole("menuitem", { name: "Server status" }).click();
@@ -122,10 +121,7 @@ await check("read-only connections cannot kill", async () => {
 });
 
 await check("a sharded cluster shows its shards and balancer", async () => {
-  await page
-    .getByRole("button", { name: /^Tenants cluster/ })
-    .first()
-    .click();
+  await connect(page, "Tenants cluster");
   await profileMenu("Tenants cluster");
   await page.getByRole("menuitem", { name: "Server status" }).click();
   const section = page.getByRole("region", { name: "Sharding" });

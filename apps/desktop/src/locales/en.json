@@ -170,6 +170,7 @@
       "resetZoom": "Actual size",
       "reopenTab": "Reopen the closed tab",
       "lastTab": "Go to the last tab",
+      "connectionManager": "Open the connection manager",
       "filterSidebar": "Filter the sidebar",
       "revealInSidebar": "Reveal the collection in the sidebar",
       "treeKeys": "Move through the sidebar tree",

@@ -1,6 +1,7 @@
 // Database diagram: collections, inferred and drawn references, notes, search, field modes,
 // opening a collection.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -30,10 +31,7 @@ const node = (name) => nodes.filter({ has: page.getByText(name, { exact: true })
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await tree
-  .getByRole("button", { name: /^Local development/ })
-  .first()
-  .click();
+await connect(page, "Local development");
 
 await check("the database row opens its diagram", async () => {
   await tree.getByRole("button", { name: /^shop/ }).first().hover();
@@ -155,10 +153,7 @@ await check("a note is added, kept, and deleted", async () => {
   await page.waitForTimeout(300);
   await shot("08-note");
   await page.reload();
-  await tree
-    .getByRole("button", { name: /^Local development/ })
-    .first()
-    .click();
+  await connect(page, "Local development");
   await page.getByRole("heading", { name: "Diagram of shop" }).waitFor();
   await note.waitFor({ timeout: 15000 });
   if ((await note.inputValue()) !== "Orders are archived after 2 years") throw new Error("lost");
@@ -207,10 +202,7 @@ await check("an area groups collections and carries them along", async () => {
   await page.waitForTimeout(200);
   await shot("09-area");
   await page.reload();
-  await tree
-    .getByRole("button", { name: /^Local development/ })
-    .first()
-    .click();
+  await connect(page, "Local development");
   await name.waitFor({ timeout: 15000 });
   if ((await name.inputValue()) !== "Catalog") throw new Error("area lost");
   await handle.hover();

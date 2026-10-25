@@ -61,3 +61,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0055](0055-value-search.md) | Searching values across collections | Accepted |
 | [0056](0056-undo-bulk-updates.md) | Undoing bulk updates and field changes | Accepted |
 | [0057](0057-custom-roles.md) | Custom roles | Accepted |
+| [0058](0058-connection-manager.md) | Connection manager | Accepted |

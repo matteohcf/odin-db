@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -25,7 +26,7 @@ const menuFor = async (name) => {
   await page.getByRole("button", { name: `Actions for ${name}` }).click();
 };
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("export a database lists its collections and exports the selection", async () => {

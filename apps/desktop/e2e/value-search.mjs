@@ -1,5 +1,6 @@
 // Value search: text or a pattern across collections, with progress, and a hit opens its document.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-search-${name}.png` });
@@ -31,7 +32,7 @@ const menuFor = async (name) => {
 const dialog = page.getByRole("dialog", { name: "Search values" });
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("a database search finds values in nested fields and arrays", async () => {

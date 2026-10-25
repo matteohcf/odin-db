@@ -1,5 +1,6 @@
 // Query bar: autocompletion, history, reset.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-agg-${name}.png` });
@@ -22,7 +23,7 @@ const options = page.locator(".cm-tooltip-autocomplete li");
 const optionLabels = () => options.locator(".cm-completionLabel").allInnerTexts();
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.getByRole("tab", { name: "Aggregation" }).click();

@@ -16,7 +16,14 @@ export type Keybindings = Partial<Record<KeybindingId, Shortcut | null>>;
 export const KEYBINDING_GROUPS = [
   {
     id: "general",
-    ids: ["palette", "shortcuts", "settings", "filterSidebar", "revealInSidebar"],
+    ids: [
+      "palette",
+      "shortcuts",
+      "settings",
+      "connectionManager",
+      "filterSidebar",
+      "revealInSidebar",
+    ],
   },
   {
     id: "tabs",

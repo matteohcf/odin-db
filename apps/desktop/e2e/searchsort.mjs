@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -25,7 +26,7 @@ const headerOf = (name) =>
   page.locator("[role=grid] thead th", { hasText: new RegExp(`^${name}\\d?$`) });
 const sortText = () => page.getByRole("textbox", { name: "Sort" }).innerText();
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })

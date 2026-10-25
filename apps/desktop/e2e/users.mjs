@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -35,7 +36,7 @@ const profileMenu = async (name) => {
     .click();
 };
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("users are listed with their roles", async () => {
@@ -168,9 +169,7 @@ await check("custom roles are listed, created, edited and deleted", async () => 
 });
 
 await check("read-only connections cannot change users", async () => {
-  await aside()
-    .getByRole("button", { name: /^Production \(Atlas\)/ })
-    .click();
+  await connect(page, "Production (Atlas)");
   await page.waitForTimeout(800);
   await profileMenu("Production (Atlas)");
   await page.getByRole("menuitem", { name: "Users and roles" }).click();

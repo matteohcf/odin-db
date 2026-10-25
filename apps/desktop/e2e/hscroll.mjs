@@ -1,9 +1,10 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1100, height: 600 } });
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");

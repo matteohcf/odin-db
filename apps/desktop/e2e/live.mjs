@@ -1,5 +1,6 @@
 // Live changes: a collection's change stream, filters, pause, clear.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -27,10 +28,7 @@ const panel = () => page.getByRole("tabpanel").filter({ visible: true }).first()
 const rows = () => panel().locator("li");
 
 await page.goto("http://localhost:1420/");
-await tree
-  .getByRole("button", { name: /^Local development/ })
-  .first()
-  .click();
+await connect(page, "Local development");
 await tree.getByRole("button", { name: /^shop/ }).first().click();
 await tree
   .getByRole("button", { name: /^orders/ })

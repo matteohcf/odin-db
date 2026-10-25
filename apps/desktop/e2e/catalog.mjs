@@ -1,5 +1,6 @@
 // Catalog: create, rename and drop databases and collections, with collection types and views.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-cat-${name}.png` });
@@ -29,7 +30,7 @@ const menuFor = async (name) => {
 };
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 
 await check("create a database with its first collection", async () => {
@@ -154,7 +155,7 @@ await check("drop a database", async () => {
 });
 
 await check("read-only profiles offer no catalog changes", async () => {
-  await page.click("text=Production (Atlas)");
+  await connect(page, "Production (Atlas)");
   await page.waitForTimeout(800);
   await menuFor("Production (Atlas)");
   if (await page.getByRole("menuitem", { name: "Create database…" }).count())

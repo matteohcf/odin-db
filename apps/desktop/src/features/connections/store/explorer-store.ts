@@ -26,6 +26,9 @@ interface ExplorerState {
   /** Where the copied node is being pasted, while the copy dialog is open. */
   pasting: PasteTarget | null;
   paste: (target: PasteTarget | null) => void;
+  /** The connection manager: every saved connection, to pick one to connect (ADR-0058). */
+  managerOpen: boolean;
+  setManagerOpen: (open: boolean) => void;
   /** Set by the mounted sidebar, so screens elsewhere (the welcome page) can start these. */
   commands: ExplorerCommands | null;
   setCommands: (commands: ExplorerCommands | null) => void;
@@ -66,6 +69,8 @@ export const useExplorer = create<ExplorerState>()((set) => ({
   copy: (copied) => set({ copied }),
   pasting: null,
   paste: (pasting) => set({ pasting }),
+  managerOpen: false,
+  setManagerOpen: (managerOpen) => set({ managerOpen }),
   commands: null,
   setCommands: (commands) => set({ commands }),
 }));

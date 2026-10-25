@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -34,21 +35,27 @@ const menuFor = async (name) => {
     .last()
     .click();
 };
+// Saved connections' own actions, in the connection manager (ADR-0058).
+const manager = page.getByRole("dialog", { name: "Connections" });
+const savedMenuFor = async (name) => {
+  if (!(await manager.count())) {
+    await page.getByRole("button", { name: "Open connection…" }).first().click();
+  }
+  await manager.getByRole("button", { name: `Actions for ${name}`, exact: true }).click();
+};
 const clipboard = () => page.evaluate(() => navigator.clipboard.readText());
 await page.goto("http://localhost:1420/");
-await page.waitForSelector("text=Local development");
+await sidebarReady(page);
 
 await check("duplicate a connection", async () => {
-  await menuFor("Production (Atlas)");
+  await savedMenuFor("Production (Atlas)");
   await page.getByRole("menuitem", { name: "Duplicate" }).click();
-  await aside()
-    .getByRole("button", { name: /^Production \(Atlas\) \(copy\)/ })
-    .waitFor();
+  await manager.getByRole("button", { name: /^Production \(Atlas\) \(copy\)/ }).waitFor();
   await page.getByText("Created Production (Atlas) (copy).").waitFor();
 });
 
 await check("copy a connection string without the password", async () => {
-  await menuFor("Production (Atlas)");
+  await savedMenuFor("Production (Atlas)");
   await page.getByRole("menuitem", { name: "Copy connection string" }).click();
   const text = await clipboard();
   if (!text.startsWith("mongodb") || /:[^@/]*@/.test(text.replace(/^mongodb(\+srv)?:\/\//, "")))
@@ -56,9 +63,7 @@ await check("copy a connection string without the password", async () => {
 });
 
 await check("copy database and collection names", async () => {
-  await aside()
-    .getByRole("button", { name: /^Local development/ })
-    .click();
+  await connect(page, "Local development");
   await aside().getByRole("button", { name: /^shop/ }).first().waitFor();
   await menuFor("shop");
   await page.getByRole("menuitem", { name: "Copy name" }).click();

@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -24,7 +25,7 @@ const check = async (name, fn) => {
 const rows = () => page.locator("tbody tr");
 const firstId = () => rows().first().locator("td").first().innerText();
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })

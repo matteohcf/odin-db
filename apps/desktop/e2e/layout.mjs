@@ -1,5 +1,6 @@
 // The grid remembers each collection's column layout.
 import { chromium } from "playwright";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -19,8 +20,8 @@ const check = async (name, fn) => {
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.getByText("Local development").waitFor();
-await page.click("text=Local development");
+await sidebarReady(page);
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })
@@ -43,11 +44,7 @@ const arranged = await names();
 await check("the arrangement survives closing the tab and a restart", async () => {
   await page.keyboard.press("Meta+w");
   await page.reload();
-  const tree = page.getByRole("complementary", { name: /Connections/ });
-  await tree
-    .getByRole("button", { name: /^Local development/ })
-    .first()
-    .click();
+  await connect(page, "Local development");
   await page.getByRole("button", { name: /^shop/ }).first().click();
   await page
     .getByRole("button", { name: /^users/ })

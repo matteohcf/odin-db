@@ -1,5 +1,6 @@
 // Functional checks for odin-db flows against the mock backend.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1360, height: 820 } });
@@ -20,7 +21,7 @@ const check = async (name, fn) => {
 const status = () => page.locator("footer").last().innerText();
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");

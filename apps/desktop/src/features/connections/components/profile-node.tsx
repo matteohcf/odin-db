@@ -5,19 +5,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   CalendarClock,
-  CopyPlus,
   DatabaseZap,
-  FileDown,
   HardDriveDownload,
   HardDriveUpload,
-  Link,
   Lock,
-  Pencil,
   Plug,
   RefreshCw,
   SquareTerminal,
   TextSearch,
-  Trash2,
   Unplug,
   UsersRound,
 } from "lucide-react";
@@ -29,11 +24,12 @@ import { useTabs } from "@/features/workspace";
 import { errorMessage, hostKeyError } from "@/lib/ipc";
 import { useSettings } from "@/lib/settings";
 import { connectionKeys } from "../api/keys";
-import { useConnect, useDisconnect, useDuplicateProfile } from "../api/mutations";
+import { useConnect, useDisconnect } from "../api/mutations";
 import { databasesQuery, useConnectionOf } from "../api/queries";
 import { useExpanded } from "../store/explorer-store";
 import { useConnectionHealth } from "../store/health-store";
 import { CreateCollectionDialog } from "./create-collection-dialog";
+import { ProfileMenuItems } from "./profile-menu-items";
 import { TreeRow } from "./tree-row";
 import { ValueSearchDialog } from "./value-search-dialog";
 
@@ -54,7 +50,6 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
   );
   const connect = useConnect();
   const disconnect = useDisconnect();
-  const duplicate = useDuplicateProfile();
   const [expanded, setExpanded] = useExpanded(profile.id);
   const sizes = useSettings((s) => s.sidebarSizes);
   // The same query as the tree, so it is shared once the connection is expanded.
@@ -209,42 +204,12 @@ export function ProfileNode({ indent, profile, onEdit, onDelete, onExport }: Pro
               </>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onEdit}>
-              <Pencil />
-              {t("profile.edit")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() =>
-                duplicate.mutate(
-                  { id: profile.id, name: t("profile.copyName", { name: profile.name }) },
-                  {
-                    onSuccess: (copy) =>
-                      toast.success(t("profile.duplicated", { name: copy.name })),
-                  },
-                )
-              }
-            >
-              <CopyPlus />
-              {t("profile.duplicate")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => {
-                void navigator.clipboard.writeText(profile.connectionString);
-                toast.success(t("profile.uriCopied"));
-              }}
-            >
-              <Link />
-              {t("profile.copyUri")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onExport}>
-              <FileDown />
-              {t("profile.export")}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-              <Trash2 />
-              {t("profile.delete")}
-            </DropdownMenuItem>
+            <ProfileMenuItems
+              profile={profile}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onExport={onExport}
+            />
           </>
         }
       />

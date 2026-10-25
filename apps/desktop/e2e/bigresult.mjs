@@ -1,5 +1,6 @@
 // 25,000 documents: paging while scrolling fast, the row cap, sorting.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -24,7 +25,7 @@ const tree = page.getByRole("complementary");
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await tree.getByRole("button", { name: /^analytics\b/ }).click();
 await tree.getByRole("button", { name: /^events\b/ }).click();
 const grid = page.locator("[role=grid]");

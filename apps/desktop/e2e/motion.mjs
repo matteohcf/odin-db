@@ -1,9 +1,10 @@
 import { chromium } from "playwright";
+import { sidebarReady } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ reducedMotion: "reduce" });
 await page.goto("http://localhost:1420/");
-await page.getByText("Local development").waitFor();
+await sidebarReady(page);
 const d = await page
   .locator("button")
   .first()

@@ -1,5 +1,6 @@
 // Profiler in the server tab: level, slow operations, index hints, details.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -20,7 +21,7 @@ const aside = () => page.getByRole("complementary");
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.waitForSelector("text=shop");
 await aside()
   .getByRole("button", { name: /^Local development/ })
@@ -60,10 +61,7 @@ await check("a row opens the command and its numbers", async () => {
     .click();
 });
 await check("read-only connections cannot change the level", async () => {
-  await aside()
-    .getByRole("button", { name: /^Production \(Atlas\)/ })
-    .first()
-    .click();
+  await connect(page, "Production (Atlas)");
   await page.waitForTimeout(800);
   await aside()
     .getByRole("button", { name: /^Production \(Atlas\)/ })

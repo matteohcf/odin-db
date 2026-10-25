@@ -1,5 +1,6 @@
 // Accent colors, black dark mode, row density.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({
@@ -26,7 +27,7 @@ const token = (name) =>
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })
@@ -140,6 +141,8 @@ await check("a custom monospace font reaches the grid and editors", async () => 
 });
 await check("compact sidebar rows", async () => {
   const tree = page.getByRole("complementary", { name: /Connections/ });
+  // The tree holds open connections only (ADR-0058): connecting expands one, for two rows.
+  if ((await tree.locator("li[data-index]").count()) < 2) await connect(page);
   const step = async () => {
     const rows = tree.locator("li[data-index]");
     const a = await rows.nth(0).boundingBox();

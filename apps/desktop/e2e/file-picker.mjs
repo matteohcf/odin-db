@@ -1,5 +1,6 @@
 // Choosing files: drop them on the window or browse, in the import and restore dialogs.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-file-picker-${name}.png` });
@@ -29,7 +30,7 @@ const drop = (files) => page.evaluate((f) => window.odinMock.dropFiles(f), files
 await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 const dialog = page.getByRole("dialog");
 

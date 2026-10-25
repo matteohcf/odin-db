@@ -347,5 +347,15 @@
     "none": "Nessun risultato.",
     "open": "Apri questo documento",
     "fieldName": "nome del campo"
+  },
+  "manager": {
+    "title": "Connessioni",
+    "description": "Le connessioni salvate. Sceglierne una la apre nella barra laterale.",
+    "open": "Apri connessione…",
+    "search": "Cerca tra le connessioni salvate",
+    "connected": "Connessa",
+    "noneOpenTitle": "Nessuna connessione aperta",
+    "noneOpenBody_one": "La connessione salvata è nel gestore connessioni. Aprila per sfogliarne i database qui.",
+    "noneOpenBody_other": "Le tue {{count}} connessioni salvate sono nel gestore connessioni. Aprine una per sfogliarne i database qui."
   }
 }

@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -26,7 +27,7 @@ const check = async (name, fn) => {
 const rows = () => page.locator("tbody tr");
 const selectedCount = () => page.locator('tbody tr[aria-selected="true"]').count();
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })
@@ -135,6 +136,8 @@ await check("copy one document as plain JSON", async () => {
   await rows().nth(0).click({ button: "right" });
   await page.getByRole("menuitem", { name: "Copy as" }).click();
   await page.getByRole("menuitem", { name: /^JSON/ }).click();
+  // The JSON conversion loads on first use, so the copy lands a moment later.
+  await page.waitForFunction(async () => (await navigator.clipboard.readText()).startsWith("{"));
   const text = await page.evaluate(() => navigator.clipboard.readText());
   const parsed = JSON.parse(text);
   if (typeof parsed._id !== "string" || typeof parsed.age !== "number")

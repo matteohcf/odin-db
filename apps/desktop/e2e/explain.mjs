@@ -1,5 +1,6 @@
 // Query bar: autocompletion, history, reset.
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-explain-${name}.png` });
@@ -21,7 +22,7 @@ const check = async (name, fn) => {
 const filter = page.getByRole("textbox", { name: "Filter" });
 
 await page.goto("http://localhost:1420/");
-await page.click("text=Local development");
+await connect(page);
 await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");

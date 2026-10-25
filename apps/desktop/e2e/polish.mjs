@@ -1,5 +1,6 @@
 // Window title and slow-query skeleton.
 import { chromium } from "playwright";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: "en-US" });
@@ -20,7 +21,7 @@ await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 await page.waitForLoadState("networkidle");
-await page.getByText("Local development").waitFor();
+await sidebarReady(page);
 await check("the window title starts as the app name", async () => {
   if ((await page.title()) !== "odin-db") throw new Error(await page.title());
 });
@@ -31,7 +32,7 @@ await page.evaluate(() => {
     return original(cmd, args, opts);
   };
 });
-await page.click("text=Local development");
+await connect(page);
 await page.getByRole("button", { name: /^shop/ }).first().click();
 await page
   .getByRole("button", { name: /^users/ })
