@@ -51,12 +51,10 @@ export function FavoritesSection() {
                   }
                   menuLabel={t("tree.actions", { name: favorite.collection })}
                   menu={
-                    <>
-                      <DropdownMenuItem onSelect={() => toggle(favorite)}>
-                        <StarOff />
-                        {t("favorites.remove")}
-                      </DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem onSelect={() => toggle(favorite)}>
+                      <StarOff />
+                      {t("favorites.remove")}
+                    </DropdownMenuItem>
                   }
                 />
               </li>

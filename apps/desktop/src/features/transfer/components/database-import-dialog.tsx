@@ -178,21 +178,19 @@ export function DatabaseImportDialog({
           ) : done ? (
             <Button onClick={onClose}>{t("actions.close")}</Button>
           ) : (
-            <>
-              <div className="flex gap-2">
-                <Button variant="ghost" onClick={onClose}>
-                  {t("actions.cancel")}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                {t("actions.cancel")}
+              </Button>
+              {folder && (
+                <Button
+                  onClick={() => void submit()}
+                  disabled={folder.collections.length === 0 || !importModeReady(mode, database)}
+                >
+                  {t("database.import.submit")}
                 </Button>
-                {folder && (
-                  <Button
-                    onClick={() => void submit()}
-                    disabled={folder.collections.length === 0 || !importModeReady(mode, database)}
-                  >
-                    {t("database.import.submit")}
-                  </Button>
-                )}
-              </div>
-            </>
+              )}
+            </div>
           )}
         </DialogFooter>
       </DialogContent>
