@@ -29,7 +29,7 @@ describe("compareDocuments", () => {
       { n: { $numberLong: "5" }, e: [] },
     );
     expect(rows).toEqual([
-      { path: "n", left: "5", right: 'Long("5")', status: "changed" },
+      { path: "n", left: "5", right: 'NumberLong("5")', status: "changed" },
       { path: "e", left: expect.any(String), right: "[]", status: "changed" },
     ]);
   });

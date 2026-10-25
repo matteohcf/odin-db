@@ -8,15 +8,15 @@ describe("describeEJson", () => {
     [{ $numberDouble: "5" }, "number", "5.0"],
     [{ $numberDouble: "-0.0" }, "number", "-0.0"],
     [{ $numberDouble: "NaN" }, "number", "NaN"],
-    [{ $numberLong: "9223372036854775807" }, "number", 'Long("9223372036854775807")'],
+    [{ $numberLong: "9223372036854775807" }, "number", 'NumberLong("9223372036854775807")'],
     [{ $numberDecimal: "1.10" }, "number", 'Decimal128("1.10")'],
     [{ $date: { $numberLong: "0" } }, "date", 'ISODate("1970-01-01T00:00:00.000Z")'],
-    [{ $date: { $numberLong: "99999999999999999" } }, "date", 'Date(Long("99999999999999999"))'],
     [
-      { $binary: { base64: "AAE=", subType: "04" } },
-      "binary",
-      'Binary.createFromBase64("AAE=", 4)',
+      { $date: { $numberLong: "99999999999999999" } },
+      "date",
+      'Date(NumberLong("99999999999999999"))',
     ],
+    [{ $binary: { base64: "AAE=", subType: "04" } }, "binary", 'BinData(4, "AAE=")'],
     [{ $timestamp: { t: 1, i: 2 } }, "other", "Timestamp({ t: 1, i: 2 })"],
     [{ $regularExpression: { pattern: "^a", options: "i" } }, "other", "/^a/i"],
     ["it's", "string", '"it\'s"'],
@@ -29,7 +29,7 @@ describe("describeEJson", () => {
     const value = { a: [{ $numberInt: "1" }, { $numberLong: "2" }], "b-c": { d: true } };
     expect(describeEJson(value)).toEqual({
       kind: "document",
-      text: '{ a: [1, Long("2")], "b-c": { d: true } }',
+      text: '{ a: [1, NumberLong("2")], "b-c": { d: true } }',
     });
   });
 

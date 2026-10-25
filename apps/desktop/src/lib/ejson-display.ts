@@ -20,7 +20,8 @@ export function isJsonObject(value: JsonValue | undefined): value is JsonObject 
 
 /**
  * Renders canonical Extended JSON (ADR-0007) in mongosh-like syntax for display.
- * Numeric types stay distinguishable: Int32 `5`, Double `5.0`, Int64 `Long("5")`.
+ * Numeric types stay distinguishable: Int32 `5`, Double `5.0`, Int64 `NumberLong("5")`.
+ * Constructors match the editable syntax (`toShellSyntax`), so a value reads the same everywhere.
  */
 export function describeEJson(value: JsonValue): { kind: EJsonKind; text: string } {
   if (value === null) return { kind: "null", text: "null" };
@@ -47,7 +48,7 @@ function describeObject(value: JsonObject): { kind: EJsonKind; text: string } {
       case "$numberDouble":
         return { kind: "number", text: formatDouble(String(inner)) };
       case "$numberLong":
-        return { kind: "number", text: `Long(${JSON.stringify(inner)})` };
+        return { kind: "number", text: `NumberLong(${JSON.stringify(inner)})` };
       case "$numberDecimal":
         return { kind: "number", text: `Decimal128(${JSON.stringify(inner)})` };
       case "$date":
@@ -57,7 +58,7 @@ function describeObject(value: JsonObject): { kind: EJsonKind; text: string } {
           const subType = Number.parseInt(String(inner.subType), 16);
           return {
             kind: "binary",
-            text: `Binary.createFromBase64(${JSON.stringify(inner.base64)}, ${subType})`,
+            text: `BinData(${subType}, ${JSON.stringify(inner.base64)})`,
           };
         }
         break;
@@ -101,7 +102,9 @@ function formatDate(inner: JsonValue | undefined): string {
   const date = new Date(millis);
   // Dates outside the JS range are still valid BSON; show the raw milliseconds.
   if (Number.isNaN(date.getTime())) {
-    return isJsonObject(inner) ? `Date(Long(${JSON.stringify(inner.$numberLong)}))` : "Date(?)";
+    return isJsonObject(inner)
+      ? `Date(NumberLong(${JSON.stringify(inner.$numberLong)}))`
+      : "Date(?)";
   }
   return `ISODate(${JSON.stringify(date.toISOString())})`;
 }
