@@ -2,17 +2,17 @@ import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import { ThemeMenu } from "@/components/theme-menu";
-import { BackupsTabLabel, BackupsView } from "@/features/backups";
+import { BackupsTabLabel } from "@/features/backups";
 import { CollectionTab, CollectionTabLabel } from "@/features/collection";
 import { ConnectionExplorer } from "@/features/connections";
 import { DiagramTabLabel } from "@/features/diagram";
-import { MonitorTab, MonitorTabLabel } from "@/features/monitor";
+import { MonitorTabLabel } from "@/features/monitor";
 import { useAutorunEnabled } from "@/features/perf-lab";
-import { QueriesTabLabel, QueriesView } from "@/features/queries";
-import { SettingsTabLabel, SettingsView, useApplySettings } from "@/features/settings";
+import { QueriesTabLabel } from "@/features/queries";
+import { SettingsTabLabel, useApplySettings } from "@/features/settings";
 import { ShellTab, ShellTabLabel } from "@/features/shell";
 import { useUpdateNotifier } from "@/features/updates";
-import { UsersTab, UsersTabLabel } from "@/features/users";
+import { UsersTabLabel } from "@/features/users";
 import {
   type TabLabelContext,
   useTabs,
@@ -38,6 +38,25 @@ const PerfLab = lazy(() =>
 // React Flow and the layout engine only load with a diagram tab (ADR-0043).
 const DiagramTab = lazy(() =>
   import("@/features/diagram/components/diagram-tab").then((m) => ({ default: m.DiagramTab })),
+);
+
+// Pages opened from a menu load with their first tab, keeping them out of the startup bundle.
+const MonitorTab = lazy(() =>
+  import("@/features/monitor/components/monitor-tab").then((m) => ({ default: m.MonitorTab })),
+);
+const UsersTab = lazy(() =>
+  import("@/features/users/components/users-tab").then((m) => ({ default: m.UsersTab })),
+);
+const QueriesView = lazy(() =>
+  import("@/features/queries/components/queries-view").then((m) => ({ default: m.QueriesView })),
+);
+const BackupsView = lazy(() =>
+  import("@/features/backups/components/backups-view").then((m) => ({ default: m.BackupsView })),
+);
+const SettingsView = lazy(() =>
+  import("@/features/settings/components/settings-view").then((m) => ({
+    default: m.SettingsView,
+  })),
 );
 
 /** Composition root: the only place that wires features together. */
@@ -109,6 +128,10 @@ function renderLabel(tab: WorkspaceTab, context: TabLabelContext) {
 }
 
 function renderTab(tab: WorkspaceTab) {
+  return <Suspense fallback={null}>{tabContent(tab)}</Suspense>;
+}
+
+function tabContent(tab: WorkspaceTab) {
   switch (tab.kind) {
     case "collection":
       return <CollectionTab tab={tab} />;
@@ -119,11 +142,7 @@ function renderTab(tab: WorkspaceTab) {
     case "users":
       return <UsersTab tab={tab} />;
     case "diagram":
-      return (
-        <Suspense fallback={null}>
-          <DiagramTab tab={tab} />
-        </Suspense>
-      );
+      return <DiagramTab tab={tab} />;
     case "queries":
       return <QueriesView />;
     case "backups":
