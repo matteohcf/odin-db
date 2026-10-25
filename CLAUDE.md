@@ -112,7 +112,7 @@ docs/adr/                Architecture Decision Records
 - Every user-visible string goes through i18next (ADR-0024). English is the source language; every `en.json` key also needs its Italian `it.json` translation in the same change (ADR-0035, enforced by a test).
 - Never put `TooltipTrigger asChild` (or any Radix trigger with `asChild`) directly on another stateful Radix component (Switch, Checkbox…): the trigger's `data-state` overwrites theirs. Wrap them in a `span`.
 - UI primitives come from `packages/ui` (shadcn). Do not hand-roll a button, dialog, menu, etc. Add components with the shadcn CLI from `packages/ui` (`pnpm dlx shadcn@latest add <name>`) and follow the official docs; class merging uses the official `cn` package, re-exported from `@odin-db/ui/lib/utils`.
-- App-level building blocks live in `src/components`; use them instead of re-writing the markup: `PageHeader` (every tab page), `EmptyState`, `InlineError` (form and action errors), `FormField` and `CheckboxField` (dialog fields), `IconAction`, `FilePicker`, `CodeEditor` / `QueryEditor`.
+- App-level building blocks live in `src/components`; use them instead of re-writing the markup: `PageHeader` (every tab page), `EmptyState`, `InlineError` (form and action errors), `FormField` and `CheckboxField` (dialog fields), `IconAction`, `FilePicker`, `CodeEditor` / `QueryEditor` (in a `QueryFieldFrame` for query bar fields).
 - Biome for lint and format. knip must report no unused exports or dependencies.
 
 ## Testing
