@@ -122,6 +122,7 @@ pub async fn export_database(
                 format: request.format,
                 json_mode: request.json_mode,
                 csv_fields: Vec::new(),
+                escape_formulas: false,
             },
             &folder.join(format!("{stem}.{extension}")),
             forward,

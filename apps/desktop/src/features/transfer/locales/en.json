@@ -34,7 +34,9 @@
     "count_other": "{{count, number}} documents will be exported.",
     "nothing": "No document matches the query: the file would be empty.",
     "titleCollection": "Export {{collection}}",
-    "descriptionCollection": "Writes every document of {{namespace}} to a file."
+    "descriptionCollection": "Writes every document of {{namespace}} to a file.",
+    "escapeFormulas": "Escape formulas for spreadsheets",
+    "escapeFormulasHint": "Text starting with =, +, - or @ gets a leading ' so Excel or Sheets show it instead of running it."
   },
   "import": {
     "title": "Import documents",

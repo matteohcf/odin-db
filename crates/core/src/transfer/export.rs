@@ -55,6 +55,9 @@ pub struct ExportRequest {
     pub json_mode: JsonMode,
     /// CSV columns as dotted paths; empty means "discover from the data".
     pub csv_fields: Vec<String>,
+    /// Prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`) with `'`.
+    #[serde(default)]
+    pub escape_formulas: bool,
 }
 
 /// Streams the source into `path`. Data goes to a sibling `.partial` file that is
@@ -168,13 +171,18 @@ async fn write_all(
             out.write(&csv_record(fields.iter().map(String::as_str))?)
                 .await?;
             for document in buffered {
-                out.write(&csv_row(&document, &fields)?).await?;
+                out.write(&csv_row(&document, &fields, request.escape_formulas)?)
+                    .await?;
                 count += 1;
                 reporter.report(count, out.bytes);
             }
             while next(&mut cursor, cancel).await? {
-                out.write(&csv_row(&cursor.deserialize_current()?, &fields)?)
-                    .await?;
+                out.write(&csv_row(
+                    &cursor.deserialize_current()?,
+                    &fields,
+                    request.escape_formulas,
+                )?)
+                .await?;
                 count += 1;
                 reporter.report(count, out.bytes);
             }
@@ -240,16 +248,22 @@ fn discover_fields(documents: &[Document]) -> Vec<String> {
     fields
 }
 
-fn csv_row(document: &Document, fields: &[String]) -> Result<Vec<u8>, CoreError> {
+fn csv_row(document: &Document, fields: &[String], escape: bool) -> Result<Vec<u8>, CoreError> {
     let cells: Vec<String> = fields
         .iter()
-        .map(|field| {
-            get_path(document, field)
-                .map(format_cell)
-                .unwrap_or_default()
+        .map(|field| match get_path(document, field) {
+            // Only text: a negative number is data, not a formula.
+            Some(Bson::String(text)) if escape && is_formula(text) => format!("'{text}"),
+            Some(value) => format_cell(value),
+            None => String::new(),
         })
         .collect();
     csv_record(cells.iter().map(String::as_str))
+}
+
+/// What spreadsheets treat as a formula (OWASP CSV injection).
+fn is_formula(text: &str) -> bool {
+    text.starts_with(['=', '+', '-', '@', '\t', '\r'])
 }
 
 fn csv_record<'a>(cells: impl IntoIterator<Item = &'a str>) -> Result<Vec<u8>, CoreError> {
@@ -288,6 +302,7 @@ mod tests {
                 "tags".into(),
                 "missing".into(),
             ],
+            false,
         )
         .expect("row");
         assert_eq!(
@@ -302,5 +317,17 @@ mod tests {
             partial_path(Path::new("/tmp/out.json")),
             Path::new("/tmp/out.json.partial")
         );
+    }
+
+    #[test]
+    fn formulas_are_escaped_only_in_text_and_only_when_asked() {
+        let document = doc! { "a": "=HYPERLINK(\"x\")", "b": -5, "c": "-3 apples", "d": "ok" };
+        let fields = ["a".into(), "b".into(), "c".into(), "d".into()];
+        let escaped =
+            String::from_utf8(csv_row(&document, &fields, true).expect("row")).expect("utf8");
+        assert_eq!(escaped, "\"'=HYPERLINK(\"\"x\"\")\",-5,'-3 apples,ok\n");
+        let raw =
+            String::from_utf8(csv_row(&document, &fields, false).expect("row")).expect("utf8");
+        assert!(raw.starts_with("\"=HYPERLINK"));
     }
 }

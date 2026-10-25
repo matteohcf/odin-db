@@ -79,6 +79,20 @@ await check("removing is destructive and refused on _id", async () => {
   await page.keyboard.press("Escape");
 });
 
+await check("CSV export can escape spreadsheet formulas", async () => {
+  await page.getByRole("button", { name: "More actions" }).click();
+  await page.getByRole("menuitem", { name: "Export results…" }).click();
+  const exportDialog = page.getByRole("dialog", { name: "Export results" });
+  await exportDialog.getByRole("button", { name: /^CSV/ }).click();
+  const escapeBox = exportDialog.getByRole("checkbox", {
+    name: "Escape formulas for spreadsheets",
+  });
+  await escapeBox.click();
+  if ((await escapeBox.getAttribute("aria-checked")) !== "true") throw new Error("not checked");
+  await shot("03-csv");
+  await page.keyboard.press("Escape");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();

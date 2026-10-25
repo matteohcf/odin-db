@@ -34,7 +34,9 @@
     "count_other": "Verranno esportati {{count, number}} documenti.",
     "nothing": "Nessun documento corrisponde alla query: il file sarebbe vuoto.",
     "titleCollection": "Esporta {{collection}}",
-    "descriptionCollection": "Scrive tutti i documenti di {{namespace}} in un file."
+    "descriptionCollection": "Scrive tutti i documenti di {{namespace}} in un file.",
+    "escapeFormulas": "Neutralizza le formule per i fogli di calcolo",
+    "escapeFormulasHint": "Il testo che inizia con =, +, - o @ riceve un ' iniziale, così Excel o Fogli lo mostrano invece di eseguirlo."
   },
   "import": {
     "title": "Importa documenti",

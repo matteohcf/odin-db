@@ -630,6 +630,7 @@ async fn json_exports_round_trip_exactly() {
             format,
             json_mode: JsonMode::Canonical,
             csv_fields: Vec::new(),
+            escape_formulas: false,
         };
         let summary = export_documents(
             &handle,
@@ -697,6 +698,7 @@ async fn csv_round_trips_with_explicit_column_types() {
             "age".into(),
             "address.city".into(),
         ],
+        escape_formulas: false,
     };
     export_documents(
         &handle,
@@ -807,6 +809,7 @@ async fn failed_exports_leave_no_file_and_read_only_blocks_imports() {
         format: ExportFormat::JsonArray,
         json_mode: JsonMode::Canonical,
         csv_fields: Vec::new(),
+        escape_formulas: false,
     };
     let result = export_documents(
         &handle,

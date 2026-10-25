@@ -53,6 +53,7 @@ export function ExportDialog({
   const id = useId();
   const [format, setFormat] = useState<ExportFormat>("jsonArray");
   const [jsonMode, setJsonMode] = useState<JsonMode>("canonical");
+  const [escapeFormulas, setEscapeFormulas] = useState(false);
   const [fields, setFields] = useState<ReadonlySet<string>>(() => new Set(columns));
   const transfer = useTransfer<TransferSummary>(t("export.title"));
   // What a find export will write, so an empty or huge export is no surprise.
@@ -98,6 +99,7 @@ export function ExportDialog({
             jsonMode,
             // Keep the grid's column order; empty lets the backend discover columns.
             csvFields: format === "csv" ? columns.filter((column) => fields.has(column)) : [],
+            escapeFormulas: format === "csv" && escapeFormulas,
           },
           channel,
         ),
@@ -195,6 +197,22 @@ export function ExportDialog({
                   ))}
                 </div>
                 <p className="text-muted-foreground text-xs">{t("export.fieldsHint")}</p>
+                <div className="flex items-start gap-2 pt-1">
+                  <Checkbox
+                    id={`${id}-escape`}
+                    checked={escapeFormulas}
+                    onCheckedChange={(checked) => setEscapeFormulas(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <Label htmlFor={`${id}-escape`} className="font-normal text-sm">
+                      {t("export.escapeFormulas")}
+                    </Label>
+                    <p className="text-muted-foreground text-xs">
+                      {t("export.escapeFormulasHint")}
+                    </p>
+                  </div>
+                </div>
               </fieldset>
             ) : (
               <fieldset className="flex flex-col gap-2">

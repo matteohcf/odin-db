@@ -714,6 +714,8 @@ export type ExportRequest = {
 	jsonMode: JsonMode,
 	/**  CSV columns as dotted paths; empty means "discover from the data". */
 	csvFields: string[],
+	/**  Prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`) with `'`. */
+	escapeFormulas?: boolean,
 };
 
 export type ExportSource = { kind: "find"; request: FindRequest } | { kind: "aggregate"; pipeline: EJsonDocument[] };
