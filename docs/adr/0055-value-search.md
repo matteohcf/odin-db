@@ -11,8 +11,9 @@ the field to be known; the server has no way to match text in every field.
 
 ## Decision
 
-- `search::search` reads documents and matches here: string values (inside embedded documents
-  and arrays, array positions in the path) and, when asked, field names; plain text is literal,
+- `search::search` reads documents and matches here: string values, and ObjectIds and numbers
+  by their text so an id finds the documents referencing it (inside embedded documents and
+  arrays, array positions in the path) and, when asked, field names; plain text is literal,
   a regular expression uses the `regex` crate, case-insensitive by default.
 - It reads at most `documentsPerCollection` per collection (1,000 by default; 10,000 or 100,000
   on request) and reports the collections it did not read in full, so a miss is never presented

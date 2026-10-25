@@ -137,6 +137,26 @@ impl Matcher {
                     found.push((path.to_owned(), preview(text, at.start(), at.end()), false));
                 }
             }
+            // References and numbers match by their text, so an id finds the documents
+            // pointing at it. The preview says what the value is.
+            Bson::ObjectId(id) => {
+                let hex = id.to_hex();
+                if self.pattern.is_match(&hex) {
+                    found.push((path.to_owned(), format!("ObjectId(\"{hex}\")"), false));
+                }
+            }
+            Bson::Int32(_) | Bson::Int64(_) | Bson::Double(_) | Bson::Decimal128(_) => {
+                let text = match value {
+                    Bson::Int32(n) => n.to_string(),
+                    Bson::Int64(n) => n.to_string(),
+                    Bson::Double(n) => n.to_string(),
+                    Bson::Decimal128(n) => n.to_string(),
+                    _ => String::new(),
+                };
+                if self.pattern.is_match(&text) {
+                    found.push((path.to_owned(), text, false));
+                }
+            }
             Bson::Document(inner) => self.walk_document(inner, path, found),
             Bson::Array(items) => {
                 for (index, item) in items.iter().enumerate() {
@@ -328,6 +348,22 @@ mod tests {
         });
         let paths: Vec<_> = found.iter().map(|(path, _, _)| path.as_str()).collect();
         assert_eq!(paths, ["city", "address.town", "tags.1"]);
+    }
+
+    #[test]
+    fn ids_and_numbers_match_by_their_text() {
+        let id = bson::oid::ObjectId::parse_str("65f0a1c30000000000000001").expect("oid");
+        let found = Matcher::new(&request("65f0a1c30000000000000001"))
+            .expect("valid")
+            .find(&doc! { "customerId": id, "other": "x" });
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, "customerId");
+        assert_eq!(found[0].1, "ObjectId(\"65f0a1c30000000000000001\")");
+        let numbers = Matcher::new(&request("1234")).expect("valid").find(&doc! {
+            "zip": 1234, "big": 99_991_234_i64, "price": 12.5,
+        });
+        let paths: Vec<_> = numbers.iter().map(|(path, _, _)| path.as_str()).collect();
+        assert_eq!(paths, ["zip", "big"]);
     }
 
     #[test]
