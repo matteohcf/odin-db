@@ -36,6 +36,7 @@
     "ttl": "TTL {{seconds}}s",
     "partial": "Partial",
     "partialHint": "Only documents matching {{filter}}",
+    "collation": "Collation {{locale}}",
     "default": "Default"
   },
   "create": {
@@ -55,6 +56,8 @@
     "ttlHint": "TTL index: documents are deleted once the date in the key field is older than this.",
     "partial": "Partial filter",
     "partialHint": "Only index documents matching this filter.",
+    "collation": "Collation",
+    "collationHint": "How strings compare, e.g. strength 2 ignores case. Queries use the index only with the same collation.",
     "submit": "Create index",
     "creating": "Building…",
     "created": "Index {{name}} created",

@@ -1878,6 +1878,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       hidden: boolean;
       expireAfterSeconds: number | null;
       partialFilter: Doc | null;
+      collation?: Doc | null;
     };
     const { connection, coll } = collectionOf(
       id("connectionId", args),
@@ -1903,6 +1904,11 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (request.expireAfterSeconds !== null)
       spec.expireAfterSeconds = num(request.expireAfterSeconds);
     if (request.partialFilter) spec.partialFilterExpression = request.partialFilter;
+    if (request.collation) {
+      if (typeof request.collation.locale !== "string")
+        fail("validation", "collation: missing field `locale`");
+      spec.collation = request.collation;
+    }
     indexesOf(coll).push(spec);
     indexBuilds.push({ key: `${ns.database}.${ns.collection}`, name, startedAt: Date.now() });
     return name;

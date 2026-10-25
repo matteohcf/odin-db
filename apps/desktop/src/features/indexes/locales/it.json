@@ -36,6 +36,7 @@
     "ttl": "TTL {{seconds}}s",
     "partial": "Parziale",
     "partialHint": "Solo documenti corrispondenti a {{filter}}",
+    "collation": "Collation {{locale}}",
     "default": "Predefinito"
   },
   "create": {
@@ -55,6 +56,8 @@
     "ttlHint": "Indice TTL: i documenti vengono eliminati quando la data nel campo chiave è più vecchia di questo valore.",
     "partial": "Filtro parziale",
     "partialHint": "Indicizza solo i documenti corrispondenti a questo filtro.",
+    "collation": "Collation",
+    "collationHint": "Come si confrontano le stringhe, ad es. strength 2 ignora maiuscole e minuscole. Le query usano l'indice solo con la stessa collation.",
     "submit": "Crea indice",
     "creating": "Creazione…",
     "created": "Indice {{name}} creato",

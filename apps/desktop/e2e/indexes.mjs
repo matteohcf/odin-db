@@ -19,6 +19,7 @@ const check = async (name, fn) => {
     results.push(`ok   ${name}`);
   } catch (error) {
     results.push(`FAIL ${name}: ${String(error).split("\n")[0]}`);
+    await page.screenshot({ path: `test-results/${scheme}-indexes-fail.png` });
     await shot(`fail-${name.replaceAll(" ", "-")}`);
   }
 };
@@ -97,6 +98,35 @@ await check("a build in progress shows its progress, then goes away", async () =
   await builds.getByText(/scanning collection/).waitFor();
   await shot("build");
   await builds.waitFor({ state: "detached", timeout: 30_000 });
+});
+
+await check("a case-insensitive index carries its collation", async () => {
+  await page.getByRole("button", { name: "Create index" }).click();
+  const dialog = page.getByRole("dialog", { name: "Create index" });
+  await dialog.getByRole("textbox", { name: "Keys" }).click();
+  await page.keyboard.type("{ name: 1");
+  const collation = dialog.getByRole("textbox", { name: "Collation" });
+  // A collation without a locale is refused.
+  await collation.click();
+  // Suggestions for the keys, arriving after the move, do not stay open over the dialog.
+  await page.waitForTimeout(400);
+  if (await page.locator(".cm-tooltip-autocomplete").count())
+    throw new Error("the keys' suggestions stayed open");
+  await page.keyboard.type("{ strength: 2");
+  await dialog.getByRole("button", { name: "Create index" }).click();
+  await dialog
+    .getByRole("alert")
+    .getByText(/locale/)
+    .waitFor();
+  await collation.click();
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.type('{ locale: "en", strength: 2');
+  await shot("collation");
+  await dialog.getByRole("button", { name: "Create index" }).click();
+  await page
+    .getByRole("row", { name: /name_1/ })
+    .getByText("Collation en")
+    .waitFor();
 });
 
 console.log(results.join("\n"));

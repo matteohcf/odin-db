@@ -11,11 +11,11 @@ import {
 } from "@odin-db/ui/components/dialog";
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
-import { CircleAlert } from "lucide-react";
 import { type FormEvent, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { FormField } from "@/components/form-field";
+import { InlineError } from "@/components/inline-error";
 import { QueryEditor } from "@/components/query-editor";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { useSampleFields } from "@/hooks/use-sample-fields";
@@ -60,6 +60,7 @@ export function CreateIndexDialog({
   });
   const [ttl, setTtl] = useState("");
   const [partial, setPartial] = useState("");
+  const [collation, setCollation] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent) {
@@ -79,6 +80,7 @@ export function CreateIndexDialog({
         ...flags,
         expireAfterSeconds: ttlSeconds,
         partialFilter: partial.trim() === "" ? null : await parseShellDocument(partial),
+        collation: collation.trim() === "" ? null : await parseShellDocument(collation),
       });
       toast.success(t("create.created", { name: created }));
       onClose();
@@ -169,12 +171,23 @@ export function CreateIndexDialog({
             </div>
           </FormField>
 
-          {error && (
-            <p role="alert" className="flex items-start gap-2 text-destructive text-xs selectable">
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              <span className="break-words">{error}</span>
-            </p>
-          )}
+          <FormField
+            id={`${id}-collation`}
+            label={t("create.collation")}
+            hint={t("create.collationHint")}
+          >
+            <div className={EDITOR_FRAME}>
+              <QueryEditor
+                value={collation}
+                onChange={setCollation}
+                onSubmit={() => form.current?.requestSubmit()}
+                placeholder='{ locale: "en", strength: 2 }'
+                ariaLabel={t("create.collation")}
+              />
+            </div>
+          </FormField>
+
+          {error && <InlineError>{error}</InlineError>}
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>

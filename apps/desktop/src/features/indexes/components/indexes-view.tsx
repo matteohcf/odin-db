@@ -33,7 +33,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { describeEJson } from "@/lib/ejson-display";
+import { describeEJson, isJsonObject } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { useDropIndex, useIndexes, useSetIndexHidden } from "../api/indexes";
 import { createIndexCommand } from "../lib/create-index-command";
@@ -301,6 +301,14 @@ function Properties({ index }: { index: IndexInfo }) {
     badges.push({
       label: t("badge.partial"),
       hint: t("badge.partialHint", { filter: describeEJson(index.partialFilter).text }),
+    });
+  }
+  const collation = isJsonObject(index.definition) ? index.definition.collation : undefined;
+  // Every index of a collection created with a collation reports it; "simple" is the default.
+  if (isJsonObject(collation) && collation.locale !== "simple") {
+    badges.push({
+      label: t("badge.collation", { locale: String(collation.locale ?? "") }),
+      hint: describeEJson(collation).text,
     });
   }
 
