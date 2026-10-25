@@ -47,6 +47,8 @@ pub struct SearchHit {
     /// The matching value around the match, or the field name.
     pub preview: String,
     pub field_name: bool,
+    /// The value is text, shown in quotes; ids and numbers are not.
+    pub quoted: bool,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -74,6 +76,9 @@ pub struct SearchSummary {
     /// The search stopped at the hit limit.
     pub truncated: bool,
 }
+
+/// One match: its path, preview, whether it is a field name, whether the value is text.
+pub(crate) type Found = (String, String, bool, bool);
 
 pub(crate) struct Matcher {
     pattern: Regex,
@@ -105,18 +110,13 @@ impl Matcher {
     }
 
     /// Every match in `document`, with its path.
-    pub(crate) fn find(&self, document: &Document) -> Vec<(String, String, bool)> {
+    pub(crate) fn find(&self, document: &Document) -> Vec<Found> {
         let mut found = Vec::new();
         self.walk_document(document, "", &mut found);
         found
     }
 
-    fn walk_document(
-        &self,
-        document: &Document,
-        prefix: &str,
-        found: &mut Vec<(String, String, bool)>,
-    ) {
+    fn walk_document(&self, document: &Document, prefix: &str, found: &mut Vec<Found>) {
         for (key, value) in document {
             let path = if prefix.is_empty() {
                 key.clone()
@@ -124,17 +124,22 @@ impl Matcher {
                 format!("{prefix}.{key}")
             };
             if self.field_names && self.pattern.is_match(key) {
-                found.push((path.clone(), key.clone(), true));
+                found.push((path.clone(), key.clone(), true, false));
             }
             self.walk_value(value, &path, found);
         }
     }
 
-    fn walk_value(&self, value: &Bson, path: &str, found: &mut Vec<(String, String, bool)>) {
+    fn walk_value(&self, value: &Bson, path: &str, found: &mut Vec<Found>) {
         match value {
             Bson::String(text) => {
                 if let Some(at) = self.pattern.find(text) {
-                    found.push((path.to_owned(), preview(text, at.start(), at.end()), false));
+                    found.push((
+                        path.to_owned(),
+                        preview(text, at.start(), at.end()),
+                        false,
+                        true,
+                    ));
                 }
             }
             // References and numbers match by their text, so an id finds the documents
@@ -142,7 +147,12 @@ impl Matcher {
             Bson::ObjectId(id) => {
                 let hex = id.to_hex();
                 if self.pattern.is_match(&hex) {
-                    found.push((path.to_owned(), format!("ObjectId(\"{hex}\")"), false));
+                    found.push((
+                        path.to_owned(),
+                        format!("ObjectId(\"{hex}\")"),
+                        false,
+                        false,
+                    ));
                 }
             }
             Bson::Int32(_) | Bson::Int64(_) | Bson::Double(_) | Bson::Decimal128(_) => {
@@ -154,7 +164,7 @@ impl Matcher {
                     _ => String::new(),
                 };
                 if self.pattern.is_match(&text) {
-                    found.push((path.to_owned(), text, false));
+                    found.push((path.to_owned(), text, false, false));
                 }
             }
             Bson::Document(inner) => self.walk_document(inner, path, found),
@@ -278,13 +288,14 @@ pub async fn search(
             }
             let document = cursor.deserialize_current()?;
             let id = EJsonValue::from(document.get("_id").cloned().unwrap_or(Bson::Null));
-            for (path, preview, field_name) in matcher.find(&document) {
+            for (path, preview, field_name, quoted) in matcher.find(&document) {
                 batch.push(SearchHit {
                     namespace: namespace.clone(),
                     id: id.clone(),
                     path,
                     preview,
                     field_name,
+                    quoted,
                 });
                 hits += 1;
                 // One past the limit proves there was more to find.
@@ -346,7 +357,7 @@ mod tests {
             "tags": ["x", "a milanos"],
             "n": 5,
         });
-        let paths: Vec<_> = found.iter().map(|(path, _, _)| path.as_str()).collect();
+        let paths: Vec<_> = found.iter().map(|(path, ..)| path.as_str()).collect();
         assert_eq!(paths, ["city", "address.town", "tags.1"]);
     }
 
@@ -362,7 +373,7 @@ mod tests {
         let numbers = Matcher::new(&request("1234")).expect("valid").find(&doc! {
             "zip": 1234, "big": 99_991_234_i64, "price": 12.5,
         });
-        let paths: Vec<_> = numbers.iter().map(|(path, _, _)| path.as_str()).collect();
+        let paths: Vec<_> = numbers.iter().map(|(path, ..)| path.as_str()).collect();
         assert_eq!(paths, ["zip", "big"]);
     }
 
@@ -375,7 +386,7 @@ mod tests {
             .expect("valid")
             .find(&doc! { "email": "x", "mail": "y" });
         assert_eq!(found.len(), 2);
-        assert!(found.iter().all(|(_, _, field)| *field));
+        assert!(found.iter().all(|(_, _, field, _)| *field));
 
         let mut exact = request("Rome");
         exact.case_sensitive = true;

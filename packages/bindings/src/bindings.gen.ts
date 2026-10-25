@@ -1285,6 +1285,8 @@ export type SearchHit = {
 	/**  The matching value around the match, or the field name. */
 	preview: string,
 	fieldName: boolean,
+	/**  The value is text, shown in quotes; ids and numbers are not. */
+	quoted: boolean,
 };
 
 export type SearchRequest = {

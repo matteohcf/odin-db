@@ -226,7 +226,7 @@ export function ValueSearchDialog({
                           <span className="text-muted-foreground">{t("search.fieldName")}</span>
                         ) : (
                           <>
-                            "
+                            {hit.quoted && '"'}
                             {highlightParts(hit.preview, pattern).map((part, at) =>
                               part.match ? (
                                 // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional.
@@ -237,7 +237,7 @@ export function ValueSearchDialog({
                                 part.text
                               ),
                             )}
-                            "
+                            {hit.quoted && '"'}
                           </>
                         )}
                       </span>

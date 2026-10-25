@@ -1363,6 +1363,29 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       if (target.docs.length > read.length) summary.partialCollections += 1;
       const hits: SearchHit[] = [];
       const walk = (value: JsonValue, path: string, doc: Doc) => {
+        // Ids and numbers match by their text, as in core.
+        const wrapped =
+          value && typeof value === "object" && !Array.isArray(value)
+            ? Object.entries(value).find(([key]) =>
+                ["$oid", "$numberInt", "$numberLong", "$numberDouble", "$numberDecimal"].includes(
+                  key,
+                ),
+              )
+            : undefined;
+        if (wrapped) {
+          const [kind, inner] = wrapped;
+          const text = String(inner);
+          if (pattern.test(text))
+            hits.push({
+              namespace,
+              id: doc._id ?? null,
+              path,
+              preview: kind === "$oid" ? `ObjectId("${text}")` : text,
+              fieldName: false,
+              quoted: false,
+            });
+          return;
+        }
         if (typeof value === "string") {
           if (pattern.test(value))
             hits.push({
@@ -1371,6 +1394,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
               path,
               preview: value.slice(0, 80),
               fieldName: false,
+              quoted: true,
             });
         } else if (Array.isArray(value)) {
           for (const [i, item] of value.entries()) walk(item, `${path}.${i}`, doc);
@@ -1388,6 +1412,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
                 path: child,
                 preview: key,
                 fieldName: true,
+                quoted: false,
               });
             walk(inner, child, doc);
           }
