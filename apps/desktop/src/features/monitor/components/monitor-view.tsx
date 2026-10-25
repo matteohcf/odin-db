@@ -198,7 +198,8 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
 
         <ShardingSection connection={connection} polling={polling} />
         <ReplicaSetSection connection={connection} polling={polling} />
-        <BusiestCollectionsSection connection={connection} polling={polling} />
+        {/* Rates diff two samples of one connection: a new connection starts over. */}
+        <BusiestCollectionsSection key={connection.id} connection={connection} polling={polling} />
         <section className="mt-6 flex flex-col gap-2" aria-label={t("ops.title")}>
           <div className="flex items-baseline gap-2">
             <h2 className="font-semibold text-sm">{t("ops.title")}</h2>

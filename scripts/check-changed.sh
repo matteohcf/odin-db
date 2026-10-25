@@ -16,7 +16,7 @@ if [ -z "$files" ]; then
 fi
 
 rust_pattern='^(crates/|apps/desktop/src-tauri/|Cargo\.|rust-toolchain\.toml|clippy\.toml)'
-js_pattern='^(apps/desktop/(src|e2e)/|apps/desktop/[^/]+\.(json|ts|js)$|packages/|package\.json|pnpm-|biome\.json|knip\.json|turbo\.json|tsconfig)'
+js_pattern='^(apps/desktop/(src|e2e)/|apps/desktop/[^/]+\.(json|ts|js|html)$|packages/|package\.json|pnpm-|biome\.json|knip\.json|turbo\.json|tsconfig)'
 
 run_js=false
 run_rust=false

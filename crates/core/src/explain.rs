@@ -167,14 +167,11 @@ fn summarize_aggregate(raw: Document) -> QueryPlan {
             }
         })
         .collect();
-    if let Some(last) = plan.pipeline.last() {
-        if let Some(returned) = last.returned {
-            plan.returned = returned;
-        }
-        // Estimates are cumulative: the last stage's covers the whole pipeline.
-        if let Some(milliseconds) = last.milliseconds {
-            plan.milliseconds = plan.milliseconds.max(milliseconds);
-        }
+    // `returned` stays the query part's: compared with the documents it examined, it tells
+    // whether the scan was wasteful. What the pipeline ends with is its last stage's count.
+    // Estimates are cumulative: the last stage's covers the whole pipeline.
+    if let Some(milliseconds) = plan.pipeline.last().and_then(|last| last.milliseconds) {
+        plan.milliseconds = plan.milliseconds.max(milliseconds);
     }
     plan.raw = EJsonDocument::from(raw);
     plan
@@ -352,7 +349,8 @@ mod tests {
         assert_eq!(plan.documents_examined, 500.0);
         let names: Vec<_> = plan.pipeline.iter().map(|s| s.stage.as_str()).collect();
         assert_eq!(names, ["$group", "$sort"]);
-        assert_eq!((plan.returned, plan.milliseconds), (7.0, 6.0));
+        assert_eq!((plan.returned, plan.milliseconds), (100.0, 6.0));
+        assert_eq!(plan.pipeline.last().and_then(|s| s.returned), Some(7.0));
         // A pipeline that ran entirely inside the query reads like a find.
         let pushed = summarize_aggregate(doc! {
             "queryPlanner": { "winningPlan": { "stage": "IXSCAN", "indexName": "a_1" } },

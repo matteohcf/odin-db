@@ -196,7 +196,7 @@ pub struct ShardedCollection {
 pub async fn sharding_status(
     handle: &ConnectionHandle,
 ) -> Result<Option<ShardingStatus>, CoreError> {
-    const NOT_A_MONGOS: [i32; 2] = [59, 13_644];
+    const NOT_A_MONGOS: [i32; 3] = [59, 115, 13_644];
     let admin = handle.client.database("admin");
     let shards = match admin.run_command(doc! { "listShards": 1 }).await {
         Err(error)
@@ -217,7 +217,12 @@ pub async fn sharding_status(
         .client
         .database("config")
         .collection::<Document>("collections")
-        .find(doc! { "key": { "$exists": true }, "dropped": { "$ne": true } })
+        // 8.0 also tracks unsharded collections here, marked `unsplittable`.
+        .find(doc! {
+            "key": { "$exists": true },
+            "dropped": { "$ne": true },
+            "unsplittable": { "$ne": true },
+        })
         .sort(doc! { "_id": 1 })
         .limit(1000)
         .await?;

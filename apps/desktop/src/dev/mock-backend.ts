@@ -2286,11 +2286,13 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const operators = pipeline.map((stage) => Object.keys(stage)[0] ?? "?");
     // The leading $match runs in the query; the rest on its output.
     const later = operators[0] === "$match" ? operators.slice(1) : operators;
+    const queried =
+      operators[0] === "$match" ? aggregate(coll.docs, pipeline.slice(0, 1)) : coll.docs;
     return {
       stages: ["COLLSCAN"],
       indexes: [],
       collectionScan: true,
-      returned: output.length,
+      returned: queried.length,
       documentsExamined: coll.docs.length,
       keysExamined: 0,
       milliseconds: 4,
