@@ -39,18 +39,21 @@ export interface ConnectionFields {
   extra: [string, string][];
 }
 
-const FORM_OPTIONS = new Set([
-  "authSource",
-  "authMechanism",
-  "tls",
-  "ssl",
-  "tlsAllowInvalidCertificates",
-  "tlsCAFile",
-  "tlsCertificateKeyFile",
-  "replicaSet",
-  "directConnection",
-  "readPreference",
-]);
+// Compared in lower case: option names are case-insensitive.
+const FORM_OPTIONS = new Set(
+  [
+    "authSource",
+    "authMechanism",
+    "tls",
+    "ssl",
+    "tlsAllowInvalidCertificates",
+    "tlsCAFile",
+    "tlsCertificateKeyFile",
+    "replicaSet",
+    "directConnection",
+    "readPreference",
+  ].map((name) => name.toLowerCase()),
+);
 
 const URI = /^(mongodb(?:\+srv)?):\/\/(?:([^@/]*)@)?([^/?]*)(?:\/([^?]*))?(?:\?(.*))?$/;
 
@@ -80,15 +83,18 @@ export function parseConnectionString(text: string): ConnectionFields | null {
     database: decode(database),
     authSource: option("authSource") ?? "",
     authMechanism: option("authMechanism") ?? "",
-    // SRV connections use TLS unless told otherwise.
-    tls: tlsOption === undefined ? srv : tlsOption === "true",
+    // SRV connections use TLS unless told otherwise; so does a string naming certificate files.
+    tls:
+      tlsOption === undefined
+        ? srv || option("tlsCAFile") !== undefined || option("tlsCertificateKeyFile") !== undefined
+        : tlsOption === "true",
     tlsAllowInvalidCertificates: option("tlsAllowInvalidCertificates") === "true",
     tlsCAFile: option("tlsCAFile") ?? "",
     tlsCertificateKeyFile: option("tlsCertificateKeyFile") ?? "",
     replicaSet: option("replicaSet") ?? "",
     directConnection: option("directConnection") === "true",
     readPreference: option("readPreference") ?? "",
-    extra: options.filter(([key]) => !FORM_OPTIONS.has(key)),
+    extra: options.filter(([key]) => !FORM_OPTIONS.has(key.toLowerCase())),
   };
 }
 

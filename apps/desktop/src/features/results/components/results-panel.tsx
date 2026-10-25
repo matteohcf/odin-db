@@ -1,6 +1,6 @@
 import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsState } from "../hooks/use-results";
 import { stepInto } from "../lib/nested";
@@ -60,6 +60,13 @@ export function ResultsPanel({
   const [path, setPath] = useState<readonly string[]>([]);
   const nested = useMemo(() => (path.length > 0 ? stepInto(rows, path) : null), [rows, path]);
   const [nestedSelection, setNestedSelection] = useState<number | null>(null);
+  // New rows (a re-run, more loaded) make the selected index point elsewhere.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rows changing is the trigger.
+  useEffect(() => setNestedSelection(null), [rows]);
+  // A field the new results no longer have leaves nothing to stand in.
+  useEffect(() => {
+    if (path[0] !== undefined && !columns.includes(path[0])) setPath([]);
+  }, [columns, path]);
 
   if (status === "idle") return <div className="flex-1">{idle}</div>;
   if (status === "error") {
@@ -183,7 +190,8 @@ export function ResultsPanel({
                 ? undefined
                 : rows[selectedIndex]
           }
-          onFilter={columnActions?.onFilterBy}
+          // Nested fields are not top-level fields of the query: no filtering from them.
+          onFilter={nested ? undefined : columnActions?.onFilterBy}
         />
       )}
     </div>

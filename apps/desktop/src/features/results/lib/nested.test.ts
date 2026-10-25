@@ -28,6 +28,15 @@ describe("stepInto", () => {
     ]);
   });
 
+  it("steps into arrays of arrays through their value column", () => {
+    const grid = [{ _id: 1, matrix: [[1, 2], [3]] }];
+    expect(stepInto(grid, ["matrix"]).rows).toEqual([
+      { [PARENT_ID]: 1, value: [1, 2] },
+      { [PARENT_ID]: 1, value: [3] },
+    ]);
+    expect(stepInto(grid, ["matrix", "value"]).rows).toHaveLength(3);
+  });
+
   it("tells documents from Extended JSON values", () => {
     expect(isNested({ city: "Milano" })).toBe(true);
     expect(isNested([1])).toBe(true);

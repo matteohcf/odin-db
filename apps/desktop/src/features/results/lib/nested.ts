@@ -24,7 +24,14 @@ export function stepInto(
   }));
   for (const field of path) {
     items = items.flatMap(({ id, value }) => {
-      const inner = isJsonObject(value) && isNested(value) ? value[field] : undefined;
+      // A plain value or an inner array shows as the `value` column: stepping into it again
+      // takes that same value.
+      const inner =
+        isJsonObject(value) && isNested(value)
+          ? value[field]
+          : field === "value"
+            ? value
+            : undefined;
       if (inner === undefined) return [];
       return Array.isArray(inner)
         ? inner.map((element) => ({ id, value: element }))

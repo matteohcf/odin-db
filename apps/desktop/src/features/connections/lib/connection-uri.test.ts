@@ -53,6 +53,17 @@ describe("connection strings", () => {
     expect(fields && buildConnectionString({ ...fields, tls: false })).toBe("mongodb://db1:27017");
   });
 
+  it("keeps certificate files given without tls=true, and option names in any case", () => {
+    const fields = parseConnectionString("mongodb://h/?tlsCAFile=%2Fx.pem");
+    expect(fields?.tls).toBe(true);
+    expect(fields && buildConnectionString(fields)).toBe(
+      "mongodb://h/?tls=true&tlsCAFile=%2Fx.pem",
+    );
+    const mixed = parseConnectionString("mongodb://h/?TLS=true&ReplicaSet=rs0");
+    expect(mixed?.extra).toEqual([]);
+    expect(mixed?.replicaSet).toBe("rs0");
+  });
+
   it("rejects text that is not a MongoDB connection string", () => {
     expect(parseConnectionString("postgres://x")).toBeNull();
     expect(parseConnectionString("localhost:27017")).toBeNull();
