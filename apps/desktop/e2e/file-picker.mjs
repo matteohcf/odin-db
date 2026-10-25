@@ -48,6 +48,7 @@ await check("a file dropped on the window is previewed", async () => {
   await drop([{ name: "people.csv" }]);
   await dialog.getByText("people.csv", { exact: true }).waitFor();
   await dialog.getByText("CSV · 5 columns").waitFor();
+  await dialog.getByRole("checkbox", { name: "Leave empty cells out" }).waitFor();
   await page.waitForTimeout(150);
   await shot("03-selected");
 });

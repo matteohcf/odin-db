@@ -31,12 +31,19 @@ pub struct CsvColumn {
 
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum ImportFormat {
     /// A JSON array, NDJSON, or concatenated documents, in canonical or relaxed Extended JSON.
     Json,
     Csv {
         columns: Vec<CsvColumn>,
+        /// Leave empty text cells out instead of storing `""`, as spreadsheets mean blank.
+        #[serde(default)]
+        ignore_empty_strings: bool,
     },
 }
 
@@ -183,7 +190,10 @@ pub async fn import_documents(
     let reader_cancel = cancel.child_token();
     let reader = tokio::task::spawn_blocking(move || match options.format {
         ImportFormat::Json => read_json(&path, &tx, &reader_cancel, None),
-        ImportFormat::Csv { columns } => read_csv(&path, &columns, &tx, &reader_cancel),
+        ImportFormat::Csv {
+            columns,
+            ignore_empty_strings,
+        } => read_csv(&path, &columns, ignore_empty_strings, &tx, &reader_cancel),
     });
 
     let mut reporter = ProgressReporter::new(progress);
@@ -518,6 +528,7 @@ impl<'de> Visitor<'de> for ArrayVisitor<'_, '_> {
 fn read_csv(
     path: &Path,
     columns: &[CsvColumn],
+    ignore_empty_strings: bool,
     tx: &mpsc::Sender<Parsed>,
     cancel: &CancellationToken,
 ) -> Result<(), CoreError> {
@@ -550,7 +561,7 @@ fn read_csv(
                 record: record_number,
                 message: error.to_string(),
             }),
-            Ok(record) => build_row(&record, &mapping).map_or_else(
+            Ok(record) => build_row(&record, &mapping, ignore_empty_strings).map_or_else(
                 |message| {
                     Parsed::Invalid(PendingError {
                         record: record_number,
@@ -570,10 +581,14 @@ fn read_csv(
 fn build_row(
     record: &csv::StringRecord,
     mapping: &[(usize, &CsvColumn)],
+    ignore_empty_strings: bool,
 ) -> Result<Document, String> {
     let mut document = Document::new();
     for (index, column) in mapping {
         let cell = record.get(*index).unwrap_or_default();
+        if ignore_empty_strings && cell.is_empty() {
+            continue;
+        }
         if let Some(value) =
             parse_cell(cell, column.kind).map_err(|error| format!("{}: {error}", column.header))?
         {
@@ -678,10 +693,16 @@ mod tests {
 
         let good = csv::StringRecord::from(vec!["36", "Milano"]);
         assert_eq!(
-            build_row(&good, &mapping),
+            build_row(&good, &mapping, false),
             Ok(doc! { "age": 36, "address": { "city": "Milano" } })
         );
         let bad = csv::StringRecord::from(vec!["old", "Milano"]);
-        assert!(build_row(&bad, &mapping).is_err_and(|e| e.starts_with("age:")));
+        assert!(build_row(&bad, &mapping, false).is_err_and(|e| e.starts_with("age:")));
+        let blank = csv::StringRecord::from(vec!["36", ""]);
+        assert_eq!(
+            build_row(&blank, &mapping, false),
+            Ok(doc! { "age": 36, "address": { "city": "" } })
+        );
+        assert_eq!(build_row(&blank, &mapping, true), Ok(doc! { "age": 36 }));
     }
 }

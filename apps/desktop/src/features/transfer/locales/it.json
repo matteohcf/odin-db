@@ -70,7 +70,9 @@
     "csvDetail_one": "CSV · {{count}} colonna",
     "csvDetail_other": "CSV · {{count}} colonne",
     "jsonDetail_one": "JSON · {{count}} documento in anteprima",
-    "jsonDetail_other": "JSON · {{count}} documenti in anteprima"
+    "jsonDetail_other": "JSON · {{count}} documenti in anteprima",
+    "ignoreEmpty": "Ometti le celle vuote",
+    "ignoreEmptyHint": "Una cella di testo vuota non aggiunge il campo, invece di una stringa vuota."
   },
   "csvTypes": {
     "skip": "Ignora colonna",

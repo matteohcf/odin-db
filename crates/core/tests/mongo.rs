@@ -724,6 +724,7 @@ async fn csv_round_trips_with_explicit_column_types() {
                 column("age", "age", CsvType::Int32),
                 column("address.city", "address.city", CsvType::String),
             ],
+            ignore_empty_strings: false,
         },
         stop_on_error: false,
         mode: ImportMode::Insert,

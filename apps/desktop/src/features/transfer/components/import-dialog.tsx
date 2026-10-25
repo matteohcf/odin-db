@@ -69,6 +69,7 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
   const [file, setFile] = useState<ChosenFile | null>(null);
   const [columns, setColumns] = useState<CsvColumn[]>([]);
   const [stopOnError, setStopOnError] = useState(false);
+  const [ignoreEmptyStrings, setIgnoreEmptyStrings] = useState(false);
   const [mode, setMode] = useState(DEFAULT_IMPORT_MODE);
   const transfer = useTransfer<ImportSummary>(t("import.title"));
   const { state } = transfer;
@@ -108,7 +109,9 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
   async function submit() {
     if (!file) return;
     const format =
-      file.preview.kind === "csv" ? { kind: "csv" as const, columns } : { kind: "json" as const };
+      file.preview.kind === "csv"
+        ? { kind: "csv" as const, columns, ignoreEmptyStrings }
+        : { kind: "json" as const };
     await transfer.start((channel) =>
       call(
         commands.importDocuments(
@@ -278,6 +281,24 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
                 <span className="text-muted-foreground text-xs">{t("import.stopOnErrorHint")}</span>
               </div>
             </div>
+            {file?.preview.kind === "csv" && (
+              <div className="flex items-start gap-2.5">
+                <Checkbox
+                  id={`${id}-empty`}
+                  checked={ignoreEmptyStrings}
+                  onCheckedChange={(checked) => setIgnoreEmptyStrings(checked === true)}
+                  className="mt-0.5"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <Label htmlFor={`${id}-empty`} className="font-normal">
+                    {t("import.ignoreEmpty")}
+                  </Label>
+                  <span className="text-muted-foreground text-xs">
+                    {t("import.ignoreEmptyHint")}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

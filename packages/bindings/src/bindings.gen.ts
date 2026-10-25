@@ -826,7 +826,9 @@ export type ImportFolder = {
 
 export type ImportFormat = 
 /**  A JSON array, NDJSON, or concatenated documents, in canonical or relaxed Extended JSON. */
-{ kind: "json" } | { kind: "csv"; columns: CsvColumn[] };
+{ kind: "json" } | { kind: "csv"; columns: CsvColumn[]; 
+/**  Leave empty text cells out instead of storing `""`, as spreadsheets mean blank. */
+ignoreEmptyStrings?: boolean };
 
 /**  What happens to documents whose `_id` already exists in the collection. */
 export type ImportMode = 

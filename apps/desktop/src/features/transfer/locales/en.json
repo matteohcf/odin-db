@@ -70,7 +70,9 @@
     "csvDetail_one": "CSV · {{count}} column",
     "csvDetail_other": "CSV · {{count}} columns",
     "jsonDetail_one": "JSON · {{count}} document previewed",
-    "jsonDetail_other": "JSON · {{count}} documents previewed"
+    "jsonDetail_other": "JSON · {{count}} documents previewed",
+    "ignoreEmpty": "Leave empty cells out",
+    "ignoreEmptyHint": "A blank text cell adds no field, instead of an empty string."
   },
   "csvTypes": {
     "skip": "Skip column",
