@@ -17,7 +17,7 @@ export function PlanTree({ steps, plansConsidered }: PlanTreeProps) {
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline gap-2">
         <p className="text-muted-foreground text-xs">{t("explain.stages")}</p>
-        <p className="text-muted-foreground/80 text-[11px]">
+        <p className="text-muted-foreground text-[11px]">
           {t("explain.stagesHint")}
           {plansConsidered > 1 && ` · ${t("explain.plansConsidered", { count: plansConsidered })}`}
         </p>
@@ -47,12 +47,12 @@ export function PlanTree({ steps, plansConsidered }: PlanTreeProps) {
               )}
               <span
                 className={cn(
-                  "rounded-sm px-1.5 py-0.5 font-mono text-[11px]",
+                  "rounded-sm border px-1.5 py-0.5 font-mono text-[11px]",
                   step.stage === "COLLSCAN"
-                    ? "bg-warning/15 text-warning"
+                    ? "border-warning/40 text-warning"
                     : step.stage === "IXSCAN"
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted",
+                      ? "border-primary/40 text-primary"
+                      : "border-transparent bg-muted",
                 )}
               >
                 {step.stage}

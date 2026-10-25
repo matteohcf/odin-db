@@ -51,10 +51,18 @@ await page.getByRole("button", { name: "More actions" }).click();
 await page.getByRole("menuitem", { name: /^Export/ }).click();
 await audit("export dialog");
 await page.keyboard.press("Escape");
+await page.getByRole("button", { name: "Explain query" }).click();
+await page.getByRole("dialog").waitFor();
+await audit("explain dialog");
+await page.keyboard.press("Escape");
 for (const view of ["Aggregation", "Schema", "Indexes", "Validation"]) {
   await page.getByRole("tab", { name: new RegExp(`^${view}`) }).click();
   await audit(view.toLowerCase());
 }
+await page.getByRole("tab", { name: /^Live/ }).click();
+// The mock streams changes; audit once the feed shows some, badges included.
+await page.getByText(/^[1-9]\d* changes?$/).waitFor();
+await audit("live");
 await page.getByRole("tab", { name: /^Indexes/ }).click();
 await page.getByRole("button", { name: "Create index" }).click();
 await audit("create index dialog");

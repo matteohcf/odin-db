@@ -6,11 +6,12 @@ import { useTranslation } from "react-i18next";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { idOf, summarize } from "../lib/change-summary";
 
+// Outlined like the Badge variants: a tinted fill leaves too little contrast for the text.
 const operationClass: Record<string, string> = {
-  insert: "bg-success/15 text-success",
-  update: "bg-type-number/15 text-type-number",
-  replace: "bg-type-boolean/15 text-type-boolean",
-  delete: "bg-destructive/15 text-destructive",
+  insert: "border-success/40 text-success",
+  update: "border-type-number/40 text-type-number",
+  replace: "border-type-boolean/40 text-type-boolean",
+  delete: "border-destructive/40 text-destructive",
 };
 
 /** One change in the live feed; opens to the full document and what an update set. */
@@ -49,8 +50,8 @@ export function ChangeRow({ change }: { change: ChangeEvent }) {
         </span>
         <span
           className={cn(
-            "w-16 shrink-0 rounded-sm px-1.5 py-0.5 text-center font-medium text-[11px]",
-            operationClass[change.operation] ?? "bg-muted text-muted-foreground",
+            "w-16 shrink-0 rounded-sm border px-1.5 py-0.5 text-center font-medium text-[11px]",
+            operationClass[change.operation] ?? "border-border text-muted-foreground",
           )}
         >
           {t(`operations.${change.operation}`, { defaultValue: change.operation })}
