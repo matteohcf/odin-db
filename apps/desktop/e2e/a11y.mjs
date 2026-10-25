@@ -40,7 +40,7 @@ const profileMenu = async (name, item) => {
 
 await page.goto("http://localhost:1420/");
 await audit("welcome");
-await page.getByRole("button", { name: "Open connection…" }).first().click();
+await page.keyboard.press("ControlOrMeta+o");
 await page.getByRole("dialog", { name: "Connections" }).getByText("Local development").waitFor();
 await audit("connection manager");
 await page.keyboard.press("Escape");

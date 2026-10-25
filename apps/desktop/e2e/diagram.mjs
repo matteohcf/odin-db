@@ -37,7 +37,10 @@ await check("the database row opens its diagram", async () => {
   await tree.getByRole("button", { name: /^shop/ }).first().hover();
   await tree.getByRole("button", { name: "Actions for shop" }).first().click();
   await page.getByRole("menuitem", { name: "Show diagram" }).click();
-  await page.getByRole("heading", { name: "Diagram of shop" }).waitFor();
+  const heading = page.getByRole("heading", { name: "Diagram of shop" });
+  await heading.waitFor();
+  // The title has room: it is not cut short.
+  if (await heading.evaluate((h) => h.scrollWidth > h.clientWidth)) throw new Error("truncated");
   await nodes.first().waitFor({ timeout: 15000 });
   if ((await nodes.count()) !== 8) throw new Error(`${await nodes.count()} nodes`);
   await page.getByText("8 collections, 9 references").waitFor();

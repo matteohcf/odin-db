@@ -1,5 +1,6 @@
-// Connection manager: saved connections live in a dialog, the sidebar holds open ones (ADR-0058).
+// The sidebar lists every saved connection; the manager (Mod+O) connects from a search (ADR-0059).
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const shot = (name) => page.screenshot({ path: `test-results/${scheme}-cm-${name}.png` });
@@ -26,11 +27,30 @@ await page.goto("http://localhost:1420/");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 
-await check("the sidebar starts without saved connections", async () => {
-  await sidebar.getByText("No open connections").waitFor();
-  await sidebar.getByText("Your 4 saved connections").waitFor();
-  if (await sidebar.getByText("Production (Atlas)").count()) throw new Error("listed in sidebar");
-  await shot("01-empty");
+const profileRow = (name) =>
+  sidebar.getByRole("button", { name: new RegExp(`^${name.replace(/[()]/g, "\\$&")}`) }).first();
+const isOpen = async (name) => (await profileRow(name).getAttribute("aria-expanded")) === "true";
+
+await check("the sidebar lists every saved connection, none open", async () => {
+  for (const name of [
+    "Local development",
+    "Tenants cluster",
+    "Production (Atlas)",
+    "Staging (bastion)",
+  ]) {
+    await profileRow(name).waitFor();
+  }
+  if (await sidebar.getByRole("button", { name: /^shop/ }).count())
+    throw new Error("databases shown");
+  await shot("01-sidebar");
+});
+
+await check("clicking a connection connects and expands it", async () => {
+  await profileRow("Local development").click();
+  await sidebar.getByRole("button", { name: /^shop/ }).waitFor();
+  if (!(await isOpen("Local development"))) throw new Error("not expanded");
+  // The others stay listed, closed.
+  if (await isOpen("Production (Atlas)")) throw new Error("another one opened");
 });
 
 await check("the shortcut opens every saved connection, grouped", async () => {
@@ -40,30 +60,24 @@ await check("the shortcut opens every saved connection, grouped", async () => {
   for (const name of ["Tenants cluster", "Production \\(Atlas\\)", "Staging \\(bastion\\)"]) {
     await row(name).waitFor();
   }
-  await manager.getByText("localhost:27017").waitFor();
+  await row("Local development").getByText("Connected").waitFor();
   await shot("02-manager");
 });
 
 await check("search narrows the list and Enter connects the first match", async () => {
   const search = page.getByRole("searchbox", { name: "Search saved connections" });
-  await search.fill("local");
+  await search.fill("prod");
   if ((await manager.locator("li").count()) !== 1) throw new Error("not narrowed");
   await search.press("Enter");
   await manager.waitFor({ state: "detached" });
-  await sidebar.getByRole("button", { name: /^shop/ }).waitFor();
-  if (await sidebar.getByText("Production (Atlas)").count()) throw new Error("unconnected shown");
-  await shot("03-connected");
-});
-
-await check("an open connection is marked, and picking it closes the manager", async () => {
-  await page.getByRole("button", { name: "Open connection…" }).first().click();
-  await row("Local development").getByText("Connected").waitFor();
-  await row("Local development").click();
-  await manager.waitFor({ state: "detached" });
+  await page.waitForFunction(
+    (element) => element?.getAttribute("aria-expanded") === "true",
+    await profileRow("Production (Atlas)").elementHandle(),
+  );
 });
 
 await check("a row's menu edits the profile over the manager", async () => {
-  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await page.keyboard.press("ControlOrMeta+o");
   await manager.getByRole("button", { name: "Actions for Production (Atlas)" }).click();
   await page.getByRole("menuitem", { name: "Edit" }).click();
   await page.getByRole("dialog", { name: /Edit connection/ }).waitFor();
@@ -74,10 +88,31 @@ await check("a row's menu edits the profile over the manager", async () => {
   await manager.waitFor({ state: "detached" });
 });
 
-await check("disconnecting takes the connection out of the sidebar", async () => {
+await check("disconnecting keeps the connection listed, closed and without its dot", async () => {
+  await profileRow("Local development").hover();
   await sidebar.getByRole("button", { name: "Actions for Local development" }).click();
   await page.getByRole("menuitem", { name: "Disconnect" }).click();
-  await sidebar.getByText("No open connections").waitFor();
+  await sidebar.getByRole("button", { name: /^shop/ }).first().waitFor({ state: "detached" });
+  await profileRow("Local development").waitFor();
+  if (await isOpen("Local development")) throw new Error("still expanded");
+  if (await sidebar.getByText("Couldn't load").count()) throw new Error("error row shown");
+  await shot("05-disconnected");
+});
+
+await check("a connection the backend lost stops showing as open", async () => {
+  await connect(page, "Local development");
+  await sidebar.getByRole("button", { name: /^shop/ }).first().click();
+  await sidebar
+    .getByRole("button", { name: /^users$/ })
+    .first()
+    .click();
+  await page.waitForSelector("[role=grid] tbody tr");
+  // As if the server restarted: the backend forgets the connection, the UI does not know.
+  await page.evaluate(() => globalThis.odinMockDropConnections());
+  // A command on it fails, without anything new reading the connections list.
+  await page.getByRole("button", { name: "Count matches" }).click();
+  await sidebar.getByRole("button", { name: /^shop/ }).first().waitFor({ state: "detached" });
+  if (await isOpen("Local development")) throw new Error("still shown as open");
 });
 
 console.log(results.join("\n"));

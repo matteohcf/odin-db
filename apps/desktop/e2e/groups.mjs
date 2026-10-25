@@ -30,7 +30,7 @@ const sidebar = page.getByRole("complementary", { name: /Connections/ });
 const tree = page.getByRole("dialog", { name: "Connections" });
 const openManager = async () => {
   if (await tree.count()) return;
-  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await page.keyboard.press("ControlOrMeta+o");
   await tree.waitFor();
 };
 const row = (name) => tree.getByRole("button", { name: new RegExp(`^${name}`) }).first();
@@ -63,7 +63,12 @@ await check("a folder says how many of its connections are open", async () => {
 await check("disconnect all from the explorer menu", async () => {
   await page.getByRole("button", { name: "Connections menu" }).click();
   await page.getByRole("menuitem", { name: "Disconnect all" }).click();
-  await sidebar.getByText("No open connections").waitFor();
+  // Every connection stays listed, closed.
+  await sidebar.getByRole("button", { name: /^shop/ }).first().waitFor({ state: "detached" });
+  await sidebar
+    .getByRole("button", { name: /^Local development/ })
+    .first()
+    .waitFor();
 });
 await check("a folder collapses and expands", async () => {
   await openManager();

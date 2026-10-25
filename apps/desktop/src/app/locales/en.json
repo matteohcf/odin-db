@@ -2,14 +2,13 @@
   "title": "odin-db",
   "welcome": {
     "title": "Open a collection",
-    "body": "Open a connection, then pick a collection in the sidebar to browse, query and edit its documents.",
+    "body": "Connect to a server in the sidebar, then pick a collection to browse, query and edit its documents.",
     "firstTitle": "Welcome to odin-db",
     "firstBody": "Add a MongoDB server with its connection string, or bring your connections over from Compass.",
     "palette": "Press <kbd>{{shortcut}}</kbd> to jump to any collection or action.",
     "recent": "Recently opened",
     "newConnection": "New connection",
-    "import": "Import from Compass…",
-    "openConnection": "Open connection…"
+    "import": "Import from Compass…"
   },
   "quit": {
     "title_one": "Quit while an operation is running?",

@@ -21,6 +21,10 @@ export function hostKeyError(error: unknown): { fingerprint: string; changed: bo
   return { fingerprint: error.detail, changed: error.kind === "hostKeyChanged" };
 }
 
+/** The backend has no such connection: it was closed or lost behind the UI's back. */
+export const isNotConnectedError = (error: unknown) =>
+  error instanceof AppError && error.kind === "notConnected";
+
 /** The server stopped the operation at its time limit (ADR-0052). */
 export const isTimeLimitError = (error: unknown) =>
   error instanceof AppError && error.kind === "timeLimit";

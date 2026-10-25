@@ -63,10 +63,14 @@ await check("pause holds the list, and a change opens to its document", async ()
   await shot("02-opened");
 });
 
-await check("filters hide kinds of changes", async () => {
-  await panel().getByRole("button", { name: "Insert", exact: true }).click();
+await check("filters hide kinds of changes, each with its count", async () => {
+  const insert = panel().getByRole("button", { name: /^Insert \d+$/ });
+  if ((await insert.getAttribute("aria-pressed")) !== "true") throw new Error("not shown");
+  await insert.click();
+  if ((await insert.getAttribute("aria-pressed")) !== "false") throw new Error("still on");
   if (await rows().filter({ hasText: "Insert" }).count()) throw new Error("inserts still shown");
-  await panel().getByRole("button", { name: "Insert", exact: true }).click();
+  await shot("03-filter");
+  await insert.click();
   await rows().filter({ hasText: "Insert" }).first().waitFor();
 });
 

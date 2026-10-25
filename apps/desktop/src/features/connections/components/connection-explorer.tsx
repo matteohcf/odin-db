@@ -21,7 +21,6 @@ import {
   FileUp,
   LocateFixed,
   MoreHorizontal,
-  Plug,
   Plus,
   Search,
   Server,
@@ -58,12 +57,14 @@ type DialogState =
   | { type: "delete"; profile: ConnectionProfile }
   | { type: "passphrase"; file: ConnectionsFile };
 
-/** Sidebar: open connections, expanding into databases and collections (ADR-0058). */
+/**
+ * Sidebar: every saved connection, like Compass; a dot marks the open ones, which expand
+ * into databases and collections (ADR-0059).
+ */
 export function ConnectionExplorer() {
   const filterSidebarKeys = useKeybindingLabel("filterSidebar");
   const paletteKeys = useKeybindingLabel("palette");
   const revealInSidebarKeys = useKeybindingLabel("revealInSidebar");
-  const managerKeys = useKeybindingLabel("connectionManager");
   const { t } = useTranslation("connections");
   const { data: profiles, error, isPending } = useProfiles();
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
@@ -87,10 +88,6 @@ export function ConnectionExplorer() {
   const importMutation = useImportConnections();
   const { data: connections } = useConnections();
   const disconnectAll = useDisconnectAll();
-  // Saved connections live in the manager; the tree holds the open ones.
-  const connected = profiles?.filter((profile) =>
-    connections?.some((connection) => connection.profileId === profile.id),
-  );
   const exportMutation = useExportConnections();
 
   function reportImported(result: ImportedProfiles) {
@@ -146,29 +143,13 @@ export function ConnectionExplorer() {
       <div className="flex h-10 shrink-0 items-center justify-between pr-2 pl-3">
         <h2 className="flex min-w-0 items-baseline gap-1 truncate font-semibold text-[11px] text-foreground uppercase tracking-wide">
           {t("explorer.title")}
-          {connected && connected.length > 0 && (
+          {profiles && profiles.length > 0 && (
             <span className="font-normal text-muted-foreground tabular-nums">
-              ({connected.length})
+              ({profiles.length})
             </span>
           )}
         </h2>
         <div className="flex shrink-0 items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-7"
-                aria-label={t("manager.open")}
-                onClick={() => setManagerOpen(true)}
-              >
-                <Plug className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t("manager.open")} {managerKeys && <Kbd>{managerKeys}</Kbd>}
-            </TooltipContent>
-          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -287,7 +268,7 @@ export function ConnectionExplorer() {
         onNewConnection={() => setDialog({ type: "create" })}
       />
 
-      {connected && connected.length > 0 && (
+      {profiles && profiles.length > 0 && (
         <div className="relative shrink-0 px-3 pb-1.5">
           <Search className="pointer-events-none absolute top-1/2 left-5 -mt-[3px] size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -360,50 +341,14 @@ export function ConnectionExplorer() {
         ) : (
           <>
             <FavoritesSection />
-            {connected?.length ? (
-              <TreeList
-                profiles={connected}
-                scrollRef={scroller}
-                onExport={(profile) => void exportConnections([profile.id])}
-                onEdit={(profile) => setDialog({ type: "edit", profile })}
-                onDelete={(profile) => setDialog({ type: "delete", profile })}
-                onNewConnection={(group) => setDialog({ type: "create", group })}
-              />
-            ) : (
-              <div className="flex flex-col items-start gap-3 px-3 py-6">
-                <Plug className="size-5 text-muted-foreground" />
-                <div className="flex flex-col gap-1">
-                  <p className="font-medium">{t("manager.noneOpenTitle")}</p>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    {t("manager.noneOpenBody", { count: profiles.length })}
-                  </p>
-                </div>
-                <div className="flex flex-col items-stretch gap-2 self-stretch">
-                  <Button
-                    size="sm"
-                    className="h-auto min-h-8 whitespace-normal"
-                    onClick={() => setManagerOpen(true)}
-                  >
-                    <Plug />
-                    {t("manager.open")}
-                    {managerKeys && (
-                      <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-                        {managerKeys}
-                      </Kbd>
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-auto min-h-8 whitespace-normal"
-                    onClick={() => setDialog({ type: "create" })}
-                  >
-                    <Plus />
-                    {t("explorer.new")}
-                  </Button>
-                </div>
-              </div>
-            )}
+            <TreeList
+              profiles={profiles}
+              scrollRef={scroller}
+              onExport={(profile) => void exportConnections([profile.id])}
+              onEdit={(profile) => setDialog({ type: "edit", profile })}
+              onDelete={(profile) => setDialog({ type: "delete", profile })}
+              onNewConnection={(group) => setDialog({ type: "create", group })}
+            />
           </>
         )}
       </div>

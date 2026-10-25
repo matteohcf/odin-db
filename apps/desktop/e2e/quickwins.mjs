@@ -39,7 +39,7 @@ const menuFor = async (name) => {
 const manager = page.getByRole("dialog", { name: "Connections" });
 const savedMenuFor = async (name) => {
   if (!(await manager.count())) {
-    await page.getByRole("button", { name: "Open connection…" }).first().click();
+    await page.keyboard.press("ControlOrMeta+o");
   }
   await manager.getByRole("button", { name: `Actions for ${name}`, exact: true }).click();
 };

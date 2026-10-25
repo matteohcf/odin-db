@@ -34,7 +34,7 @@ await check("import connections from a file", async () => {
   await shot("01-menu");
   await page.getByRole("menuitem", { name: "Import connections…" }).click();
   await page.getByText("Imported 2 connections (0 already there).").waitFor();
-  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await page.keyboard.press("ControlOrMeta+o");
   await manager.getByRole("button", { name: /^Staging(?! \()/ }).waitFor();
   await manager.getByRole("button", { name: /^Reporting replica/ }).waitFor();
 });

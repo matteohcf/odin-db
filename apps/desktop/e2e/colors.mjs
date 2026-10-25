@@ -1,5 +1,5 @@
 import { chromium } from "playwright";
-import { connect } from "./lib/connect.mjs";
+import { connect, sidebarReady } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -33,7 +33,7 @@ const profileMenu = async (name) => {
     .click();
 };
 await page.goto("http://localhost:1420/");
-await page.getByText("No open connections").waitFor();
+await sidebarReady(page);
 
 await check("colors show in the sidebar, tabs and collection header", async () => {
   await connect(page);
@@ -111,7 +111,7 @@ await check("an open colored connection writes and tints its whole subtree", asy
   if ((await inkOf(/^Production \(Atlas\)/)) !== red) throw new Error("connection ink");
   await shot("03-subtree");
   // A closed connection shows its color in the connection manager.
-  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await page.keyboard.press("ControlOrMeta+o");
   const staging = page
     .getByRole("dialog", { name: "Connections" })
     .locator("li")

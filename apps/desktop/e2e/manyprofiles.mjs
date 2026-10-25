@@ -25,13 +25,18 @@ await page.evaluate(() => {
   localStorage.setItem("odin-mock-many", "1");
 });
 await page.reload();
-// Saved connections live in the connection manager (ADR-0058).
+// Every connection is in the sidebar; the manager (Mod+O) searches them (ADR-0059).
 const tree = page.getByRole("dialog", { name: "Connections" });
 const search = page.getByRole("searchbox", { name: "Search saved connections" });
 await check(
   "104 connections render, grouped",
   async () => {
-    await page.getByRole("button", { name: "Open connection…" }).first().click();
+    await page
+      .getByRole("complementary")
+      .getByRole("button", { name: /^Region 1\b/ })
+      .first()
+      .waitFor();
+    await page.keyboard.press("ControlOrMeta+o");
     await tree
       .getByRole("button", { name: /^Region 1\b/ })
       .first()
@@ -57,7 +62,7 @@ await check("collapse all leaves only the folders", async () => {
   await page.keyboard.press("Escape");
   await tree.waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Collapse all" }).click();
-  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  await page.keyboard.press("ControlOrMeta+o");
   await tree
     .getByRole("button", { name: /^Region 1\b/ })
     .first()

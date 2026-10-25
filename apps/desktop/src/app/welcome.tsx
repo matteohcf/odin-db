@@ -1,6 +1,6 @@
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { Clock, Eye, FileUp, Plug, Plus, Table2 } from "lucide-react";
+import { Clock, Eye, FileUp, Plus, Table2 } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { OdinAppIcon } from "@/components/odin-app-icon";
 import { ProfileColorMark } from "@/components/profile-color-mark";
@@ -18,8 +18,6 @@ export function Welcome() {
   const { data: profiles = [], isSuccess: profilesLoaded } = useProfiles();
   const firstRun = profilesLoaded && profiles.length === 0;
   const commands = useExplorer((s) => s.commands);
-  const setManagerOpen = useExplorer((s) => s.setManagerOpen);
-  const managerKeys = useKeybindingLabel("connectionManager");
   // Collections of deleted connections are not offered.
   const shown = recent.flatMap((entry) => {
     const profile = profiles.find((p) => p.id === entry.profileId);
@@ -39,22 +37,7 @@ export function Welcome() {
       </div>
       {commands && (
         <div className="flex gap-2">
-          {profiles.length > 0 && (
-            <Button size="sm" onClick={() => setManagerOpen(true)}>
-              <Plug />
-              {t("welcome.openConnection")}
-              {managerKeys && (
-                <Kbd className="bg-primary-foreground/15 text-primary-foreground">
-                  {managerKeys}
-                </Kbd>
-              )}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant={profiles.length > 0 ? "outline" : "default"}
-            onClick={commands.newConnection}
-          >
+          <Button size="sm" onClick={commands.newConnection}>
             <Plus />
             {t("welcome.newConnection")}
           </Button>

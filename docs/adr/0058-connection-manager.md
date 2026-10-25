@@ -1,6 +1,6 @@
 # 0058. Connection manager
 
-- Status: Accepted
+- Status: Accepted; the sidebar part is superseded by [ADR-0059](0059-sidebar-lists-every-connection.md)
 - Date: 2026-10-25
 
 ## Context

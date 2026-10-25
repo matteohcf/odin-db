@@ -44,7 +44,7 @@ await page.reload();
 await sidebarReady(page);
 await page.waitForTimeout(500);
 // The connection manager opens outside the budget: it times the connect, not the dialog.
-await page.getByRole("button", { name: "Open connection…" }).first().click();
+await page.keyboard.press("ControlOrMeta+o");
 const manager = page.getByRole("dialog", { name: "Connections" });
 await manager.getByRole("button", { name: /^Tenants cluster/ }).waitFor();
 await check(

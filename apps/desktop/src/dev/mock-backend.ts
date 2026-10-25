@@ -767,6 +767,10 @@ const importFolders = new Set<string>();
 /** Files dropped on the window, by token, like the backend keeps their paths. */
 const droppedFiles = new Map<string, { name: string; directory: boolean }>();
 
+// e2e checks drop the connections behind the UI's back, as a server restart would.
+(globalThis as { odinMockDropConnections?: () => void }).odinMockDropConnections = () =>
+  connections.clear();
+
 const mockUsers = [
   {
     user: "admin",
