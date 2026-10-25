@@ -138,6 +138,17 @@ pub fn split_password(connection_string: &str) -> Result<(String, Option<Secret>
     let trimmed = connection_string.trim();
     let parsed = ConnectionString::parse(trimmed)
         .map_err(|error| CoreError::Validation(format!("invalid connection string: {error}")))?;
+    // It would be stored and shared in clear with the connection string, unlike the password.
+    if trimmed
+        .to_ascii_lowercase()
+        .contains("tlscertificatekeyfilepassword=")
+    {
+        return Err(CoreError::Validation(
+            "a certificate key password cannot be saved in the connection string: \
+             use a key file without a password"
+                .into(),
+        ));
+    }
     let password = parsed
         .credential
         .and_then(|credential| credential.password)
@@ -556,6 +567,14 @@ mod tests {
             "mongodb://alice@db1:27017,db2/admin?replicaSet=rs0"
         );
         assert_eq!(password.as_ref().map(Secret::expose), Some("p@ss:w0rd"));
+    }
+
+    #[test]
+    fn a_certificate_key_password_is_never_stored() {
+        let result = split_password(
+            "mongodb://db1/?tls=true&tlsCertificateKeyFile=%2Fme.pem&tlsCertificateKeyFilePassword=s3cret",
+        );
+        assert!(matches!(result, Err(CoreError::Validation(_))));
     }
 
     #[test]
