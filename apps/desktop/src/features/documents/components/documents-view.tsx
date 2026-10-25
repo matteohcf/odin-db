@@ -9,24 +9,7 @@ import type {
 } from "@odin-db/bindings";
 import { commands } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@odin-db/ui/components/dropdown-menu";
-import {
-  ClipboardPaste,
-  Code2,
-  DatabaseZap,
-  Download,
-  FilePen,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { ClipboardPaste, Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -73,6 +56,7 @@ import { BulkWriteDialog } from "./bulk-write-dialog";
 import { ChangeFieldDialog, type FieldChangeKind } from "./change-field-dialog";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DistinctValuesDialog } from "./distinct-values-dialog";
+import { DocumentsActions } from "./documents-actions";
 import { EditFieldDialog } from "./edit-field-dialog";
 import { ExplainDialog } from "./explain-dialog";
 import { PasteDocumentsDialog } from "./paste-documents-dialog";
@@ -385,87 +369,18 @@ export function DocumentsView({
         fields={fields.data ?? NO_FIELDS}
         historyKey={queryHistoryKey}
         actions={
-          <>
-            {editable && gridFs.bucket && (
-              <Button
-                variant="outline"
-                size="sm"
-                aria-label={t("gridfs.upload")}
-                title={t("gridfs.upload")}
-                onClick={() => void gridFs.upload()}
-              >
-                <Upload />
-                <span className="hidden @4xl:inline">{t("gridfs.upload")}</span>
-              </Button>
-            )}
-            {editable && (
-              <Button
-                variant="outline"
-                size="sm"
-                aria-label={t("insert")}
-                title={t("insert")}
-                onClick={() => openInsert()}
-              >
-                <Plus />
-                <span className="hidden @4xl:inline">{t("insert")}</span>
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  aria-label={t("menu.more", { ns: "transfer" })}
-                >
-                  <MoreHorizontal />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                {editable && (
-                  <DropdownMenuItem onSelect={() => setTransfer("import")}>
-                    <Upload />
-                    {t("menu.import", { ns: "transfer" })}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => setTransfer("export")}>
-                  <Download />
-                  {t("menu.export", { ns: "transfer" })}
-                </DropdownMenuItem>
-                {editable && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => void openBulk("update")}>
-                      <FilePen />
-                      {t("bulk.menuUpdate")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onSelect={() => void openBulk("delete")}
-                    >
-                      <Trash2 />
-                      {t("bulk.menuDelete")}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                {editable && (
-                  <DropdownMenuItem onSelect={() => void pasteDocuments()}>
-                    <ClipboardPaste />
-                    {t("paste.menu")}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => setSqlOpen(true)}>
-                  <DatabaseZap />
-                  {t("sql.menu")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => void showCode()}>
-                  <Code2 />
-                  {t("queryCode.menu", { ns: "common" })}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
+          <DocumentsActions
+            editable={editable}
+            gridFs={Boolean(gridFs.bucket)}
+            onUpload={() => void gridFs.upload()}
+            onInsert={() => openInsert()}
+            onImport={() => setTransfer("import")}
+            onExport={() => setTransfer("export")}
+            onBulk={(mode) => void openBulk(mode)}
+            onPaste={() => void pasteDocuments()}
+            onSql={() => setSqlOpen(true)}
+            onCode={() => void showCode()}
+          />
         }
       />
 
