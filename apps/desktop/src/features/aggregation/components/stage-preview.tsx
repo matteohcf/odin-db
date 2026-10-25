@@ -67,31 +67,34 @@ export function StagePreview({
   }
 
   return (
-    <div className="flex h-44 min-w-0 flex-col">
-      <div className="flex h-7 shrink-0 items-center gap-2 border-b px-2 text-muted-foreground text-xs">
-        {preview.data && stage?.enabled && !writes ? (
-          <>
-            <span className="text-foreground">
-              {t("preview.title", { count: preview.data.length })}
-            </span>
-            <span className="truncate">
-              {t("preview.sampleNote", {
-                limit: PREVIEW_LIMIT,
-                sample: PREVIEW_SAMPLE.toLocaleString(),
-              })}
-            </span>
-          </>
-        ) : null}
-        {preview.isFetching && <Loader2 className="ml-auto size-3 animate-spin" />}
+    // Exactly as tall as the stage's editor (which can grow): the row never stretches to the list.
+    <div className="relative min-w-0">
+      <div className="absolute inset-0 flex flex-col">
+        <div className="flex h-7 shrink-0 items-center gap-2 border-b px-2 text-muted-foreground text-xs">
+          {preview.data && stage?.enabled && !writes ? (
+            <>
+              <span className="shrink-0 whitespace-nowrap text-foreground">
+                {t("preview.title", { count: preview.data.length })}
+              </span>
+              <span className="truncate">
+                {t("preview.sampleNote", {
+                  limit: PREVIEW_LIMIT,
+                  sample: PREVIEW_SAMPLE.toLocaleString(),
+                })}
+              </span>
+            </>
+          ) : null}
+          {preview.isFetching && <Loader2 className="ml-auto size-3 animate-spin" />}
+        </div>
+        <section
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable to scroll from the keyboard (WCAG 2.1.1).
+          tabIndex={0}
+          aria-label={t("preview.label")}
+          className="min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        >
+          {body}
+        </section>
       </div>
-      <section
-        // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable to scroll from the keyboard (WCAG 2.1.1).
-        tabIndex={0}
-        aria-label={t("preview.label")}
-        className="min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-      >
-        {body}
-      </section>
     </div>
   );
 }
