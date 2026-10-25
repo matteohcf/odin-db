@@ -1,11 +1,13 @@
 import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { lazy, Suspense, useCallback } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useResultsState } from "../hooks/use-results";
+import { stepInto } from "../lib/nested";
 import type { ResultsController } from "../lib/results-controller";
 import { useResultsView } from "../store/results-view-store";
 import { DocumentPreview } from "./document-preview";
+import { NestedPath } from "./nested-path";
 import { type ColumnActions, ResultsGrid, type RowActions } from "./results-grid";
 import { ResultsList } from "./results-list";
 
@@ -54,6 +56,10 @@ export function ResultsPanel({
   const loadMore = useCallback(() => void controller.loadMore(), [controller]);
   const view = useResultsView((s) => s.view);
   const preview = useResultsView((s) => s.preview);
+  // Stepped into arrays or embedded documents: their values as rows, read-only.
+  const [path, setPath] = useState<readonly string[]>([]);
+  const nested = useMemo(() => (path.length > 0 ? stepInto(rows, path) : null), [rows, path]);
+  const [nestedSelection, setNestedSelection] = useState<number | null>(null);
 
   if (status === "idle") return <div className="flex-1">{idle}</div>;
   if (status === "error") {
@@ -126,7 +132,28 @@ export function ResultsPanel({
       />
     );
   }
-  const grid = (
+  const openPath = (next: readonly string[]) => {
+    setNestedSelection(null);
+    setPath(next);
+  };
+  const grid = nested ? (
+    <>
+      <NestedPath label={label} path={path} onOpen={openPath} count={nested.rows.length} />
+      <ResultsGrid
+        // A layout of its own per path: its columns are not the documents'.
+        key={path.join("\u0000")}
+        label={label}
+        rows={nested.rows}
+        columns={nested.columns}
+        hasMore={false}
+        selectedIndex={nestedSelection}
+        onSelect={setNestedSelection}
+        onLoadMore={loadMore}
+        actions={{ onOpen: () => {}, openMode: "view", onCopy: actions.onCopy }}
+        onStepInto={(field) => openPath([...path, field])}
+      />
+    </>
+  ) : (
     <ResultsGrid
       label={label}
       layoutKey={layoutKey}
@@ -138,6 +165,7 @@ export function ResultsPanel({
       onLoadMore={loadMore}
       actions={actions}
       columnActions={columnActions}
+      onStepInto={(field) => openPath([field])}
     />
   );
   // The same wrapper with or without the preview, so toggling it keeps the grid mounted.
@@ -146,7 +174,15 @@ export function ResultsPanel({
       <div className="flex min-w-0 flex-1 flex-col">{grid}</div>
       {preview && (
         <DocumentPreview
-          document={selectedIndex === null ? undefined : rows[selectedIndex]}
+          document={
+            nested
+              ? nestedSelection === null
+                ? undefined
+                : nested.rows[nestedSelection]
+              : selectedIndex === null
+                ? undefined
+                : rows[selectedIndex]
+          }
           onFilter={columnActions?.onFilterBy}
         />
       )}

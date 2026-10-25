@@ -86,7 +86,8 @@
     "pinned": "Pinned",
     "renameField": "Rename field…",
     "convertField": "Change type…",
-    "removeField": "Remove field…"
+    "removeField": "Remove field…",
+    "stepInto": "Step into {{field}}"
   },
   "rows": {
     "copy_one": "Copy {{count}} document",
@@ -179,5 +180,12 @@
     "zoomOut": "Zoom out",
     "fit": "Fit to the points"
   },
-  "timedOut": "Give it longer in Options → Max time (ms), or change the default in Settings → Data and tools. 0 means no limit."
+  "timedOut": "Give it longer in Options → Max time (ms), or change the default in Settings → Data and tools. 0 means no limit.",
+  "nested": {
+    "label": "Position inside the documents",
+    "up": "Back up one level",
+    "documents": "Documents",
+    "count_one": "{{count, number}} row, from the loaded documents · read-only",
+    "count_other": "{{count, number}} rows, from the loaded documents · read-only"
+  }
 }

@@ -101,6 +101,33 @@ await check("drag a header onto another to reorder", async () => {
   )
     throw new Error(firstRow.join(","));
 });
+await check("step into an array column and back", async () => {
+  await header("tags").click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Step into tags" }).click();
+  const crumbs = page.getByRole("navigation", { name: "Position inside the documents" });
+  await crumbs.getByText("tags").waitFor();
+  await header("_id ↑").waitFor();
+  await header("value").waitFor();
+  await crumbs.getByText(/rows, from the loaded documents/).waitFor();
+  await shot("step-into");
+  await crumbs.getByRole("button", { name: "Documents" }).click();
+  await crumbs.waitFor({ state: "detached" });
+  await header("tags").waitFor();
+});
+
+await check("step into an embedded document, then deeper", async () => {
+  await header("address").click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Step into address" }).click();
+  await header("city").waitFor();
+  await header("location").click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Step into location" }).click();
+  await header("coordinates").waitFor();
+  await page.getByRole("button", { name: "Back up one level" }).click();
+  await header("city").waitFor();
+  await page.getByRole("button", { name: "Back up one level" }).click();
+  await header("tags").waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

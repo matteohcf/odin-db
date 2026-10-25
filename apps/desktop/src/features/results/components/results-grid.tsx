@@ -36,6 +36,7 @@ import {
   pinnedFirst,
   stickyOffsets,
 } from "../lib/columns";
+import { isNested } from "../lib/nested";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { useColumnLayouts } from "../store/column-layout-store";
 import { useResultsView } from "../store/results-view-store";
@@ -115,6 +116,8 @@ interface ResultsGridProps {
   onLoadMore: () => void;
   actions: RowActions;
   columnActions?: ColumnActions | undefined;
+  /** Shows a column's arrays and embedded documents as rows of their own. */
+  onStepInto?: ((field: string) => void) | undefined;
 }
 
 /**
@@ -135,8 +138,14 @@ export function ResultsGrid({
   onLoadMore,
   actions,
   columnActions,
+  onStepInto,
 }: ResultsGridProps) {
   const { t } = useTranslation("results");
+  // Columns worth stepping into: arrays or embedded documents in the first rows.
+  const nestedFields = useMemo(() => {
+    const sample = rows.slice(0, 50);
+    return new Set(columns.filter((field) => sample.some((row) => isNested(row[field]))));
+  }, [rows, columns]);
   const { onOpen, onDelete } = actions;
   const gridId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -488,6 +497,11 @@ export function ResultsGrid({
                         open={columnMenu === header.id}
                         onOpenChange={(open) => setColumnMenu(open ? header.id : null)}
                         columnActions={columnActions}
+                        onStepInto={
+                          onStepInto && nestedFields.has(header.id)
+                            ? () => onStepInto(header.id)
+                            : undefined
+                        }
                         onFit={() =>
                           table.setColumnSizing((sizes) => ({
                             ...sizes,

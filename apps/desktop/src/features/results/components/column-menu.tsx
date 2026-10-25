@@ -11,6 +11,7 @@ import {
   ArrowUp,
   ChevronDown,
   ClipboardCopy,
+  CornerDownRight,
   EyeOff,
   ListChecks,
   MoveHorizontal,
@@ -37,6 +38,8 @@ interface ColumnMenuProps {
   onTogglePin: (() => void) | undefined;
   /** Absent when this is the last visible column. */
   onHide: (() => void) | undefined;
+  /** Present for columns holding arrays or embedded documents. */
+  onStepInto?: (() => void) | undefined;
 }
 
 /** A column's commands, from the chevron in its header or a right-click on it. */
@@ -49,6 +52,7 @@ export function ColumnMenu({
   pinned,
   onTogglePin,
   onHide,
+  onStepInto,
 }: ColumnMenuProps) {
   const { t } = useTranslation("results");
   return (
@@ -67,6 +71,15 @@ export function ColumnMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        {onStepInto && (
+          <>
+            <DropdownMenuItem onSelect={onStepInto}>
+              <CornerDownRight />
+              {t("column.stepInto", { field })}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {columnActions?.onSortBy && (
           <>
             <DropdownMenuItem onSelect={() => columnActions.onSortBy?.(field, 1)}>

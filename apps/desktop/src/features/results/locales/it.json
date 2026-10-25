@@ -86,7 +86,8 @@
     "pinned": "Fissata",
     "renameField": "Rinomina campo…",
     "convertField": "Cambia tipo…",
-    "removeField": "Rimuovi campo…"
+    "removeField": "Rimuovi campo…",
+    "stepInto": "Entra in {{field}}"
   },
   "rows": {
     "copy_one": "Copia {{count}} documento",
@@ -179,5 +180,12 @@
     "zoomOut": "Riduci",
     "fit": "Adatta ai punti"
   },
-  "timedOut": "Concedile più tempo in Opzioni → Tempo max (ms), o cambia il valore predefinito in Impostazioni → Dati e strumenti. 0 significa nessun limite."
+  "timedOut": "Concedile più tempo in Opzioni → Tempo max (ms), o cambia il valore predefinito in Impostazioni → Dati e strumenti. 0 significa nessun limite.",
+  "nested": {
+    "label": "Posizione dentro i documenti",
+    "up": "Torna su di un livello",
+    "documents": "Documenti",
+    "count_one": "{{count, number}} riga, dai documenti caricati · sola lettura",
+    "count_other": "{{count, number}} righe, dai documenti caricati · sola lettura"
+  }
 }
