@@ -104,6 +104,14 @@ describe("chartData", () => {
     expect(bins[0]).toMatchObject({ x: 0, to: 50, y: 2 });
     expect(bins.at(-1)).toMatchObject({ x: 850, to: 900, y: 1 });
     expect(bins).toHaveLength(18);
+    // A value on an edge starts the next bin, despite float noise.
+    const edges = [0, 0.3, 1.9].map((v) => ({ v: { $numberDouble: String(v) } }));
+    const tenths = chartData(edges, "number", { x: "v", y: null, aggregate: "sum" }).points;
+    expect(tenths.find((bin) => bin.x === 0.3)?.y).toBe(1);
+    // A range past what a double holds still charts, as one bin.
+    const huge = [-1e308, 1e308].map((v) => ({ v: { $numberDouble: String(v) } }));
+    const wide = chartData(huge, "number", { x: "v", y: null, aggregate: "sum" }).points;
+    expect(wide).toEqual([{ x: -1e308, to: -1e308 + 1, y: 2 }]);
     const scatter = chartData(orders, "number", { x: "total", y: "total", aggregate: "sum" });
     expect(scatter.points).toContainEqual({ x: 7, y: 7 });
   });

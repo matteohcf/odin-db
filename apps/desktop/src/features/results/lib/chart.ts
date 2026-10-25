@@ -324,6 +324,9 @@ function timeSeries(
   return { kind: "line", unit, points, missing };
 }
 
+/** Float noise tolerated when placing a value on a bin edge, in bin widths. */
+const EDGE = 1e-9;
+
 /** The smallest 1, 2 or 5 times a power of ten that is at least `raw`. */
 function niceStep(raw: number): number {
   const power = 10 ** Math.floor(Math.log10(raw));
@@ -346,12 +349,15 @@ function histogram(rows: readonly JsonObject[], spec: ChartSpec): ChartData {
   if (values.length === 0) return { kind: "histogram", points: [], missing };
   const [low, high] = range(values);
   // Round bin edges (0–50, 50–100) rather than fractions of the range.
-  const width = niceStep((high - low) / HISTOGRAM_BINS || 1);
-  const start = Math.floor(low / width) * width;
-  const bins = Math.floor((high - start) / width) + 1;
+  // A range too wide for a double (±1e308) gets one bin instead of NaN edges.
+  const finite = Number.isFinite(high - low);
+  const width = finite ? niceStep((high - low) / HISTOGRAM_BINS || 1) : 1;
+  const start = finite ? Math.floor(low / width) * width : low;
+  const bins = finite ? Math.floor((high - start) / width + EDGE) + 1 : 1;
   const counts = new Array<number>(bins).fill(0);
   for (const value of values) {
-    const index = Math.min(Math.floor((value - start) / width), bins - 1);
+    // A value on an edge (0.3 with 0.1 steps reads 2.9999…) belongs to the bin it starts.
+    const index = Math.min(Math.floor((value - start) / width + EDGE), bins - 1);
     counts[index] = (counts[index] ?? 0) + 1;
   }
   const points = counts.map((count, index) => ({
