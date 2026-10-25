@@ -34,9 +34,15 @@ fi
 if $run_rust; then
   echo "▸ Rust gates"
   pnpm check:rust
-  # Rust types cross into TypeScript: the bindings must follow.
+  # Rust types cross into TypeScript: the bindings must follow. Compared with the file as it
+  # is, not as committed, so freshly regenerated bindings pass before the commit.
+  bindings=packages/bindings/src/bindings.gen.ts
+  before=$(shasum "$bindings")
   pnpm bindings
-  git diff --exit-code packages/bindings
+  if [ "$(shasum "$bindings")" != "$before" ]; then
+    echo "The bindings were out of date; they are regenerated now: review and commit them."
+    exit 1
+  fi
 fi
 if ! $run_js && ! $run_rust; then
   echo "Only docs or other files changed: nothing to check."
