@@ -164,6 +164,7 @@
       "max": "Massimo"
     },
     "other": "Altro",
+    "weekOf": "Settimana del {{date}}",
     "loaded_one": "Da {{count}} documento caricato",
     "loaded_other": "Da {{count}} documenti caricati",
     "missing_one": "{{count}} senza {{field}}",

@@ -170,7 +170,7 @@ export interface ChartPoint {
   other?: boolean;
 }
 
-export type TimeUnit = "hour" | "day" | "month" | "year";
+export type TimeUnit = "hour" | "day" | "week" | "month" | "year";
 
 export type ChartData =
   | { kind: "bar"; points: ChartPoint[]; missing: number }
@@ -240,11 +240,21 @@ function range(values: readonly number[]): [number, number] {
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
-function unitFor(span: number): TimeUnit {
-  if (span <= 2 * DAY) return "hour";
-  if (span <= 120 * DAY) return "day";
-  if (span <= 4 * 365 * DAY) return "month";
-  return "year";
+const UNITS: readonly [TimeUnit, number][] = [
+  ["hour", HOUR],
+  ["day", DAY],
+  ["week", 7 * DAY],
+  ["month", 30 * DAY],
+  ["year", 365 * DAY],
+];
+
+/**
+ * The finest unit that keeps the line readable: at most 120 buckets, and few enough that most
+ * hold a document (about two per bucket), down to 12 buckets for small samples.
+ */
+function unitFor(span: number, count: number): TimeUnit {
+  const most = Math.min(120, Math.max(12, count / 2));
+  return UNITS.find(([, length]) => span / length <= most)?.[0] ?? "year";
 }
 
 /** The start of the UTC bucket a moment falls in. */
@@ -255,6 +265,9 @@ function bucket(millis: number, unit: TimeUnit): number {
       return Math.floor(millis / HOUR) * HOUR;
     case "day":
       return Math.floor(millis / DAY) * DAY;
+    case "week":
+      // Weeks start on Monday; 1 January 1970 was a Thursday.
+      return (Math.floor((millis / DAY + 3) / 7) * 7 - 3) * DAY;
     case "month":
       return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1);
     case "year":
@@ -269,6 +282,8 @@ function next(start: number, unit: TimeUnit): number {
       return start + HOUR;
     case "day":
       return start + DAY;
+    case "week":
+      return start + 7 * DAY;
     case "month":
       return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1);
     case "year":
@@ -290,7 +305,7 @@ function timeSeries(
   }
   if (moments.length === 0) return { kind: "line", unit: "day", points: [], missing };
   const [first, last] = range(moments.map(([millis]) => millis));
-  const unit = unitFor(last - first);
+  const unit = unitFor(last - first, moments.length);
   const groups = new Map<number, Accumulator>();
   for (const [millis, row] of moments) {
     const start = bucket(millis, unit);

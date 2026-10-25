@@ -73,6 +73,26 @@ describe("chartData", () => {
     expect(averages.points.map((point) => point.y)).toEqual([10, null, 6.25]);
   });
 
+  it("picks coarser buckets for sparse dates", () => {
+    const day = 86_400_000;
+    const monday = Date.UTC(2026, 0, 5);
+    // 100 documents over 10 weeks: days would leave most buckets empty, weeks do not.
+    const rows = Array.from({ length: 100 }, (_, i) => ({
+      at: { $date: { $numberLong: String(monday + Math.floor((i * 70) / 100) * day) } },
+    }));
+    const data = chartData(rows, "date", { x: "at", y: null, aggregate: "sum" });
+    expect(data.kind === "line" && data.unit).toBe("week");
+    expect(data.points).toHaveLength(10);
+    expect(data.points[0]?.x).toBe(monday);
+    expect(data.points.reduce((sum, point) => sum + (point.y ?? 0), 0)).toBe(100);
+    // The same span with many documents keeps daily detail.
+    const dense = Array.from({ length: 400 }, (_, i) => ({
+      at: { $date: { $numberLong: String(monday + Math.floor((i * 70) / 400) * day) } },
+    }));
+    const daily = chartData(dense, "date", { x: "at", y: null, aggregate: "sum" });
+    expect(daily.kind === "line" && daily.unit).toBe("day");
+  });
+
   it("bins numbers when counting, plots them against another number otherwise", () => {
     const data = chartData(orders, "number", { x: "total", y: null, aggregate: "sum" });
     expect(data.kind).toBe("histogram");

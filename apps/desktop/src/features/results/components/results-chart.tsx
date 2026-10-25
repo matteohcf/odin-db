@@ -42,6 +42,7 @@ const axis = { axisLine: { stroke: "var(--border)" }, tickLine: false, fontSize:
 const timeFormat: Record<TimeUnit, Intl.DateTimeFormatOptions> = {
   hour: { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
   day: { month: "short", day: "numeric" },
+  week: { month: "short", day: "numeric" },
   month: { month: "short", year: "numeric" },
   year: { year: "numeric" },
 };
@@ -108,14 +109,18 @@ export function ResultsChart({ rows, hasMore, onLoadMore }: ResultsChartProps) {
     x: { label: spec.x },
     y: { label: yLabel, color: "var(--primary)" },
   } satisfies ChartConfig;
-  const points = data.points.map((point) => ({ ...point, label: formatX(point) }));
+  const points = data.points.map((point) => {
+    const label = formatX(point);
+    const weekly = data.kind === "line" && data.unit === "week";
+    return { ...point, label, tip: weekly ? t("chart.weekOf", { date: label }) : label };
+  });
   const tooltip = (
     <ChartTooltip
       cursor={data.kind !== "scatter"}
       content={
         <ChartTooltipContent
           hideLabel={data.kind === "scatter"}
-          labelFormatter={(_, payload) => payload[0]?.payload?.label}
+          labelFormatter={(_, payload) => payload[0]?.payload?.tip}
           formatter={(value, name) => (
             <div className="flex w-full items-center justify-between gap-4">
               <span className="text-muted-foreground">
