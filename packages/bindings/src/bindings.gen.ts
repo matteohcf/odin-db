@@ -90,6 +90,12 @@ export const commands = {
 	/**  Tests unsaved settings. Without a new password, the saved one of `profile_id` is used. */
 	testConnection: (input: ProfileInput, profileId: string | null) => typedError<ServerInfo, IpcError>(__TAURI_INVOKE("test_connection", { input, profileId })),
 	connect: (profileId: ProfileId) => typedError<ConnectionInfo, IpcError>(__TAURI_INVOKE("connect", { profileId })),
+	/**
+	 *  Asks for a certificate file (a CA, or a client certificate and key) and returns its
+	 *  path, which goes into the connection string where the driver reads it. `None` if the
+	 *  user cancels.
+	 */
+	chooseCertificateFile: () => typedError<string | null, IpcError>(__TAURI_INVOKE("choose_certificate_file")),
 	disconnect: (connectionId: ConnectionId) => typedError<null, IpcError>(__TAURI_INVOKE("disconnect", { connectionId })),
 	listConnections: () => typedError<ConnectionInfo[], IpcError>(__TAURI_INVOKE("list_connections")),
 	listDatabases: (connectionId: ConnectionId) => typedError<DatabaseInfo[], IpcError>(__TAURI_INVOKE("list_databases", { connectionId })),

@@ -40,6 +40,19 @@ describe("connection strings", () => {
     expect(srv && buildConnectionString(srv)).toBe("mongodb+srv://c.net");
   });
 
+  it("reads and writes certificate files, only with TLS on", () => {
+    const text =
+      "mongodb://db1:27017/?tls=true&tlsCAFile=%2Fetc%2Fssl%2Fca.pem&tlsCertificateKeyFile=%2Fhome%2Fada%2Fme.pem";
+    const fields = parseConnectionString(text);
+    expect(fields).toMatchObject({
+      tlsCAFile: "/etc/ssl/ca.pem",
+      tlsCertificateKeyFile: "/home/ada/me.pem",
+      extra: [],
+    });
+    expect(fields && buildConnectionString(fields)).toBe(text);
+    expect(fields && buildConnectionString({ ...fields, tls: false })).toBe("mongodb://db1:27017");
+  });
+
   it("rejects text that is not a MongoDB connection string", () => {
     expect(parseConnectionString("postgres://x")).toBeNull();
     expect(parseConnectionString("localhost:27017")).toBeNull();

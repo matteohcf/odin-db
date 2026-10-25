@@ -1944,6 +1944,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     const chosen = (handlers.choose_import_file as () => { name: string })();
     return { ...chosen, name: dropped.name };
   },
+  choose_certificate_file: () => "/Users/ada/certs/company-ca.pem",
   choose_import_file: () => {
     const headers = ["email", "name", "age", "joined", "city"];
     const rows = Array.from({ length: 120 }, (_, i) => [

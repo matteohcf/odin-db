@@ -54,6 +54,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::profiles::delete_profile,
             commands::profiles::test_connection,
             commands::connections::connect,
+            commands::connections::choose_certificate_file,
             commands::connections::disconnect,
             commands::connections::list_connections,
             commands::connections::list_databases,

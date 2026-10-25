@@ -26,6 +26,10 @@ export interface ConnectionFields {
   authMechanism: string;
   tls: boolean;
   tlsAllowInvalidCertificates: boolean;
+  /** A certificate authority file, for servers whose certificate it signed. */
+  tlsCAFile: string;
+  /** A PEM file with this client's certificate and key, for X.509 or mutual TLS. */
+  tlsCertificateKeyFile: string;
   replicaSet: string;
   directConnection: boolean;
   readPreference: string;
@@ -39,6 +43,8 @@ const FORM_OPTIONS = new Set([
   "tls",
   "ssl",
   "tlsAllowInvalidCertificates",
+  "tlsCAFile",
+  "tlsCertificateKeyFile",
   "replicaSet",
   "directConnection",
   "readPreference",
@@ -75,6 +81,8 @@ export function parseConnectionString(text: string): ConnectionFields | null {
     // SRV connections use TLS unless told otherwise.
     tls: tlsOption === undefined ? srv : tlsOption === "true",
     tlsAllowInvalidCertificates: option("tlsAllowInvalidCertificates") === "true",
+    tlsCAFile: option("tlsCAFile") ?? "",
+    tlsCertificateKeyFile: option("tlsCertificateKeyFile") ?? "",
     replicaSet: option("replicaSet") ?? "",
     directConnection: option("directConnection") === "true",
     readPreference: option("readPreference") ?? "",
@@ -94,6 +102,10 @@ export function buildConnectionString(fields: ConnectionFields): string {
   if (fields.tls !== fields.srv) options.push(["tls", String(fields.tls)]);
   if (fields.tls && fields.tlsAllowInvalidCertificates) {
     options.push(["tlsAllowInvalidCertificates", "true"]);
+  }
+  if (fields.tls && fields.tlsCAFile) options.push(["tlsCAFile", fields.tlsCAFile]);
+  if (fields.tls && fields.tlsCertificateKeyFile) {
+    options.push(["tlsCertificateKeyFile", fields.tlsCertificateKeyFile]);
   }
   if (fields.replicaSet) options.push(["replicaSet", fields.replicaSet]);
   if (fields.directConnection && !fields.srv) options.push(["directConnection", "true"]);

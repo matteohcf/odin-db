@@ -18,6 +18,7 @@ import {
   parseConnectionString,
   READ_PREFERENCES,
 } from "../lib/connection-uri";
+import { CertificateField } from "./certificate-field";
 
 /** Radix Select needs a non-empty value for "not set". */
 const DEFAULT = "default";
@@ -177,6 +178,22 @@ export function ConnectionFormFields({
           />
         )}
       </div>
+      {fields.tls && (
+        <div className="grid gap-4">
+          <CertificateField
+            label={t("form.caFile")}
+            hint={t("form.caFileHint")}
+            value={fields.tlsCAFile}
+            onChange={(path) => set("tlsCAFile", path)}
+          />
+          <CertificateField
+            label={t("form.certificateFile")}
+            hint={t("form.certificateFileHint")}
+            value={fields.tlsCertificateKeyFile}
+            onChange={(path) => set("tlsCertificateKeyFile", path)}
+          />
+        </div>
+      )}
     </div>
   );
 }

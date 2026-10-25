@@ -248,7 +248,12 @@
     "allowInvalid": "Allow invalid certificates",
     "allowInvalidWarning": "Anyone on the network could intercept this connection. Use only for local testing.",
     "directConnection": "Direct connection",
-    "directConnectionHint": "Connect to this host only, without discovering the rest of a replica set."
+    "directConnectionHint": "Connect to this host only, without discovering the rest of a replica set.",
+    "choose": "Choose…",
+    "caFile": "Certificate authority",
+    "caFileHint": "A PEM file with the CA that signed the server's certificate, for self-signed or company certificates.",
+    "certificateFile": "Client certificate",
+    "certificateFileHint": "A PEM file with this client's certificate and private key, for X.509 sign-in or mutual TLS."
   },
   "favorites": {
     "title": "Favorites",

@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
+use odin_core::CoreError;
 use odin_core::browse::{self, CollectionCount, CollectionInfo, CollectionStats, DatabaseInfo};
 use odin_core::connection::{ConnectionId, ConnectionInfo};
 use odin_core::profiles::{self, ProfileId};
 use odin_core::query::Namespace;
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
 
 use crate::ipc::IpcError;
 use crate::state::{AppState, blocking};
@@ -100,4 +102,24 @@ pub async fn collection_counts(
 ) -> Result<Vec<CollectionCount>, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(browse::collection_counts(&handle, &database).await?)
+}
+
+/// Asks for a certificate file (a CA, or a client certificate and key) and returns its
+/// path, which goes into the connection string where the driver reads it. `None` if the
+/// user cancels.
+#[tauri::command]
+#[specta::specta]
+pub async fn choose_certificate_file(app: AppHandle) -> Result<Option<String>, IpcError> {
+    let dialog = app
+        .dialog()
+        .file()
+        .add_filter("Certificates", &["pem", "crt", "cer", "key"]);
+    let Some(path) = super::transfer::blocking_dialog(move || dialog.blocking_pick_file()).await?
+    else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|error| CoreError::Validation(error.to_string()))?;
+    Ok(Some(path.to_string_lossy().into_owned()))
 }

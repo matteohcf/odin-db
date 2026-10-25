@@ -56,6 +56,24 @@ await check("the form edits the connection string", async () => {
   if (uri !== expected) throw new Error(uri);
 });
 
+await check("TLS takes a CA and a client certificate file", async () => {
+  await dialog.getByRole("tab", { name: "Form" }).click();
+  await dialog.getByLabel("Certificate authority").waitFor();
+  await dialog.getByRole("button", { name: "Choose…" }).first().click();
+  await page.waitForFunction(
+    () => document.querySelector("input[value$='company-ca.pem']") !== null,
+  );
+  await dialog.getByLabel("Client certificate").fill("/Users/ada/certs/me.pem");
+  await shot("02-certificates");
+  await dialog.getByRole("tab", { name: "Connection string" }).click();
+  const uri = await dialog.getByRole("textbox", { name: "Connection string" }).inputValue();
+  if (
+    !uri.includes("tlsCAFile=%2FUsers%2Fada%2Fcerts%2Fcompany-ca.pem") ||
+    !uri.includes("tlsCertificateKeyFile=%2FUsers%2Fada%2Fcerts%2Fme.pem")
+  )
+    throw new Error(uri);
+});
+
 await check("SRV switches scheme and TLS default", async () => {
   await dialog
     .getByRole("textbox", { name: "Connection string" })

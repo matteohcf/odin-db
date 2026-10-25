@@ -248,7 +248,12 @@
     "allowInvalid": "Consenti certificati non validi",
     "allowInvalidWarning": "Chiunque sulla rete potrebbe intercettare questa connessione. Usare solo per test in locale.",
     "directConnection": "Connessione diretta",
-    "directConnectionHint": "Connettiti solo a questo host, senza rilevare il resto di un replica set."
+    "directConnectionHint": "Connettiti solo a questo host, senza rilevare il resto di un replica set.",
+    "choose": "Scegli…",
+    "caFile": "Autorità di certificazione",
+    "caFileHint": "Un file PEM con la CA che ha firmato il certificato del server, per certificati autofirmati o aziendali.",
+    "certificateFile": "Certificato client",
+    "certificateFileHint": "Un file PEM con il certificato e la chiave privata di questo client, per l'accesso X.509 o il TLS reciproco."
   },
   "favorites": {
     "title": "Preferiti",
