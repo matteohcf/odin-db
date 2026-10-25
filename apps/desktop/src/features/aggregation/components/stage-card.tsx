@@ -4,9 +4,10 @@ import { Switch } from "@odin-db/ui/components/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
 import { ArrowDown, ArrowUp, ChevronRight, Maximize2, Minimize2, Plus, Trash2 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code-editor";
+import { IconAction } from "@/components/icon-action";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
 import { useStageInputFields } from "../api/use-stage-input-fields";
 import { queryKindOf } from "../lib/operators";
@@ -87,74 +88,53 @@ export function StageCard({
           </span>
         )}
         <div className="ml-auto flex items-center gap-0.5">
-          <IconAction label={t("stage.enabled")}>
-            {/* A wrapper keeps the tooltip's data-state from overriding the switch's own. */}
-            <span className="mx-1.5 inline-flex">
-              <Switch
-                checked={stage.enabled}
-                onCheckedChange={onToggle}
-                aria-label={t("stage.enabled")}
-              />
-            </span>
-          </IconAction>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* A wrapper keeps the tooltip's data-state from overriding the switch's own. */}
+              <span className="mx-1.5 inline-flex">
+                <Switch
+                  checked={stage.enabled}
+                  onCheckedChange={onToggle}
+                  aria-label={t("stage.enabled")}
+                />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{t("stage.enabled")}</TooltipContent>
+          </Tooltip>
           {!collapsed && (
-            <IconAction label={t(tall ? "stage.shorter" : "stage.taller")}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => setTall((value) => !value)}
-                aria-label={t(tall ? "stage.shorter" : "stage.taller")}
-              >
-                {tall ? <Minimize2 /> : <Maximize2 />}
-              </Button>
+            <IconAction
+              label={t(tall ? "stage.shorter" : "stage.taller")}
+              onClick={() => setTall((value) => !value)}
+              className="size-7"
+            >
+              {tall ? <Minimize2 /> : <Maximize2 />}
             </IconAction>
           )}
-          <IconAction label={t("stage.moveUp")}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={index === 0}
-              onClick={() => onMove(-1)}
-              aria-label={t("stage.moveUp")}
-            >
-              <ArrowUp />
-            </Button>
+          <IconAction
+            label={t("stage.moveUp")}
+            onClick={() => onMove(-1)}
+            disabled={index === 0}
+            className="size-7"
+          >
+            <ArrowUp />
           </IconAction>
-          <IconAction label={t("stage.moveDown")}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={index === stages.length - 1}
-              onClick={() => onMove(1)}
-              aria-label={t("stage.moveDown")}
-            >
-              <ArrowDown />
-            </Button>
+          <IconAction
+            label={t("stage.moveDown")}
+            onClick={() => onMove(1)}
+            disabled={index === stages.length - 1}
+            className="size-7"
+          >
+            <ArrowDown />
           </IconAction>
-          <IconAction label={t("stage.addAfter")}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={onAddAfter}
-              aria-label={t("stage.addAfter")}
-            >
-              <Plus />
-            </Button>
+          <IconAction label={t("stage.addAfter")} onClick={onAddAfter} className="size-7">
+            <Plus />
           </IconAction>
-          <IconAction label={t("stage.remove")}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 hover:text-destructive"
-              onClick={onRemove}
-              aria-label={t("stage.remove")}
-            >
-              <Trash2 />
-            </Button>
+          <IconAction
+            label={t("stage.remove")}
+            onClick={onRemove}
+            className="size-7 hover:text-destructive"
+          >
+            <Trash2 />
           </IconAction>
         </div>
       </header>
@@ -177,15 +157,6 @@ export function StageCard({
         />
       </div>
     </section>
-  );
-}
-
-function IconAction({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
   );
 }
 
