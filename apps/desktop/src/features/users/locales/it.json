@@ -50,8 +50,8 @@
     "add": "Aggiungi un privilegio",
     "removeAction": "Rimuovi {{action}}",
     "actionsPlaceholder": "find, insert…",
-    "anyDb": "tutti i database",
-    "anyCollection": "tutte le collezioni",
+    "anyDb": "ogni database",
+    "anyCollection": "ogni collezione",
     "kind": {
       "namespace": "Collezione",
       "cluster": "Cluster",
