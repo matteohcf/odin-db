@@ -36,10 +36,7 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
       detail={
         <>
           {status.data && (
-            <Badge
-              variant={status.data.balancerMode === "off" ? "outline" : "secondary"}
-              className={status.data.balancerMode === "off" ? "text-warning" : undefined}
-            >
+            <Badge variant={status.data.balancerMode === "off" ? "warning" : "secondary"}>
               {status.data.balancerRunning
                 ? t("sharding.balancing")
                 : t(`sharding.balancer.${status.data.balancerMode}` as "sharding.balancer.full", {

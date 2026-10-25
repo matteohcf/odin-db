@@ -86,7 +86,7 @@ export function SchemaDifferenceRow({
           )}
           {validation && <Badge variant="secondary">{t("schema.rules")}</Badge>}
           {error && (
-            <Badge variant="outline" className="text-destructive" title={error}>
+            <Badge variant="danger" title={error}>
               {t("schema.unreadable")}
             </Badge>
           )}

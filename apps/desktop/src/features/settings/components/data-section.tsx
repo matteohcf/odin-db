@@ -75,9 +75,7 @@ export function DataSection() {
                 {tools.data.version ?? t("tools.available")}
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-warning">
-                {t("tools.missing")}
-              </Badge>
+              <Badge variant="warning">{t("tools.missing")}</Badge>
             ))}
         </SettingRow>
       </SettingsSection>

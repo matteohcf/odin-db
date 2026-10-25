@@ -113,7 +113,7 @@ function StatusBadge({ run }: { run: BackupRun }) {
       );
     case "completed":
       return (
-        <Badge variant="secondary" className="gap-1 text-success">
+        <Badge variant="success" className="gap-1">
           <CircleCheck className="size-3" />
           {run.archiveExists ? t("status.completed") : t("status.fileMissing")}
         </Badge>
@@ -129,7 +129,7 @@ function StatusBadge({ run }: { run: BackupRun }) {
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge variant="secondary" className="gap-1 text-destructive">
+            <Badge variant="danger" className="gap-1">
               <CircleAlert className="size-3" />
               {t("status.failed")}
             </Badge>

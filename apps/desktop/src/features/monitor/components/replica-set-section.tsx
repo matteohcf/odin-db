@@ -106,18 +106,8 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
 }
 
 function MemberState({ member }: { member: ReplicaMember }) {
-  if (!member.healthy)
-    return (
-      <Badge variant="outline" className="border-destructive/40 text-destructive">
-        {member.state || "DOWN"}
-      </Badge>
-    );
-  if (member.state === "PRIMARY")
-    return <Badge className="bg-success/15 text-success hover:bg-success/15">{member.state}</Badge>;
+  if (!member.healthy) return <Badge variant="danger">{member.state || "DOWN"}</Badge>;
+  if (member.state === "PRIMARY") return <Badge variant="success">{member.state}</Badge>;
   if (member.state === "SECONDARY") return <Badge variant="secondary">{member.state}</Badge>;
-  return (
-    <Badge variant="outline" className="text-warning">
-      {member.state}
-    </Badge>
-  );
+  return <Badge variant="warning">{member.state}</Badge>;
 }

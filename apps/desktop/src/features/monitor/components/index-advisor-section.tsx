@@ -91,7 +91,7 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
                       {keys}
                     </code>
                     {advice.collectionScan && (
-                      <Badge variant="outline" className="shrink-0 border-warning/40 text-warning">
+                      <Badge variant="warning" className="shrink-0">
                         {t("advisor.collectionScan")}
                       </Badge>
                     )}
