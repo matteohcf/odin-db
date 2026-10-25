@@ -25,7 +25,11 @@
     "remove": "Rimuovi stage",
     "addAfter": "Aggiungi stage dopo",
     "editor": "Corpo dello stage {{number}}",
-    "disabled": "Ignorato. Attivalo per includerlo nella pipeline."
+    "disabled": "Ignorato. Attivalo per includerlo nella pipeline.",
+    "collapse": "Comprimi lo stage",
+    "expand": "Espandi lo stage",
+    "taller": "Più spazio per modificare",
+    "shorter": "Meno spazio"
   },
   "preview": {
     "title_one": "{{count}} documento",

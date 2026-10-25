@@ -3,8 +3,8 @@ import { Button } from "@odin-db/ui/components/button";
 import { Switch } from "@odin-db/ui/components/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowDown, ArrowUp, ChevronRight, Maximize2, Minimize2, Plus, Trash2 } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code-editor";
 import { useQueryCompletions } from "@/hooks/use-query-completions";
@@ -47,6 +47,9 @@ export function StageCard({
   const stage = stages[index];
   const fields = useStageInputFields(connectionId, namespace, stages, index);
   const completionsFor = useQueryCompletions(fields);
+  // Collapsed, a long pipeline reads as an outline; tall, a long stage has room.
+  const [collapsed, setCollapsed] = useState(false);
+  const [tall, setTall] = useState(false);
   if (!stage) return null;
   const number = index + 1;
 
@@ -55,7 +58,17 @@ export function StageCard({
       aria-label={t("stage.label", { number })}
       className={cn("rounded-lg border bg-card", !stage.enabled && "opacity-60")}
     >
-      <header className="flex h-10 items-center gap-2 border-b px-2.5">
+      <header className={cn("flex h-10 items-center gap-2 px-2.5", !collapsed && "border-b")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="-mr-1 size-6"
+          aria-expanded={!collapsed}
+          aria-label={t(collapsed ? "stage.expand" : "stage.collapse")}
+          onClick={() => setCollapsed((value) => !value)}
+        >
+          <ChevronRight className={cn("transition-transform", !collapsed && "rotate-90")} />
+        </Button>
         {/* Stages are a sequence: the number is the order the server applies them in. */}
         <span className="flex size-5 items-center justify-center rounded-full bg-muted font-mono text-[11px] text-muted-foreground">
           {number}
@@ -64,9 +77,15 @@ export function StageCard({
           value={stage.operator}
           onChange={(operator) => onOperatorChange(operator, templateField(fields))}
         />
-        <span className="truncate text-muted-foreground text-xs">
-          {t(`operators.${stage.operator}` as "operators.$match", { defaultValue: "" })}
-        </span>
+        {collapsed ? (
+          <code className="min-w-0 truncate font-mono text-muted-foreground text-xs">
+            {stage.body.replace(/\s+/g, " ").trim()}
+          </code>
+        ) : (
+          <span className="truncate text-muted-foreground text-xs">
+            {t(`operators.${stage.operator}` as "operators.$match", { defaultValue: "" })}
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-0.5">
           <IconAction label={t("stage.enabled")}>
             {/* A wrapper keeps the tooltip's data-state from overriding the switch's own. */}
@@ -78,6 +97,19 @@ export function StageCard({
               />
             </span>
           </IconAction>
+          {!collapsed && (
+            <IconAction label={t(tall ? "stage.shorter" : "stage.taller")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => setTall((value) => !value)}
+                aria-label={t(tall ? "stage.shorter" : "stage.taller")}
+              >
+                {tall ? <Minimize2 /> : <Maximize2 />}
+              </Button>
+            </IconAction>
+          )}
           <IconAction label={t("stage.moveUp")}>
             <Button
               variant="ghost"
@@ -126,7 +158,7 @@ export function StageCard({
           </IconAction>
         </div>
       </header>
-      <div className="grid grid-cols-2 divide-x">
+      <div className={cn("grid grid-cols-2 divide-x", collapsed && "hidden")}>
         <CodeEditor
           // Remount when the operator swaps in a new template.
           key={`${stage.id}:${stage.operator}`}
@@ -135,7 +167,7 @@ export function StageCard({
           onSubmit={onRun}
           ariaLabel={t("stage.editor", { number })}
           completions={completionsFor(queryKindOf(stage.operator))}
-          className="h-44 rounded-bl-lg"
+          className={cn("rounded-bl-lg", tall ? "h-[28rem]" : "h-44")}
         />
         <StagePreview
           connectionId={connectionId}

@@ -143,6 +143,21 @@ await check("loading a saved pipeline in text mode shows it in the editor", asyn
   await page.getByRole("radio", { name: "Stages" }).click();
 });
 
+await check("a stage collapses to one line and grows for long bodies", async () => {
+  const first = page.getByRole("region", { name: "Stage 1" });
+  const editor = first.locator(".cm-editor");
+  const before = (await editor.boundingBox())?.height ?? 0;
+  await first.getByRole("button", { name: "More room to edit" }).click();
+  const after = (await editor.boundingBox())?.height ?? 0;
+  if (after <= before * 1.5) throw new Error(`${before} -> ${after}`);
+  await first.getByRole("button", { name: "Collapse the stage" }).click();
+  await editor.waitFor({ state: "hidden" });
+  await first.locator("header code").waitFor();
+  await shot("collapsed");
+  await first.getByRole("button", { name: "Expand the stage" }).click();
+  await editor.waitFor();
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();

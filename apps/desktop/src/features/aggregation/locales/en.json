@@ -25,7 +25,11 @@
     "remove": "Remove stage",
     "addAfter": "Add stage after",
     "editor": "Stage {{number}} body",
-    "disabled": "Skipped. Turn it on to include it in the pipeline."
+    "disabled": "Skipped. Turn it on to include it in the pipeline.",
+    "collapse": "Collapse the stage",
+    "expand": "Expand the stage",
+    "taller": "More room to edit",
+    "shorter": "Less room"
   },
   "preview": {
     "title_one": "{{count}} document",
