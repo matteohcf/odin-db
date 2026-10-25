@@ -1,5 +1,13 @@
 import type { BackupRun, ProfileId } from "@odin-db/bindings";
 import { Badge } from "@odin-db/ui/components/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { CircleAlert, CircleCheck, CircleSlash, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -25,27 +33,27 @@ export function HistoryTable({
 
   return (
     <div className="overflow-hidden rounded-lg border">
-      <table className="w-full text-sm">
-        <thead className="bg-sidebar text-left text-muted-foreground text-xs">
-          <tr className="border-b">
-            <th className="px-3 py-2 font-medium">{t("columns.when")}</th>
-            <th className="px-3 py-2 font-medium">{t("columns.what")}</th>
-            <th className="px-3 py-2 font-medium">{t("columns.status")}</th>
-            <th className="px-3 py-2 text-right font-medium">{t("columns.size")}</th>
-            <th className="px-3 py-2 text-right font-medium">{t("columns.documents")}</th>
-            <th className="px-3 py-2 text-right font-medium">{t("columns.duration")}</th>
+      <Table className="text-sm">
+        <TableHeader className="bg-sidebar text-xs">
+          <TableRow className="border-b">
+            <TableHead>{t("columns.when")}</TableHead>
+            <TableHead>{t("columns.what")}</TableHead>
+            <TableHead>{t("columns.status")}</TableHead>
+            <TableHead className="text-right">{t("columns.size")}</TableHead>
+            <TableHead className="text-right">{t("columns.documents")}</TableHead>
+            <TableHead className="text-right">{t("columns.duration")}</TableHead>
             <th className="w-10 px-2 py-2" />
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {runs.map((run) => {
             const started = run.startedAt ?? 0;
             return (
-              <tr
+              <TableRow
                 key={run.id}
                 className="border-b border-border/60 last:border-0 hover:bg-accent/40"
               >
-                <td className="px-3 py-2 align-top">
+                <TableCell className="align-top">
                   <div className="flex flex-col">
                     <span title={new Date(started).toLocaleString(locale)}>
                       {formatRelativeTime(started, now, locale)}
@@ -54,39 +62,39 @@ export function HistoryTable({
                       {run.scheduleId ? t("trigger.scheduled") : t("trigger.manual")}
                     </span>
                   </div>
-                </td>
-                <td className="max-w-72 px-3 py-2 align-top">
+                </TableCell>
+                <TableCell className="max-w-72 align-top">
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate">{nameOf(run.profileId)}</span>
                     <span className="truncate text-muted-foreground text-xs">
                       {scopeLabel(run.scope, t)}
                     </span>
                   </div>
-                </td>
-                <td className="px-3 py-2 align-top">
+                </TableCell>
+                <TableCell className="align-top">
                   <StatusBadge run={run} />
-                </td>
-                <td className="px-3 py-2 text-right align-top tabular-nums">
+                </TableCell>
+                <TableCell className="text-right align-top tabular-nums">
                   {run.status === "completed" ? formatBytes(run.bytes ?? 0, locale) : "—"}
-                </td>
-                <td className="px-3 py-2 text-right align-top tabular-nums">
+                </TableCell>
+                <TableCell className="text-right align-top tabular-nums">
                   {run.status === "completed" ? formatCount(run.documents ?? 0, locale) : "—"}
-                </td>
-                <td className="px-3 py-2 text-right align-top tabular-nums">
+                </TableCell>
+                <TableCell className="text-right align-top tabular-nums">
                   {run.finishedAt ? durationLabel(run.finishedAt - started) : "—"}
-                </td>
-                <td className="px-2 py-1.5 align-top">
+                </TableCell>
+                <TableCell className="px-2 py-1.5 align-top">
                   <RunMenu
                     run={run}
                     onRestore={() => setRestoring(run)}
                     onDelete={() => setDeleting(run)}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {restoring && <RestoreFromBackup run={restoring} onClose={() => setRestoring(null)} />}
       {deleting && <DeleteRunDialog run={deleting} onClose={() => setDeleting(null)} />}
     </div>

@@ -1,6 +1,14 @@
 import type { ConnectionInfo, FieldSummary, JsonValue, Namespace } from "@odin-db/bindings";
 import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { cn } from "@odin-db/ui/lib/utils";
 import { CircleAlert, FileSearch, Loader2, RotateCw } from "lucide-react";
 import { useState } from "react";
@@ -67,21 +75,21 @@ export function SchemaView({
         ) : fields.length === 0 ? (
           <EmptyState icon={FileSearch}>{t("empty")}</EmptyState>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-sidebar text-left text-muted-foreground text-xs">
-              <tr className="border-b">
-                <th className="px-3 py-2 font-medium">{t("columns.field")}</th>
-                <th className="w-56 px-3 py-2 font-medium">{t("columns.presence")}</th>
-                <th className="px-3 py-2 font-medium">{t("columns.types")}</th>
-                <th className="px-3 py-2 font-medium">{t("columns.values")}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="text-sm">
+            <TableHeader className="sticky top-0 bg-sidebar text-xs">
+              <TableRow className="border-b">
+                <TableHead>{t("columns.field")}</TableHead>
+                <TableHead className="w-56">{t("columns.presence")}</TableHead>
+                <TableHead>{t("columns.types")}</TableHead>
+                <TableHead>{t("columns.values")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {fields.map((field) => (
                 <FieldRow key={field.path} field={field} onFilterBy={onFilterBy} />
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>
@@ -104,8 +112,8 @@ function FieldRow({
   const percent = Math.round(frequency * 100);
 
   return (
-    <tr className="border-b border-border/60 hover:bg-accent/40">
-      <td className="px-3 py-1.5 font-mono text-xs" title={field.path}>
+    <TableRow className="border-b border-border/60 hover:bg-accent/40">
+      <TableCell className="px-3 py-1.5 font-mono text-xs" title={field.path}>
         <span
           style={{ paddingLeft: depth * 16 }}
           className={cn(depth > 0 && "text-muted-foreground")}
@@ -113,8 +121,8 @@ function FieldRow({
           {depth > 0 && <span className="text-muted-foreground/50">└ </span>}
           <span className="text-foreground">{parts.at(-1)}</span>
         </span>
-      </td>
-      <td className="px-3 py-1.5">
+      </TableCell>
+      <TableCell className="py-1.5">
         <div className="flex items-center gap-2">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
             <div
@@ -126,8 +134,8 @@ function FieldRow({
             {percent}%
           </span>
         </div>
-      </td>
-      <td className="px-3 py-1.5">
+      </TableCell>
+      <TableCell className="py-1.5">
         <div className="flex flex-wrap items-center gap-1">
           {field.types.map((type, index) => {
             const share = field.typeShares[index];
@@ -149,8 +157,8 @@ function FieldRow({
             </span>
           )}
         </div>
-      </td>
-      <td className="max-w-md px-3 py-1.5">
+      </TableCell>
+      <TableCell className="max-w-md py-1.5">
         <div className="flex flex-wrap gap-1">
           {field.range && (
             <span
@@ -193,8 +201,8 @@ function FieldRow({
             </button>
           )}
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 

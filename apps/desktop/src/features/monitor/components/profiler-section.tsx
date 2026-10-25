@@ -13,6 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@odin-db/ui/components/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
@@ -160,22 +168,22 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
         </p>
       ) : (
         <div className="max-h-96 overflow-auto rounded-lg border">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-muted text-left text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t("profiler.when")}</th>
-                <th className="px-3 py-2 font-medium">{t("ops.op")}</th>
-                <th className="px-3 py-2 font-medium">{t("ops.namespace")}</th>
-                <th className="px-3 py-2 text-right font-medium">{t("profiler.duration")}</th>
-                <th className="px-3 py-2 text-right font-medium">{t("profiler.examined")}</th>
-                <th className="px-3 py-2 font-medium">{t("profiler.plan")}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted">
+              <TableRow className="hover:bg-transparent">
+                <TableHead>{t("profiler.when")}</TableHead>
+                <TableHead>{t("ops.op")}</TableHead>
+                <TableHead>{t("ops.namespace")}</TableHead>
+                <TableHead className="text-right">{t("profiler.duration")}</TableHead>
+                <TableHead className="text-right">{t("profiler.examined")}</TableHead>
+                <TableHead>{t("profiler.plan")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {entries.data?.map((entry, index) => {
                 const hint = indexHint(entry);
                 return (
-                  <tr
+                  <TableRow
                     // Entries have no id; the time and position are unique enough within a list.
                     key={`${entry.at}-${index}`}
                     tabIndex={0}
@@ -183,18 +191,18 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
                     onKeyDown={(event) => event.key === "Enter" && setSelected(entry)}
                     className="cursor-pointer border-t outline-none hover:bg-accent/50 focus-visible:bg-accent"
                   >
-                    <td className="whitespace-nowrap px-3 py-1.5 text-muted-foreground tabular-nums">
+                    <TableCell className="whitespace-nowrap py-1.5 text-muted-foreground tabular-nums">
                       {new Date(entry.at ?? 0).toLocaleTimeString(i18n.language)}
-                    </td>
-                    <td className="px-3 py-1.5 font-medium">{entry.op}</td>
-                    <td className="px-3 py-1.5 font-mono">{entry.ns}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
+                    </TableCell>
+                    <TableCell className="py-1.5 font-medium">{entry.op}</TableCell>
+                    <TableCell className="py-1.5 font-mono">{entry.ns}</TableCell>
+                    <TableCell className="py-1.5 text-right tabular-nums">
                       {number(entry.millis)} ms
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-1.5 text-right tabular-nums">
                       {number(entry.docsExamined)} / {number(entry.returned)}
-                    </td>
-                    <td
+                    </TableCell>
+                    <TableCell
                       className="max-w-56 truncate px-3 py-1.5 font-mono"
                       title={entry.planSummary ?? ""}
                     >
@@ -204,12 +212,12 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
                           {t(`profiler.hints.${hint}`)}
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
       {selected && (

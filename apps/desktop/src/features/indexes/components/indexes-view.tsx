@@ -10,6 +10,14 @@ import {
 } from "@odin-db/ui/components/alert-dialog";
 import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import { cn } from "@odin-db/ui/lib/utils";
 import {
@@ -121,39 +129,39 @@ export function IndexesView({
             {t("table.failed", { message: indexes.error.message })}
           </p>
         ) : (
-          <table
-            className="w-full border-collapse text-[13px]"
+          <Table
+            className="text-[13px]"
             aria-label={t("table.label", { collection: namespace.collection })}
           >
-            <thead className="sticky top-0 bg-sidebar text-left text-muted-foreground text-xs">
-              <tr className="h-8 border-b">
-                <th className="px-3 font-medium">{t("table.name")}</th>
-                <th className="px-3 font-medium">{t("table.keys")}</th>
-                <th className="px-3 font-medium">{t("table.properties")}</th>
-                <th className="px-3 text-right font-medium">{t("table.size")}</th>
-                <th className="px-3 text-right font-medium">{t("table.usage")}</th>
-                <th className="w-12 px-3">
+            <TableHeader className="sticky top-0 bg-sidebar text-xs">
+              <TableRow className="h-8 border-b">
+                <TableHead>{t("table.name")}</TableHead>
+                <TableHead>{t("table.keys")}</TableHead>
+                <TableHead>{t("table.properties")}</TableHead>
+                <TableHead className="text-right">{t("table.size")}</TableHead>
+                <TableHead className="text-right">{t("table.usage")}</TableHead>
+                <TableHead className="w-12">
                   <span className="sr-only">{t("table.actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {indexes.data.map((index) => (
-                <tr
+                <TableRow
                   key={index.name}
                   className="group h-11 border-b border-border/60 hover:bg-accent/40"
                 >
-                  <td className="px-3 font-medium selectable">{index.name}</td>
-                  <td className="px-3 font-mono text-type-structure text-xs selectable">
+                  <TableCell className="font-medium selectable">{index.name}</TableCell>
+                  <TableCell className="font-mono text-type-structure text-xs selectable">
                     {describeEJson(index.keys).text}
-                  </td>
-                  <td className="px-3">
+                  </TableCell>
+                  <TableCell>
                     <Properties index={index} />
-                  </td>
-                  <td className="px-3 text-right text-muted-foreground text-xs tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground text-xs tabular-nums">
                     {index.size == null ? "—" : formatBytes(index.size)}
-                  </td>
-                  <td
+                  </TableCell>
+                  <TableCell
                     className={cn(
                       "px-3 text-right text-xs tabular-nums",
                       // An index never used costs writes and memory for nothing.
@@ -176,8 +184,8 @@ export function IndexesView({
                               ? new Date(index.usageSince).toLocaleDateString()
                               : "",
                           })}
-                  </td>
-                  <td className="px-3 text-right whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -233,11 +241,11 @@ export function IndexesView({
                         <Trash2 />
                       </Button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
 
