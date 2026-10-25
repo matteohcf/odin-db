@@ -203,3 +203,31 @@ pub async fn drop_user(
         .await?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn users_and_roles_read_from_users_info() {
+        let user = to_user(&doc! {
+            "user": "shop-api", "db": "shop",
+            "roles": [{ "role": "readWrite", "db": "shop" }, { "bad": true }],
+            "mechanisms": ["SCRAM-SHA-256", 1],
+        });
+        assert_eq!((user.user.as_str(), user.db.as_str()), ("shop-api", "shop"));
+        assert_eq!(
+            user.roles.len(),
+            2,
+            "a malformed role reads as empty, not dropped silently"
+        );
+        assert_eq!(user.roles[0].role, "readWrite");
+        assert_eq!(user.mechanisms, ["SCRAM-SHA-256"]);
+        assert_eq!(
+            roles_bson(&user.roles[..1]),
+            [Bson::Document(doc! { "role": "readWrite", "db": "shop" })]
+        );
+        assert_eq!(validate_name("  ada ").ok(), Some("ada"));
+        assert!(validate_name("   ").is_err());
+    }
+}

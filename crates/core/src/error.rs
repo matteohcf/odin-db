@@ -134,3 +134,29 @@ impl From<rusqlite::Error> for CoreError {
         Self::Storage(error.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn kinds_and_details_are_stable_for_the_ui() {
+        assert_eq!(
+            CoreError::TimeLimit("x".into()).kind(),
+            ErrorKind::TimeLimit
+        );
+        assert_eq!(CoreError::ReadOnly.kind(), ErrorKind::ReadOnly);
+        assert_eq!(
+            CoreError::UnknownHostKey("SHA256:abc".into())
+                .detail()
+                .as_deref(),
+            Some("SHA256:abc")
+        );
+        assert_eq!(CoreError::Database("x".into()).detail(), None);
+        assert!(
+            CoreError::TimeLimit("operation exceeded time limit".into())
+                .to_string()
+                .starts_with("the server stopped it at its time limit")
+        );
+    }
+}
