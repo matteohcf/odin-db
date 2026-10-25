@@ -25,7 +25,11 @@ if printf '%s\n' "$files" | grep -qE "$rust_pattern"; then run_rust=true; fi
 
 if $run_js; then
   echo "▸ JS gates"
-  pnpm lint && pnpm typecheck && pnpm knip && pnpm test
+  # One per line: under `set -e` a failing `a && b` chain would not stop the script.
+  pnpm lint
+  pnpm typecheck
+  pnpm knip
+  pnpm test
 fi
 if $run_rust; then
   echo "▸ Rust gates"
