@@ -130,6 +130,8 @@ export const commands = {
 	distinctValues: (connectionId: ConnectionId, namespace: Namespace, field: string, filter: EJsonDocument, limit: number) => typedError<DistinctValue[], IpcError>(__TAURI_INVOKE("distinct_values", { connectionId, namespace, field, filter, limit })),
 	updateDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, update: EJsonDocument) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("update_documents", { connectionId, namespace, filter, update })),
 	changeField: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument, field: string, change: FieldChange) => typedError<UpdateManyResult, IpcError>(__TAURI_INVOKE("change_field", { connectionId, namespace, filter, field, change })),
+	/**  Puts documents back as they were before a bulk write (its `originals`). */
+	restoreDocuments: (connectionId: ConnectionId, namespace: Namespace, originals: EJsonDocument[]) => typedError<number | null, IpcError>(__TAURI_INVOKE("restore_documents", { connectionId, namespace, originals })),
 	deleteDocuments: (connectionId: ConnectionId, namespace: Namespace, filter: EJsonDocument) => typedError<number | null, IpcError>(__TAURI_INVOKE("delete_documents", { connectionId, namespace, filter })),
 	/**  Sets (or, with `value: null`, removes) one top-level field of a document. */
 	setDocumentField: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, field: string, value: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("set_document_field", { connectionId, namespace, id, field, value })),
@@ -1400,6 +1402,8 @@ export type UpdateInfo = {
 export type UpdateManyResult = {
 	matched: number | null,
 	modified: number | null,
+	/**  The documents as they were before the write, to undo it; none past `UNDO_LIMIT`. */
+	originals?: EJsonDocument[] | null,
 };
 
 /**  Bytes of the update downloaded so far; `total` is unknown for some servers. */

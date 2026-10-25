@@ -124,7 +124,8 @@
     "updated_one": "Aggiornato {{count, number}} documento ({{matched, number}} corrispondenti).",
     "updated_other": "Aggiornati {{count, number}} documenti ({{matched, number}} corrispondenti).",
     "deleted_one": "Eliminato {{count, number}} documento.",
-    "deleted_other": "Eliminati {{count, number}} documenti."
+    "deleted_other": "Eliminati {{count, number}} documenti.",
+    "noUndo": "Cambiano più di 1.000 documenti: non si potrà annullare."
   },
   "distinct": {
     "title": "Valori distinti di {{field}}",

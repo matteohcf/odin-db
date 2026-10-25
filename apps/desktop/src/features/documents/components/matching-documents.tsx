@@ -6,13 +6,18 @@ import { errorMessage } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import type { useMatchingCount } from "../api/queries";
 
+// Matches core's documents::UNDO_LIMIT: past it a write keeps no originals to undo with.
+const UNDO_LIMIT = 1000;
+
 interface MatchingDocumentsProps {
   filter: EJsonDocument;
   count: ReturnType<typeof useMatchingCount>;
+  /** The write keeps the documents to undo it, up to a limit worth warning about. */
+  undoable?: boolean;
 }
 
 /** The filter a write by filter applies to, and how many documents match it. */
-export function MatchingDocuments({ filter, count }: MatchingDocumentsProps) {
+export function MatchingDocuments({ filter, count, undoable = false }: MatchingDocumentsProps) {
   const { t } = useTranslation("documents");
   const matchAll = isJsonObject(filter) && Object.keys(filter).length === 0;
   return (
@@ -36,6 +41,9 @@ export function MatchingDocuments({ filter, count }: MatchingDocumentsProps) {
           t("bulk.matching", { count: count.data ?? 0 })
         )}
       </p>
+      {undoable && (count.data ?? 0) > UNDO_LIMIT && (
+        <p className="text-warning text-xs">{t("bulk.noUndo")}</p>
+      )}
     </div>
   );
 }

@@ -92,12 +92,61 @@ pub async fn delete(
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateManyResult {
     pub matched: f64,
     pub modified: f64,
+    /// The documents as they were before the write, to undo it; none past `UNDO_LIMIT`.
+    #[serde(default)]
+    pub originals: Option<Vec<EJsonDocument>>,
+}
+
+/// Writes touching more documents than this cannot be undone: keeping them all would cost
+/// too much memory and time.
+pub const UNDO_LIMIT: i64 = 1000;
+
+/// The documents `filter` matches as they are now, or `None` past `UNDO_LIMIT`.
+async fn snapshot(
+    collection: &mongodb::Collection<Document>,
+    filter: &Document,
+) -> Result<Option<Vec<EJsonDocument>>, CoreError> {
+    let mut cursor = collection
+        .find(filter.clone())
+        .limit(UNDO_LIMIT + 1)
+        .await?;
+    let mut documents = Vec::new();
+    while cursor.advance().await? {
+        if documents.len() >= usize::try_from(UNDO_LIMIT).unwrap_or(usize::MAX) {
+            return Ok(None);
+        }
+        documents.push(EJsonDocument::from(cursor.deserialize_current()?));
+    }
+    Ok(Some(documents))
+}
+
+/// Puts documents back as they were, matched by `_id`; returns how many were replaced.
+pub async fn restore(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    originals: Vec<EJsonDocument>,
+) -> Result<f64, CoreError> {
+    handle.ensure_writable()?;
+    let collection = namespace.collection(handle)?;
+    let mut restored = 0_u64;
+    for original in originals {
+        let document = Document::try_from(original)?;
+        let Some(id) = document.get("_id").cloned() else {
+            continue;
+        };
+        restored += collection
+            .replace_one(doc! { "_id": id }, document)
+            .await?
+            .modified_count;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    Ok(restored as f64)
 }
 
 /// Applies update operators such as `$set` to every document matching `filter`.
@@ -115,14 +164,15 @@ pub async fn update_many(
             "an update needs operators such as { $set: { field: value } }".into(),
         ));
     }
-    let result = namespace
-        .collection(handle)?
-        .update_many(Document::try_from(filter)?, update)
-        .await?;
+    let filter = Document::try_from(filter)?;
+    let collection = namespace.collection(handle)?;
+    let originals = snapshot(&collection, &filter).await?;
+    let result = collection.update_many(filter, update).await?;
     #[allow(clippy::cast_precision_loss)]
     Ok(UpdateManyResult {
         matched: result.matched_count as f64,
         modified: result.modified_count as f64,
+        originals,
     })
 }
 
@@ -237,14 +287,14 @@ pub async fn change_field(
 ) -> Result<UpdateManyResult, CoreError> {
     handle.ensure_writable()?;
     let (filter, update) = field_update(Document::try_from(filter)?, field, change)?;
-    let result = namespace
-        .collection(handle)?
-        .update_many(filter, update)
-        .await?;
+    let collection = namespace.collection(handle)?;
+    let originals = snapshot(&collection, &filter).await?;
+    let result = collection.update_many(filter, update).await?;
     #[allow(clippy::cast_precision_loss)]
     Ok(UpdateManyResult {
         matched: result.matched_count as f64,
         modified: result.modified_count as f64,
+        originals,
     })
 }
 

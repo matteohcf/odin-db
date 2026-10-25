@@ -328,7 +328,9 @@ export function DocumentsView({
   }
 
   const gridFs = useGridFsActions(connection.id, namespace, () => refresh(true));
-  const { offerUndo, offerFieldUndo } = useUndo(connection.id, namespace, () => refresh(true));
+  const { offerUndo, offerFieldUndo, offerRestore } = useUndo(connection.id, namespace, () =>
+    refresh(true),
+  );
 
   function deleteRow(row: JsonObject | undefined) {
     const id = row?._id;
@@ -684,6 +686,7 @@ export function DocumentsView({
           connectionId={connection.id}
           namespace={namespace}
           onDone={() => refresh(true)}
+          onUndoable={offerRestore}
           onClose={() => setFieldChange(null)}
         />
       )}
@@ -703,6 +706,7 @@ export function DocumentsView({
                 }
               : undefined
           }
+          onUndoable={offerRestore}
           onClose={() => setBulk(null)}
         />
       )}

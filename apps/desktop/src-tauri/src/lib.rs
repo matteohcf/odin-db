@@ -80,6 +80,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::documents::distinct_values,
             commands::documents::update_documents,
             commands::documents::change_field,
+            commands::documents::restore_documents,
             commands::documents::delete_documents,
             commands::documents::set_document_field,
             commands::documents::unset_document_field,

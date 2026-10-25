@@ -1,4 +1,10 @@
-import { type ConnectionId, commands, type JsonValue, type Namespace } from "@odin-db/bindings";
+import {
+  type ConnectionId,
+  commands,
+  type EJsonDocument,
+  type JsonValue,
+  type Namespace,
+} from "@odin-db/bindings";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { JsonObject } from "@/lib/ejson-display";
@@ -55,5 +61,25 @@ export function useUndo(connectionId: ConnectionId, namespace: Namespace, refres
     });
   }
 
-  return { offerUndo, offerFieldUndo };
+  /** Confirms a bulk write with an Undo that puts the documents back as they were. */
+  function offerRestore(originals: EJsonDocument[], message: string) {
+    toast.success(message, {
+      duration: 10_000,
+      action: {
+        label: t("undo.action"),
+        onClick: () =>
+          void call(commands.restoreDocuments(connectionId, namespace, originals))
+            .then(() => {
+              toast.success(t("undo.restored", { count: originals.length }));
+              refresh();
+            })
+            .catch((error: unknown) => {
+              toast.error(t("undo.failed", { message: errorMessage(error) }));
+              refresh();
+            }),
+      },
+    });
+  }
+
+  return { offerUndo, offerFieldUndo, offerRestore };
 }

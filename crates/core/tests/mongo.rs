@@ -3437,3 +3437,58 @@ async fn values_are_found_across_collections_and_databases() {
         "{hits:?}"
     );
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn bulk_writes_can_be_undone_from_their_originals() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("undo");
+    fx.seed(&handle, &ns, 5).await;
+    let all = || EJsonDocument::from(doc! {});
+    let updated = documents::update_many(
+        &handle,
+        &ns,
+        all(),
+        EJsonDocument::from(doc! { "$set": { "n": -1 } }),
+    )
+    .await
+    .expect("updated");
+    let originals = updated.originals.expect("few enough to undo");
+    assert_eq!(originals.len(), 5);
+    let restored = documents::restore(&handle, &ns, originals)
+        .await
+        .expect("restored");
+    assert_eq!(restored, 5.0);
+    let collection = handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection);
+    assert_eq!(
+        collection
+            .count_documents(doc! { "n": -1 })
+            .await
+            .expect("count"),
+        0
+    );
+
+    let changed = documents::change_field(&handle, &ns, all(), "n", &FieldChange::Remove)
+        .await
+        .expect("removed");
+    documents::restore(&handle, &ns, changed.originals.expect("originals"))
+        .await
+        .expect("restored");
+    assert_eq!(
+        collection
+            .count_documents(doc! { "n": { "$exists": true } })
+            .await
+            .expect("count"),
+        5
+    );
+
+    let read_only = fx.connect(true).await;
+    assert!(matches!(
+        documents::restore(&read_only, &ns, Vec::new()).await,
+        Err(CoreError::ReadOnly)
+    ));
+}

@@ -34,6 +34,8 @@ interface BulkWriteDialogProps {
   onDone: () => void;
   /** Replaces the default "deleted" message, e.g. to offer an undo. */
   onDeleted?: ((count: number) => void) | undefined;
+  /** Confirms an update that can be undone, with the documents as they were. */
+  onUndoable?: ((originals: EJsonDocument[], message: string) => void) | undefined;
   onClose: () => void;
 }
 
@@ -46,6 +48,7 @@ export function BulkWriteDialog({
   completions,
   onDone,
   onDeleted,
+  onUndoable,
   onClose,
 }: BulkWriteDialogProps) {
   const { t } = useTranslation("documents");
@@ -72,9 +75,12 @@ export function BulkWriteDialog({
       if (mode === "update") {
         const parsed = await parseShellDocument(update.current);
         const result = await updateMany.mutateAsync({ ...target, update: parsed });
-        toast.success(
-          t("bulk.updated", { count: result.modified ?? 0, matched: result.matched ?? 0 }),
-        );
+        const message = t("bulk.updated", {
+          count: result.modified ?? 0,
+          matched: result.matched ?? 0,
+        });
+        if (result.originals && onUndoable) onUndoable(result.originals, message);
+        else toast.success(message);
       } else {
         const deleted = await deleteMany.mutateAsync(target);
         if (onDeleted) onDeleted(deleted ?? 0);
@@ -102,7 +108,7 @@ export function BulkWriteDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <MatchingDocuments filter={filter} count={count} />
+        <MatchingDocuments filter={filter} count={count} undoable={mode === "update"} />
 
         {mode === "update" && (
           <div className="flex flex-col gap-1.5">

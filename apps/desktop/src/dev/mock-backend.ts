@@ -2635,11 +2635,12 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
         "invalid input: an update needs operators such as { $set: { field: value } }",
       );
     const matched = coll.docs.filter((doc) => matchesFilter(doc, args.filter as Doc));
+    const originals = matched.length <= 1000 ? structuredClone(matched) : null;
     for (const doc of matched) {
       Object.assign(doc, update.$set ?? {});
       for (const field of Object.keys(update.$unset ?? {})) delete doc[field];
     }
-    return { matched: matched.length, modified: matched.length };
+    return { matched: matched.length, modified: matched.length, originals };
   },
   change_field: (args) => {
     const ns = args.namespace as { database: string; collection: string };
@@ -2663,7 +2664,11 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     };
     let matched = 0;
     let modified = 0;
-    for (const doc of coll.docs.filter((d) => matchesFilter(d, args.filter as Doc))) {
+    const concerned = coll.docs.filter(
+      (d) => matchesFilter(d, args.filter as Doc) && d[field] !== undefined,
+    );
+    const originals = concerned.length <= 1000 ? structuredClone(concerned) : null;
+    for (const doc of concerned) {
       const value = doc[field];
       if (value === undefined) continue;
       if (change.kind === "convert") {
@@ -2679,7 +2684,21 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       }
       modified += 1;
     }
-    return { matched, modified };
+    return { matched, modified, originals };
+  },
+  restore_documents: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const { connection, coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    ensureWritable(connection);
+    let restored = 0;
+    for (const original of args.originals as Doc[]) {
+      const key = JSON.stringify(original._id);
+      const index = coll.docs.findIndex((doc) => JSON.stringify(doc._id) === key);
+      if (index < 0) continue;
+      coll.docs[index] = structuredClone(original);
+      restored += 1;
+    }
+    return restored;
   },
   delete_documents: (args) => {
     const ns = args.namespace as { database: string; collection: string };

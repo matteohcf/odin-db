@@ -177,6 +177,19 @@ pub async fn update_documents(
     Ok(documents::update_many(&handle, &namespace, filter, update).await?)
 }
 
+/// Puts documents back as they were before a bulk write (its `originals`).
+#[tauri::command]
+#[specta::specta]
+pub async fn restore_documents(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    originals: Vec<EJsonDocument>,
+) -> Result<f64, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(documents::restore(&handle, &namespace, originals).await?)
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn change_field(

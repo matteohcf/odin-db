@@ -36,12 +36,15 @@ await check("renaming in every document asks for the collection name", async () 
   await dialog.getByLabel("New name").fill("tier");
   const submit = dialog.getByRole("button", { name: "Rename", exact: true });
   if (!(await submit.isDisabled())) throw new Error("renamed without confirmation");
+  await dialog.getByText("More than 1,000 documents change: this cannot be undone.").waitFor();
   await dialog.getByLabel(/Type users to confirm/).fill("users");
   await shot("01-rename");
   await submit.click();
   await page.getByText(/Renamed plan to tier in [\d,]+ documents/).waitFor();
   // Renamed fields move to the end of each document, past the visible columns.
   await header("plan").waitFor({ state: "detached" });
+  // Over 1,000 documents: said before, and no Undo after.
+  if (await page.getByRole("button", { name: "Undo" }).count()) throw new Error("undo offered");
 });
 
 await check("converting keeps what cannot be converted", async () => {
@@ -57,6 +60,8 @@ await check("converting keeps what cannot be converted", async () => {
   await shot("02-convert");
   await dialog.getByRole("button", { name: "Convert" }).click();
   await page.getByText(/Converted age in [\d,]+ documents?/).waitFor();
+  await page.getByRole("button", { name: "Undo" }).click();
+  await page.getByText(/Restored [\d,]+ documents/).waitFor();
 });
 
 await check("removing is destructive and refused on _id", async () => {

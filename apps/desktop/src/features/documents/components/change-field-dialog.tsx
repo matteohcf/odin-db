@@ -49,6 +49,8 @@ interface ChangeFieldDialogProps {
   /** The query bar's filter: matching documents that have the field change. */
   filter: EJsonDocument;
   onDone: () => void;
+  /** Confirms a change that can be undone, with the documents as they were. */
+  onUndoable?: ((originals: EJsonDocument[], message: string) => void) | undefined;
   onClose: () => void;
 }
 
@@ -60,6 +62,7 @@ export function ChangeFieldDialog({
   namespace,
   filter,
   onDone,
+  onUndoable,
   onClose,
 }: ChangeFieldDialogProps) {
   const { t } = useTranslation("documents");
@@ -98,9 +101,13 @@ export function ChangeFieldDialog({
       });
       const changed = result.modified ?? 0;
       const kept = (result.matched ?? 0) - changed;
-      if (kind === "convert" && kept > 0)
-        toast.warning(t("fieldChange.convertedSome", { count: changed, kept }));
-      else toast.success(t(`fieldChange.${kind}.done`, { count: changed, field, to: to.trim() }));
+      const message =
+        kind === "convert" && kept > 0
+          ? t("fieldChange.convertedSome", { count: changed, kept })
+          : t(`fieldChange.${kind}.done`, { count: changed, field, to: to.trim() });
+      if (result.originals && changed > 0 && onUndoable) onUndoable(result.originals, message);
+      else if (kind === "convert" && kept > 0) toast.warning(message);
+      else toast.success(message);
     } catch (cause) {
       setError(errorMessage(cause));
       return;
@@ -118,7 +125,7 @@ export function ChangeFieldDialog({
             <DialogDescription>{t(`fieldChange.${kind}.description`, { field })}</DialogDescription>
           </DialogHeader>
 
-          <MatchingDocuments filter={filter} count={count} />
+          <MatchingDocuments filter={filter} count={count} undoable />
 
           {kind === "rename" && (
             <FormField

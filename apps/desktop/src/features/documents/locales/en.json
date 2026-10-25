@@ -124,7 +124,8 @@
     "updated_one": "Updated {{count, number}} document ({{matched, number}} matched).",
     "updated_other": "Updated {{count, number}} documents ({{matched, number}} matched).",
     "deleted_one": "Deleted {{count, number}} document.",
-    "deleted_other": "Deleted {{count, number}} documents."
+    "deleted_other": "Deleted {{count, number}} documents.",
+    "noUndo": "More than 1,000 documents change: this cannot be undone."
   },
   "distinct": {
     "title": "Distinct values of {{field}}",
