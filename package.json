@@ -17,6 +17,7 @@
     "test": "turbo run test",
     "knip": "knip",
     "check": "pnpm lint && pnpm typecheck && pnpm knip && pnpm test && pnpm check:rust",
+    "check:changed": "scripts/check-changed.sh",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
     "test:integration": "cargo test --workspace -- --ignored",
     "prepare": "lefthook install"
