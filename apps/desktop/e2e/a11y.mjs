@@ -44,10 +44,21 @@ await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");
 await audit("documents");
+await page.getByRole("button", { name: "Insert document" }).click();
+await audit("insert document dialog");
+await page.keyboard.press("Escape");
+await page.getByRole("button", { name: "More actions" }).click();
+await page.getByRole("menuitem", { name: /^Export/ }).click();
+await audit("export dialog");
+await page.keyboard.press("Escape");
 for (const view of ["Aggregation", "Schema", "Indexes", "Validation"]) {
   await page.getByRole("tab", { name: new RegExp(`^${view}`) }).click();
   await audit(view.toLowerCase());
 }
+await page.getByRole("tab", { name: /^Indexes/ }).click();
+await page.getByRole("button", { name: "Create index" }).click();
+await audit("create index dialog");
+await page.keyboard.press("Escape");
 await profileMenu("Local development", "Server status");
 await audit("server status");
 await profileMenu("Local development", "Users and roles");
