@@ -12,7 +12,10 @@
     "pasteFailed": "The clipboard has no pipeline: {{message}}",
     "undo": "Undo",
     "createView": "Create view",
-    "createViewHint": "Save this pipeline as a read-only view"
+    "createViewHint": "Save this pipeline as a read-only view",
+    "explain": "Explain",
+    "explainHint": "How MongoDB runs this pipeline: indexes, scans and what each stage returned",
+    "explainFailed": "Could not explain the pipeline: {{message}}"
   },
   "stage": {
     "label": "Stage {{number}}",

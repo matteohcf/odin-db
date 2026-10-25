@@ -74,6 +74,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::catalog::set_validation,
             commands::documents::sample_fields,
             commands::documents::explain_find,
+            commands::documents::explain_aggregate,
             commands::documents::insert_document,
             commands::documents::replace_document,
             commands::documents::delete_document,

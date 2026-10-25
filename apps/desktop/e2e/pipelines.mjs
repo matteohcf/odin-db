@@ -158,6 +158,18 @@ await check("a stage collapses to one line and grows for long bodies", async () 
   await editor.waitFor();
 });
 
+await check("a pipeline is explained stage by stage", async () => {
+  await page.getByRole("button", { name: "Add stage", exact: true }).last().click();
+  const second = page.getByRole("region", { name: "Stage 2" });
+  await second.locator(".cm-content").waitFor();
+  await page.getByRole("button", { name: "Explain" }).click();
+  const dialog = page.getByRole("dialog", { name: "Query plan" });
+  await dialog.getByText("COLLSCAN").first().waitFor();
+  await dialog.getByText("Then, on what the query returned").waitFor();
+  await shot("explain");
+  await page.keyboard.press("Escape");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }, null, 2));
 await browser.close();

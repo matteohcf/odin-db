@@ -11,7 +11,7 @@ interface PlanTreeProps {
 
 /** The winning plan's stages, root first and inputs indented, with what each one did. */
 export function PlanTree({ steps, plansConsidered }: PlanTreeProps) {
-  const { t, i18n } = useTranslation("documents");
+  const { t, i18n } = useTranslation("common");
   const count = (value: number) => formatCount(value, i18n.language);
   return (
     <div className="flex flex-col gap-1.5">

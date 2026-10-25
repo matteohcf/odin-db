@@ -124,6 +124,14 @@ export const commands = {
 	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size })),
 	/**  How the server runs a find: winning plan, indexes and counts. */
 	explainFind: (connectionId: ConnectionId, namespace: Namespace, request: ExplainRequest) => typedError<QueryPlan, IpcError>(__TAURI_INVOKE("explain_find", { connectionId, namespace, request })),
+	explainAggregate: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], options: {
+	/**  e.g. `{ locale: "en", strength: 2 }` for case-insensitive matching. */
+	collation?: EJsonDocument | null,
+	/**  An index name, or its keys. */
+	hint?: EJsonValue | null,
+	/**  The server stops the query past this many milliseconds; `None` lets it run. */
+	maxTimeMs?: number | null,
+} | null) => typedError<QueryPlan, IpcError>(__TAURI_INVOKE("explain_aggregate", { connectionId, namespace, pipeline, options })),
 	insertDocument: (connectionId: ConnectionId, namespace: Namespace, document: EJsonDocument) => typedError<EJsonValue, IpcError>(__TAURI_INVOKE("insert_document", { connectionId, namespace, document })),
 	replaceDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue, document: EJsonDocument) => typedError<null, IpcError>(__TAURI_INVOKE("replace_document", { connectionId, namespace, id, document })),
 	deleteDocument: (connectionId: ConnectionId, namespace: Namespace, id: EJsonValue) => typedError<null, IpcError>(__TAURI_INVOKE("delete_document", { connectionId, namespace, id })),
@@ -1131,6 +1139,11 @@ export type QueryPlan = {
 	steps: PlanStep[],
 	/**  How many candidate plans the planner compared. */
 	plansConsidered: number,
+	/**
+	 *  For a pipeline, the stages that run after the query part, in order, with what each
+	 *  returned; empty for a find, or when the whole pipeline runs inside the query.
+	 */
+	pipeline?: PlanStep[],
 	/**  The full `explain` output, for details the summary leaves out. */
 	raw: EJsonDocument,
 };

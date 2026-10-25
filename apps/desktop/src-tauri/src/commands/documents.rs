@@ -71,6 +71,22 @@ pub async fn explain_find(
     Ok(explain::explain_find(&handle, &namespace, request).await?)
 }
 
+#[tauri::command]
+#[specta::specta]
+pub async fn explain_aggregate(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+    namespace: Namespace,
+    pipeline: Vec<EJsonDocument>,
+    options: Option<query::QueryOptions>,
+) -> Result<QueryPlan, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(
+        explain::explain_aggregate(&handle, &namespace, pipeline, &options.unwrap_or_default())
+            .await?,
+    )
+}
+
 /// Field paths of a sample of the collection, for query autocompletion.
 #[tauri::command]
 #[specta::specta]

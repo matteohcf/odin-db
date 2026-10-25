@@ -13,6 +13,7 @@ import { ClipboardPaste, Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ExplainDialog } from "@/components/explain-dialog";
 import { QueryCodeDialog } from "@/components/query-code-dialog";
 import {
   DocumentEditorDialog,
@@ -58,7 +59,6 @@ import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DistinctValuesDialog } from "./distinct-values-dialog";
 import { DocumentsActions } from "./documents-actions";
 import { EditFieldDialog } from "./edit-field-dialog";
-import { ExplainDialog } from "./explain-dialog";
 import { PasteDocumentsDialog } from "./paste-documents-dialog";
 import { QueryBar } from "./query-bar";
 import { SqlDialog } from "./sql-dialog";

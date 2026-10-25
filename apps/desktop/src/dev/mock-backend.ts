@@ -2276,6 +2276,50 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     shells.delete(id("id", args));
     return null;
   },
+  explain_aggregate: (args) => {
+    const ns = args.namespace as { database: string; collection: string };
+    const pipeline = args.pipeline as Doc[];
+    const { coll } = collectionOf(id("connectionId", args), ns.database, ns.collection);
+    if (pipeline.some((stage) => "$out" in stage || "$merge" in stage))
+      return fail("validation", "invalid input: pipelines with $out or $merge cannot be explained");
+    const output = aggregate(coll.docs, pipeline);
+    const operators = pipeline.map((stage) => Object.keys(stage)[0] ?? "?");
+    // The leading $match runs in the query; the rest on its output.
+    const later = operators[0] === "$match" ? operators.slice(1) : operators;
+    return {
+      stages: ["COLLSCAN"],
+      indexes: [],
+      collectionScan: true,
+      returned: output.length,
+      documentsExamined: coll.docs.length,
+      keysExamined: 0,
+      milliseconds: 4,
+      plansConsidered: 1,
+      steps: [
+        {
+          stage: "COLLSCAN",
+          depth: 0,
+          returned: coll.docs.length,
+          milliseconds: 2,
+          documentsExamined: coll.docs.length,
+          keysExamined: null,
+          indexName: null,
+          keyPattern: null,
+        },
+      ],
+      pipeline: later.map((stage, index) => ({
+        stage,
+        depth: 0,
+        returned: index === later.length - 1 ? output.length : null,
+        milliseconds: 3 + index,
+        documentsExamined: null,
+        keysExamined: null,
+        indexName: null,
+        keyPattern: null,
+      })),
+      raw: { stages: pipeline },
+    };
+  },
   explain_find: (args) => {
     const ns = args.namespace as { database: string; collection: string };
     const request = args.request as { filter: Doc };

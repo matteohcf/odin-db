@@ -40,6 +40,10 @@ pub struct QueryPlan {
     pub steps: Vec<PlanStep>,
     /// How many candidate plans the planner compared.
     pub plans_considered: u32,
+    /// For a pipeline, the stages that run after the query part, in order, with what each
+    /// returned; empty for a find, or when the whole pipeline runs inside the query.
+    #[serde(default)]
+    pub pipeline: Vec<PlanStep>,
     /// The full `explain` output, for details the summary leaves out.
     pub raw: EJsonDocument,
 }
@@ -94,6 +98,88 @@ pub async fn explain_find(
     Ok(summarize(raw))
 }
 
+/// Runs the pipeline with `explain` at `executionStats` verbosity. Like a find, it really
+/// executes, so pipelines that write (`$out`, `$merge`) are refused.
+pub async fn explain_aggregate(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    pipeline: Vec<EJsonDocument>,
+    options: &QueryOptions,
+) -> Result<QueryPlan, CoreError> {
+    let pipeline = pipeline
+        .into_iter()
+        .map(Document::try_from)
+        .collect::<Result<Vec<_>, _>>()?;
+    if pipeline
+        .iter()
+        .any(|stage| stage.contains_key("$out") || stage.contains_key("$merge"))
+    {
+        return Err(CoreError::Validation(
+            "pipelines with $out or $merge cannot be explained: explaining runs them".into(),
+        ));
+    }
+    let collection = namespace.collection(handle)?;
+    let mut aggregate = doc! {
+        "aggregate": collection.name(),
+        "pipeline": pipeline,
+        "cursor": {},
+    };
+    options.add_to(&mut aggregate)?;
+    let raw = handle
+        .client
+        .database(&namespace.database)
+        .run_command(doc! { "explain": aggregate, "verbosity": "executionStats" })
+        .await?;
+    Ok(summarize_aggregate(raw))
+}
+
+/// A pipeline's explain: either one plan (the whole pipeline ran inside the query), or a
+/// `$cursor` stage holding the query's plan followed by the stages run on its output.
+fn summarize_aggregate(raw: Document) -> QueryPlan {
+    let Ok(stages) = raw.get_array("stages") else {
+        return summarize(raw);
+    };
+    let stages: Vec<&Document> = stages.iter().filter_map(Bson::as_document).collect();
+    let cursor = stages
+        .first()
+        .and_then(|stage| stage.get_document("$cursor").ok())
+        .cloned();
+    let after = usize::from(cursor.is_some());
+    let mut plan = summarize(cursor.unwrap_or_default());
+    plan.pipeline = stages
+        .iter()
+        .skip(after)
+        .map(|stage| {
+            let number = |key: &str| stage.get(key).map(number_of);
+            PlanStep {
+                stage: stage
+                    .keys()
+                    .find(|key| key.starts_with('$'))
+                    .cloned()
+                    .unwrap_or_else(|| "?".into()),
+                depth: 0,
+                returned: number("nReturned"),
+                milliseconds: number("executionTimeMillisEstimate"),
+                documents_examined: None,
+                keys_examined: None,
+                index_name: None,
+                key_pattern: None,
+            }
+        })
+        .collect();
+    if let Some(last) = plan.pipeline.last() {
+        if let Some(returned) = last.returned {
+            plan.returned = returned;
+        }
+        // Estimates are cumulative: the last stage's covers the whole pipeline.
+        if let Some(milliseconds) = last.milliseconds {
+            plan.milliseconds = plan.milliseconds.max(milliseconds);
+        }
+    }
+    plan.raw = EJsonDocument::from(raw);
+    plan
+}
+
 fn summarize(raw: Document) -> QueryPlan {
     let planner = raw.get_document("queryPlanner").ok();
     // Since MongoDB 7.0 the slot-based engine nests the classic tree under `queryPlan`.
@@ -140,6 +226,7 @@ fn summarize(raw: Document) -> QueryPlan {
         milliseconds: number("executionTimeMillis"),
         steps,
         plans_considered: u32::try_from(rejected + 1).unwrap_or(u32::MAX),
+        pipeline: Vec::new(),
         raw: EJsonDocument::from(raw),
     }
 }
@@ -249,6 +336,29 @@ mod tests {
         );
         assert_eq!((scan.depth, scan.keys_examined), (1, Some(6.0)));
         assert_eq!(scan.index_name.as_deref(), Some("age_1"));
+    }
+
+    #[test]
+    fn a_split_pipeline_keeps_the_query_plan_and_lists_the_later_stages() {
+        let plan = summarize_aggregate(doc! { "stages": [
+            { "$cursor": {
+                "queryPlanner": { "winningPlan": { "stage": "COLLSCAN" } },
+                "executionStats": { "nReturned": 100, "totalDocsExamined": 500, "executionTimeMillis": 3 },
+            }, "nReturned": 100_i64, "executionTimeMillisEstimate": 3_i64 },
+            { "$group": { "_id": "$city" }, "nReturned": 7_i64, "executionTimeMillisEstimate": 5_i64 },
+            { "$sort": { "sortKey": { "_id": 1 } }, "nReturned": 7_i64, "executionTimeMillisEstimate": 6_i64 },
+        ] });
+        assert!(plan.collection_scan);
+        assert_eq!(plan.documents_examined, 500.0);
+        let names: Vec<_> = plan.pipeline.iter().map(|s| s.stage.as_str()).collect();
+        assert_eq!(names, ["$group", "$sort"]);
+        assert_eq!((plan.returned, plan.milliseconds), (7.0, 6.0));
+        // A pipeline that ran entirely inside the query reads like a find.
+        let pushed = summarize_aggregate(doc! {
+            "queryPlanner": { "winningPlan": { "stage": "IXSCAN", "indexName": "a_1" } },
+        });
+        assert_eq!(pushed.indexes, ["a_1"]);
+        assert_eq!(pushed.pipeline.len(), 0);
     }
 
     #[test]

@@ -3,6 +3,7 @@ import {
   commands,
   type EJsonDocument,
   type Namespace,
+  type QueryPlan,
 } from "@odin-db/bindings";
 import {
   AlertDialog,
@@ -24,6 +25,8 @@ import {
   Download,
   Eye,
   FileCode2,
+  Gauge,
+  Loader2,
   Play,
   Plus,
   Rows3,
@@ -34,6 +37,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useStore } from "zustand";
 import { CodeEditor } from "@/components/code-editor";
+import { ExplainDialog } from "@/components/explain-dialog";
 import { QueryCodeDialog } from "@/components/query-code-dialog";
 import {
   DocumentEditorDialog,
@@ -96,6 +100,8 @@ export function AggregationView({
   const resultsReady = useResultsState(results, (s) => s.status === "ready");
   const lastPipeline = useRef<EJsonDocument[]>([]);
   const [codePipeline, setCodePipeline] = useState<EJsonDocument[] | null>(null);
+  const [plan, setPlan] = useState<QueryPlan | null>(null);
+  const [explaining, setExplaining] = useState(false);
 
   // Like Compass: the whole pipeline as one editable text, or as stage cards.
   const [mode, setMode] = useState<"stages" | "text">("stages");
@@ -194,6 +200,21 @@ export function AggregationView({
     return built.pipeline;
   }
 
+  async function explain() {
+    const pipeline = await builtPipeline();
+    if (!pipeline) return;
+    setExplaining(true);
+    try {
+      setPlan(
+        await call(commands.explainAggregate(connection.id, namespace, pipeline, withTimeLimit())),
+      );
+    } catch (error) {
+      setRunError(t("toolbar.explainFailed", { message: errorMessage(error) }));
+    } finally {
+      setExplaining(false);
+    }
+  }
+
   async function showCode() {
     const pipeline = await builtPipeline();
     if (pipeline) setCodePipeline(pipeline);
@@ -278,6 +299,17 @@ export function AggregationView({
         >
           <ClipboardPaste />
           <span className="hidden @4xl:inline">{t("toolbar.paste")}</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={t("toolbar.explain")}
+          title={t("toolbar.explainHint")}
+          disabled={explaining}
+          onClick={() => void explain()}
+        >
+          {explaining ? <Loader2 className="animate-spin" /> : <Gauge />}
+          <span className="hidden @4xl:inline">{t("toolbar.explain")}</span>
         </Button>
         <Button
           variant="ghost"
@@ -455,6 +487,14 @@ export function AggregationView({
         </section>
       )}
 
+      {plan && (
+        <ExplainDialog
+          collection={namespace.collection}
+          plan={plan}
+          suggestedIndex={null}
+          onClose={() => setPlan(null)}
+        />
+      )}
       {codePipeline && (
         <QueryCodeDialog
           source={{

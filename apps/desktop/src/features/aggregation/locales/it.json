@@ -12,7 +12,10 @@
     "pasteFailed": "Negli appunti non c'è una pipeline: {{message}}",
     "undo": "Annulla",
     "createView": "Crea vista",
-    "createViewHint": "Salva questa pipeline come vista di sola lettura"
+    "createViewHint": "Salva questa pipeline come vista di sola lettura",
+    "explain": "Explain",
+    "explainHint": "Come MongoDB esegue questa pipeline: indici, scansioni e cosa ha restituito ogni stage",
+    "explainFailed": "Impossibile spiegare la pipeline: {{message}}"
   },
   "stage": {
     "label": "Stage {{number}}",

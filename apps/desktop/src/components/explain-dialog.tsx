@@ -12,9 +12,9 @@ import { ChevronRight, CircleCheck, ListPlus, TriangleAlert } from "lucide-react
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code-editor";
+import { PlanTree } from "@/components/plan-tree";
 import { formatCount } from "@/lib/format";
 import { toShellSyntax } from "@/lib/shell-syntax";
-import { PlanTree } from "./plan-tree";
 
 interface ExplainDialogProps {
   collection: string;
@@ -34,7 +34,7 @@ export function ExplainDialog({
   onCreateIndex,
   onClose,
 }: ExplainDialogProps) {
-  const { t, i18n } = useTranslation("documents");
+  const { t, i18n } = useTranslation("common");
   const [showRaw, setShowRaw] = useState(false);
   // Counts are f64 over IPC, which the bindings type as nullable.
   const count = (value: number | null) => formatCount(value ?? 0, i18n.language);
@@ -112,6 +112,40 @@ export function ExplainDialog({
 
         {plan.steps.length > 0 && (
           <PlanTree steps={plan.steps} plansConsidered={plan.plansConsidered ?? 1} />
+        )}
+        {(plan.pipeline?.length ?? 0) > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-muted-foreground text-xs">{t("explain.pipeline")}</p>
+            <ol className="flex flex-col overflow-hidden rounded-md border">
+              {plan.pipeline?.map((step, index) => (
+                <li
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stages are positional.
+                  key={index}
+                  className="flex items-center gap-3 border-t px-3 py-1.5 text-xs first:border-t-0"
+                >
+                  <span className="flex size-4 items-center justify-center rounded-full bg-muted font-mono text-[10px] text-muted-foreground">
+                    {index + 1}
+                  </span>
+                  <span className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[11px]">
+                    {step.stage}
+                  </span>
+                  <span className="ml-auto flex shrink-0 gap-3 text-muted-foreground tabular-nums">
+                    {step.returned != null && (
+                      <span className="text-foreground">
+                        {t("explain.stepReturned", {
+                          count: step.returned,
+                          value: count(step.returned),
+                        })}
+                      </span>
+                    )}
+                    {step.milliseconds != null && (
+                      <span>{t("explain.milliseconds", { value: count(step.milliseconds) })}</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
         )}
 
         <div className="flex flex-col gap-2">

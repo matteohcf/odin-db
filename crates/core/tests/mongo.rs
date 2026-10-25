@@ -3515,3 +3515,35 @@ async fn collection_activity_counts_reads_and_writes() {
     assert!(busy.total_count > 0.0 && busy.write_count > 0.0, "{busy:?}");
     assert!(activity.iter().all(|a| !a.namespace.starts_with("admin.")));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn pipelines_are_explained_and_writes_refused() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("explained");
+    fx.seed(&handle, &ns, 30).await;
+    let stage = |d: Document| EJsonDocument::from(d);
+    let plan = explain::explain_aggregate(
+        &handle,
+        &ns,
+        vec![
+            stage(doc! { "$match": { "n": { "$gte": 10 } } }),
+            stage(doc! { "$group": { "_id": { "$mod": ["$n", 3] }, "count": { "$sum": 1 } } }),
+        ],
+        &QueryOptions::default(),
+    )
+    .await
+    .expect("explained");
+    assert!(plan.collection_scan, "no index on n: {plan:?}");
+    assert!(matches!(
+        explain::explain_aggregate(
+            &handle,
+            &ns,
+            vec![stage(doc! { "$out": "copy" })],
+            &QueryOptions::default(),
+        )
+        .await,
+        Err(CoreError::Validation(_))
+    ));
+}
