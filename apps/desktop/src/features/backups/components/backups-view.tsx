@@ -10,10 +10,10 @@ import {
 import { CalendarClock, HardDriveDownload, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PageHeader } from "@/components/page-header";
 import { useProfiles } from "@/features/connections";
 import { useBackupEvents, useBackupRuns, useBackupSchedules } from "../api/backups";
 import { HistoryTable } from "./history-table";
-
 import { ScheduleCard } from "./schedule-card";
 import { ScheduleDialog } from "./schedule-dialog";
 
@@ -35,69 +35,74 @@ export function BackupsView() {
   const visibleRuns = (runs.data ?? []).filter((run) => filter === ALL || run.profileId === filter);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="font-semibold text-lg">{t("title")}</h1>
-            <p className="text-muted-foreground text-sm">{t("subtitle")}</p>
-          </div>
-          <Button size="sm" onClick={() => setEditing("new")} disabled={profiles.length === 0}>
-            <Plus />
-            {t("schedule.new")}
-          </Button>
-        </header>
-
-        <section aria-labelledby="schedules-heading" className="flex flex-col gap-3">
-          <h2 id="schedules-heading" className="font-medium text-sm">
-            {t("schedules")}
-          </h2>
-          {schedules.data?.length === 0 ? (
-            <EmptyCard icon={CalendarClock} title={t("noSchedules")} body={t("noSchedulesBody")} />
-          ) : (
-            <ul className="grid gap-3 md:grid-cols-2">
-              {(schedules.data ?? []).map((schedule) => (
-                <li key={schedule.id}>
-                  <ScheduleCard
-                    schedule={schedule}
-                    profileName={nameOf(schedule.profileId)}
-                    onEdit={() => setEditing(schedule)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section aria-labelledby="history-heading" className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 id="history-heading" className="font-medium text-sm">
-              {t("history")}
+    <div className="flex h-full min-h-0 flex-col">
+      <PageHeader icon={HardDriveDownload} title={t("title")} subtitle={t("subtitle")}>
+        <Button size="sm" onClick={() => setEditing("new")} disabled={profiles.length === 0}>
+          <Plus />
+          {t("schedule.new")}
+        </Button>
+      </PageHeader>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-6">
+          <section aria-labelledby="schedules-heading" className="flex flex-col gap-3">
+            <h2 id="schedules-heading" className="font-medium text-sm">
+              {t("schedules")}
             </h2>
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger size="sm" className="w-56" aria-label={t("filterConnection")}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t("allConnections")}</SelectItem>
-                {profiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.name}
-                  </SelectItem>
+            {schedules.data?.length === 0 ? (
+              <EmptyCard
+                icon={CalendarClock}
+                title={t("noSchedules")}
+                body={t("noSchedulesBody")}
+              />
+            ) : (
+              <ul className="grid gap-3 md:grid-cols-2">
+                {(schedules.data ?? []).map((schedule) => (
+                  <li key={schedule.id}>
+                    <ScheduleCard
+                      schedule={schedule}
+                      profileName={nameOf(schedule.profileId)}
+                      onEdit={() => setEditing(schedule)}
+                    />
+                  </li>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {runs.isPending ? (
-            <p className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Loader2 className="size-4 animate-spin" />
-            </p>
-          ) : visibleRuns.length === 0 ? (
-            <EmptyCard icon={HardDriveDownload} title={t("noBackups")} body={t("noBackupsBody")} />
-          ) : (
-            <HistoryTable runs={visibleRuns} nameOf={nameOf} />
-          )}
-        </section>
+              </ul>
+            )}
+          </section>
+
+          <section aria-labelledby="history-heading" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="history-heading" className="font-medium text-sm">
+                {t("history")}
+              </h2>
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger size="sm" className="w-56" aria-label={t("filterConnection")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>{t("allConnections")}</SelectItem>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      {profile.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {runs.isPending ? (
+              <p className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Loader2 className="size-4 animate-spin" />
+              </p>
+            ) : visibleRuns.length === 0 ? (
+              <EmptyCard
+                icon={HardDriveDownload}
+                title={t("noBackups")}
+                body={t("noBackupsBody")}
+              />
+            ) : (
+              <HistoryTable runs={visibleRuns} nameOf={nameOf} />
+            )}
+          </section>
+        </div>
       </div>
 
       {editing && (

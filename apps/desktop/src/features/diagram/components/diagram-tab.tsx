@@ -6,6 +6,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { RefreshCw, Unplug, Waypoints } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PageHeader } from "@/components/page-header";
 import { useConnect, useConnectionOf, useOpenCollection, useProfile } from "@/features/connections";
 import type { DiagramTab as DiagramTabModel } from "@/features/workspace";
 import { useOperation } from "@/hooks/use-operation";
@@ -65,41 +66,35 @@ export function DiagramTab({ tab }: { tab: DiagramTabModel }) {
   const done = progress?.done ?? 0;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex h-11 shrink-0 items-center gap-3 border-b px-3">
-        <Waypoints className="size-4 shrink-0 text-muted-foreground" />
-        <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate font-semibold text-base">
-            {t("title", { database: tab.database })}
-          </h1>
-          {diagram && (
-            <p className="hidden truncate text-muted-foreground text-xs md:block">
-              {t("subtitle", {
-                collections: diagram.collections.length,
-                links: diagram.links.length,
-              })}
-            </p>
-          )}
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {running && (
-            <>
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {t("analyzing", { done, total })}
-              </span>
-              <Progress value={total ? (done / total) * 100 : null} className="h-1.5 w-32" />
-              <Button size="sm" variant="ghost" onClick={operation.cancel}>
-                {t("cancel")}
-              </Button>
-            </>
-          )}
-          {!running && (
-            <Button size="sm" variant="outline" onClick={analyze}>
-              <RefreshCw />
-              {t("retry")}
+      <PageHeader
+        icon={Waypoints}
+        title={t("title", { database: tab.database })}
+        subtitle={
+          diagram &&
+          t("subtitle", {
+            collections: diagram.collections.length,
+            links: diagram.links.length,
+          })
+        }
+      >
+        {running && (
+          <>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {t("analyzing", { done, total })}
+            </span>
+            <Progress value={total ? (done / total) * 100 : null} className="h-1.5 w-32" />
+            <Button size="sm" variant="ghost" onClick={operation.cancel}>
+              {t("cancel")}
             </Button>
-          )}
-        </div>
-      </header>
+          </>
+        )}
+        {!running && (
+          <Button size="sm" variant="outline" onClick={analyze}>
+            <RefreshCw />
+            {t("retry")}
+          </Button>
+        )}
+      </PageHeader>
       <div className="relative min-h-0 flex-1">
         {operation.state.status === "failed" && !diagram ? (
           <DiagramMessage>{t("failed", { message: operation.state.error })}</DiagramMessage>

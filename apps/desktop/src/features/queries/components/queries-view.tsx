@@ -2,6 +2,7 @@ import { BookMarked, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 import { pipelineToText, useSavedPipelines } from "@/features/aggregation";
 import { useOpenCollection, useProfiles } from "@/features/connections";
 import { useQueryHistory } from "@/features/documents";
@@ -77,11 +78,12 @@ export function QueriesView() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4">
-        <BookMarked className="size-4 text-muted-foreground" />
-        <h1 className="font-semibold text-base">{t("title")}</h1>
-        <span className="text-muted-foreground text-xs">{t("count", { count: items.length })}</span>
-        <div className="ml-auto flex h-8 w-72 items-center gap-2 rounded-md border bg-background px-2.5 focus-within:ring-2 focus-within:ring-ring">
+      <PageHeader
+        icon={BookMarked}
+        title={t("title")}
+        subtitle={t("count", { count: items.length })}
+      >
+        <div className="flex h-8 w-72 items-center gap-2 rounded-md border bg-background px-2.5 focus-within:ring-2 focus-within:ring-ring">
           <Search className="size-3.5 text-muted-foreground" />
           <input
             type="search"
@@ -93,7 +95,7 @@ export function QueriesView() {
             className="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
           />
         </div>
-      </header>
+      </PageHeader>
       {items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
           <BookMarked className="size-5 text-muted-foreground" />

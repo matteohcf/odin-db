@@ -23,10 +23,11 @@ import {
   SelectValue,
 } from "@odin-db/ui/components/select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleAlert, OctagonX, Pause, Play } from "lucide-react";
+import { Activity, CircleAlert, OctagonX, Pause, Play } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { call, errorMessage } from "@/lib/ipc";
@@ -106,31 +107,28 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4">
-        <h1 className="font-semibold text-base">{t("title")}</h1>
-        <span className="truncate text-muted-foreground text-sm">
-          {profileName}
-          {current && ` · ${current.host} · ${current.process} ${current.version}`}
-        </span>
-        <div className="ml-auto flex items-center gap-2">
-          <Select value={String(interval)} onValueChange={(value) => setIntervalMs(Number(value))}>
-            <SelectTrigger size="sm" className="w-28" aria-label={t("interval")}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {INTERVALS.map((value) => (
-                <SelectItem key={value} value={String(value)}>
-                  {t("every", { seconds: value / 1000 })}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={() => setPaused(!paused)}>
-            {paused ? <Play /> : <Pause />}
-            {paused ? t("resume") : t("pause")}
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        icon={Activity}
+        title={t("title")}
+        subtitle={`${profileName}${current ? ` · ${current.host} · ${current.process} ${current.version}` : ""}`}
+      >
+        <Select value={String(interval)} onValueChange={(value) => setIntervalMs(Number(value))}>
+          <SelectTrigger size="sm" className="w-28" aria-label={t("interval")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {INTERVALS.map((value) => (
+              <SelectItem key={value} value={String(value)}>
+                {t("every", { seconds: value / 1000 })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => setPaused(!paused)}>
+          {paused ? <Play /> : <Pause />}
+          {paused ? t("resume") : t("pause")}
+        </Button>
+      </PageHeader>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {status.error ? (

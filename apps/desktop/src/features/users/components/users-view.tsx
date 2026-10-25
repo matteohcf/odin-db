@@ -21,10 +21,20 @@ import {
 } from "@odin-db/ui/components/dialog";
 import { Input } from "@odin-db/ui/components/input";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleAlert, KeyRound, Loader2, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import {
+  CircleAlert,
+  KeyRound,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 import { call, errorMessage } from "@/lib/ipc";
 import { generatePassword } from "../lib/password";
 import { UserDialog } from "./user-dialog";
@@ -64,16 +74,14 @@ export function UsersView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4">
-        <h1 className="font-semibold text-base">{t("title")}</h1>
-        <span className="truncate text-muted-foreground text-sm">{profileName}</span>
+      <PageHeader icon={UsersRound} title={t("title")} subtitle={profileName}>
         {writable && (
-          <Button size="sm" className="ml-auto" onClick={() => setEditing({ kind: "create" })}>
+          <Button size="sm" onClick={() => setEditing({ kind: "create" })}>
             <Plus />
             {t("new")}
           </Button>
         )}
-      </header>
+      </PageHeader>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {users.isPending ? (
           <p className="flex items-center gap-2 text-muted-foreground text-sm">
