@@ -8,7 +8,7 @@ import {
 } from "@odin-db/ui/components/context-menu";
 import { cn } from "@odin-db/ui/lib/utils";
 import { Copy, CopyPlus, Pin, PinOff, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { useTabs, type WorkspaceTab } from "../store/tabs-store";
@@ -27,7 +27,7 @@ interface TabItemProps {
 }
 
 /** One tab: its label, a close (or unpin) button, dragging, and its menu. */
-export function TabItem({
+export const TabItem = memo(function TabItem({
   tab,
   index,
   count,
@@ -173,4 +173,4 @@ export function TabItem({
       </ContextMenuContent>
     </ContextMenu>
   );
-}
+});

@@ -20,7 +20,7 @@ import {
   Trash2,
   Waypoints,
 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog, RestoreDialog } from "@/features/backup";
 import { DatabaseExportDialog, DatabaseImportDialog } from "@/features/transfer";
@@ -42,7 +42,8 @@ import { TreeRow } from "./tree-row";
 import { ValueSearchDialog } from "./value-search-dialog";
 
 /** A database row; its collections are rows of their own, after it. */
-export function DatabaseNode({
+// Memoized: the explorer re-renders on every tab switch, and the tree shows dozens of rows.
+export const DatabaseNode = memo(function DatabaseNode({
   indent,
   connection,
   database,
@@ -256,4 +257,4 @@ export function DatabaseNode({
       )}
     </>
   );
-}
+});

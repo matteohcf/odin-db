@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTabShortcuts } from "../hooks/use-tab-shortcuts";
 import { useTabs, type WorkspaceTab } from "../store/tabs-store";
@@ -63,11 +63,15 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
       ?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [activeTabId]);
 
+  const showsSeveralConnections =
+    new Set(tabs.flatMap((tab) => ("profileId" in tab ? [tab.profileId] : []))).size > 1;
+  // Stable, so switching tabs re-renders only the two whose state changes.
+  const context: TabLabelContext = useMemo(
+    () => ({ showsSeveralConnections }),
+    [showsSeveralConnections],
+  );
+
   if (tabs.length === 0) return <>{emptyState}</>;
-  const context: TabLabelContext = {
-    showsSeveralConnections:
-      new Set(tabs.flatMap((tab) => ("profileId" in tab ? [tab.profileId] : []))).size > 1,
-  };
 
   return (
     <div className="flex h-full min-w-0 flex-col">

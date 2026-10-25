@@ -22,7 +22,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackupDialog } from "@/features/backup";
 import { ExportDialog, ImportDialog } from "@/features/transfer";
@@ -47,7 +47,8 @@ import { TreeRow } from "./tree-row";
 // Compass's vocabulary: a folder for collections.
 const kindIcon = { collection: Folder, view: Eye, timeseries: Clock } as const;
 
-export function CollectionNode({
+// Memoized: the explorer re-renders on every tab switch, and the tree shows dozens of rows.
+export const CollectionNode = memo(function CollectionNode({
   indent,
   connection,
   database,
@@ -285,4 +286,4 @@ export function CollectionNode({
       )}
     </>
   );
-}
+});
