@@ -217,7 +217,7 @@ async fn read(
         collection: collection.to_owned(),
     };
     Ok(Side {
-        fields: sample_fields(handle, &namespace, SAMPLE_SIZE).await?,
+        fields: sample_fields(handle, &namespace, SAMPLE_SIZE, None).await?,
         indexes: indexes::list(handle, &namespace).await?,
         // Rules need listCollections on the database, which some users lack: not a failure.
         validation: get_rules(handle, &namespace).await.ok(),

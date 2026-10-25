@@ -95,9 +95,10 @@ pub async fn sample_fields(
     connection_id: ConnectionId,
     namespace: Namespace,
     size: u32,
+    filter: Option<EJsonDocument>,
 ) -> Result<Vec<FieldSummary>, IpcError> {
     let handle = state.connections.get(connection_id).await?;
-    Ok(schema::sample_fields(&handle, &namespace, size).await?)
+    Ok(schema::sample_fields(&handle, &namespace, size, filter).await?)
 }
 
 #[tauri::command]

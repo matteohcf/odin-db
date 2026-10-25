@@ -285,13 +285,40 @@ async fn samples_field_paths_for_autocompletion() {
         .await
         .expect("seeded");
 
-    let fields = schema::sample_fields(&handle, &ns, 100)
+    let fields = schema::sample_fields(&handle, &ns, 100, None)
         .await
         .expect("sampling is allowed on read-only connections");
     let paths: Vec<_> = fields.iter().map(|field| field.path.as_str()).collect();
     assert_eq!(paths, ["_id", "address", "address.city", "name"]);
     assert_eq!(fields[0].types, ["objectId"]);
-    assert!(schema::sample_fields(&handle, &ns, 0).await.is_err());
+    assert!(schema::sample_fields(&handle, &ns, 0, None).await.is_err());
+
+    // A filter samples the matching documents only.
+    handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection)
+        .insert_many((0..5).map(|i| doc! { "kind": "vip", "tier": i }))
+        .await
+        .expect("seeded");
+    let vip = schema::sample_fields(
+        &handle,
+        &ns,
+        100,
+        Some(EJsonDocument::from(doc! { "kind": "vip" })),
+    )
+    .await
+    .expect("filtered sample");
+    let paths: Vec<_> = vip.iter().map(|field| field.path.as_str()).collect();
+    assert_eq!(paths, ["_id", "kind", "tier"]);
+    let empty = Some(EJsonDocument::from(doc! {}));
+    assert_eq!(
+        schema::sample_fields(&handle, &ns, 100, empty)
+            .await
+            .expect("an empty filter samples everything")
+            .len(),
+        6
+    );
 }
 
 #[tokio::test]

@@ -127,7 +127,7 @@ export const commands = {
 	getValidation: (connectionId: ConnectionId, namespace: Namespace) => typedError<ValidationRules, IpcError>(__TAURI_INVOKE("get_validation", { connectionId, namespace })),
 	setValidation: (connectionId: ConnectionId, namespace: Namespace, rules: ValidationRules) => typedError<null, IpcError>(__TAURI_INVOKE("set_validation", { connectionId, namespace, rules })),
 	/**  Field paths of a sample of the collection, for query autocompletion. */
-	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size })),
+	sampleFields: (connectionId: ConnectionId, namespace: Namespace, size: number, filter: JsonValue | null) => typedError<FieldSummary[], IpcError>(__TAURI_INVOKE("sample_fields", { connectionId, namespace, size, filter })),
 	/**  How the server runs a find: winning plan, indexes and counts. */
 	explainFind: (connectionId: ConnectionId, namespace: Namespace, request: ExplainRequest) => typedError<QueryPlan, IpcError>(__TAURI_INVOKE("explain_find", { connectionId, namespace, request })),
 	explainAggregate: (connectionId: ConnectionId, namespace: Namespace, pipeline: EJsonDocument[], options: {
