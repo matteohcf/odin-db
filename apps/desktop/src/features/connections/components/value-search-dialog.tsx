@@ -23,6 +23,7 @@ import { useTabs } from "@/features/workspace";
 import { formatCount } from "@/lib/format";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { useValueSearch } from "../hooks/use-value-search";
+import { highlightParts, searchPattern } from "../lib/search-highlight";
 
 const DEPTHS = [1_000, 10_000, 100_000] as const;
 
@@ -51,6 +52,8 @@ export function ValueSearchDialog({
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [fieldNames, setFieldNames] = useState(false);
   const [depth, setDepth] = useState<number>(DEPTHS[0]);
+  // Marks matches as the search that produced the results asked, not as the form is now.
+  const [pattern, setPattern] = useState<RegExp | null>(null);
   const running = search.state.status === "running";
   const count = (value: number) => formatCount(value, i18n.language);
   const scope = collection ? `${database}.${collection}` : (database ?? t("search.everyDatabase"));
@@ -58,6 +61,7 @@ export function ValueSearchDialog({
   function submit(event: FormEvent) {
     event.preventDefault();
     if (running) return;
+    setPattern(searchPattern({ text, regex, caseSensitive }));
     void search.start({
       database: database ?? null,
       collection: collection ?? null,
@@ -225,7 +229,20 @@ export function ValueSearchDialog({
                         {hit.fieldName ? (
                           <span className="text-muted-foreground">{t("search.fieldName")}</span>
                         ) : (
-                          JSON.stringify(hit.preview)
+                          <>
+                            "
+                            {highlightParts(hit.preview, pattern).map((part, at) =>
+                              part.match ? (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional.
+                                <mark key={at} className="rounded-sm bg-warning/25 text-foreground">
+                                  {part.text}
+                                </mark>
+                              ) : (
+                                part.text
+                              ),
+                            )}
+                            "
+                          </>
                         )}
                       </span>
                       <span className="max-w-40 shrink-0 truncate font-mono text-[11px] text-muted-foreground">

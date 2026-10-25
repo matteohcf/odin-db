@@ -43,6 +43,8 @@ await check("a database search finds values in nested fields and arrays", async 
   await dialog.getByText(/matches? in \d+ collections/).waitFor();
   const users = dialog.getByRole("region", { name: "shop.users" });
   await users.getByText("address.city").first().waitFor();
+  // The match is marked inside the value.
+  await users.locator("mark", { hasText: "Milano" }).first().waitFor();
   await shot("01-results");
 });
 
