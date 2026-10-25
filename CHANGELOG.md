@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.0](https://github.com/matteohcf/odin-db/compare/v1.4.0...v1.5.0) (2026-10-25)
+
+
+### Features
+
+* **desktop:** connections write their tree in their color, like Studio 3T ([bce0ce6](https://github.com/matteohcf/odin-db/commit/bce0ce64f96f57a5c0c517e60ef45727bc4d8451))
+* **desktop:** saved connections move to a connection manager, the sidebar keeps open ones ([0005687](https://github.com/matteohcf/odin-db/commit/000568783c6432a84f498d77831689ad2f5c3b36))
+
+
+### Bug Fixes
+
+* **core:** stop asking for the keychain on every profile refresh ([12bc692](https://github.com/matteohcf/odin-db/commit/12bc69268bc579d305d9127f80e732ef8cd19bd7))
+* **desktop:** paste aggregate calls that pass options ([57e8591](https://github.com/matteohcf/odin-db/commit/57e85910ec55b2bf918394876893eca19d6116eb))
+* **desktop:** the whole query field box takes clicks ([3aaa7c9](https://github.com/matteohcf/odin-db/commit/3aaa7c9a01a7665a627fd4f67da87a18451a97f2))
+
 ## [1.4.0](https://github.com/matteohcf/odin-db/compare/v1.3.0...v1.4.0) (2026-10-25)
 
 
