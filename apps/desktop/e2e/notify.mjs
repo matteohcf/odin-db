@@ -46,6 +46,8 @@ await check("a notification when an export ends in the background", async () => 
     document.hasFocus = () => false;
   });
   await exportShop();
+  // The notice is sent after the operation ends, on its own round trip: wait for it.
+  await page.waitForFunction(() => (window.odinNotifications ?? []).length > 0);
   const [notice] = await sent();
   if (notice?.title !== "Export database" || notice?.body !== "Finished.")
     throw new Error(JSON.stringify(notice));
