@@ -15,7 +15,8 @@ export function Welcome() {
   const { t } = useTranslation("app");
   const recent = useTabs((s) => s.recent);
   const openCollection = useOpenCollection();
-  const { data: profiles = [] } = useProfiles();
+  const { data: profiles = [], isSuccess: profilesLoaded } = useProfiles();
+  const firstRun = profilesLoaded && profiles.length === 0;
   const commands = useExplorer((s) => s.commands);
   // Collections of deleted connections are not offered.
   const shown = recent.flatMap((entry) => {
@@ -27,8 +28,12 @@ export function Welcome() {
     <div className="flex h-full flex-col items-center justify-center gap-6 p-8 text-center">
       <OdinAppIcon className="size-16 drop-shadow-sm" />
       <div className="flex max-w-sm flex-col gap-1.5">
-        <h1 className="font-semibold text-base">{t("welcome.title")}</h1>
-        <p className="text-muted-foreground text-xs leading-relaxed">{t("welcome.body")}</p>
+        <h1 className="font-semibold text-base">
+          {firstRun ? t("welcome.firstTitle") : t("welcome.title")}
+        </h1>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {firstRun ? t("welcome.firstBody") : t("welcome.body")}
+        </p>
       </div>
       {commands && (
         <div className="flex gap-2">

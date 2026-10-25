@@ -29,6 +29,7 @@ const tree = page.getByRole("complementary", { name: /Connections/ });
 
 await check("first launch explains what to do", async () => {
   await page.getByText("No connections yet").waitFor();
+  await page.getByRole("heading", { name: "Welcome to odin-db" }).waitFor();
   await shot("first-run");
 });
 await check("create a connection from a pasted URI", async () => {

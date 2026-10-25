@@ -3,6 +3,8 @@
   "welcome": {
     "title": "Open a collection",
     "body": "Connect to a server in the sidebar, then pick a collection to browse, query and edit its documents.",
+    "firstTitle": "Welcome to odin-db",
+    "firstBody": "Add a MongoDB server with its connection string, or bring your connections over from Compass.",
     "palette": "Press <kbd>{{shortcut}}</kbd> to jump to any collection or action.",
     "recent": "Recently opened",
     "newConnection": "New connection",
