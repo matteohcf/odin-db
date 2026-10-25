@@ -161,6 +161,7 @@ export const commands = {
 	set: string,
 	members: ReplicaMember[],
 } | null, IpcError>(__TAURI_INVOKE("replica_set_status", { connectionId })),
+	collectionActivity: (connectionId: ConnectionId) => typedError<CollectionActivity[] | null, IpcError>(__TAURI_INVOKE("collection_activity", { connectionId })),
 	profilingStatus: (connectionId: ConnectionId, database: string) => typedError<ProfilingStatus, IpcError>(__TAURI_INVOKE("profiling_status", { connectionId, database })),
 	setProfilingStatus: (connectionId: ConnectionId, database: string, status: ProfilingStatus) => typedError<null, IpcError>(__TAURI_INVOKE("set_profiling_status", { connectionId, database, status })),
 	profileEntries: (connectionId: ConnectionId, query: ProfileQuery) => typedError<ProfileEntry[], IpcError>(__TAURI_INVOKE("profile_entries", { connectionId, query })),
@@ -388,6 +389,20 @@ export type ChangeEvent = {
 
 /**  What the feed sends: changes, and how many were dropped because the UI fell behind. */
 export type ChangeFeed = { kind: "change"; value: ChangeEvent } | { kind: "skipped"; value: number | null };
+
+/**
+ *  Time and operations spent on one collection since the server started (`top`).
+ *  Cumulative: two samples give the rates.
+ */
+export type CollectionActivity = {
+	namespace: string,
+	totalMicros: number | null,
+	totalCount: number | null,
+	readMicros: number | null,
+	readCount: number | null,
+	writeMicros: number | null,
+	writeCount: number | null,
+};
 
 export type CollectionComparison = {
 	name: string,

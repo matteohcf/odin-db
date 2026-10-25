@@ -3496,3 +3496,22 @@ async fn bulk_writes_can_be_undone_from_their_originals() {
         Err(CoreError::ReadOnly)
     ));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn collection_activity_counts_reads_and_writes() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("busy");
+    fx.seed(&handle, &ns, 10).await;
+    let activity = odin_core::monitor::collection_activity(&handle)
+        .await
+        .expect("top")
+        .expect("a mongod has top");
+    let busy = activity
+        .iter()
+        .find(|a| a.namespace == "odin_test.busy")
+        .expect("the seeded collection");
+    assert!(busy.total_count > 0.0 && busy.write_count > 0.0, "{busy:?}");
+    assert!(activity.iter().all(|a| !a.namespace.starts_with("admin.")));
+}

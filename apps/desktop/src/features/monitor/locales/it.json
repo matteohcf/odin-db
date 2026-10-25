@@ -104,5 +104,16 @@
     "uptime": "Attivo da",
     "syncSource": "Sincronizza da",
     "self": "(questa connessione)"
+  },
+  "busiest": {
+    "title": "Collezioni più attive",
+    "hint": "Tempo del server speso su ogni collezione, al secondo",
+    "collection": "Collezione",
+    "time": "Tempo del server",
+    "reads": "Letture",
+    "writes": "Scritture",
+    "msPerSecond": "{{value}} ms/s",
+    "idle": "Nessuna collezione è attiva adesso.",
+    "failed": "Impossibile leggere l'attività delle collezioni: {{message}}"
   }
 }

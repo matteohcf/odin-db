@@ -159,6 +159,81 @@ async fn list_ops(
     Ok(ops)
 }
 
+/// Time and operations spent on one collection since the server started (`top`).
+/// Cumulative: two samples give the rates.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionActivity {
+    pub namespace: String,
+    pub total_micros: f64,
+    pub total_count: f64,
+    pub read_micros: f64,
+    pub read_count: f64,
+    pub write_micros: f64,
+    pub write_count: f64,
+}
+
+/// Activity per collection, or `None` where `top` does not exist (mongos).
+pub async fn collection_activity(
+    handle: &ConnectionHandle,
+) -> Result<Option<Vec<CollectionActivity>>, CoreError> {
+    const NOT_SUPPORTED: [i32; 2] = [59, 115];
+    let reply = match handle
+        .client
+        .database("admin")
+        .run_command(doc! { "top": 1 })
+        .await
+    {
+        Err(error)
+            if matches!(*error.kind, mongodb::error::ErrorKind::Command(ref command)
+                if NOT_SUPPORTED.contains(&command.code)) =>
+        {
+            return Ok(None);
+        }
+        result => result?,
+    };
+    Ok(Some(parse_top(&reply)))
+}
+
+fn parse_top(reply: &Document) -> Vec<CollectionActivity> {
+    let Ok(totals) = reply.get_document("totals") else {
+        return Vec::new();
+    };
+    let mut activity: Vec<CollectionActivity> = totals
+        .iter()
+        .filter_map(|(namespace, entry)| {
+            let entry = entry.as_document()?;
+            // Internal namespaces: `admin.*`, `local.*`, `config.*` and `system.*` collections.
+            let (database, collection) = namespace.split_once('.')?;
+            if matches!(database, "admin" | "local" | "config") || collection.starts_with("system.")
+            {
+                return None;
+            }
+            let pair = |key: &str| {
+                let section = entry.get_document(key).ok();
+                let number =
+                    |field: &str| section.and_then(|s| s.get(field)).map_or(0.0, number_of);
+                (number("time"), number("count"))
+            };
+            let (total_micros, total_count) = pair("total");
+            let (read_micros, read_count) = pair("readLock");
+            let (write_micros, write_count) = pair("writeLock");
+            Some(CollectionActivity {
+                namespace: namespace.clone(),
+                total_micros,
+                total_count,
+                read_micros,
+                read_count,
+                write_micros,
+                write_count,
+            })
+        })
+        .collect();
+    activity.sort_by(|a, b| b.total_micros.total_cmp(&a.total_micros));
+    activity
+}
+
 /// A replica set as the connected member sees it (`replSetGetStatus`).
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -277,6 +352,28 @@ pub async fn kill_op(handle: &ConnectionHandle, opid: EJsonValue) -> Result<(), 
 mod tests {
     use super::*;
     use bson::DateTime;
+
+    #[test]
+    fn top_keeps_user_collections_busiest_first() {
+        let reply = doc! { "totals": {
+            "note": "all times in microseconds",
+            "shop.orders": {
+                "total": { "time": 900_i64, "count": 9_i64 },
+                "readLock": { "time": 600_i64, "count": 6_i64 },
+                "writeLock": { "time": 300_i64, "count": 3_i64 },
+            },
+            "shop.users": { "total": { "time": 1_500_i64, "count": 2_i64 } },
+            "admin.system.users": { "total": { "time": 99_999_i64, "count": 1_i64 } },
+            "shop.system.profile": { "total": { "time": 99_999_i64, "count": 1_i64 } },
+        } };
+        let activity = parse_top(&reply);
+        let names: Vec<_> = activity.iter().map(|a| a.namespace.as_str()).collect();
+        assert_eq!(names, ["shop.users", "shop.orders"]);
+        assert_eq!(
+            (activity[1].read_micros, activity[1].write_count),
+            (600.0, 3.0)
+        );
+    }
 
     #[test]
     fn replica_members_get_their_lag_behind_the_primary() {

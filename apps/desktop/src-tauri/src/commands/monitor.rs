@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use odin_core::connection::ConnectionId;
 use odin_core::ejson::EJsonValue;
-use odin_core::monitor::{self, CurrentOp, ReplicaSetStatus, ServerStatus};
+use odin_core::monitor::{self, CollectionActivity, CurrentOp, ReplicaSetStatus, ServerStatus};
 use odin_core::profiler::{self, ProfileEntry, ProfileQuery, ProfilingStatus};
 use tauri::State;
 
@@ -29,6 +29,16 @@ pub async fn replica_set_status(
 ) -> Result<Option<ReplicaSetStatus>, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(monitor::replica_set_status(&handle).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn collection_activity(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+) -> Result<Option<Vec<CollectionActivity>>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(monitor::collection_activity(&handle).await?)
 }
 
 #[tauri::command]

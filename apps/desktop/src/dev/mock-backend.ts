@@ -2483,6 +2483,26 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (index >= 0) mockUsers.splice(index, 1);
     return null;
   },
+  collection_activity: (args) => {
+    serverOf(id("connectionId", args));
+    // Counters that grow with time at different paces, so two samples give believable rates.
+    const t = Date.now() / 1000;
+    const entry = (namespace: string, msPerSecond: number, reads: number, writes: number) => ({
+      namespace,
+      totalMicros: Math.round(t * msPerSecond * 1000),
+      totalCount: Math.round(t * (reads + writes)),
+      readMicros: Math.round(t * msPerSecond * 700),
+      readCount: Math.round(t * reads),
+      writeMicros: Math.round(t * msPerSecond * 300),
+      writeCount: Math.round(t * writes),
+    });
+    return [
+      entry("shop.orders", 42, 120, 18),
+      entry("analytics.events", 31, 40, 95),
+      entry("shop.users", 12, 60, 2),
+      entry("shop.products", 3, 25, 0),
+    ];
+  },
   replica_set_status: (args) => {
     serverOf(id("connectionId", args));
     const uptime = Math.round(Date.now() / 1000) % 1_000_000;

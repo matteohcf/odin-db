@@ -95,6 +95,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::indexes::set_index_hidden,
             commands::monitor::server_status,
             commands::monitor::replica_set_status,
+            commands::monitor::collection_activity,
             commands::monitor::profiling_status,
             commands::monitor::set_profiling_status,
             commands::monitor::profile_entries,

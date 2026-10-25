@@ -60,6 +60,16 @@ await check("replica set members show state, lag and problems", async () => {
   await shot("replica-set");
 });
 
+await check("the busiest collections are ranked by server time", async () => {
+  const section = page.getByRole("region", { name: "Busiest collections" });
+  await section.getByText("shop.orders").waitFor();
+  const first = await section.locator("tbody tr").first().innerText();
+  if (!first.includes("shop.orders")) throw new Error(first);
+  await section.getByText(/ms\/s/).first().waitFor();
+  await section.scrollIntoViewIfNeeded();
+  await shot("busiest");
+});
+
 await check("running operations are listed and can be killed", async () => {
   const table = page.getByRole("region", { name: "Running operations" });
   await table.getByText("analytics.events").waitFor();

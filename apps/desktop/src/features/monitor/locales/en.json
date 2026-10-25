@@ -104,5 +104,16 @@
     "uptime": "Uptime",
     "syncSource": "Syncs from",
     "self": "(this connection)"
+  },
+  "busiest": {
+    "title": "Busiest collections",
+    "hint": "Server time spent on each collection, per second",
+    "collection": "Collection",
+    "time": "Server time",
+    "reads": "Reads",
+    "writes": "Writes",
+    "msPerSecond": "{{value}} ms/s",
+    "idle": "No collection is busy right now.",
+    "failed": "Could not read collection activity: {{message}}"
   }
 }

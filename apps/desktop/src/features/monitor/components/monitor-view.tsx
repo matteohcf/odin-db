@@ -32,6 +32,7 @@ import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { call, errorMessage } from "@/lib/ipc";
 import { type Rates, rates, uptime } from "../lib/rates";
+import { BusiestCollectionsSection } from "./busiest-collections-section";
 import { IndexAdvisorSection } from "./index-advisor-section";
 import { ProfilerSection } from "./profiler-section";
 import { ReplicaSetSection } from "./replica-set-section";
@@ -195,6 +196,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
         )}
 
         <ReplicaSetSection connection={connection} polling={polling} />
+        <BusiestCollectionsSection connection={connection} polling={polling} />
         <section className="mt-6 flex flex-col gap-2" aria-label={t("ops.title")}>
           <div className="flex items-baseline gap-2">
             <h2 className="font-semibold text-sm">{t("ops.title")}</h2>
