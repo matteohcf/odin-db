@@ -5,14 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { idOf, summarize } from "../lib/change-summary";
-
-// Outlined like the Badge variants: a tinted fill leaves too little contrast for the text.
-const operationClass: Record<string, string> = {
-  insert: "border-success/40 text-success",
-  update: "border-type-number/40 text-type-number",
-  replace: "border-type-boolean/40 text-type-boolean",
-  delete: "border-destructive/40 text-destructive",
-};
+import { operationClass } from "../lib/operation-colors";
 
 /** One change in the live feed; opens to the full document and what an update set. */
 export function ChangeRow({ change }: { change: ChangeEvent }) {

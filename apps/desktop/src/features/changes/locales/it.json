@@ -8,6 +8,7 @@
   "skipped_one": "{{count}} saltata: troppo veloci da mostrare",
   "skipped_other": "{{count}} saltate: troppo veloci da mostrare",
   "filter": "Mostra queste modifiche",
+  "show": "Mostra",
   "pause": "Pausa",
   "resume": "Riprendi",
   "clear": "Svuota",

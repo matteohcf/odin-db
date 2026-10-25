@@ -6,7 +6,6 @@ import {
   type Namespace,
 } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
 import { cn } from "@odin-db/ui/lib/utils";
 import { Pause, Play, RadioTower, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -17,6 +16,7 @@ import { createFrameBatcher } from "@/lib/frame-batcher";
 import { call } from "@/lib/ipc";
 import { OPERATIONS, type Operation } from "../lib/change-summary";
 import { ChangeRow } from "./change-row";
+import { OperationFilter } from "./operation-filter";
 
 /** Changes kept on screen; older ones scroll out of memory. */
 const MAX_CHANGES = 500;
@@ -73,6 +73,16 @@ export function ChangesView({
       ),
     [changes, shown],
   );
+  const counts = useMemo(() => {
+    const byOperation = Object.fromEntries(OPERATIONS.map((o) => [o, 0])) as Record<
+      Operation,
+      number
+    >;
+    for (const { change } of changes) {
+      if (change.operation in byOperation) byOperation[change.operation as Operation] += 1;
+    }
+    return byOperation;
+  }, [changes]);
   const status = feed.state.status;
   const live = status === "running" && !paused;
 
@@ -98,21 +108,9 @@ export function ChangesView({
           {t("count", { count: changes.length })}
           {skipped > 0 && ` · ${t("skipped", { count: skipped })}`}
         </span>
-        <ToggleGroup
-          type="multiple"
-          variant="outline"
-          size="sm"
-          value={shown}
-          onValueChange={(value) => setShown(value as Operation[])}
-          aria-label={t("filter")}
-          className="ml-auto"
-        >
-          {OPERATIONS.map((operation) => (
-            <ToggleGroupItem key={operation} value={operation} className="px-2.5 text-xs">
-              {t(`operations.${operation}`)}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        <div className="ml-auto">
+          <OperationFilter shown={shown} counts={counts} onChange={setShown} />
+        </div>
         <Button
           size="sm"
           variant="outline"
