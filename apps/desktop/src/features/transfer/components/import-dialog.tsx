@@ -25,6 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@odin-db/ui/components/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@odin-db/ui/components/table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckboxField } from "@/components/checkbox-field";
@@ -195,28 +203,25 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
               <div className="flex flex-col gap-2">
                 <p className="font-medium text-sm">{t("import.csvColumns", { name: file.name })}</p>
                 <div className="max-h-72 overflow-y-auto rounded-md border">
-                  <table className="w-full border-collapse text-xs">
-                    <thead className="sticky top-0 bg-sidebar text-left text-muted-foreground">
-                      <tr className="h-8 border-b">
-                        <th className="px-2.5 font-medium">{t("import.column")}</th>
-                        <th className="px-2.5 font-medium">{t("import.sample")}</th>
-                        <th className="px-2.5 font-medium">{t("import.field")}</th>
-                        <th className="px-2.5 font-medium">{t("import.type")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-sidebar">
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>{t("import.column")}</TableHead>
+                        <TableHead>{t("import.sample")}</TableHead>
+                        <TableHead>{t("import.field")}</TableHead>
+                        <TableHead>{t("import.type")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {columns.map((column, index) => (
-                        <tr
-                          key={column.header}
-                          className="h-10 border-b border-border/60 last:border-0"
-                        >
-                          <td className="px-2.5 font-medium">{column.header}</td>
-                          <td className="max-w-40 truncate px-2.5 font-mono text-muted-foreground">
+                        <TableRow key={column.header} className="hover:bg-transparent">
+                          <TableCell className="py-1.5 font-medium">{column.header}</TableCell>
+                          <TableCell className="max-w-40 truncate py-1.5 font-mono text-muted-foreground">
                             {file.preview.kind === "csv"
                               ? (file.preview.rows[0]?.[index] ?? "")
                               : ""}
-                          </td>
-                          <td className="px-2.5">
+                          </TableCell>
+                          <TableCell className="py-1.5">
                             <Input
                               value={column.field}
                               disabled={column.kind === "skip"}
@@ -226,8 +231,8 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
                               aria-label={t("import.field")}
                               className="h-7 font-mono text-xs"
                             />
-                          </td>
-                          <td className="w-40 px-2.5">
+                          </TableCell>
+                          <TableCell className="w-40 py-1.5">
                             <Select
                               value={column.kind}
                               onValueChange={(kind) =>
@@ -249,11 +254,11 @@ export function ImportDialog({ connectionId, namespace, onImported, onClose }: I
                                 ))}
                               </SelectContent>
                             </Select>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
