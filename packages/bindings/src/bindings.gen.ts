@@ -170,6 +170,14 @@ export const commands = {
 	members: ReplicaMember[],
 } | null, IpcError>(__TAURI_INVOKE("replica_set_status", { connectionId })),
 	collectionActivity: (connectionId: ConnectionId) => typedError<CollectionActivity[] | null, IpcError>(__TAURI_INVOKE("collection_activity", { connectionId })),
+	shardingStatus: (connectionId: ConnectionId) => typedError<{
+	shards: Shard[],
+	/**  `full` (balancing), `off`, or `autoSplitOnly` on old servers. */
+	balancerMode: string,
+	/**  A balancing round is moving data right now. */
+	balancerRunning: boolean,
+	collections: ShardedCollection[],
+} | null, IpcError>(__TAURI_INVOKE("sharding_status", { connectionId })),
 	profilingStatus: (connectionId: ConnectionId, database: string) => typedError<ProfilingStatus, IpcError>(__TAURI_INVOKE("profiling_status", { connectionId, database })),
 	setProfilingStatus: (connectionId: ConnectionId, database: string, status: ProfilingStatus) => typedError<null, IpcError>(__TAURI_INVOKE("set_profiling_status", { connectionId, database, status })),
 	profileEntries: (connectionId: ConnectionId, query: ProfileQuery) => typedError<ProfileEntry[], IpcError>(__TAURI_INVOKE("profile_entries", { connectionId, query })),
@@ -1329,6 +1337,30 @@ export type ServerStatus = {
 	networkBytesOut: number | null,
 	/**  Unix milliseconds, from the server's clock. */
 	sampledAt: number | null,
+};
+
+export type Shard = {
+	id: string,
+	/**  The shard's replica set and members, as `rs/host:port,host:port`. */
+	host: string,
+	/**  Being removed: its data moves to the other shards. */
+	draining: boolean,
+};
+
+export type ShardedCollection = {
+	namespace: string,
+	key: EJsonDocument,
+	unique: boolean,
+};
+
+/**  A sharded cluster as its mongos sees it. */
+export type ShardingStatus = {
+	shards: Shard[],
+	/**  `full` (balancing), `off`, or `autoSplitOnly` on old servers. */
+	balancerMode: string,
+	/**  A balancing round is moving data right now. */
+	balancerRunning: boolean,
+	collections: ShardedCollection[],
 };
 
 export type ShellEvent = 

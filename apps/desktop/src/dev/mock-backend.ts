@@ -2527,8 +2527,32 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     if (index >= 0) mockUsers.splice(index, 1);
     return null;
   },
+  sharding_status: (args) => {
+    const connection =
+      connections.get(id("connectionId", args)) ?? fail("notConnected", "connection is not open");
+    const profile = profiles.find((p) => p.id === connection.profileId);
+    // The tenants cluster plays a sharded cluster; the other profiles are replica sets.
+    if (!profile?.connectionString.includes("tenants")) return null;
+    return {
+      shards: [
+        { id: "shard01", host: "shard01/tenants-a1:27018,tenants-a2:27018", draining: false },
+        { id: "shard02", host: "shard02/tenants-b1:27018,tenants-b2:27018", draining: false },
+        { id: "shard03", host: "shard03/tenants-c1:27018", draining: true },
+      ],
+      balancerMode: "full",
+      balancerRunning: false,
+      collections: [
+        {
+          namespace: "tenant_0001.events",
+          key: { tenantId: { $numberInt: "1" }, at: { $numberInt: "1" } },
+          unique: false,
+        },
+        { namespace: "tenant_0001.users", key: { _id: "hashed" }, unique: false },
+      ],
+    };
+  },
   collection_activity: (args) => {
-    serverOf(id("connectionId", args));
+    if (serverOf(id("connectionId", args)).databases === servers.large) return null;
     // Counters that grow with time at different paces, so two samples give believable rates.
     const t = Date.now() / 1000;
     const entry = (namespace: string, msPerSecond: number, reads: number, writes: number) => ({
@@ -2548,7 +2572,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     ];
   },
   replica_set_status: (args) => {
-    serverOf(id("connectionId", args));
+    if (serverOf(id("connectionId", args)).databases === servers.large) return null;
     const uptime = Math.round(Date.now() / 1000) % 1_000_000;
     return {
       set: "rs0",
@@ -2590,14 +2614,14 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     } satisfies ReplicaSetStatus;
   },
   server_status: (args) => {
-    serverOf(id("connectionId", args));
+    const sharded = serverOf(id("connectionId", args)).databases === servers.large;
     const now = Date.now();
     // Counters grow with time, so consecutive samples give believable rates.
     const t = now / 1000;
     return {
       host: "localhost:27017",
       version: "8.0.4",
-      process: "mongod",
+      process: sharded ? "mongos" : "mongod",
       uptimeSeconds: Math.floor(t % 864000),
       connectionsCurrent: 12 + Math.round(Math.sin(t / 7) * 3),
       connectionsAvailable: 838848,

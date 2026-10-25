@@ -115,5 +115,25 @@
     "msPerSecond": "{{value}} ms/s",
     "idle": "No collection is busy right now.",
     "failed": "Could not read collection activity: {{message}}"
+  },
+  "sharding": {
+    "title": "Sharding",
+    "balancing": "Balancing now",
+    "balancer": {
+      "full": "Balancer on",
+      "off": "Balancer off",
+      "autoSplitOnly": "Auto-split only",
+      "unknown": "Balancer unknown"
+    },
+    "shards_one": "{{count}} shard",
+    "shards_other": "{{count}} shards",
+    "hosts": "Replica set and members",
+    "draining": "draining",
+    "collections_one": "{{count}} sharded collection",
+    "collections_other": "{{count}} sharded collections",
+    "key": "Shard key",
+    "unique": "unique",
+    "noCollections": "No collection is sharded yet.",
+    "failed": "Could not read the sharding status: {{message}}"
   }
 }

@@ -115,5 +115,25 @@
     "msPerSecond": "{{value}} ms/s",
     "idle": "Nessuna collezione è attiva adesso.",
     "failed": "Impossibile leggere l'attività delle collezioni: {{message}}"
+  },
+  "sharding": {
+    "title": "Sharding",
+    "balancing": "Bilanciamento in corso",
+    "balancer": {
+      "full": "Balancer attivo",
+      "off": "Balancer spento",
+      "autoSplitOnly": "Solo auto-split",
+      "unknown": "Balancer sconosciuto"
+    },
+    "shards_one": "{{count}} shard",
+    "shards_other": "{{count}} shard",
+    "hosts": "Replica set e membri",
+    "draining": "in svuotamento",
+    "collections_one": "{{count}} collezione shardata",
+    "collections_other": "{{count}} collezioni shardate",
+    "key": "Chiave di shard",
+    "unique": "unica",
+    "noCollections": "Nessuna collezione è ancora shardata.",
+    "failed": "Impossibile leggere lo stato dello sharding: {{message}}"
   }
 }

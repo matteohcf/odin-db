@@ -121,6 +121,23 @@ await check("read-only connections cannot kill", async () => {
     throw new Error("kill enabled");
 });
 
+await check("a sharded cluster shows its shards and balancer", async () => {
+  await page
+    .getByRole("button", { name: /^Tenants cluster/ })
+    .first()
+    .click();
+  await profileMenu("Tenants cluster");
+  await page.getByRole("menuitem", { name: "Server status" }).click();
+  const section = page.getByRole("region", { name: "Sharding" });
+  await section.getByText("3 shards").waitFor();
+  await section.getByText("draining").waitFor();
+  await section.getByText("Balancer on").waitFor();
+  await section.getByText("tenant_0001.events").waitFor();
+  if (await page.getByRole("region", { name: "Replica set" }).count())
+    throw new Error("a mongos shows a replica set");
+  await shot("sharding");
+});
+
 console.log(results.join("\n"));
 console.log(JSON.stringify({ errors }));
 await browser.close();

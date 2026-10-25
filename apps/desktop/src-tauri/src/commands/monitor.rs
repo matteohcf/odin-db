@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use odin_core::connection::ConnectionId;
 use odin_core::ejson::EJsonValue;
-use odin_core::monitor::{self, CollectionActivity, CurrentOp, ReplicaSetStatus, ServerStatus};
+use odin_core::monitor::{
+    self, CollectionActivity, CurrentOp, ReplicaSetStatus, ServerStatus, ShardingStatus,
+};
 use odin_core::profiler::{self, ProfileEntry, ProfileQuery, ProfilingStatus};
 use tauri::State;
 
@@ -39,6 +41,16 @@ pub async fn collection_activity(
 ) -> Result<Option<Vec<CollectionActivity>>, IpcError> {
     let handle = state.connections.get(connection_id).await?;
     Ok(monitor::collection_activity(&handle).await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sharding_status(
+    state: State<'_, Arc<AppState>>,
+    connection_id: ConnectionId,
+) -> Result<Option<ShardingStatus>, IpcError> {
+    let handle = state.connections.get(connection_id).await?;
+    Ok(monitor::sharding_status(&handle).await?)
 }
 
 #[tauri::command]

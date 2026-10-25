@@ -3547,3 +3547,16 @@ async fn pipelines_are_explained_and_writes_refused() {
         Err(CoreError::Validation(_))
     ));
 }
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn a_mongod_has_no_sharding_status() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    assert_eq!(
+        odin_core::monitor::sharding_status(&handle)
+            .await
+            .expect("status"),
+        None
+    );
+}

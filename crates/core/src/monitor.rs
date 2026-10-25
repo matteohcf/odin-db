@@ -159,6 +159,110 @@ async fn list_ops(
     Ok(ops)
 }
 
+/// A sharded cluster as its mongos sees it.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ShardingStatus {
+    pub shards: Vec<Shard>,
+    /// `full` (balancing), `off`, or `autoSplitOnly` on old servers.
+    pub balancer_mode: String,
+    /// A balancing round is moving data right now.
+    pub balancer_running: bool,
+    pub collections: Vec<ShardedCollection>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct Shard {
+    pub id: String,
+    /// The shard's replica set and members, as `rs/host:port,host:port`.
+    pub host: String,
+    /// Being removed: its data moves to the other shards.
+    pub draining: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ShardedCollection {
+    pub namespace: String,
+    pub key: EJsonDocument,
+    pub unique: bool,
+}
+
+/// Shards, balancer and sharded collections, or `None` when not connected to a mongos.
+pub async fn sharding_status(
+    handle: &ConnectionHandle,
+) -> Result<Option<ShardingStatus>, CoreError> {
+    const NOT_A_MONGOS: [i32; 2] = [59, 13_644];
+    let admin = handle.client.database("admin");
+    let shards = match admin.run_command(doc! { "listShards": 1 }).await {
+        Err(error)
+            if matches!(*error.kind, mongodb::error::ErrorKind::Command(ref command)
+                if NOT_A_MONGOS.contains(&command.code)) =>
+        {
+            return Ok(None);
+        }
+        result => result?,
+    };
+    // The balancer state needs a privilege some users lack: then it reads as unknown.
+    let balancer = admin
+        .run_command(doc! { "balancerStatus": 1 })
+        .await
+        .unwrap_or_default();
+    let mut collections = Vec::new();
+    let mut cursor = handle
+        .client
+        .database("config")
+        .collection::<Document>("collections")
+        .find(doc! { "key": { "$exists": true }, "dropped": { "$ne": true } })
+        .sort(doc! { "_id": 1 })
+        .limit(1000)
+        .await?;
+    while cursor.advance().await? {
+        let entry = cursor.deserialize_current()?;
+        let Ok(namespace) = entry.get_str("_id") else {
+            continue;
+        };
+        if namespace.starts_with("config.") {
+            continue;
+        }
+        collections.push(ShardedCollection {
+            namespace: namespace.to_owned(),
+            key: EJsonDocument::from(entry.get_document("key").cloned().unwrap_or_default()),
+            unique: entry.get_bool("unique").unwrap_or(false),
+        });
+    }
+    Ok(Some(parse_sharding(&shards, &balancer, collections)))
+}
+
+fn parse_sharding(
+    shards: &Document,
+    balancer: &Document,
+    collections: Vec<ShardedCollection>,
+) -> ShardingStatus {
+    ShardingStatus {
+        shards: shards
+            .get_array("shards")
+            .map(|list| {
+                list.iter()
+                    .filter_map(Bson::as_document)
+                    .map(|shard| Shard {
+                        id: shard.get_str("_id").unwrap_or_default().to_owned(),
+                        host: shard.get_str("host").unwrap_or_default().to_owned(),
+                        draining: shard.get_bool("draining").unwrap_or(false),
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        balancer_mode: balancer.get_str("mode").unwrap_or("unknown").to_owned(),
+        balancer_running: balancer.get_bool("inBalancerRound").unwrap_or(false),
+        collections,
+    }
+}
+
 /// Time and operations spent on one collection since the server started (`top`).
 /// Cumulative: two samples give the rates.
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -352,6 +456,24 @@ pub async fn kill_op(handle: &ConnectionHandle, opid: EJsonValue) -> Result<(), 
 mod tests {
     use super::*;
     use bson::DateTime;
+
+    #[test]
+    fn sharding_reads_shards_and_balancer() {
+        let status = parse_sharding(
+            &doc! { "shards": [
+                { "_id": "shard01", "host": "rs1/a:27018,b:27018", "state": 1 },
+                { "_id": "shard02", "host": "rs2/c:27018", "draining": true },
+            ] },
+            &doc! { "mode": "full", "inBalancerRound": true },
+            Vec::new(),
+        );
+        assert_eq!(status.shards.len(), 2);
+        assert!(status.shards[1].draining && !status.shards[0].draining);
+        assert_eq!(status.balancer_mode, "full");
+        assert!(status.balancer_running);
+        let unknown = parse_sharding(&doc! {}, &doc! {}, Vec::new());
+        assert_eq!(unknown.balancer_mode, "unknown");
+    }
 
     #[test]
     fn top_keeps_user_collections_busiest_first() {

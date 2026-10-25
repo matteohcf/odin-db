@@ -36,6 +36,7 @@ import { BusiestCollectionsSection } from "./busiest-collections-section";
 import { IndexAdvisorSection } from "./index-advisor-section";
 import { ProfilerSection } from "./profiler-section";
 import { ReplicaSetSection } from "./replica-set-section";
+import { ShardingSection } from "./sharding-section";
 import { Sparkline } from "./sparkline";
 
 const HISTORY = 60;
@@ -195,6 +196,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
           </div>
         )}
 
+        <ShardingSection connection={connection} polling={polling} />
         <ReplicaSetSection connection={connection} polling={polling} />
         <BusiestCollectionsSection connection={connection} polling={polling} />
         <section className="mt-6 flex flex-col gap-2" aria-label={t("ops.title")}>
