@@ -19,7 +19,17 @@ export function QueryFieldFrame({
   end,
 }: QueryFieldFrameProps) {
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: the field inside is what takes focus.
     <div
+      // Clicking the label or the padding focuses the field, like a native input's box.
+      onMouseDown={(event) => {
+        const target = event.target as HTMLElement;
+        if (target.closest("input, button, .cm-editor")) return;
+        const field = event.currentTarget.querySelector<HTMLElement>("input, .cm-content");
+        if (!field) return;
+        event.preventDefault();
+        field.focus();
+      }}
       className={cn(
         "flex h-8 min-w-0 items-center rounded-md border bg-background shadow-xs transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40",
         invalid &&

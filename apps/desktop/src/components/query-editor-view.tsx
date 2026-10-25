@@ -175,5 +175,5 @@ export default function QueryEditorView({
     viewRef.current?.contentDOM.setAttribute("aria-invalid", String(invalid));
   }, [invalid]);
 
-  return <div ref={hostRef} className={cn("flex h-full min-w-0", className)} />;
+  return <div ref={hostRef} className={cn("flex h-full min-w-0 flex-1", className)} />;
 }

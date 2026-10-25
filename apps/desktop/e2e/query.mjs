@@ -29,6 +29,22 @@ await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");
 
+await check("the whole field box takes clicks, label included", async () => {
+  const box = await filter
+    .locator("xpath=ancestor::div[contains(@class,'rounded-md')][1]")
+    .boundingBox();
+  if (!box) throw new Error("no filter frame");
+  for (const x of [box.x + 8, box.x + box.width - 60]) {
+    await page.evaluate(
+      () => document.activeElement instanceof HTMLElement && document.activeElement.blur(),
+    );
+    await page.mouse.click(x, box.y + box.height / 2);
+    if (!(await filter.evaluate((el) => el === document.activeElement))) {
+      throw new Error(`click at x=${Math.round(x - box.x)} did not focus the filter`);
+    }
+  }
+});
+
 await check("typing { suggests sampled fields and logical operators", async () => {
   await filter.click();
   await page.keyboard.type("{");
