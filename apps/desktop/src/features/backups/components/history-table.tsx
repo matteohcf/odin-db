@@ -42,7 +42,9 @@ export function HistoryTable({
             <TableHead className="text-right">{t("columns.size")}</TableHead>
             <TableHead className="text-right">{t("columns.documents")}</TableHead>
             <TableHead className="text-right">{t("columns.duration")}</TableHead>
-            <th className="w-10 px-2 py-2" />
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">{t("columns.actions")}</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

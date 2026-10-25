@@ -79,7 +79,8 @@
     "status": "Status",
     "size": "Size",
     "documents": "Documents",
-    "duration": "Duration"
+    "duration": "Duration",
+    "actions": "Actions"
   },
   "trigger": {
     "manual": "Manual",
