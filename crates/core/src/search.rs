@@ -267,12 +267,15 @@ pub async fn search(
                     field_name,
                 });
                 hits += 1;
-                if hits >= MAX_HITS {
+                // One past the limit proves there was more to find.
+                if hits > MAX_HITS {
+                    batch.pop();
+                    hits -= 1;
+                    summary.truncated = true;
                     break;
                 }
             }
-            if hits >= MAX_HITS {
-                summary.truncated = true;
+            if summary.truncated {
                 break;
             }
         }

@@ -69,8 +69,8 @@ export function useUndo(connectionId: ConnectionId, namespace: Namespace, refres
         label: t("undo.action"),
         onClick: () =>
           void call(commands.restoreDocuments(connectionId, namespace, originals))
-            .then(() => {
-              toast.success(t("undo.restored", { count: originals.length }));
+            .then((restored) => {
+              toast.success(t("undo.restored", { count: restored ?? 0 }));
               refresh();
             })
             .catch((error: unknown) => {

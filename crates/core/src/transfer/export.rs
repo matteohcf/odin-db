@@ -168,7 +168,12 @@ async fn write_all(
             } else {
                 request.csv_fields.clone()
             };
-            out.write(&csv_record(fields.iter().map(String::as_str))?)
+            // Field names are text too: `{ "=cmd": 1 }` would be a formula in the header.
+            let header: Vec<String> = fields
+                .iter()
+                .map(|field| escaped(field, request.escape_formulas))
+                .collect();
+            out.write(&csv_record(header.iter().map(String::as_str))?)
                 .await?;
             for document in buffered {
                 out.write(&csv_row(&document, &fields, request.escape_formulas)?)
@@ -253,12 +258,20 @@ fn csv_row(document: &Document, fields: &[String], escape: bool) -> Result<Vec<u
         .iter()
         .map(|field| match get_path(document, field) {
             // Only text: a negative number is data, not a formula.
-            Some(Bson::String(text)) if escape && is_formula(text) => format!("'{text}"),
+            Some(Bson::String(text)) => escaped(text, escape),
             Some(value) => format_cell(value),
             None => String::new(),
         })
         .collect();
     csv_record(cells.iter().map(String::as_str))
+}
+
+fn escaped(text: &str, escape: bool) -> String {
+    if escape && is_formula(text) {
+        format!("'{text}")
+    } else {
+        text.to_owned()
+    }
 }
 
 /// What spreadsheets treat as a formula (OWASP CSV injection).
@@ -329,5 +342,12 @@ mod tests {
         let raw =
             String::from_utf8(csv_row(&document, &fields, false).expect("row")).expect("utf8");
         assert!(raw.starts_with("\"=HYPERLINK"));
+    }
+
+    #[test]
+    fn header_names_are_escaped_like_values() {
+        assert_eq!(escaped("=cmd", true), "'=cmd");
+        assert_eq!(escaped("=cmd", false), "=cmd");
+        assert_eq!(escaped("name", true), "name");
     }
 }
