@@ -7,10 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
-import { CircleAlert, Copy, Info } from "lucide-react";
+import { Copy, Info } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { QueryForm } from "../lib/query-form";
 import { type SqlTranslation, translateSql } from "../lib/sql";
@@ -98,10 +99,7 @@ export function SqlDialog({ collection, onUse, onClose }: SqlDialogProps) {
             )}
           </section>
         ) : (
-          <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs selectable">
-            <CircleAlert className="mt-px size-3.5 shrink-0" />
-            {result.error}
-          </p>
+          <InlineError>{result.error}</InlineError>
         )}
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>

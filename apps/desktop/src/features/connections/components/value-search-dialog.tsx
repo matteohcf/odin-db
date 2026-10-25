@@ -16,9 +16,10 @@ import {
   SelectValue,
 } from "@odin-db/ui/components/select";
 import { Toggle } from "@odin-db/ui/components/toggle";
-import { CircleAlert, Loader2, Search, Square } from "lucide-react";
+import { Loader2, Search, Square } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { useTabs } from "@/features/workspace";
 import { formatCount } from "@/lib/format";
 import { toShellSyntax } from "@/lib/shell-syntax";
@@ -192,12 +193,7 @@ export function ValueSearchDialog({
             </span>
           )}
         </div>
-        {search.state.status === "failed" && (
-          <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs selectable">
-            <CircleAlert className="mt-px size-3.5 shrink-0" />
-            {search.state.error}
-          </p>
-        )}
+        {search.state.status === "failed" && <InlineError>{search.state.error}</InlineError>}
 
         <div className="-mx-6 min-h-0 flex-1 overflow-y-auto border-t px-6">
           {summary && search.hits.length === 0 && (

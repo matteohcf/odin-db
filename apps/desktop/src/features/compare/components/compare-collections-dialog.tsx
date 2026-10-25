@@ -11,10 +11,11 @@ import {
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { Progress } from "@odin-db/ui/components/progress";
-import { ArrowLeftRight, CircleAlert } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { CompareDialog } from "@/features/results";
 import { isJsonObject, type JsonObject } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
@@ -190,10 +191,7 @@ export function CompareCollectionsDialog({
               />
             </div>
             {(filterError || sameCollection) && (
-              <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs">
-                <CircleAlert className="mt-px size-3.5 shrink-0" />
-                {filterError ?? t("sameCollection")}
-              </p>
+              <InlineError>{filterError ?? t("sameCollection")}</InlineError>
             )}
             {running && (
               <div className="flex flex-col gap-1.5">
@@ -210,14 +208,13 @@ export function CompareCollectionsDialog({
               </div>
             )}
             {(compare.state.status === "failed" || sync.state.status === "failed") && (
-              <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs">
-                <CircleAlert className="mt-px size-3.5 shrink-0" />
+              <InlineError>
                 {compare.state.status === "failed"
                   ? compare.state.error
                   : sync.state.status === "failed"
                     ? sync.state.error
                     : null}
-              </p>
+              </InlineError>
             )}
             {summary && mode === "sync" && (
               <SyncPanel

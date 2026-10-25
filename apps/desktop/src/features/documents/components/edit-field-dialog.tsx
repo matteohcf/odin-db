@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@odin-db/ui/components/dialog";
-import { CircleAlert } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { QueryEditor } from "@/components/query-editor";
 import { describeEJson } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
@@ -73,15 +73,7 @@ export function EditFieldDialog({ field, value, pending, onSave, onClose }: Edit
                   type: t(`types.${describeEJson(value).kind}`, { ns: "common" }),
                 })}
           </p>
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-destructive text-xs selectable"
-            >
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              {error}
-            </p>
-          )}
+          {error && <InlineError>{error}</InlineError>}
         </div>
         <DialogFooter className="sm:justify-between">
           {value !== undefined ? (

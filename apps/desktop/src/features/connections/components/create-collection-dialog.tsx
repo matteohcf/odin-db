@@ -11,10 +11,11 @@ import {
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { cn } from "@odin-db/ui/lib/utils";
-import { ChevronRight, CircleAlert } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
 import { useCreateCollection } from "../api/mutations";
@@ -152,15 +153,7 @@ export function CreateCollectionDialog({
               />
             )}
           </div>
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-destructive text-xs selectable"
-            >
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              {error}
-            </p>
-          )}
+          {error && <InlineError>{error}</InlineError>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {t("actions.cancel", { ns: "common" })}

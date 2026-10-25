@@ -11,10 +11,11 @@ import {
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
 import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, Copy, RefreshCw } from "lucide-react";
+import { Copy, RefreshCw } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
 import { generatePassword } from "../lib/password";
 import { RolesEditor } from "./roles-editor";
@@ -153,15 +154,7 @@ export function UserDialog({ connectionId, user, onSaved, onClose }: UserDialogP
             />
             <p className="text-muted-foreground text-xs">{t("dialog.rolesHint")}</p>
           </div>
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-destructive text-xs selectable"
-            >
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              {error}
-            </p>
-          )}
+          {error && <InlineError>{error}</InlineError>}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
               {t("actions.cancel", { ns: "common" })}

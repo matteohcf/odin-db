@@ -26,11 +26,12 @@ import {
 } from "@odin-db/ui/components/select";
 import { Switch } from "@odin-db/ui/components/switch";
 import { ToggleGroup, ToggleGroupItem } from "@odin-db/ui/components/toggle-group";
-import { CircleAlert, FolderOpen } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { FormField } from "@/components/form-field";
+import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
 import { useSaveSchedule } from "../api/backups";
 import { clockTime, weekdayName } from "../lib/describe";
@@ -288,15 +289,7 @@ export function ScheduleDialog({ profiles, schedule, profileId, onClose }: Sched
           </div>
           <p className="-mt-2 text-muted-foreground text-xs">{t("schedule.keepHint")}</p>
 
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-destructive text-xs selectable"
-            >
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              {error}
-            </p>
-          )}
+          {error && <InlineError>{error}</InlineError>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {t("actions.cancel", { ns: "common" })}

@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
 import { parseShellDocument } from "@/lib/shell-syntax";
 import { useToolRun } from "../hooks/use-tool-run";
@@ -154,15 +155,7 @@ export function BackupDialog({ connectionId, profileName, scope, onClose }: Back
                   <span className="text-muted-foreground text-xs">{t("backup.filterHint")}</span>
                 </div>
               )}
-              {optionError && (
-                <p
-                  role="alert"
-                  className="flex items-start gap-1.5 text-destructive text-xs selectable"
-                >
-                  <CircleAlert className="mt-px size-3.5 shrink-0" />
-                  {optionError}
-                </p>
-              )}
+              {optionError && <InlineError>{optionError}</InlineError>}
             </div>
           ) : (
             <div className="flex flex-col gap-3">

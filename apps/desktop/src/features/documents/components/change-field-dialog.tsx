@@ -16,11 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@odin-db/ui/components/select";
-import { CircleAlert } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { FormField } from "@/components/form-field";
+import { InlineError } from "@/components/inline-error";
 import { isJsonObject } from "@/lib/ejson-display";
 import { errorMessage } from "@/lib/ipc";
 import { useChangeField } from "../api/mutations";
@@ -174,15 +174,7 @@ export function ChangeFieldDialog({
             />
           )}
 
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-destructive text-xs selectable"
-            >
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              {error}
-            </p>
-          )}
+          {error && <InlineError>{error}</InlineError>}
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose} disabled={change.isPending}>

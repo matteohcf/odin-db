@@ -10,10 +10,10 @@ import {
 } from "@odin-db/ui/components/dialog";
 import { Input } from "@odin-db/ui/components/input";
 import { Label } from "@odin-db/ui/components/label";
-import { CircleAlert } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { useTabs } from "@/features/workspace";
 import { errorMessage } from "@/lib/ipc";
 import { useRenameCollection } from "../api/mutations";
@@ -77,15 +77,7 @@ export function RenameCollectionDialog({
               className="font-mono"
             />
           </div>
-          {error && (
-            <p
-              role="alert"
-              className="flex items-start gap-1.5 text-destructive text-xs selectable"
-            >
-              <CircleAlert className="mt-px size-3.5 shrink-0" />
-              {error}
-            </p>
-          )}
+          {error && <InlineError>{error}</InlineError>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {t("actions.cancel", { ns: "common" })}

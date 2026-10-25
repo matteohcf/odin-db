@@ -1,9 +1,10 @@
 import type { EngineChoice, FieldSummary } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
 import { Kbd } from "@odin-db/ui/components/kbd";
-import { CircleAlert, Loader2, Sparkles, Square } from "lucide-react";
+import { Loader2, Sparkles, Square } from "lucide-react";
 import { useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { useKeybindingLabel } from "@/hooks/use-keybinding";
 import { keybinding } from "@/lib/keybindings";
 import { matches } from "@/lib/shortcuts";
@@ -115,12 +116,7 @@ export function AskAiPanel({
           })}
         </div>
       )}
-      {state.status === "failed" && (
-        <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs selectable">
-          <CircleAlert className="mt-px size-3.5 shrink-0" />
-          {state.error}
-        </p>
-      )}
+      {state.status === "failed" && <InlineError>{state.error}</InlineError>}
       {text && <QueryPreview text={text} />}
       <div className="flex items-center gap-2">
         <p className="mr-auto text-muted-foreground text-xs">{t("ask.privacy")}</p>

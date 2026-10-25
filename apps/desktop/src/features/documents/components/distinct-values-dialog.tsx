@@ -14,9 +14,10 @@ import {
 } from "@odin-db/ui/components/dialog";
 import { Input } from "@odin-db/ui/components/input";
 import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { compactEJson } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
 
@@ -79,10 +80,7 @@ export function DistinctValuesDialog({
             {t("distinct.loading")}
           </p>
         ) : values.error ? (
-          <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs selectable">
-            <CircleAlert className="mt-px size-3.5 shrink-0" />
-            {errorMessage(values.error)}
-          </p>
+          <InlineError>{errorMessage(values.error)}</InlineError>
         ) : (
           <ul
             aria-label={t("distinct.title", { field })}

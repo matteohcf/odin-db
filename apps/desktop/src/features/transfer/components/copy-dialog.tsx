@@ -27,6 +27,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CircleAlert } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InlineError } from "@/components/inline-error";
 import { SuggestInput } from "@/components/suggest-input";
 import { call } from "@/lib/ipc";
 import { useTransfer } from "../hooks/use-transfer";
@@ -257,12 +258,7 @@ export function CopyDialog({
               <ArrowRight className="size-3" />
               {collection ? `${trimmedDatabase}.${trimmedCollection}` : trimmedDatabase}
             </p>
-            {ontoItself && (
-              <p role="alert" className="flex items-start gap-1.5 text-destructive text-xs">
-                <CircleAlert className="mt-px size-3.5 shrink-0" />
-                {t("copy.ontoItself")}
-              </p>
-            )}
+            {ontoItself && <InlineError>{t("copy.ontoItself")}</InlineError>}
 
             <div className="flex items-start gap-2.5">
               <Checkbox
