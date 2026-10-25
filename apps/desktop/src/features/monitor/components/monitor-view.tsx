@@ -42,8 +42,10 @@ import { call, errorMessage } from "@/lib/ipc";
 import { type Rates, rates, uptime } from "../lib/rates";
 import { BusiestCollectionsSection } from "./busiest-collections-section";
 import { IndexAdvisorSection } from "./index-advisor-section";
+import { MonitorSection } from "./monitor-section";
 import { ProfilerSection } from "./profiler-section";
 import { ReplicaSetSection } from "./replica-set-section";
+import { SectionNote } from "./section-note";
 import { ShardingSection } from "./sharding-section";
 import { Sparkline } from "./sparkline";
 
@@ -208,21 +210,20 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
         <ReplicaSetSection connection={connection} polling={polling} />
         {/* Rates diff two samples of one connection: a new connection starts over. */}
         <BusiestCollectionsSection key={connection.id} connection={connection} polling={polling} />
-        <section className="mt-6 flex flex-col gap-2" aria-label={t("ops.title")}>
-          <div className="flex items-baseline gap-2">
-            <h2 className="font-semibold text-sm">{t("ops.title")}</h2>
+        <MonitorSection
+          title={t("ops.title")}
+          detail={
             <span className="text-muted-foreground text-xs">
               {ops.data ? t("ops.count", { count: ops.data.length }) : ""}
             </span>
-          </div>
+          }
+        >
           {ops.error ? (
             <p role="alert" className="text-destructive text-xs selectable">
               {errorMessage(ops.error)}
             </p>
           ) : ops.data?.length === 0 ? (
-            <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-              {t("ops.none")}
-            </p>
+            <SectionNote>{t("ops.none")}</SectionNote>
           ) : (
             <div className="overflow-hidden rounded-lg border">
               {/* Fixed columns: a long command truncates instead of pushing Kill out of view. */}
@@ -285,7 +286,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
               </Table>
             </div>
           )}
-        </section>
+        </MonitorSection>
         <IndexAdvisorSection connection={connection} />
         <ProfilerSection connection={connection} polling={polling} />
       </div>

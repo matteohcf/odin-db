@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { compactEJson } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
+import { MonitorSection } from "./monitor-section";
 
 interface ShardingSectionProps {
   connection: ConnectionInfo;
@@ -30,22 +31,25 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
   if (status.data === null || status.isPending) return null;
 
   return (
-    <section className="mt-6 flex flex-col gap-2" aria-label={t("sharding.title")}>
-      <div className="flex items-center gap-2">
-        <h2 className="font-semibold text-sm">{t("sharding.title")}</h2>
-        {status.data && (
-          <Badge
-            variant={status.data.balancerMode === "off" ? "outline" : "secondary"}
-            className={status.data.balancerMode === "off" ? "text-warning" : undefined}
-          >
-            {status.data.balancerRunning
-              ? t("sharding.balancing")
-              : t(`sharding.balancer.${status.data.balancerMode}` as "sharding.balancer.full", {
-                  defaultValue: status.data.balancerMode,
-                })}
-          </Badge>
-        )}
-      </div>
+    <MonitorSection
+      title={t("sharding.title")}
+      detail={
+        <>
+          {status.data && (
+            <Badge
+              variant={status.data.balancerMode === "off" ? "outline" : "secondary"}
+              className={status.data.balancerMode === "off" ? "text-warning" : undefined}
+            >
+              {status.data.balancerRunning
+                ? t("sharding.balancing")
+                : t(`sharding.balancer.${status.data.balancerMode}` as "sharding.balancer.full", {
+                    defaultValue: status.data.balancerMode,
+                  })}
+            </Badge>
+          )}
+        </>
+      }
+    >
       {status.error ? (
         <p role="alert" className="text-destructive text-xs selectable">
           {t("sharding.failed", { message: errorMessage(status.error) })}
@@ -121,6 +125,6 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
           </div>
         </div>
       )}
-    </section>
+    </MonitorSection>
   );
 }

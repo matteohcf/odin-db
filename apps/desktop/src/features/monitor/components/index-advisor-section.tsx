@@ -13,6 +13,8 @@ import { formatCount } from "@/lib/format";
 import { call } from "@/lib/ipc";
 import { toShellSyntax } from "@/lib/shell-syntax";
 import { createIndexCommand, formatMillis } from "../lib/advice";
+import { MonitorSection } from "./monitor-section";
+import { SectionNote } from "./section-note";
 
 /** Indexes the server's slow operations ask for, with one click to create them. */
 export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo }) {
@@ -34,38 +36,32 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
     .join(" · ");
 
   return (
-    <section className="mt-6 flex flex-col gap-2" aria-label={t("advisor.title")}>
-      <div className="flex items-center gap-2">
-        <Lightbulb className="size-4 text-warning" />
-        <h2 className="font-semibold text-sm">{t("advisor.title")}</h2>
-        <span className="truncate text-muted-foreground text-xs">{sourceText}</span>
+    <MonitorSection
+      title={t("advisor.title")}
+      icon={Lightbulb}
+      detail={<span className="truncate text-muted-foreground text-xs">{sourceText}</span>}
+      actions={
         <Button
           size="sm"
           variant="ghost"
-          className="ml-auto"
           disabled={report.isFetching}
           onClick={() => void report.refetch()}
         >
           <RefreshCw className={report.isFetching ? "animate-spin" : undefined} />
           {t("advisor.refresh")}
         </Button>
-      </div>
+      }
+    >
       {report.error ? (
         <p role="alert" className="text-destructive text-xs selectable">
           {report.error.message}
         </p>
       ) : !report.data ? (
-        <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-          {t("advisor.loading")}
-        </p>
+        <SectionNote>{t("advisor.loading")}</SectionNote>
       ) : readable.length === 0 ? (
-        <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-          {t("advisor.noSources")}
-        </p>
+        <SectionNote>{t("advisor.noSources")}</SectionNote>
       ) : report.data.advice.length === 0 ? (
-        <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-          {t("advisor.none")}
-        </p>
+        <SectionNote>{t("advisor.none")}</SectionNote>
       ) : (
         <ul className="divide-y rounded-lg border">
           {report.data.advice.map((advice) => {
@@ -152,6 +148,6 @@ export function IndexAdvisorSection({ connection }: { connection: ConnectionInfo
           }}
         />
       )}
-    </section>
+    </MonitorSection>
   );
 }

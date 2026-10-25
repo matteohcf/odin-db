@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { call, errorMessage } from "@/lib/ipc";
 import { uptime } from "../lib/rates";
+import { MonitorSection } from "./monitor-section";
 
 interface ReplicaSetSectionProps {
   connection: ConnectionInfo;
@@ -35,13 +36,14 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
     value.toLocaleString(i18n.language, { maximumFractionDigits: value < 10 ? 1 : 0 });
 
   return (
-    <section className="mt-6 flex flex-col gap-2" aria-label={t("replica.title")}>
-      <div className="flex items-baseline gap-2">
-        <h2 className="font-semibold text-sm">{t("replica.title")}</h2>
-        {status.data && (
+    <MonitorSection
+      title={t("replica.title")}
+      detail={
+        status.data && (
           <span className="font-mono text-muted-foreground text-xs">{status.data.set}</span>
-        )}
-      </div>
+        )
+      }
+    >
       {status.error ? (
         <p role="alert" className="text-destructive text-xs selectable">
           {t("replica.failed", { message: errorMessage(status.error) })}
@@ -99,7 +101,7 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
           </Table>
         </div>
       )}
-    </section>
+    </MonitorSection>
   );
 }
 

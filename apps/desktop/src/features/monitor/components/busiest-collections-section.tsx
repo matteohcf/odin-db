@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { call, errorMessage } from "@/lib/ipc";
 import { type ActivityRate, activityRates } from "../lib/activity";
+import { MonitorSection } from "./monitor-section";
+import { SectionNote } from "./section-note";
 
 interface BusiestCollectionsSectionProps {
   connection: ConnectionInfo;
@@ -45,23 +47,18 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
   const busiest = rates?.[0]?.busyMs ?? 0;
 
   return (
-    <section className="mt-6 flex flex-col gap-2" aria-label={t("busiest.title")}>
-      <div className="flex items-baseline gap-2">
-        <h2 className="font-semibold text-sm">{t("busiest.title")}</h2>
-        <span className="text-muted-foreground text-xs">{t("busiest.hint")}</span>
-      </div>
+    <MonitorSection
+      title={t("busiest.title")}
+      detail={<span className="text-muted-foreground text-xs">{t("busiest.hint")}</span>}
+    >
       {activity.error ? (
         <p role="alert" className="text-destructive text-xs selectable">
           {t("busiest.failed", { message: errorMessage(activity.error) })}
         </p>
       ) : rates === null ? (
-        <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-          {t("stats.measuring")}
-        </p>
+        <SectionNote>{t("stats.measuring")}</SectionNote>
       ) : rates.length === 0 ? (
-        <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-          {t("busiest.idle")}
-        </p>
+        <SectionNote>{t("busiest.idle")}</SectionNote>
       ) : (
         <div className="overflow-hidden rounded-lg border">
           <Table className="min-w-2xl table-fixed">
@@ -104,6 +101,6 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
           </Table>
         </div>
       )}
-    </section>
+    </MonitorSection>
   );
 }

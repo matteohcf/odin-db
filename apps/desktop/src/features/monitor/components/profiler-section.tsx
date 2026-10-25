@@ -30,7 +30,9 @@ import { toast } from "sonner";
 import { useTabs } from "@/features/workspace";
 import { call, errorMessage } from "@/lib/ipc";
 import { indexHint } from "../lib/profile";
+import { MonitorSection } from "./monitor-section";
 import { ProfileEntryDialog } from "./profile-entry-dialog";
+import { SectionNote } from "./section-note";
 
 const LEVELS: ProfilingLevel[] = ["off", "slow", "all"];
 
@@ -100,72 +102,73 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
   const level = status.data?.level ?? "off";
 
   return (
-    <section className="mt-6 flex flex-col gap-2" aria-label={t("profiler.title")}>
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="mr-auto font-semibold text-sm">{t("profiler.title")}</h2>
-        <Select value={database} onValueChange={setDatabase}>
-          <SelectTrigger size="sm" className="w-44" aria-label={t("profiler.database")}>
-            <SelectValue placeholder={t("profiler.database")} />
-          </SelectTrigger>
-          <SelectContent>
-            {databases.data?.map((entry) => (
-              <SelectItem key={entry.name} value={entry.name}>
-                {entry.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={level}
-          onValueChange={(next) => change.mutate(next as ProfilingLevel)}
-          disabled={!status.data || connection.readOnly || change.isPending}
-        >
-          <SelectTrigger
-            size="sm"
-            className="w-44"
-            aria-label={t("profiler.level")}
-            title={connection.readOnly ? t("profiler.readOnly") : undefined}
+    <MonitorSection
+      title={t("profiler.title")}
+      actions={
+        <>
+          <Select value={database} onValueChange={setDatabase}>
+            <SelectTrigger size="sm" className="w-44" aria-label={t("profiler.database")}>
+              <SelectValue placeholder={t("profiler.database")} />
+            </SelectTrigger>
+            <SelectContent>
+              {databases.data?.map((entry) => (
+                <SelectItem key={entry.name} value={entry.name}>
+                  {entry.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={level}
+            onValueChange={(next) => change.mutate(next as ProfilingLevel)}
+            disabled={!status.data || connection.readOnly || change.isPending}
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {LEVELS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {t(`profiler.levels.${option}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-1">
-          <Input
-            aria-label={t("profiler.threshold")}
-            value={slowMs}
-            onChange={(event) => setSlowMs(event.target.value)}
-            onKeyDown={(event) => event.key === "Enter" && change.mutate(level)}
-            inputMode="numeric"
-            disabled={!status.data || connection.readOnly}
-            className="h-8 w-20 text-right text-xs tabular-nums"
-          />
-          <span className="text-muted-foreground text-xs">ms</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t("profiler.refresh")}
-          onClick={() => void entries.refetch()}
-          disabled={!database}
-        >
-          <RefreshCw className={cn(entries.isFetching && "animate-spin")} />
-        </Button>
-      </div>
+            <SelectTrigger
+              size="sm"
+              className="w-44"
+              aria-label={t("profiler.level")}
+              title={connection.readOnly ? t("profiler.readOnly") : undefined}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LEVELS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {t(`profiler.levels.${option}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1">
+            <Input
+              aria-label={t("profiler.threshold")}
+              value={slowMs}
+              onChange={(event) => setSlowMs(event.target.value)}
+              onKeyDown={(event) => event.key === "Enter" && change.mutate(level)}
+              inputMode="numeric"
+              disabled={!status.data || connection.readOnly}
+              className="h-8 w-20 text-right text-xs tabular-nums"
+            />
+            <span className="text-muted-foreground text-xs">ms</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("profiler.refresh")}
+            onClick={() => void entries.refetch()}
+            disabled={!database}
+          >
+            <RefreshCw className={cn(entries.isFetching && "animate-spin")} />
+          </Button>
+        </>
+      }
+    >
       {status.error ? (
         <p role="alert" className="text-destructive text-xs selectable">
           {t("profiler.unavailable", { message: errorMessage(status.error) })}
         </p>
       ) : entries.data?.length === 0 ? (
-        <p className="rounded-lg border p-6 text-center text-muted-foreground text-sm">
-          {recording ? t("profiler.empty") : t("profiler.off")}
-        </p>
+        <SectionNote>{recording ? t("profiler.empty") : t("profiler.off")}</SectionNote>
       ) : (
         <div className="max-h-96 overflow-auto rounded-lg border">
           <Table>
@@ -238,6 +241,6 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
           onClose={() => setSelected(null)}
         />
       )}
-    </section>
+    </MonitorSection>
   );
 }
