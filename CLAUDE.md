@@ -121,6 +121,7 @@ docs/adr/                Architecture Decision Records
 - UI logic: Vitest. Keep logic in framework-free modules (`lib/`, controllers, stores) so it is testable without React.
 - UI review: `pnpm --filter @odin-db/desktop dev:web` in a browser uses the in-memory mock backend (ADR-0027). Check light and dark themes. Update `src/dev/mock-backend.ts` whenever a command changes.
 - UI checks: `apps/desktop/e2e/*.mjs` are Playwright scripts against that mock backend; `pnpm --filter @odin-db/desktop e2e [name ...]` runs them while `dev:web` is up. A UI feature adds or extends one.
+- Accessibility: `e2e/a11y.mjs` runs axe-core on the main screens and fails on any violation; a new screen is added to it. Run it in both themes (`SCHEME=dark`).
 - E2E smoke: `tauri-driver` on Linux and Windows.
 - A bug fix includes a test that fails without the fix.
 - See ADR-0020.
