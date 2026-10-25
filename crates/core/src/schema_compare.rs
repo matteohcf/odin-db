@@ -319,6 +319,7 @@ fn same_options(left: &IndexInfo, right: &IndexInfo) -> bool {
         && left.hidden == right.hidden
         && left.expire_after_seconds == right.expire_after_seconds
         && left.partial_filter == right.partial_filter
+        && left.collation == right.collation
 }
 
 #[cfg(test)]
@@ -346,6 +347,7 @@ mod tests {
             hidden: false,
             expire_after_seconds: None,
             partial_filter: None,
+            collation: None,
             definition: EJsonDocument::from(bson::doc! {}),
             size: None,
             usage_count: None,
@@ -423,5 +425,24 @@ mod tests {
         let left = [partial("active", "active"), partial("paid", "paid")];
         let right = [partial("paid_r", "paid"), partial("active_r", "active")];
         assert_eq!(index_differences(&left, &right).len(), 0);
+    }
+
+    #[test]
+    fn a_different_collation_is_a_difference() {
+        let caseless = |name: &str, strength: i32| IndexInfo {
+            collation: Some(EJsonDocument::from(
+                bson::doc! { "locale": "en", "strength": strength },
+            )),
+            ..index(name, bson::doc! { "name": 1 }, false)
+        };
+        let same = index_differences(&[caseless("a", 2)], &[caseless("b", 2)]);
+        assert_eq!(same.len(), 0);
+        let differs = index_differences(&[caseless("a", 2)], &[caseless("b", 3)]);
+        assert_eq!(differs.len(), 1);
+        let simple = index_differences(
+            &[caseless("a", 2)],
+            &[index("b", bson::doc! { "name": 1 }, false)],
+        );
+        assert_eq!(simple.len(), 1);
     }
 }

@@ -642,6 +642,14 @@ async fn creates_lists_and_drops_indexes() {
         .get_document("collation")
         .expect("collation kept");
     assert_eq!(collation.get_str("locale").ok(), Some("en"));
+    let listed_collation =
+        Document::try_from(caseless.collation.clone().expect("collation listed")).expect("doc");
+    assert_eq!(listed_collation.get_str("locale").ok(), Some("en"));
+    assert!(
+        !listed_collation.contains_key("version"),
+        "the ICU version is the server's, not the index's"
+    );
+    assert_eq!(listed[0].collation, None, "_id_ compares simply");
     assert!(matches!(
         indexes::create(
             &handle,

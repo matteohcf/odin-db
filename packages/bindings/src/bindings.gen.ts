@@ -960,6 +960,11 @@ export type IndexInfo = {
 	hidden: boolean,
 	expireAfterSeconds: number | null,
 	partialFilter: EJsonDocument | null,
+	/**
+	 *  How strings compare in the index, without the server's ICU `version`; absent for the
+	 *  default simple comparison.
+	 */
+	collation: EJsonDocument | null,
 	/**  The complete spec as returned by the server. */
 	definition: EJsonDocument,
 	/**  Bytes on disk, when the server reports it. */

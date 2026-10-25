@@ -26,6 +26,9 @@ pub struct IndexInfo {
     pub hidden: bool,
     pub expire_after_seconds: Option<f64>,
     pub partial_filter: Option<EJsonDocument>,
+    /// How strings compare in the index, without the server's ICU `version`; absent for the
+    /// default simple comparison.
+    pub collation: Option<EJsonDocument>,
     /// The complete spec as returned by the server.
     pub definition: EJsonDocument,
     /// Bytes on disk, when the server reports it.
@@ -265,6 +268,11 @@ fn to_info(
             .ok()
             .cloned()
             .map(EJsonDocument::from),
+        collation: spec.get_document("collation").ok().map(|collation| {
+            let mut collation = collation.clone();
+            collation.remove("version");
+            EJsonDocument::from(collation)
+        }),
         definition: EJsonDocument::from(spec.clone()),
         size: sizes.get(&name).copied(),
         usage_count: usage.get(&name).map(|(ops, _)| *ops),
