@@ -4,12 +4,25 @@ import {
   type CompletionResult,
   type CompletionSection,
   type CompletionSource,
+  closeCompletion,
+  completionStatus,
   pickedCompletion,
   snippetCompletion,
 } from "@codemirror/autocomplete";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import type { FieldSummary } from "@odin-db/bindings";
 import { queryContext } from "./query-context";
+
+/**
+ * Closes a suggestion list that opens after the editor lost focus. Suggestions arrive
+ * asynchronously, and CodeMirror closes them only on the blur itself.
+ */
+export const closeCompletionWhenBlurred = EditorView.updateListener.of((update) => {
+  if (!update.view.hasFocus && completionStatus(update.state) !== null) {
+    // An update listener must not dispatch synchronously.
+    queueMicrotask(() => closeCompletion(update.view));
+  }
+});
 
 /**
  * `expression` is the body of aggregation stages other than $match, $sort and

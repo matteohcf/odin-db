@@ -15,7 +15,7 @@ import { useEffect, useRef } from "react";
 import { completionTheme } from "@/lib/codemirror-completion-theme";
 import { highlight } from "@/lib/codemirror-highlight";
 import { submitOnKeybinding, withoutAppShortcuts } from "@/lib/editor-keybindings";
-import { reopensCompletion } from "@/lib/query-completion";
+import { closeCompletionWhenBlurred, reopensCompletion } from "@/lib/query-completion";
 
 // A query is one expression, not a script: `{ a: 1 }` is an object, not a block.
 const queryLanguage = new LanguageSupport(
@@ -114,6 +114,7 @@ export default function QueryEditorView({
             maxRenderedOptions: 200,
             activateOnCompletion: reopensCompletion,
           }),
+          closeCompletionWhenBlurred,
           Prec.high(
             keymap.of([
               { key: "Tab", run: acceptCompletion },
