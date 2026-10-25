@@ -33,7 +33,9 @@
     "save": "Salva le regole",
     "saved": "Regole di validazione salvate.",
     "hint": "Un filtro di query o un $jsonSchema. I documenti esistenti non vengono controllati; ⌘↵ salva.",
-    "readOnly": "Sola lettura: le regole non si possono modificare da questa connessione."
+    "readOnly": "Sola lettura: le regole non si possono modificare da questa connessione.",
+    "findInvalid": "Trova chi viola le regole",
+    "findInvalidHint": "Mostra i documenti che queste regole rifiuterebbero, come scritte nell'editor"
   },
   "filterBy": "Mostra i documenti dove {{field}} è \"{{value}}\"",
   "range": "{{min}} – {{max}}",

@@ -458,6 +458,10 @@ function matchesFilter(doc: Doc, filter: Doc, caseless = false): boolean {
     return caseless && typeof plain === "string" ? plain.toLowerCase() : plain;
   };
   return Object.entries(filter).every(([key, condition]) => {
+    const clauses = Array.isArray(condition) ? (condition as Doc[]) : [];
+    if (key === "$and") return clauses.every((clause) => matchesFilter(doc, clause, caseless));
+    if (key === "$or") return clauses.some((clause) => matchesFilter(doc, clause, caseless));
+    if (key === "$nor") return !clauses.some((clause) => matchesFilter(doc, clause, caseless));
     if (key.startsWith("$")) return true;
     const value = scalar(fieldValue(doc, key));
     if (condition && typeof condition === "object" && !Array.isArray(condition)) {

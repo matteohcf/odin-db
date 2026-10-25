@@ -68,6 +68,25 @@ await check("saved rules load back, invalid syntax is reported", async () => {
   await page.getByRole("alert").first().waitFor();
 });
 
+await check("the documents that break the rules are one click away", async () => {
+  const editor = page.getByRole("textbox", { name: "Validator" });
+  await editor.click();
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.insertText("{ age: { $gte: 30 } }");
+  await page.getByRole("button", { name: "Find rule breakers" }).click();
+  await page.getByRole("tab", { name: /Documents/, selected: true }).waitFor();
+  const filter = page.getByRole("textbox", { name: "Filter" });
+  await filter.getByText("$nor").waitFor();
+  // Every row shown is younger than 30: the ones the rules reject.
+  await page.waitForFunction(() => {
+    const ages = [...document.querySelectorAll("[role=grid] tbody tr")].map((row) =>
+      Number(row.querySelectorAll("td")[3]?.textContent),
+    );
+    return ages.length > 0 && ages.every((age) => age < 30);
+  });
+  await shot("02-breakers");
+});
+
 await check("views have no validation tab", async () => {
   await page
     .getByRole("button", { name: /^active_users/ })

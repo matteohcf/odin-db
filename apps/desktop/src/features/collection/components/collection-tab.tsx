@@ -285,7 +285,20 @@ function CollectionWorkspace({
               ) : value === "live" ? (
                 <ChangesView connection={connection} namespace={namespace} />
               ) : value === "validation" ? (
-                <ValidationView connection={connection} namespace={namespace} editable={editable} />
+                <ValidationView
+                  connection={connection}
+                  namespace={namespace}
+                  editable={editable}
+                  onFindInvalid={(validator) => {
+                    // `$nor` of the rules: what they reject, added to the current filter.
+                    setCondition({
+                      field: "$nor",
+                      literal: `[${validator}]`,
+                      nonce: crypto.randomUUID(),
+                    });
+                    select("documents");
+                  }}
+                />
               ) : (
                 <IndexesView
                   connection={connection}

@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@odin-db/ui/components/select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleAlert, Loader2, Sparkles } from "lucide-react";
+import { CircleAlert, Loader2, ShieldX, Sparkles } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -32,10 +32,17 @@ interface ValidationViewProps {
   connection: ConnectionInfo;
   namespace: Namespace;
   editable: boolean;
+  /** Shows the documents the rules reject; takes them as a mongosh validator. */
+  onFindInvalid?: ((validator: string) => void) | undefined;
 }
 
 /** The rules documents must follow: a validator, with its level and action. */
-export function ValidationView({ connection, namespace, editable }: ValidationViewProps) {
+export function ValidationView({
+  connection,
+  namespace,
+  editable,
+  onFindInvalid,
+}: ValidationViewProps) {
   const { t } = useTranslation("schema");
   const id = useId();
   const queryClient = useQueryClient();
@@ -60,6 +67,17 @@ export function ValidationView({ connection, namespace, editable }: ValidationVi
     setAction(rules.data.action);
     setEditorKey((value) => value + 1);
   }, [rules.data]);
+
+  /** The rules as written in the editor, saved or not, checked before they filter anything. */
+  async function findInvalid() {
+    try {
+      const validator = await parseShellDocument(text ?? "");
+      setError(null);
+      onFindInvalid?.(toShellSyntax(validator, 0));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
 
   const save = useMutation({
     mutationFn: async () => {
@@ -145,6 +163,18 @@ export function ValidationView({ connection, namespace, editable }: ValidationVi
           </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">
+          {onFindInvalid && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={(text ?? "").trim() === "" || (text ?? "").trim() === "{}"}
+              title={t("validation.findInvalidHint")}
+              onClick={() => void findInvalid()}
+            >
+              <ShieldX />
+              {t("validation.findInvalid")}
+            </Button>
+          )}
           {editable && (
             <Button
               variant="ghost"
