@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { connect } from "./lib/connect.mjs";
 
 const scheme = process.env.SCHEME ?? "light";
 const browser = await chromium.launch();
@@ -32,10 +33,10 @@ const profileMenu = async (name) => {
     .click();
 };
 await page.goto("http://localhost:1420/");
-await page.waitForSelector("text=Local development");
+await page.getByText("No open connections").waitFor();
 
 await check("colors show in the sidebar, tabs and collection header", async () => {
-  await page.click("text=Local development");
+  await connect(page);
   await page.getByRole("button", { name: /^shop/ }).first().click();
   await page
     .getByRole("button", { name: /^users/ })
@@ -80,34 +81,44 @@ await check("no color removes every mark", async () => {
   await page.waitForFunction(() => !document.querySelector("header.border-t-2"));
 });
 
-await check("an open colored connection tints its whole subtree", async () => {
+await check("an open colored connection writes and tints its whole subtree", async () => {
   const tree = page.getByRole("complementary");
-  const rowOf = (name) =>
+  const rowOf = (name, nth = 0) =>
     tree
       .locator("li[data-index]")
       .filter({ has: page.getByRole("button", { name }) })
-      .first();
-  const classOf = async (name) => (await rowOf(name).getAttribute("class")) ?? "";
+      .nth(nth);
+  const classOf = async (name, nth) => (await rowOf(name, nth).getAttribute("class")) ?? "";
+  // The color a row's name is written in.
+  const inkOf = (name, nth = 0) =>
+    rowOf(name, nth)
+      .getByRole("button", { name })
+      .first()
+      .evaluate((el) => getComputedStyle(el.parentElement).color);
   // Earlier checks cleared Local dev's color; Production (Atlas) is red.
   await page.keyboard.press("Escape");
-  await tree.getByRole("button", { name: /^Production \(Atlas\)/ }).click();
-  await tree
-    .getByRole("button", { name: /^analytics/ })
-    .nth(1)
-    .waitFor();
+  await connect(page, "Production (Atlas)");
+  await rowOf(/^analytics/, 1).waitFor();
   await page.waitForTimeout(300);
   const production = await classOf(/^Production \(Atlas\)/);
   if (!production.includes("bg-red-500/10")) throw new Error(`connection: ${production}`);
-  const database = await tree
-    .locator("li[data-index]")
-    .filter({ has: page.getByRole("button", { name: /^analytics/ }) })
-    .nth(1)
-    .getAttribute("class");
-  if (!database?.includes("bg-red-500/10")) throw new Error(`database: ${database}`);
+  if (!(await classOf(/^analytics/, 1)).includes("bg-red-500/10")) throw new Error("database tint");
   if ((await classOf(/^Local dev/)).includes("/10")) throw new Error("uncolored connection tinted");
-  // Like Compass, a colored connection is tinted even while closed.
-  if (!(await classOf(/^Staging/)).includes("bg-orange-500/10"))
+  // Like Studio 3T, the names are written in the connection's color too.
+  const plain = await inkOf(/^analytics/, 0);
+  const red = await inkOf(/^analytics/, 1);
+  if (red === plain) throw new Error(`database ink ${red} = ${plain}`);
+  if ((await inkOf(/^Production \(Atlas\)/)) !== red) throw new Error("connection ink");
+  await shot("03-subtree");
+  // A closed connection shows its color in the connection manager.
+  await page.getByRole("button", { name: "Open connection…" }).first().click();
+  const staging = page
+    .getByRole("dialog", { name: "Connections" })
+    .locator("li")
+    .filter({ hasText: "Staging (bastion)" });
+  if (!((await staging.getAttribute("class")) ?? "").includes("bg-orange-500/10"))
     throw new Error("closed connection not tinted");
+  await page.keyboard.press("Escape");
 });
 
 console.log(results.join("\n"));

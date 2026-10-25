@@ -166,7 +166,7 @@ export function TreeList({
     return Boolean(target) || !copied;
   }
 
-  // Like Compass, a connection's color tints its row, and its whole subtree once open.
+  // Like Studio 3T, a connection's color writes its row and its whole subtree once open.
   function colorOf(row: TreeItem) {
     const profileId =
       row.kind === "profile"
@@ -189,6 +189,7 @@ export function TreeList({
   const stickyIndex = top && topRow?.kind === "collection" ? parentIndex(rows, top.index) : -1;
   const stickyRow =
     stickyIndex >= 0 && stickyIndex < (top?.index ?? 0) ? rows[stickyIndex] : undefined;
+  const stickyColor = stickyRow && colorOf(stickyRow);
 
   return (
     <>
@@ -203,7 +204,10 @@ export function TreeList({
             data-index={stickyIndex}
             data-sticky
             // Reaches over the scroller's top padding, so no row peeks out above it.
-            className="sticky -top-1 z-10 -mt-1 border-b bg-sidebar pt-1 shadow-xs"
+            className={cn(
+              "sticky -top-1 z-10 -mt-1 border-b bg-sidebar pt-1 shadow-xs",
+              stickyColor && PROFILE_COLOR_CLASS[stickyColor].text,
+            )}
             style={{ height: ROW_HEIGHT + 4 }}
           >
             <Row
@@ -228,7 +232,10 @@ export function TreeList({
             <li
               key={item.key}
               data-index={item.index}
-              className={cn("absolute inset-x-0 top-0", color && PROFILE_COLOR_CLASS[color].tint)}
+              className={cn(
+                "absolute inset-x-0 top-0",
+                color && [PROFILE_COLOR_CLASS[color].tint, PROFILE_COLOR_CLASS[color].text],
+              )}
               style={{ height: ROW_HEIGHT, transform: `translateY(${item.start - offset}px)` }}
             >
               <Row

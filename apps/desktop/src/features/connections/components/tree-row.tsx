@@ -52,7 +52,8 @@ export function TreeRow({
         // The sidebar sets --tree-row from the density setting.
         // Full-width rows like Compass: hover and selection span the whole sidebar.
         "group relative flex h-(--tree-row) items-center text-[13px] hover:bg-accent has-[[data-state=open]]:bg-accent data-[state=open]:bg-accent",
-        muted ? "text-muted-foreground" : "text-foreground",
+        // A colored connection sets --tree-fg on its rows (PROFILE_COLOR_CLASS.text).
+        muted ? "text-muted-foreground" : "text-[color:var(--tree-fg,var(--foreground))]",
         active && "bg-accent font-semibold",
       )}
     >

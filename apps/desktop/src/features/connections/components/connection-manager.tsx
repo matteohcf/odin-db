@@ -14,10 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
 import { Input } from "@odin-db/ui/components/input";
+import { cn } from "@odin-db/ui/lib/utils";
 import { FileDown, FileUp, MoreHorizontal, Plus, Search, Server } from "lucide-react";
 import { type CSSProperties, type KeyboardEvent, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/empty-state";
+import { PROFILE_COLOR_CLASS } from "@/lib/profile-colors";
 import { TREE_ROW_HEIGHTS, useSettings } from "@/lib/settings";
 import { buildTreeRows } from "../lib/tree-rows";
 import { useExplorer } from "../store/explorer-store";
@@ -173,7 +175,17 @@ function ManagerBody({
             onKeyDown={onListKeyDown}
           >
             {rows.map((row, index) => (
-              <li key={row.key} data-index={index}>
+              <li
+                key={row.key}
+                data-index={index}
+                className={cn(
+                  row.kind === "profile" &&
+                    row.profile.color && [
+                      PROFILE_COLOR_CLASS[row.profile.color].tint,
+                      PROFILE_COLOR_CLASS[row.profile.color].text,
+                    ],
+                )}
+              >
                 {row.kind === "group" ? (
                   <GroupNode
                     name={row.name}
