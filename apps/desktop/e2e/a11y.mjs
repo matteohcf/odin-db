@@ -67,6 +67,22 @@ await page.getByRole("tab", { name: /^Indexes/ }).click();
 await page.getByRole("button", { name: "Create index" }).click();
 await audit("create index dialog");
 await page.keyboard.press("Escape");
+await profileMenu("shop", "Show diagram");
+await page.locator(".react-flow__node").first().waitFor();
+await audit("diagram");
+await aside()
+  .getByRole("button", { name: /^Production \(Atlas\)/ })
+  .click();
+// Its databases list below the open ones, once it is connected.
+await page.waitForFunction(
+  () =>
+    [...document.querySelectorAll("aside button")].filter((b) => /^shop/.test(b.textContent ?? ""))
+      .length > 1,
+);
+await aside().getByRole("button", { name: /^shop/ }).last().click();
+await aside().getByText("system.views").nth(1).waitFor();
+// Rows tinted with the connection's color, muted text included.
+await audit("tinted connection rows");
 await profileMenu("Local development", "Server status");
 await audit("server status");
 await profileMenu("Local development", /Search values/);
