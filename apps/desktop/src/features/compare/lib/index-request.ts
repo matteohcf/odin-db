@@ -11,10 +11,11 @@ export function indexRequestOf(index: IndexInfo): CreateIndexRequest {
     expireAfterSeconds:
       index.expireAfterSeconds === null ? null : Math.round(index.expireAfterSeconds),
     partialFilter: index.partialFilter,
+    collation: index.collation,
   };
 }
 
-/** Short labels for what sets an index apart: unique, sparse, hidden, TTL, partial. */
+/** Short labels for what sets an index apart: unique, sparse, hidden, TTL, partial, collation. */
 export function indexOptions(index: IndexInfo): string[] {
   return [
     index.unique && "unique",
@@ -22,5 +23,6 @@ export function indexOptions(index: IndexInfo): string[] {
     index.hidden && "hidden",
     index.expireAfterSeconds !== null && `TTL ${index.expireAfterSeconds}s`,
     index.partialFilter !== null && "partial",
+    index.collation !== null && "collation",
   ].filter((option): option is string => typeof option === "string");
 }

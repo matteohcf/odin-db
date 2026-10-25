@@ -1862,6 +1862,7 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
       expireAfterSeconds:
         spec.expireAfterSeconds === undefined ? null : Number(scalar(spec.expireAfterSeconds)),
       partialFilter: spec.partialFilterExpression ?? null,
+      collation: spec.collation ?? null,
       definition: spec,
       size: 20_480 + coll.docs.length * (position === 0 ? 24 : 40),
       usageCount: position === 0 ? 1532 : position === 1 ? 87 : 0,

@@ -303,8 +303,8 @@ function Properties({ index }: { index: IndexInfo }) {
       hint: t("badge.partialHint", { filter: describeEJson(index.partialFilter).text }),
     });
   }
-  const collation = isJsonObject(index.definition) ? index.definition.collation : undefined;
-  // Every index of a collection created with a collation reports it; "simple" is the default.
+  const { collation } = index;
+  // Indexes of a collection created with a collation report it; "simple" is the default.
   if (isJsonObject(collation) && collation.locale !== "simple") {
     badges.push({
       label: t("badge.collation", { locale: String(collation.locale ?? "") }),
