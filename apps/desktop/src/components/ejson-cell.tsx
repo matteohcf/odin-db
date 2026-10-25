@@ -2,7 +2,7 @@ import type { JsonValue } from "@odin-db/bindings";
 import { cn } from "@odin-db/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { compactEJson, describeEJson, type EJsonKind } from "@/lib/ejson-display";
-import { formatLocalDateTime, formatRelativeTime } from "@/lib/format";
+import { formatLocalDateTime, formatLocaleDateTime, formatRelativeTime } from "@/lib/format";
 import { useSettings } from "@/lib/settings";
 import { momentOf } from "@/lib/value-hints";
 
@@ -28,7 +28,7 @@ export function EJsonCell({ value }: { value: JsonValue | undefined }) {
   // Dates and ObjectIds also say when, in local time and relative to now.
   const when = moment
     ? `\n${t(moment.kind === "objectId" ? "value.created" : "value.localTime", {
-        date: moment.date.toLocaleString(i18n.language),
+        date: formatLocaleDateTime(moment.date, i18n.language),
         relative: formatRelativeTime(moment.date.getTime(), Date.now(), i18n.language),
       })}`
     : "";

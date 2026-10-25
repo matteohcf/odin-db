@@ -37,9 +37,17 @@ const TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["minute", 60],
 ];
 
+// Building an Intl formatter is far slower than formatting; grid cells format on every render.
+const relativeFormats = new Map<string | undefined, Intl.RelativeTimeFormat>();
+const dateTimeFormats = new Map<string | undefined, Intl.DateTimeFormat>();
+
 /** "5 minutes ago", "yesterday"; anything under a minute is "now". */
 export function formatRelativeTime(timestamp: number, now: number, locale?: string): string {
-  const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "long" });
+  let format = relativeFormats.get(locale);
+  if (!format) {
+    format = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "long" });
+    relativeFormats.set(locale, format);
+  }
   const seconds = (timestamp - now) / 1000;
   for (const [unit, size] of TIME_UNITS) {
     if (Math.abs(seconds) >= size) return format.format(Math.round(seconds / size), unit);
@@ -60,4 +68,23 @@ export function formatLocalDateTime(date: Date): string {
     `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.` +
     `${pad(date.getMilliseconds(), 3)} ${sign}${pad(Math.trunc(offset / 60))}:${pad(offset % 60)}`
   );
+}
+
+const LOCALE_DATE_TIME: Intl.DateTimeFormatOptions = {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric",
+};
+
+/** The date and time as `Date.toLocaleString` writes them, with a reused formatter. */
+export function formatLocaleDateTime(date: Date, locale?: string): string {
+  let format = dateTimeFormats.get(locale);
+  if (!format) {
+    format = new Intl.DateTimeFormat(locale, LOCALE_DATE_TIME);
+    dateTimeFormats.set(locale, format);
+  }
+  return format.format(date);
 }

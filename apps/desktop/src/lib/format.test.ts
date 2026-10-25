@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatCount, formatLocalDateTime, formatRelativeTime } from "./format";
+import {
+  formatBytes,
+  formatCount,
+  formatLocalDateTime,
+  formatLocaleDateTime,
+  formatRelativeTime,
+} from "./format";
 
 describe("format", () => {
   it("formats byte sizes with the largest fitting unit", () => {
@@ -27,5 +33,14 @@ describe("format", () => {
     const hours = String(Math.trunc(Math.abs(offset) / 60)).padStart(2, "0");
     const minutes = String(Math.abs(offset) % 60).padStart(2, "0");
     expect(formatLocalDateTime(date)).toBe(`2024-03-01 14:05:09.120 ${sign}${hours}:${minutes}`);
+  });
+});
+
+describe("formatLocaleDateTime", () => {
+  it("writes what toLocaleString writes, in each locale", () => {
+    const date = new Date(Date.UTC(2026, 9, 25, 14, 5, 9));
+    for (const locale of ["en", "it", undefined]) {
+      expect(formatLocaleDateTime(date, locale)).toBe(date.toLocaleString(locale));
+    }
   });
 });
