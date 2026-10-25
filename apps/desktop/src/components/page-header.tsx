@@ -16,7 +16,7 @@ export function PageHeader({ icon: Icon, title, subtitle, children }: PageHeader
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4">
       <Icon className="size-4 shrink-0 text-muted-foreground" />
-      <div className="flex min-w-0 items-baseline gap-2">
+      <div className="flex min-w-0 flex-1 items-baseline gap-2">
         {/* The title keeps its width; the context gives way first. */}
         <h1 className="max-w-[70%] shrink-0 truncate font-semibold text-base">{title}</h1>
         {subtitle && (
