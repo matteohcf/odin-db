@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addFilterCondition, nextSort, simpleSort, sortText } from "./query-edits";
+import { addFilterCondition, nextSort, simpleSort, sortText, valueCondition } from "./query-edits";
 
 describe("simpleSort", () => {
   it("reads field sorts in any quoting", () => {
@@ -70,5 +70,19 @@ describe("addFilterCondition", () => {
     expect(addFilterCondition("{ age: { $gt: 30 } }", "age", "45")).toBe(
       "{ $and: [{ age: { $gt: 30 } }, { age: 45 }] }",
     );
+  });
+});
+
+describe("valueCondition", () => {
+  it("compares the value in mongosh syntax", () => {
+    expect(valueCondition("pro")).toBe('"pro"');
+    expect(valueCondition({ $numberInt: "3" }, "gt")).toBe("{ $gt: 3 }");
+    expect(valueCondition({ $date: { $numberLong: "0" } }, "lt")).toContain("$lt: ISODate(");
+    expect(valueCondition(null, "ne")).toBe("{ $ne: null }");
+  });
+
+  it("treats a missing field as an existence check", () => {
+    expect(valueCondition(undefined)).toBe("{ $exists: false }");
+    expect(valueCondition(undefined, "ne")).toBe("{ $exists: true }");
   });
 });

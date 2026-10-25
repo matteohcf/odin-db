@@ -1,3 +1,6 @@
+import type { JsonValue } from "@odin-db/bindings";
+import { toShellSyntax } from "@/lib/shell-syntax";
+
 export interface FieldSort {
   field: string;
   direction: 1 | -1;
@@ -68,6 +71,23 @@ export function addFilterCondition(filter: string, field: string, value: string)
   const mentioned = new RegExp(`(^|[{,\\s])["']?${escapeRegExp(field)}["']?\\s*:`).test(body);
   if (mentioned) return `{ $and: [{ ${body} }, { ${condition} }] }`;
   return `{ ${body}, ${condition} }`;
+}
+
+/**
+ * The condition on a cell's value for `addFilterCondition`: equal, different,
+ * greater or less. `undefined` means the document has no such field.
+ */
+export function valueCondition(
+  value: JsonValue | undefined,
+  how: "eq" | "ne" | "gt" | "lt" = "eq",
+): string {
+  const literal = value === undefined ? null : toShellSyntax(value, 0);
+  return {
+    eq: literal ?? "{ $exists: false }",
+    ne: literal === null ? "{ $exists: true }" : `{ $ne: ${literal} }`,
+    gt: `{ $gt: ${literal} }`,
+    lt: `{ $lt: ${literal} }`,
+  }[how];
 }
 
 function escapeRegExp(text: string): string {

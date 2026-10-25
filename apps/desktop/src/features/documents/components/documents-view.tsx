@@ -9,7 +9,6 @@ import type {
 } from "@odin-db/bindings";
 import { commands } from "@odin-db/bindings";
 import { Button } from "@odin-db/ui/components/button";
-import { ClipboardPaste, Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -43,7 +42,13 @@ import { useGridFsActions } from "../hooks/use-gridfs-actions";
 import { useUndo } from "../hooks/use-undo";
 import { parseDocuments } from "../lib/clipboard-documents";
 import { suggestIndexKeys } from "../lib/index-suggestion";
-import { addFilterCondition, nextSort, simpleSort, sortText } from "../lib/query-edits";
+import {
+  addFilterCondition,
+  nextSort,
+  simpleSort,
+  sortText,
+  valueCondition,
+} from "../lib/query-edits";
 import {
   emptyQueryForm,
   type FindQuery,
@@ -59,6 +64,7 @@ import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DistinctValuesDialog } from "./distinct-values-dialog";
 import { DocumentsActions } from "./documents-actions";
 import { EditFieldDialog } from "./edit-field-dialog";
+import { NoDocuments } from "./no-documents";
 import { PasteDocumentsDialog } from "./paste-documents-dialog";
 import { QueryBar } from "./query-bar";
 import { SqlDialog } from "./sql-dialog";
@@ -349,8 +355,6 @@ export function DocumentsView({
     refresh(true);
   }
 
-  const hasFilter = form.filter.trim() !== "";
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <QueryBar
@@ -397,16 +401,11 @@ export function DocumentsView({
             }),
           onSortBy: (field, direction) =>
             void runForm({ ...form, sort: sortText([{ field, direction }]) }),
-          onFilterBy: (field, value, how = "eq") => {
-            const literal = value === undefined ? null : toShellSyntax(value, 0);
-            const condition = {
-              eq: literal ?? "{ $exists: false }",
-              ne: literal === null ? "{ $exists: true }" : `{ $ne: ${literal} }`,
-              gt: `{ $gt: ${literal} }`,
-              lt: `{ $lt: ${literal} }`,
-            }[how];
-            void runForm({ ...form, filter: addFilterCondition(form.filter, field, condition) });
-          },
+          onFilterBy: (field, value, how) =>
+            void runForm({
+              ...form,
+              filter: addFilterCondition(form.filter, field, valueCondition(value, how)),
+            }),
           onDistinct: (field) => void openDistinct(field),
           onChangeField: editable
             ? (field, kind) =>
@@ -419,37 +418,15 @@ export function DocumentsView({
         selectedIndex={selectedIndex}
         onSelect={setSelectedIndex}
         empty={
-          <>
-            <p>
-              {hasFilter
-                ? t("results.empty")
-                : isView
-                  ? t("results.emptyView")
-                  : t("results.emptyCollection")}
-            </p>
-            {hasFilter ? (
-              <Button size="sm" variant="outline" onClick={() => void runForm(emptyQueryForm)}>
-                {t("results.clearFilter")}
-              </Button>
-            ) : (
-              editable && (
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button size="sm" onClick={() => openInsert()}>
-                    <Plus />
-                    {t("insert")}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => void pasteDocuments()}>
-                    <ClipboardPaste />
-                    {t("paste.menu")}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setTransfer("import")}>
-                    <Upload />
-                    {t("menu.import", { ns: "transfer" })}
-                  </Button>
-                </div>
-              )
-            )}
-          </>
+          <NoDocuments
+            filtered={form.filter.trim() !== ""}
+            isView={isView}
+            editable={editable}
+            onClearFilter={() => void runForm(emptyQueryForm)}
+            onInsert={() => openInsert()}
+            onPaste={() => void pasteDocuments()}
+            onImport={() => setTransfer("import")}
+          />
         }
         actions={{
           openMode: editable ? "edit" : "view",
