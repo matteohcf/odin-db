@@ -1,6 +1,6 @@
 //! Credentials live only in the OS keyring (ADR-0016). Secrets never appear in logs.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::sync::{Mutex, PoisonError};
 
@@ -53,7 +53,7 @@ pub trait SecretStore: Send + Sync {
 ///
 /// Every secret lives in one keychain item, read once and then kept in memory: macOS asks the
 /// user for each item an app reads, so one item per password meant one prompt per connection,
-/// again on every read. Items from older versions (one per profile) move in when first read.
+/// again on every read. Items from older versions (one per profile) are copied in when first read.
 pub type KeyringStore = VaultStore<KeychainItems>;
 
 /// Keychain items by account name, under odin-db's service.
@@ -103,6 +103,8 @@ const VAULT: &str = "vault";
 pub struct VaultStore<S> {
     items: S,
     cache: Mutex<Option<HashMap<String, String>>>,
+    /// Accounts already looked up in their own, older item this session.
+    looked_up: Mutex<HashSet<String>>,
 }
 
 impl<S: ItemStore> VaultStore<S> {
@@ -111,6 +113,7 @@ impl<S: ItemStore> VaultStore<S> {
         Self {
             items,
             cache: Mutex::new(None),
+            looked_up: Mutex::new(HashSet::new()),
         }
     }
 
@@ -144,7 +147,19 @@ impl<S: ItemStore> VaultStore<S> {
             if let Some(value) = vault.get(account) {
                 return Ok((Some(Secret::new(value.clone())), false));
             }
-            // A secret saved by an older version, in its own item: move it into the vault.
+            // A secret saved by an older version, in its own item, is copied into the vault. It
+            // is looked up once per session: every keychain call can be a macOS prompt, and the
+            // profile list reads every profile's secrets on each refresh. The old item is left
+            // alone: "Always Allow" does not cover deleting another build's item, so macOS would
+            // ask again on every attempt.
+            let first = self
+                .looked_up
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .insert(account.to_owned());
+            if !first {
+                return Ok((None, false));
+            }
             match self.items.read(account)? {
                 Some(value) => {
                     vault.insert(account.to_owned(), value.clone());
@@ -152,12 +167,6 @@ impl<S: ItemStore> VaultStore<S> {
                 }
                 None => Ok((None, false)),
             }
-        })
-        .and_then(|found| {
-            if found.is_some() {
-                self.items.delete(account)?;
-            }
-            Ok(found)
         })
     }
 
@@ -256,16 +265,22 @@ impl SecretStore for MemoryStore {
 mod tests {
     use super::*;
 
-    /// Items in memory, counting reads the way macOS counts keychain prompts.
+    /// Items in memory, counting reads and deletes the way macOS counts keychain prompts.
     #[derive(Default)]
     struct CountingItems {
         items: Mutex<HashMap<String, String>>,
-        reads: Mutex<usize>,
+        calls: Mutex<usize>,
+    }
+
+    impl CountingItems {
+        fn calls(&self) -> usize {
+            *self.calls.lock().expect("lock")
+        }
     }
 
     impl ItemStore for &CountingItems {
         fn read(&self, account: &str) -> Result<Option<String>, CoreError> {
-            *self.reads.lock().expect("lock") += 1;
+            *self.calls.lock().expect("lock") += 1;
             Ok(self.items.lock().expect("lock").get(account).cloned())
         }
         fn write(&self, account: &str, value: &str) -> Result<(), CoreError> {
@@ -276,6 +291,7 @@ mod tests {
             Ok(())
         }
         fn delete(&self, account: &str) -> Result<(), CoreError> {
+            *self.calls.lock().expect("lock") += 1;
             self.items.lock().expect("lock").remove(account);
             Ok(())
         }
@@ -292,7 +308,7 @@ mod tests {
                 .expect("set");
         }
         let fresh = VaultStore::new(&items);
-        *items.reads.lock().expect("lock") = 0;
+        *items.calls.lock().expect("lock") = 0;
         for profile in &profiles {
             assert_eq!(
                 fresh.password(*profile).expect("read").map(|s| s.0),
@@ -303,26 +319,41 @@ mod tests {
                 Some("pw".into())
             );
         }
-        assert_eq!(*items.reads.lock().expect("lock"), 1);
+        assert_eq!(items.calls(), 1);
     }
 
     #[test]
-    fn moves_secrets_of_older_versions_into_the_vault() {
+    fn looks_for_an_older_item_once_per_session() {
+        let items = CountingItems::default();
+        let store = VaultStore::new(&items);
+        let profile = ProfileId::new();
+        for _ in 0..5 {
+            assert!(store.password(profile).expect("read").is_none());
+        }
+        // The vault, then the older item once.
+        assert_eq!(items.calls(), 2);
+    }
+
+    #[test]
+    fn an_older_item_is_read_once_and_never_deleted() {
         let items = CountingItems::default();
         let profile = ProfileId::new();
-        (&items)
-            .write(&format!("profile:{profile}:password"), "old")
-            .expect("legacy");
+        let old = format!("profile:{profile}:password");
+        (&items).write(&old, "old").expect("legacy");
         let store = VaultStore::new(&items);
-        assert_eq!(
-            store.password(profile).expect("read").map(|s| s.0),
-            Some("old".into())
-        );
-        let stored = items.items.lock().expect("lock").clone();
-        assert!(!stored.contains_key(&format!("profile:{profile}:password")));
-        assert!(stored.get("vault").is_some_and(|json| json.contains("old")));
-        store.delete_password(profile).expect("delete");
-        assert!(store.password(profile).expect("gone").is_none());
+        for _ in 0..5 {
+            assert_eq!(
+                store.password(profile).expect("read").map(|s| s.0),
+                Some("old".into())
+            );
+        }
+        // The vault and the older item, nothing else: deleting it would be one more prompt.
+        assert_eq!(items.calls(), 2);
+        assert!(items.items.lock().expect("lock").contains_key(&old));
+        let fresh = VaultStore::new(&items);
+        *items.calls.lock().expect("lock") = 0;
+        assert!(fresh.password(profile).expect("next session").is_some());
+        assert_eq!(items.calls(), 1);
     }
 
     #[test]
