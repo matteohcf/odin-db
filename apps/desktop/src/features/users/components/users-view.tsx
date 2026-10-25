@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@odin-db/ui/components/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Loader2, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
+import { KeyRound, Loader2, Pencil, Plus, Search, Trash2, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ import { InlineError } from "@/components/inline-error";
 import { PageHeader } from "@/components/page-header";
 import { call, errorMessage } from "@/lib/ipc";
 import { generatePassword } from "../lib/password";
+import { userMatches } from "../lib/user-filter";
 import { CustomRolesSection } from "./custom-roles-section";
 import { RoleBadge } from "./role-badge";
 import { UserDialog } from "./user-dialog";
@@ -59,6 +60,8 @@ export function UsersView({
   const key = ["users", connection.id];
   const users = useQuery({ queryKey: key, queryFn: () => call(commands.listUsers(connection.id)) });
   const [editing, setEditing] = useState<Editing | null>(null);
+  const [filter, setFilter] = useState("");
+  const shown = users.data?.filter((user) => userMatches(user, filter)) ?? [];
   const refresh = () => void queryClient.invalidateQueries({ queryKey: key });
   const writable = !connection.readOnly;
 
@@ -85,7 +88,21 @@ export function UsersView({
       </PageHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto p-4">
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium text-sm">{t("usersTitle")}</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-medium text-sm">{t("usersTitle")}</h2>
+            {(users.data?.length ?? 0) > 0 && (
+              <div className="relative w-56">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  aria-label={t("filter")}
+                  placeholder={t("filter")}
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+            )}
+          </div>
           {users.isPending ? (
             <p className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="size-4 animate-spin" />
@@ -111,7 +128,17 @@ export function UsersView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.data.map((user) => (
+                  {shown.length === 0 && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell
+                        colSpan={4}
+                        className="py-6 text-center text-muted-foreground text-xs"
+                      >
+                        {t("noMatch", { filter: filter.trim() })}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {shown.map((user) => (
                     <TableRow key={`${user.db}.${user.user}`} className="group align-top">
                       <TableCell className="py-2.5 font-medium selectable">{user.user}</TableCell>
                       <TableCell className="py-2.5 font-mono text-muted-foreground text-xs">

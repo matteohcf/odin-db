@@ -8,6 +8,8 @@
   "disconnected": "{{name}} is not connected.",
   "connect": "Connect",
   "usersTitle": "Users",
+  "filter": "Filter users",
+  "noMatch": "No user matches “{{filter}}”.",
   "customRoles": {
     "title": "Custom roles",
     "new": "New role",

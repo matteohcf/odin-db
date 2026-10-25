@@ -48,6 +48,19 @@ await check("users are listed with their roles", async () => {
     .waitFor();
 });
 
+await check("the filter narrows users by name, database or role", async () => {
+  const filter = page.getByRole("textbox", { name: "Filter users" });
+  await filter.fill("readwrite");
+  await page.getByRole("row", { name: /shop-api/ }).waitFor();
+  await page.getByRole("row", { name: /^admin/ }).waitFor({ state: "detached" });
+  await filter.fill("nobody");
+  await page.getByText("No user matches “nobody”.").waitFor();
+  await page.waitForTimeout(100);
+  await shot("05-filter");
+  await filter.fill("");
+  await page.getByRole("row", { name: /^admin/ }).waitFor();
+});
+
 await check("create a user with a generated password and roles", async () => {
   await page.getByRole("button", { name: "New user" }).click();
   const dialog = page.getByRole("dialog", { name: "New user" });

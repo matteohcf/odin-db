@@ -8,6 +8,8 @@
   "disconnected": "{{name}} non è connesso.",
   "connect": "Connetti",
   "usersTitle": "Utenti",
+  "filter": "Filtra gli utenti",
+  "noMatch": "Nessun utente corrisponde a “{{filter}}”.",
   "customRoles": {
     "title": "Ruoli personalizzati",
     "new": "Nuovo ruolo",
