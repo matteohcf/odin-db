@@ -217,7 +217,7 @@ function CollectionWorkspace({
               <TabsTrigger
                 key={value}
                 value={value}
-                aria-label={t(`views.${value}`)}
+                // Names the tab when narrow windows hide its text; otherwise the text does.
                 title={t(`views.${value}`)}
                 // shadcn's 60% foreground misses WCAG contrast on the muted list.
                 className="group px-2.5 text-muted-foreground text-xs"
