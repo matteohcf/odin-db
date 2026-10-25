@@ -64,11 +64,15 @@ export function pipelineToText(stages: readonly Stage[]): string {
  * `db.<collection>.aggregate([...])` call as copied from a shell or another tool.
  */
 export async function pipelineFromText(text: string): Promise<Omit<Stage, "id">[]> {
-  let source = text.trim().replace(/;$/, "");
+  const source = text.trim().replace(/;$/, "");
   const call = /\.aggregate\s*\(([\s\S]*)\)$/.exec(source);
-  if (call?.[1] !== undefined) source = call[1].trim();
-  const parsed = await parseShellDocument(`{ pipeline: ${source}\n}`);
-  const pipeline = isObject(parsed) ? parsed.pipeline : undefined;
+  // A call's arguments are read as a list, so options after the pipeline (allowDiskUse…) parse;
+  // they are not stages, so they are left out.
+  const parsed = await parseShellDocument(
+    call?.[1] !== undefined ? `{ args: [${call[1]}\n] }` : `{ pipeline: ${source}\n}`,
+  );
+  const args = isObject(parsed) && Array.isArray(parsed.args) ? parsed.args : undefined;
+  const pipeline = args ? args[0] : isObject(parsed) ? parsed.pipeline : undefined;
   const list = Array.isArray(pipeline) ? pipeline : [pipeline ?? null];
   return list.map((stage, index) => {
     const entries = isObject(stage) ? Object.entries(stage) : [];

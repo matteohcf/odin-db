@@ -68,6 +68,10 @@ describe("pipeline", () => {
     ]);
     const call = await pipelineFromText('db.orders.aggregate([{ $unwind: "$items" }]);');
     expect(call).toEqual([{ operator: "$unwind", body: '"$items"', enabled: true }]);
+    const withOptions = await pipelineFromText(
+      "db.orders.aggregate([{ $match: { a: 1 } }, { $limit: 5 }], { allowDiskUse: true })",
+    );
+    expect(withOptions.map((s) => s.operator)).toEqual(["$match", "$limit"]);
     expect(await pipelineFromText("{ $count: 'n' }")).toHaveLength(1);
     await expect(pipelineFromText("[{ status: 1 }]")).rejects.toThrow("stage 1");
     await expect(pipelineFromText("not a pipeline")).rejects.toThrow();
