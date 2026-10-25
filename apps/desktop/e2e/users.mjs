@@ -93,6 +93,67 @@ await check("edit roles, change the password and delete the user", async () => {
   await page.getByRole("row", { name: /reporter/ }).waitFor({ state: "detached" });
 });
 
+await check("custom roles are listed, created, edited and deleted", async () => {
+  const writer = page.getByRole("row", { name: /reportWriter/ });
+  await writer.getByText("analytics.reports").waitFor();
+  await writer.getByText("find, insert, update").waitFor();
+  await writer.getByText("@shop").waitFor();
+
+  await page.getByRole("button", { name: "New role" }).click();
+  const dialog = page.getByRole("dialog", { name: "New role" });
+  await dialog.getByLabel("Role name").fill("ordersReader");
+  await dialog.getByLabel("Database", { exact: true }).fill("shop");
+  await dialog.getByLabel("Database of privilege 1").fill("shop");
+  await dialog.getByLabel("Collection of privilege 1").fill("orders");
+  const actions = dialog.getByLabel("Actions of privilege 1");
+  await actions.fill("fin");
+  await page.getByRole("option", { name: "find", exact: true }).click();
+  await actions.fill("listIndexes");
+  await page.keyboard.press("Enter");
+  await dialog.getByRole("button", { name: "Add a privilege" }).click();
+  await dialog.getByRole("combobox", { name: "Resource of privilege 2" }).click();
+  await page.getByRole("option", { name: "Cluster" }).click();
+  await dialog.getByLabel("Actions of privilege 2").fill("serverStatus,");
+  await dialog.getByRole("button", { name: "Add a role" }).click();
+  await dialog.getByLabel("Role 1", { exact: true }).fill("read");
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(150);
+  await shot("03-role");
+  await dialog.getByRole("button", { name: "Create role" }).click();
+  await page.getByText("Role ordersReader created.").waitFor();
+  const row = page.getByRole("row", { name: /ordersReader/ });
+  await row.getByText("shop.orders").waitFor();
+  await row.getByText("find, listIndexes").waitFor();
+  await row.getByText("serverStatus").waitFor();
+  await page.waitForTimeout(150);
+  await shot("04-roles");
+
+  await row.hover();
+  await row.getByRole("button", { name: "Edit the role ordersReader" }).click();
+  const edit = page.getByRole("dialog", { name: "Role ordersReader" });
+  await edit.getByRole("button", { name: "Remove listIndexes" }).click();
+  await edit.getByRole("button", { name: "Remove privilege 2" }).click();
+  await edit.getByRole("button", { name: "Save role" }).click();
+  await page.getByText("Role ordersReader saved.").waitFor();
+  await row.getByText("serverStatus").waitFor({ state: "detached" });
+  await row.getByText("find", { exact: true }).waitFor();
+
+  // A custom role can be granted to users.
+  await page.getByRole("button", { name: "New user" }).click();
+  const user = page.getByRole("dialog", { name: "New user" });
+  await user.getByLabel("Authentication database").fill("shop");
+  await user.getByLabel("Role 1", { exact: true }).fill("orders");
+  await page.getByRole("option", { name: "ordersReader" }).waitFor();
+  await page.keyboard.press("Escape");
+  await user.getByRole("button", { name: "Cancel" }).click();
+
+  await row.hover();
+  await row.getByRole("button", { name: "Delete the role ordersReader" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete role" }).click();
+  await page.getByText("Role ordersReader deleted.").waitFor();
+  await row.waitFor({ state: "detached" });
+});
+
 await check("read-only connections cannot change users", async () => {
   await aside()
     .getByRole("button", { name: /^Production \(Atlas\)/ })
@@ -111,6 +172,13 @@ await check("read-only connections cannot change users", async () => {
       .count()
   )
     throw new Error("new user offered");
+  if (
+    await page
+      .locator("[role=tabpanel]:not([hidden])")
+      .getByRole("button", { name: "New role" })
+      .count()
+  )
+    throw new Error("new role offered");
 });
 
 console.log(results.join("\n"));

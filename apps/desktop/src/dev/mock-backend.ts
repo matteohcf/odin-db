@@ -782,6 +782,33 @@ const mockUsers = [
   },
 ];
 
+type MockPrivilege = {
+  resource:
+    | { kind: "namespace"; db: string; collection: string }
+    | { kind: "cluster" }
+    | { kind: "any" };
+  actions: string[];
+};
+const mockRoles: {
+  role: string;
+  db: string;
+  privileges: MockPrivilege[];
+  roles: { role: string; db: string }[];
+}[] = [
+  {
+    role: "reportWriter",
+    db: "admin",
+    privileges: [
+      {
+        resource: { kind: "namespace", db: "analytics", collection: "reports" },
+        actions: ["find", "insert", "update"],
+      },
+      { resource: { kind: "cluster" }, actions: ["serverStatus"] },
+    ],
+    roles: [{ role: "read", db: "shop" }],
+  },
+];
+
 const mockOps = [
   {
     opid: { $numberInt: "4721" },
@@ -2542,10 +2569,56 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     serverOf(id("connectionId", args));
     return mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
   },
-  list_roles: () =>
-    ["read", "readWrite", "dbAdmin", "dbOwner", "userAdmin", "readAnyDatabase", "root"].map(
-      (role) => ({ role, db: "admin", builtIn: true }),
+  list_roles: (args) => [
+    ...["read", "readWrite", "dbAdmin", "dbOwner", "userAdmin", "readAnyDatabase", "root"].map(
+      (role) => ({ role, db: String(args.database), builtIn: true }),
     ),
+    ...mockRoles
+      .filter((role) => role.db === args.database)
+      .map((role) => ({ role: role.role, db: role.db, builtIn: false })),
+  ],
+  list_custom_roles: (args) => {
+    serverOf(id("connectionId", args));
+    return structuredClone(mockRoles);
+  },
+  create_role: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const name = String(args.name).trim();
+    if (!name) fail("validation", "enter a role name");
+    if (mockRoles.some((r) => r.role === name && r.db === args.database))
+      fail("database", `Role "${name}@${String(args.database)}" already exists`);
+    const privileges = args.privileges as MockPrivilege[];
+    if (privileges.some((p) => p.actions.every((a) => !a.trim())))
+      fail("validation", "every privilege needs at least one action");
+    mockRoles.push({
+      role: name,
+      db: String(args.database),
+      privileges,
+      roles: args.roles as { role: string; db: string }[],
+    });
+    return null;
+  },
+  update_role: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const role =
+      mockRoles.find((r) => r.role === args.name && r.db === args.database) ??
+      fail("database", `Role "${String(args.name)}" not found`);
+    const privileges = args.privileges as MockPrivilege[];
+    if (privileges.some((p) => p.actions.every((a) => !a.trim())))
+      fail("validation", "every privilege needs at least one action");
+    role.privileges = privileges;
+    role.roles = args.roles as { role: string; db: string }[];
+    return null;
+  },
+  drop_role: (args) => {
+    const { connection } = serverOf(id("connectionId", args));
+    ensureWritable(connection);
+    const index = mockRoles.findIndex((r) => r.role === args.name && r.db === args.database);
+    if (index >= 0) mockRoles.splice(index, 1);
+    return null;
+  },
   create_user: (args) => {
     const { connection } = serverOf(id("connectionId", args));
     ensureWritable(connection);

@@ -7,6 +7,59 @@
   "none": "Nessun utente: il server accetta connessioni senza autenticazione.",
   "disconnected": "{{name}} non è connesso.",
   "connect": "Connetti",
+  "usersTitle": "Utenti",
+  "customRoles": {
+    "title": "Ruoli personalizzati",
+    "new": "Nuovo ruolo",
+    "failed": "Impossibile elencare i ruoli: {{message}}",
+    "none": "Nessun ruolo personalizzato. I ruoli predefiniti bastano quasi sempre; un ruolo personalizzato concede esattamente le azioni che scegli.",
+    "role": "Ruolo",
+    "privileges": "Privilegi",
+    "inherits": "Eredita",
+    "noPrivileges": "Solo quelli ereditati",
+    "edit": "Modifica il ruolo {{name}}",
+    "drop": "Elimina il ruolo {{name}}",
+    "dropTitle": "Eliminare il ruolo {{name}}?",
+    "dropBody": "Gli utenti che lo hanno perdono i suoi privilegi. L'operazione non si può annullare.",
+    "dropConfirm": "Elimina ruolo",
+    "dropped": "Ruolo {{name}} eliminato."
+  },
+  "roleDialog": {
+    "createTitle": "Nuovo ruolo",
+    "createDescription": "Un ruolo su admin può valere per tutti i database e per il cluster; su un altro database, solo per quel database.",
+    "editTitle": "Ruolo {{name}}",
+    "editDescription": "I privilegi e i ruoli ereditati sostituiscono quelli attuali. Il ruolo appartiene a {{db}}.",
+    "name": "Nome del ruolo",
+    "database": "Database",
+    "privileges": "Privilegi",
+    "privilegesHint": "Lascia vuoti database o collezione per indicarli tutti. I privilegi senza azioni vengono ignorati.",
+    "inherits": "Eredita da",
+    "create": "Crea ruolo",
+    "save": "Salva ruolo",
+    "created": "Ruolo {{name}} creato.",
+    "saved": "Ruolo {{name}} salvato."
+  },
+  "privileges": {
+    "resource": "Risorsa del privilegio {{number}}",
+    "db": "Database del privilegio {{number}}",
+    "collection": "Collezione del privilegio {{number}}",
+    "actions": "Azioni del privilegio {{number}}",
+    "remove": "Rimuovi il privilegio {{number}}",
+    "add": "Aggiungi un privilegio",
+    "removeAction": "Rimuovi {{action}}",
+    "actionsPlaceholder": "find, insert…",
+    "anyDb": "tutti i database",
+    "anyCollection": "tutte le collezioni",
+    "kind": {
+      "namespace": "Collezione",
+      "cluster": "Cluster",
+      "any": "Qualsiasi risorsa"
+    },
+    "hint": {
+      "cluster": "Azioni sull'intero server, come serverStatus.",
+      "any": "Tutte le risorse del deployment."
+    }
+  },
   "table": {
     "user": "Utente",
     "database": "Database",

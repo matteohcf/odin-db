@@ -11,6 +11,8 @@ type SuggestInputProps = Omit<ComponentProps<typeof Input>, "value" | "onChange"
   suggestions: readonly string[];
   /** Suggestions in the code font, for field paths, names and the like. */
   mono?: boolean;
+  /** Called instead of `onValueChange` when a suggestion is picked, e.g. to add it to a list. */
+  onPick?: (suggestion: string) => void;
 };
 
 /**
@@ -22,6 +24,7 @@ export function SuggestInput({
   onValueChange,
   suggestions,
   mono = false,
+  onPick,
   className,
   onKeyDown,
   onFocus,
@@ -42,7 +45,8 @@ export function SuggestInput({
   const visible = open && shown.length > 0;
 
   function pick(suggestion: string) {
-    onValueChange(suggestion);
+    if (onPick) onPick(suggestion);
+    else onValueChange(suggestion);
     setOpen(false);
   }
 

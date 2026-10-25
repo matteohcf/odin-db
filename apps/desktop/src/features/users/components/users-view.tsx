@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@odin-db/ui/components/alert-dialog";
-import { Badge } from "@odin-db/ui/components/badge";
 import { Button } from "@odin-db/ui/components/button";
 import {
   Dialog,
@@ -29,16 +28,7 @@ import {
   TableRow,
 } from "@odin-db/ui/components/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CircleAlert,
-  KeyRound,
-  Loader2,
-  Pencil,
-  Plus,
-  Trash2,
-  UserRound,
-  UsersRound,
-} from "lucide-react";
+import { KeyRound, Loader2, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -46,6 +36,8 @@ import { InlineError } from "@/components/inline-error";
 import { PageHeader } from "@/components/page-header";
 import { call, errorMessage } from "@/lib/ipc";
 import { generatePassword } from "../lib/password";
+import { CustomRolesSection } from "./custom-roles-section";
+import { RoleBadge } from "./role-badge";
 import { UserDialog } from "./user-dialog";
 
 type Editing =
@@ -91,101 +83,94 @@ export function UsersView({
           </Button>
         )}
       </PageHeader>
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        {users.isPending ? (
-          <p className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="size-4 animate-spin" />
-            {t("loading")}
-          </p>
-        ) : users.error ? (
-          <p role="alert" className="flex items-start gap-2 text-destructive text-sm selectable">
-            <CircleAlert className="mt-0.5 size-4 shrink-0" />
-            {t("failed", { message: errorMessage(users.error) })}
-          </p>
-        ) : users.data.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-lg border p-8 text-center text-muted-foreground text-sm">
-            <UserRound className="size-5" />
-            {t("none")}
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border">
-            <Table className="text-sm">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>{t("table.user")}</TableHead>
-                  <TableHead>{t("table.database")}</TableHead>
-                  <TableHead>{t("table.roles")}</TableHead>
-                  <TableHead>
-                    <span className="sr-only">{t("columns.actions")}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.data.map((user) => (
-                  <TableRow key={`${user.db}.${user.user}`} className="group align-top">
-                    <TableCell className="py-2.5 font-medium selectable">{user.user}</TableCell>
-                    <TableCell className="py-2.5 font-mono text-muted-foreground text-xs">
-                      {user.db}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.roles.length === 0 ? (
-                          <span className="text-muted-foreground text-xs">
-                            {t("table.noRoles")}
-                          </span>
-                        ) : (
-                          user.roles.map((role) => (
-                            <Badge
-                              key={`${role.role}@${role.db}`}
-                              variant="secondary"
-                              className="font-mono text-[11px]"
-                            >
-                              {role.role}
-                              <span className="text-muted-foreground">@{role.db}</span>
-                            </Badge>
-                          ))
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-2 py-1.5 text-right">
-                      {writable && (
-                        <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            aria-label={t("actions.roles", { name: user.user })}
-                            onClick={() => setEditing({ kind: "roles", user })}
-                          >
-                            <Pencil />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            aria-label={t("actions.password", { name: user.user })}
-                            onClick={() => setEditing({ kind: "password", user })}
-                          >
-                            <KeyRound />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7 hover:text-destructive"
-                            aria-label={t("actions.drop", { name: user.user })}
-                            onClick={() => setEditing({ kind: "drop", user })}
-                          >
-                            <Trash2 />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto p-4">
+        <section className="flex flex-col gap-3">
+          <h2 className="font-medium text-sm">{t("usersTitle")}</h2>
+          {users.isPending ? (
+            <p className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Loader2 className="size-4 animate-spin" />
+              {t("loading")}
+            </p>
+          ) : users.error ? (
+            <InlineError>{t("failed", { message: errorMessage(users.error) })}</InlineError>
+          ) : users.data.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-xs">
+              {t("none")}
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-lg border">
+              <Table className="text-sm">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>{t("table.user")}</TableHead>
+                    <TableHead>{t("table.database")}</TableHead>
+                    <TableHead>{t("table.roles")}</TableHead>
+                    <TableHead>
+                      <span className="sr-only">{t("columns.actions")}</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {users.data.map((user) => (
+                    <TableRow key={`${user.db}.${user.user}`} className="group align-top">
+                      <TableCell className="py-2.5 font-medium selectable">{user.user}</TableCell>
+                      <TableCell className="py-2.5 font-mono text-muted-foreground text-xs">
+                        {user.db}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {user.roles.length === 0 ? (
+                            <span className="text-muted-foreground text-xs">
+                              {t("table.noRoles")}
+                            </span>
+                          ) : (
+                            user.roles.map((role) => (
+                              <RoleBadge key={`${role.role}@${role.db}`} role={role} />
+                            ))
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-1.5 text-right">
+                        {writable && (
+                          <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7"
+                              aria-label={t("actions.roles", { name: user.user })}
+                              onClick={() => setEditing({ kind: "roles", user })}
+                            >
+                              <Pencil />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7"
+                              aria-label={t("actions.password", { name: user.user })}
+                              onClick={() => setEditing({ kind: "password", user })}
+                            >
+                              <KeyRound />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 hover:text-destructive"
+                              aria-label={t("actions.drop", { name: user.user })}
+                              onClick={() => setEditing({ kind: "drop", user })}
+                            >
+                              <Trash2 />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </section>
+        <CustomRolesSection connection={connection} />
       </div>
 
       {(editing?.kind === "create" || editing?.kind === "roles") && (

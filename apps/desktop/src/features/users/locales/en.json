@@ -7,6 +7,59 @@
   "none": "No users yet: the server accepts connections without authentication.",
   "disconnected": "{{name}} is not connected.",
   "connect": "Connect",
+  "usersTitle": "Users",
+  "customRoles": {
+    "title": "Custom roles",
+    "new": "New role",
+    "failed": "Cannot list roles: {{message}}",
+    "none": "No custom roles. Built-in roles cover most needs; a custom role grants exactly the actions you choose.",
+    "role": "Role",
+    "privileges": "Privileges",
+    "inherits": "Inherits",
+    "noPrivileges": "Only inherited ones",
+    "edit": "Edit the role {{name}}",
+    "drop": "Delete the role {{name}}",
+    "dropTitle": "Delete the role {{name}}?",
+    "dropBody": "Users that have it lose its privileges. This cannot be undone.",
+    "dropConfirm": "Delete role",
+    "dropped": "Role {{name}} deleted."
+  },
+  "roleDialog": {
+    "createTitle": "New role",
+    "createDescription": "A role on admin can apply to every database and the cluster; on another database, only to that database.",
+    "editTitle": "Role {{name}}",
+    "editDescription": "The privileges and inherited roles replace the current ones. The role belongs to {{db}}.",
+    "name": "Role name",
+    "database": "Database",
+    "privileges": "Privileges",
+    "privilegesHint": "Leave the database or collection empty for every one. Privileges without actions are left out.",
+    "inherits": "Inherits from",
+    "create": "Create role",
+    "save": "Save role",
+    "created": "Role {{name}} created.",
+    "saved": "Role {{name}} saved."
+  },
+  "privileges": {
+    "resource": "Resource of privilege {{number}}",
+    "db": "Database of privilege {{number}}",
+    "collection": "Collection of privilege {{number}}",
+    "actions": "Actions of privilege {{number}}",
+    "remove": "Remove privilege {{number}}",
+    "add": "Add a privilege",
+    "removeAction": "Remove {{action}}",
+    "actionsPlaceholder": "find, insert…",
+    "anyDb": "every database",
+    "anyCollection": "every collection",
+    "kind": {
+      "namespace": "Collection",
+      "cluster": "Cluster",
+      "any": "Any resource"
+    },
+    "hint": {
+      "cluster": "Server-wide actions, such as serverStatus.",
+      "any": "Every resource of the deployment."
+    }
+  },
   "table": {
     "user": "User",
     "database": "Database",
