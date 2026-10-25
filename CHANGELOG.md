@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/matteohcf/odin-db/compare/v1.5.0...v1.6.0) (2026-10-25)
+
+
+### Features
+
+* **desktop:** clearer live feed filters, with a check and a count per kind ([43b1190](https://github.com/matteohcf/odin-db/commit/43b1190e1bf523ac255c0910df80609fc0ff9c7b))
+* **desktop:** the sidebar lists every connection again, like Compass ([aa42852](https://github.com/matteohcf/odin-db/commit/aa428523d3c1b862202e2f40a238650a3970a153))
+
+
+### Bug Fixes
+
+* **desktop:** page titles use the free space instead of truncating ([7aeab9c](https://github.com/matteohcf/odin-db/commit/7aeab9cfb06e35e1ec2de18eedb04fce246be1e0))
+
 ## [1.5.0](https://github.com/matteohcf/odin-db/compare/v1.4.0...v1.5.0) (2026-10-25)
 
 
