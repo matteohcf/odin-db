@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/matteohcf/odin-db/compare/v1.6.0...v1.7.0) (2026-10-26)
+
+
+### Features
+
+* **desktop:** find in results with Mod+F; the filter moves to Mod+L ([3ad5e86](https://github.com/matteohcf/odin-db/commit/3ad5e868dff5d0052649cb6088de1b70ad76d136))
+
 ## [1.6.0](https://github.com/matteohcf/odin-db/compare/v1.5.0...v1.6.0) (2026-10-25)
 
 
