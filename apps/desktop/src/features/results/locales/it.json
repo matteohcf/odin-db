@@ -54,6 +54,16 @@
     "openLink": "Apri link",
     "copyFilter": "Copia {{field}} come filtro"
   },
+  "find": {
+    "label": "Trova nei risultati",
+    "placeholder": "Trova nei documenti caricati",
+    "count": "{{current, number}} di {{count, number}}",
+    "countCapped": "{{current, number}} di {{count, number}}+",
+    "none": "Nessun risultato",
+    "previous": "Risultato precedente",
+    "next": "Risultato successivo",
+    "close": "Chiudi la ricerca"
+  },
   "view": {
     "label": "Vista dei risultati",
     "table": "Tabella",

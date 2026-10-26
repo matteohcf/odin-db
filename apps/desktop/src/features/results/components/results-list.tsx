@@ -7,7 +7,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { type KeyboardEvent, useEffect, useId, useRef } from "react";
 import type { JsonObject } from "@/lib/ejson-display";
 import { DocumentCard } from "./document-card";
-import type { RowActions } from "./results-grid";
+import type { FindTarget, RowActions } from "./results-grid";
 import { RowMenuItems } from "./row-menu-items";
 
 /** Start fetching the next page this many documents before the end. */
@@ -23,7 +23,12 @@ interface ResultsListProps {
   onSelect: (index: number) => void;
   onLoadMore: () => void;
   actions: RowActions;
+  /** The current Find match: its document scrolled into view, its field marked. */
+  findCurrent?: FindTarget | null | undefined;
 }
+
+/** Frames to wait for a document scrolled to to render. */
+const RENDER_FRAMES = 10;
 
 /**
  * Documents as expandable trees, one card each. Cards have different heights,
@@ -38,6 +43,7 @@ export function ResultsList({
   onSelect,
   onLoadMore,
   actions,
+  findCurrent,
 }: ResultsListProps) {
   const listId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,6 +63,32 @@ export function ResultsList({
   useEffect(() => {
     if (hasMore && lastVisible >= rows.length - PREFETCH_ROWS) onLoadMore();
   }, [hasMore, lastVisible, rows.length, onLoadMore]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new match (`seq`) is the trigger.
+  useEffect(() => {
+    if (!findCurrent) return;
+    const { row, field } = findCurrent;
+    virtualizer.scrollToIndex(row, { align: "auto" });
+    // Cards are measured as they render: mark the field once the card is there, then bring
+    // the field itself into view (a long document may be taller than the list).
+    let frames = 0;
+    let frame = requestAnimationFrame(function mark() {
+      const list = scrollRef.current;
+      const card = list?.querySelector(`[data-index="${row}"]`);
+      if (!list || !card) {
+        if (++frames < RENDER_FRAMES) frame = requestAnimationFrame(mark);
+        return;
+      }
+      for (const old of list.querySelectorAll("[data-find-current]")) {
+        old.removeAttribute("data-find-current");
+      }
+      // Trees mark the field's line; JSON text marks the whole document.
+      const target = card.querySelector(`[data-path="${CSS.escape(field)}"]`) ?? card;
+      target.setAttribute("data-find-current", "");
+      target.scrollIntoView({ block: "nearest" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [findCurrent?.seq]);
 
   const selected = selectedIndex === null ? undefined : rows[selectedIndex];
 

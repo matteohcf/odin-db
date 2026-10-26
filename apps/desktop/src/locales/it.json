@@ -179,6 +179,7 @@
       "inlineEdit": "Modifica un valore in linea",
       "preview": "Anteprima del documento selezionato",
       "nextField": "Salva e modifica il valore successivo",
+      "find": "Trova nei risultati",
       "focusFilter": "Vai al filtro",
       "askAi": "Descrivi una query all'assistente AI",
       "goToTabN": "Vai alla scheda {{n}}",

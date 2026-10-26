@@ -7,7 +7,9 @@ export const SHORTCUTS = {
   previousTab: { key: "Tab", ctrl: true, shift: true },
   settings: { key: ",", mod: true },
   rerun: { key: "r", mod: true },
-  focusFilter: { key: "f", mod: true },
+  // Like a browser: Find in Page, over the loaded results; the filter takes the address bar's key.
+  find: { key: "f", mod: true },
+  focusFilter: { key: "l", mod: true },
   askAi: { key: "i", mod: true },
   // Like Studio 3T's Connection Manager: every saved connection, to pick one.
   connectionManager: { key: "o", mod: true },

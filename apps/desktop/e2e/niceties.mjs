@@ -45,9 +45,9 @@ await check("ids and dates tell when, on hover", async () => {
   if (!title?.includes("Created")) throw new Error(title ?? "no title");
 });
 
-await check("Cmd+F jumps to the filter of the visible tab", async () => {
+await check("Cmd+L jumps to the filter of the visible tab", async () => {
   await page.locator("tbody tr").nth(3).click();
-  await page.keyboard.press("Meta+f");
+  await page.keyboard.press("Meta+l");
   await page.keyboard.type('plan: "pro"');
   const filter = await page.getByRole("textbox", { name: "Filter" }).innerText();
   if (!filter.includes('plan: "pro"')) throw new Error(filter);

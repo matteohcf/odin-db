@@ -1,14 +1,27 @@
 import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
+import { useShortcut } from "@/hooks/use-shortcut";
+import { useFindHighlight } from "../hooks/use-find-highlight";
 import { useResultsState } from "../hooks/use-results";
+import { findMatches, matchKey, stepMatch } from "../lib/find";
 import { stepInto } from "../lib/nested";
 import type { ResultsController } from "../lib/results-controller";
 import { useResultsView } from "../store/results-view-store";
 import { DocumentPreview } from "./document-preview";
+import { FindBar } from "./find-bar";
 import { NestedPath } from "./nested-path";
-import { type ColumnActions, ResultsGrid, type RowActions } from "./results-grid";
+import { type ColumnActions, type FindTarget, ResultsGrid, type RowActions } from "./results-grid";
 import { ResultsList } from "./results-list";
 
 interface ResultsPanelProps {
@@ -24,6 +37,8 @@ interface ResultsPanelProps {
   columnActions?: ColumnActions | undefined;
   /** Remembers the table's column arrangement under this key. */
   layoutKey?: string | undefined;
+  /** Whether this panel's tab is the visible one, which Find (Mod+F) acts on. */
+  active?: boolean | undefined;
 }
 
 // Charts bring recharts along: loaded the first time someone looks at one.
@@ -45,6 +60,7 @@ export function ResultsPanel({
   actions,
   columnActions,
   layoutKey,
+  active = true,
 }: ResultsPanelProps) {
   const { t } = useTranslation("results");
   const rows = useResultsState(controller, (s) => s.rows);
@@ -67,6 +83,70 @@ export function ResultsPanel({
   useEffect(() => {
     if (path[0] !== undefined && !columns.includes(path[0])) setPath([]);
   }, [columns, path]);
+
+  // Find in results (Mod+F): over the loaded documents, the rows on screen being only some.
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [findIndex, setFindIndex] = useState(-1);
+  const [findSeq, setFindSeq] = useState(0);
+  const findInput = useRef<HTMLInputElement>(null);
+  const [findRoot, setFindRoot] = useState<HTMLDivElement | null>(null);
+  const findable = view !== "chart" && rows.length > 0;
+  const finding = findOpen && findable;
+  const query = useDeferredValue(findQuery);
+  const table = view === "table";
+  const findRows = table && nested ? nested.rows : rows;
+  const findColumns = table ? (nested ? nested.columns : columns) : undefined;
+  const matches = useMemo(
+    () => (finding ? findMatches(findRows, query, findColumns) : []),
+    [finding, findRows, query, findColumns],
+  );
+  const matched = useMemo(
+    () => new Set(matches.map((each) => matchKey(each.row, each.field))),
+    [matches],
+  );
+  const match = matches[findIndex];
+  const findCurrent: FindTarget | null = match ? { ...match, seq: findSeq } : null;
+
+  function goToMatch(index: number) {
+    setFindIndex(index);
+    setFindSeq((seq) => seq + 1);
+    const next = matches[index];
+    if (!next) return;
+    if (table && nested) setNestedSelection(next.row);
+    else onSelect(next.row);
+  }
+  // New text starts again from the first match, as a browser does; more rows keep the place.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: new text, or a new view, is the trigger.
+  useEffect(() => {
+    if (finding) goToMatch(matches.length > 0 ? 0 : -1);
+  }, [query, view, path, finding]);
+  useFindHighlight(findRoot, query, finding && active);
+  useShortcut(
+    "find",
+    () => {
+      setFindOpen(true);
+      // Already open: back to the text, selected, ready to be replaced.
+      findInput.current?.focus();
+      findInput.current?.select();
+    },
+    active && findable,
+  );
+  function closeFind() {
+    setFindOpen(false);
+    findRoot?.querySelector<HTMLElement>('[role="grid"], [role="listbox"]')?.focus();
+  }
+  const findBar = finding && (
+    <FindBar
+      inputRef={findInput}
+      query={findQuery}
+      onQuery={setFindQuery}
+      count={matches.length}
+      current={findIndex}
+      onStep={(step) => goToMatch(stepMatch(findIndex, matches.length, step))}
+      onClose={closeFind}
+    />
+  );
 
   if (status === "idle") return <div className="flex-1">{idle}</div>;
   if (status === "error") {
@@ -127,16 +207,22 @@ export function ResultsPanel({
   }
   if (view === "list" || view === "json") {
     return (
-      <ResultsList
-        format={view === "list" ? "tree" : "json"}
-        label={label}
-        rows={rows}
-        hasMore={hasMore}
-        selectedIndex={selectedIndex}
-        onSelect={onSelect}
-        onLoadMore={loadMore}
-        actions={actions}
-      />
+      <div className="flex min-h-0 flex-1 flex-col">
+        {findBar}
+        <div ref={setFindRoot} className="flex min-h-0 flex-1 flex-col">
+          <ResultsList
+            format={view === "list" ? "tree" : "json"}
+            label={label}
+            rows={rows}
+            hasMore={hasMore}
+            selectedIndex={selectedIndex}
+            onSelect={onSelect}
+            onLoadMore={loadMore}
+            actions={actions}
+            findCurrent={findCurrent}
+          />
+        </div>
+      </div>
     );
   }
   const openPath = (next: readonly string[]) => {
@@ -158,6 +244,8 @@ export function ResultsPanel({
         onLoadMore={loadMore}
         actions={{ onOpen: () => {}, openMode: "view", onCopy: actions.onCopy }}
         onStepInto={(field) => openPath([...path, field])}
+        findCurrent={findCurrent}
+        findMatched={matched}
       />
     </>
   ) : (
@@ -173,12 +261,19 @@ export function ResultsPanel({
       actions={actions}
       columnActions={columnActions}
       onStepInto={(field) => openPath([field])}
+      findCurrent={findCurrent}
+      findMatched={matched}
     />
   );
   // The same wrapper with or without the preview, so toggling it keeps the grid mounted.
   return (
     <div className="flex min-h-0 flex-1">
-      <div className="flex min-w-0 flex-1 flex-col">{grid}</div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {findBar}
+        <div ref={setFindRoot} className="flex min-h-0 flex-1 flex-col">
+          {grid}
+        </div>
+      </div>
       {preview && (
         <DocumentPreview
           document={

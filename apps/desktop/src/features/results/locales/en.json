@@ -54,6 +54,16 @@
     "openLink": "Open link",
     "copyFilter": "Copy {{field}} as a filter"
   },
+  "find": {
+    "label": "Find in results",
+    "placeholder": "Find in loaded documents",
+    "count": "{{current, number}} of {{count, number}}",
+    "countCapped": "{{current, number}} of {{count, number}}+",
+    "none": "No matches",
+    "previous": "Previous match",
+    "next": "Next match",
+    "close": "Close find"
+  },
   "view": {
     "label": "Results view",
     "table": "Table",

@@ -472,6 +472,7 @@ export function AggregationView({
           </header>
           <ResultsPanel
             controller={results}
+            active={active}
             label={t("results.label", { collection: namespace.collection })}
             selectedIndex={selectedIndex}
             onSelect={setSelectedIndex}

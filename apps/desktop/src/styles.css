@@ -1,3 +1,14 @@
 @import "@odin-db/ui/globals.css";
 
 @source "./";
+
+/* Find in results: matches in the rendered text, the current one stronger. Dark text on a
+   light mark reads in both themes. */
+::highlight(find) {
+  background-color: var(--color-yellow-200);
+  color: var(--color-neutral-950);
+}
+::highlight(find-current) {
+  background-color: var(--color-orange-400);
+  color: var(--color-neutral-950);
+}

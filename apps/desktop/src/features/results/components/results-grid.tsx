@@ -36,6 +36,7 @@ import {
   pinnedFirst,
   stickyOffsets,
 } from "../lib/columns";
+import { matchKey } from "../lib/find";
 import { isNested } from "../lib/nested";
 import { modeOf, nextMarked, type SelectMode } from "../lib/selection";
 import { useColumnLayouts } from "../store/column-layout-store";
@@ -49,6 +50,8 @@ import { RowMenuItems } from "./row-menu-items";
 import { SelectionMenuItems } from "./selection-menu-items";
 
 const INDEX_WIDTH = 56;
+/** The sticky header row (`h-8`), which rows scroll under. */
+const HEADER_HEIGHT = 32;
 /** Start fetching the next page this many rows before the end. */
 const PREFETCH_ROWS = 40;
 
@@ -118,6 +121,17 @@ interface ResultsGridProps {
   columnActions?: ColumnActions | undefined;
   /** Shows a column's arrays and embedded documents as rows of their own. */
   onStepInto?: ((field: string) => void) | undefined;
+  /** The current Find match: scrolled into view and outlined. */
+  findCurrent?: FindTarget | null | undefined;
+  /** Every Find match, by `matchKey`: tinted, since a nested match hides in a cell's summary. */
+  findMatched?: ReadonlySet<string> | undefined;
+}
+
+/** A match to show; a new `seq` scrolls to it again, even when it is the same cell. */
+export interface FindTarget {
+  row: number;
+  field: string;
+  seq: number;
 }
 
 /**
@@ -139,6 +153,8 @@ export function ResultsGrid({
   actions,
   columnActions,
   onStepInto,
+  findCurrent,
+  findMatched,
 }: ResultsGridProps) {
   const { t } = useTranslation("results");
   // Columns worth stepping into: arrays or embedded documents in the first rows.
@@ -231,6 +247,9 @@ export function ResultsGrid({
     getScrollElement: () => scrollRef.current,
     estimateSize: () => rowHeight,
     overscan: 12,
+    // Row offsets start below the header, so a row scrolled to the bottom would end under the
+    // edge by the header's height.
+    scrollPaddingEnd: HEADER_HEIGHT,
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new density re-measures the rows.
   useEffect(() => virtualizer.measure(), [rowHeight, virtualizer]);
@@ -238,12 +257,24 @@ export function ResultsGrid({
 
   // Wide documents have hundreds of fields: only the columns in view are rendered.
   const widths = headers.map((header) => header.getSize());
+  // `_id` and pinned columns stay in view while wide documents scroll sideways.
+  const sticky = stickyOffsets(
+    headers.map((header, index) => ({ id: header.id, width: widths[index] ?? 0 })),
+    pinned,
+    INDEX_WIDTH,
+  );
+  const stickyWidth = headers.reduce(
+    (total, header, index) => total + (sticky.has(header.id) ? (widths[index] ?? 0) : 0),
+    0,
+  );
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: headers.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => widths[index] ?? 150,
     scrollMargin: INDEX_WIDTH,
+    // A column scrolled to from the right stays clear of the sticky ones.
+    scrollPaddingStart: stickyWidth,
     overscan: 3,
   });
   const widthsKey = widths.join();
@@ -261,12 +292,6 @@ export function ResultsGrid({
   }, [layoutKey, order, pinned, widthsKey, visibleKey]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `widthsKey` stands for the sizes.
   useEffect(() => columnVirtualizer.measure(), [widthsKey, columnVirtualizer]);
-  // `_id` and pinned columns stay in view while wide documents scroll sideways.
-  const sticky = stickyOffsets(
-    headers.map((header, index) => ({ id: header.id, width: widths[index] ?? 0 })),
-    pinned,
-    INDEX_WIDTH,
-  );
   const slots = columnSlots(widths, [
     ...columnVirtualizer.getVirtualItems().map((column) => column.index),
     // Sticky columns, and a cell being edited, must stay mounted.
@@ -278,6 +303,20 @@ export function ResultsGrid({
   useEffect(() => {
     if (hasMore && lastVisible >= rows.length - PREFETCH_ROWS) onLoadMore();
   }, [hasMore, lastVisible, rows.length, onLoadMore]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new match (`seq`) is the trigger.
+  useEffect(() => {
+    if (!findCurrent) return;
+    // The panel selects the match's row; rows marked before would otherwise stay selected.
+    setMarked(new Set());
+    anchor.current = findCurrent.row;
+    virtualizer.scrollToIndex(findCurrent.row, { align: "auto" });
+    const column = headers.findIndex((header) => header.id === findCurrent.field);
+    // Sticky columns are always in view; scrolling to them would only move the others.
+    if (column >= 0 && !sticky.has(findCurrent.field)) {
+      columnVirtualizer.scrollToIndex(column, { align: "auto" });
+    }
+  }, [findCurrent?.seq]);
 
   function move(index: number, extend = false) {
     const next = Math.max(0, Math.min(rows.length - 1, index));
@@ -615,10 +654,15 @@ export function ResultsGrid({
                       }
                       const header = headers[slot.index];
                       if (!header) return null;
+                      const found =
+                        findCurrent?.row === item.index && findCurrent.field === header.id;
+                      const matched = findMatched?.has(matchKey(item.index, header.id)) ?? false;
                       return (
                         // biome-ignore lint/a11y/useKeyWithClickEvents: Cmd-click is a pointer shortcut; the cell menu opens links from the keyboard.
                         <td
                           key={header.id}
+                          data-find-current={found || undefined}
+                          data-find-match={matched || undefined}
                           onContextMenu={() => setMenuColumn(header.id)}
                           onClick={(event) => {
                             // Cmd/Ctrl-click follows a link, like in an editor.
@@ -635,6 +679,10 @@ export function ResultsGrid({
                           }}
                           className={cn(
                             "selectable flex shrink-0 items-center overflow-hidden border-r border-border/60 px-2.5",
+                            // After the sticky background, so a pinned cell shows it too. Not on
+                            // the selected row: over its tint the text would lose its contrast.
+                            matched && !isSelected && "bg-yellow-100 dark:bg-yellow-400/15",
+                            found && "outline-2 -outline-offset-2 outline-orange-400",
                             sticky.has(header.id) &&
                               (isSelected
                                 ? "sticky z-[5] bg-[color-mix(in_oklab,var(--primary)_10%,var(--background))]"

@@ -44,7 +44,7 @@ export const KEYBINDING_GROUPS = [
     ],
   },
   { id: "view", ids: ["zoomIn", "zoomOut", "resetZoom"] },
-  { id: "query", ids: ["focusFilter", "askAi", "submit", "rerun"] },
+  { id: "query", ids: ["find", "focusFilter", "askAi", "submit", "rerun"] },
   { id: "edit", ids: ["copy", "paste", "duplicate", "selectAll"] },
 ] as const satisfies readonly { id: string; ids: readonly KeybindingId[] }[];
 

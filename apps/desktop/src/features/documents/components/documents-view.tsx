@@ -390,6 +390,7 @@ export function DocumentsView({
 
       <ResultsPanel
         controller={results}
+        active={active}
         layoutKey={queryHistoryKey}
         columnActions={{
           sort: simpleSort(form.sort) ?? [],

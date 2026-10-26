@@ -49,6 +49,12 @@ await page.click("text=shop");
 await page.getByRole("button", { name: /^users$/ }).click();
 await page.waitForSelector("[role=grid] tbody tr");
 await audit("documents");
+await page.keyboard.press("Meta+f");
+await page.getByRole("searchbox", { name: "Find in results" }).fill("beta");
+await page.locator("td[data-find-current]").waitFor();
+// Matching cells tinted, the current one outlined, text marked.
+await audit("find in results");
+await page.keyboard.press("Escape");
 await page.getByRole("button", { name: "Insert document" }).click();
 await audit("insert document dialog");
 await page.keyboard.press("Escape");

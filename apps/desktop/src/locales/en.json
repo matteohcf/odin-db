@@ -179,6 +179,7 @@
       "inlineEdit": "Edit a value in place",
       "preview": "Preview the selected document",
       "nextField": "Save and edit the next value",
+      "find": "Find in results",
       "focusFilter": "Focus the filter",
       "askAi": "Describe a query to the AI assistant",
       "goToTabN": "Go to tab {{n}}",
