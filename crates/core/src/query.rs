@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::CoreError;
 use crate::connection::{ConnectionHandle, ConnectionId};
 use crate::ejson::{EJsonDocument, EJsonValue};
+use crate::sampling::SCAN_TIME_LIMIT;
 
 pub const MAX_BATCH_SIZE: u32 = 1000;
 
@@ -416,7 +417,12 @@ pub async fn distinct_values(
         bson::doc! { "$sort": { "count": -1, "_id": 1 } },
         bson::doc! { "$limit": i64::from(limit.clamp(1, 1000)) },
     ];
-    let mut cursor = namespace.collection(handle)?.aggregate(pipeline).await?;
+    // Every matching document is grouped: a scan, so bounded like one (ADR-0060).
+    let mut cursor = namespace
+        .collection(handle)?
+        .aggregate(pipeline)
+        .max_time(SCAN_TIME_LIMIT)
+        .await?;
     let mut values = Vec::new();
     while cursor.advance().await? {
         let document = cursor.deserialize_current()?;

@@ -13,6 +13,7 @@ use crate::browse::{self, CollectionKind};
 use crate::connection::ConnectionHandle;
 use crate::ejson::EJsonValue;
 use crate::query::Namespace;
+use crate::sampling::SCAN_TIME_LIMIT;
 
 /// More hits than anyone reads; past it the search stops.
 const MAX_HITS: usize = 1000;
@@ -270,13 +271,22 @@ pub async fn search(
             .find(doc! {})
             .limit(limit + 1)
             .batch_size(BATCH)
+            .max_time(SCAN_TIME_LIMIT)
             .await?;
         let mut read = 0_i64;
         let mut batch = Vec::new();
         loop {
             let next = tokio::select! {
                 () = cancel.cancelled() => return Err(CoreError::Cancelled),
-                next = cursor.advance() => next?,
+                next = cursor.advance() => next.map_err(CoreError::from),
+            };
+            let next = match next {
+                // Too slow to read in full: what was read is searched, the rest is not.
+                Err(CoreError::TimeLimit(_)) => {
+                    summary.partial_collections += 1;
+                    break;
+                }
+                next => next?,
             };
             if !next {
                 break;

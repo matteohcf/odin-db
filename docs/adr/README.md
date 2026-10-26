@@ -63,3 +63,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0057](0057-custom-roles.md) | Custom roles | Accepted |
 | [0058](0058-connection-manager.md) | Connection manager | Partly superseded by 0059 |
 | [0059](0059-sidebar-lists-every-connection.md) | The sidebar lists every connection | Accepted |
+| [0060](0060-bounded-scans.md) | Bounded scans | Proposed |

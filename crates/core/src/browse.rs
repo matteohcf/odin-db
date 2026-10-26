@@ -8,6 +8,7 @@ use crate::CoreError;
 use crate::connection::ConnectionHandle;
 use crate::ejson::number_of;
 use crate::query::Namespace;
+use crate::sampling::COUNT_TIME_LIMIT;
 
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -164,7 +165,13 @@ pub async fn collection_counts(
         tasks.spawn(async move {
             // Closed only if dropped, which never happens while tasks hold it.
             let _permit = permits.acquire_owned().await;
-            (info.name, collection.estimated_document_count().await)
+            (
+                info.name,
+                collection
+                    .estimated_document_count()
+                    .max_time(COUNT_TIME_LIMIT)
+                    .await,
+            )
         });
     }
     let mut counts = Vec::new();

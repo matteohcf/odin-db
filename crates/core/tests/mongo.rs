@@ -29,7 +29,7 @@ use odin_core::transfer::{
     CsvColumn, CsvType, ExportFormat, ExportRequest, ExportSource, ImportFormat, ImportMode,
     ImportOptions, JsonMode, TransferProgress, export_documents, import_documents,
 };
-use odin_core::{CoreError, browse, catalog, documents, explain, schema};
+use odin_core::{CoreError, browse, catalog, documents, explain, sampling, schema};
 use std::str::FromStr;
 use std::sync::Arc;
 use testcontainers_modules::mongo::Mongo;
@@ -364,6 +364,77 @@ async fn samples_field_paths_for_autocompletion() {
             .len(),
         6
     );
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
+async fn samples_time_series_and_views_within_the_scan_cap() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(true).await;
+    let db = handle.client.database("odin_sampling");
+    db.create_collection("metrics")
+        .timeseries(
+            mongodb::options::TimeseriesOptions::builder()
+                .time_field("at".to_owned())
+                .meta_field(Some("sensor".to_owned()))
+                .build(),
+        )
+        .await
+        .expect("time series created");
+    // One sensor per measurement: one bucket each, the sparse case where `$sample` alone would
+    // unpack every bucket.
+    db.collection::<Document>("metrics")
+        .insert_many((0..300_i32).map(|i| {
+            doc! { "at": DateTime::from_millis(i64::from(i) * 1000), "sensor": i, "value": f64::from(i) }
+        }))
+        .await
+        .expect("seeded");
+    db.create_collection("people").await.expect("collection");
+    db.collection::<Document>("people")
+        .insert_one(doc! { "name": "Ada" })
+        .await
+        .expect("seeded");
+    db.run_command(doc! { "create": "named", "viewOn": "people", "pipeline": [] })
+        .await
+        .expect("view created");
+
+    let ns = |collection: &str| Namespace {
+        database: "odin_sampling".into(),
+        collection: collection.into(),
+    };
+    let kind = |collection: &'static str| {
+        let handle = handle.clone();
+        async move {
+            sampling::collection_kind(&handle, &ns(collection))
+                .await
+                .expect("kind")
+        }
+    };
+    assert_eq!(kind("metrics").await, browse::CollectionKind::Timeseries);
+    assert_eq!(kind("people").await, browse::CollectionKind::Collection);
+    assert_eq!(kind("named").await, browse::CollectionKind::View);
+    assert_eq!(kind("missing").await, browse::CollectionKind::View);
+
+    let fields = schema::sample_fields(&handle, &ns("metrics"), 100, None)
+        .await
+        .expect("a time series samples");
+    let paths: Vec<_> = fields.iter().map(|field| field.path.as_str()).collect();
+    assert_eq!(paths, ["_id", "at", "sensor", "value"]);
+    let filtered = schema::sample_fields(
+        &handle,
+        &ns("metrics"),
+        100,
+        Some(EJsonDocument::from(doc! { "sensor": { "$lt": 10 } })),
+    )
+    .await
+    .expect("a filtered time series samples");
+    let paths: Vec<_> = filtered.iter().map(|field| field.path.as_str()).collect();
+    assert_eq!(paths, ["_id", "at", "sensor", "value"]);
+    let viewed = schema::sample_fields(&handle, &ns("named"), 100, None)
+        .await
+        .expect("a view samples");
+    let paths: Vec<_> = viewed.iter().map(|field| field.path.as_str()).collect();
+    assert_eq!(paths, ["_id", "name"]);
 }
 
 #[tokio::test]

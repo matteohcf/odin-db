@@ -20,6 +20,7 @@ pub mod operations;
 pub mod profiler;
 pub mod profiles;
 pub mod query;
+pub mod sampling;
 pub mod schema;
 pub mod schema_compare;
 pub mod search;

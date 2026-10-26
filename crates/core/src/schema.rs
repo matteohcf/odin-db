@@ -2,13 +2,15 @@
 
 use std::collections::HashMap;
 
-use bson::{Bson, Document, doc};
+use bson::{Bson, Document};
 use serde::Serialize;
 
 use crate::CoreError;
+use crate::browse::CollectionKind;
 use crate::connection::ConnectionHandle;
 use crate::ejson::{EJsonDocument, EJsonValue};
 use crate::query::Namespace;
+use crate::sampling::{collection_kind, sample_documents};
 
 pub const MAX_SAMPLE_SIZE: u32 = 1000;
 /// Deeper paths are rare in queries and would make wide documents explode.
@@ -113,24 +115,30 @@ pub async fn sample_fields(
     size: u32,
     filter: Option<EJsonDocument>,
 ) -> Result<Vec<FieldSummary>, CoreError> {
+    let kind = collection_kind(handle, namespace).await?;
+    sample_fields_of(handle, namespace, kind, size, filter).await
+}
+
+/// [`sample_fields`] for a collection whose kind the caller already listed.
+pub(crate) async fn sample_fields_of(
+    handle: &ConnectionHandle,
+    namespace: &Namespace,
+    kind: CollectionKind,
+    size: u32,
+    filter: Option<EJsonDocument>,
+) -> Result<Vec<FieldSummary>, CoreError> {
     if size == 0 || size > MAX_SAMPLE_SIZE {
         return Err(CoreError::Validation(format!(
             "sample size must be between 1 and {MAX_SAMPLE_SIZE}"
         )));
     }
-    let mut pipeline = Vec::with_capacity(2);
     // A random sample of the matching documents only.
-    if let Some(filter) = filter.map(Document::try_from).transpose()?
-        && !filter.is_empty()
-    {
-        pipeline.push(doc! { "$match": filter });
-    }
-    pipeline.push(doc! { "$sample": { "size": i64::from(size) } });
-    let mut cursor = namespace.collection(handle)?.aggregate(pipeline).await?;
-    let mut documents = Vec::with_capacity(size as usize);
-    while cursor.advance().await? {
-        documents.push(cursor.deserialize_current()?);
-    }
+    let filter = filter
+        .map(Document::try_from)
+        .transpose()?
+        .unwrap_or_default();
+    let collection = namespace.collection(handle)?;
+    let documents = sample_documents(&collection, kind, filter, size).await?;
     Ok(summarize(&documents))
 }
 
@@ -297,6 +305,7 @@ fn type_name(value: &Bson) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bson::doc;
 
     fn field<'a>(fields: &'a [FieldSummary], path: &str) -> &'a FieldSummary {
         fields

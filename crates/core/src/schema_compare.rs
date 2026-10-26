@@ -14,7 +14,7 @@ use crate::browse::{CollectionKind, list_collections};
 use crate::connection::ConnectionHandle;
 use crate::indexes::{self, IndexInfo};
 use crate::query::Namespace;
-use crate::schema::{FieldSummary, sample_fields};
+use crate::schema::{FieldSummary, sample_fields_of};
 use crate::validation::{ValidationRules, get_rules};
 
 const SAMPLE_SIZE: u32 = 200;
@@ -162,6 +162,17 @@ async fn run(
         // let it pass as identical.
         let kinds_differ = presence == Presence::Both
             && is_view(left_names.get(name)) != is_view(right_names.get(name));
+        // Each side is sampled as what it is there: a time series on one side is capped there.
+        let kinds = (
+            left_names
+                .get(name)
+                .copied()
+                .unwrap_or(CollectionKind::View),
+            right_names
+                .get(name)
+                .copied()
+                .unwrap_or(CollectionKind::View),
+        );
         let (left, right) = (Arc::clone(left), Arc::clone(right));
         let (left_db, right_db) = (
             request.left_database.clone(),
@@ -182,8 +193,10 @@ async fn run(
                         .then(|| "a view on one side and a collection on the other".to_owned()),
                 };
             }
-            let sides =
-                tokio::try_join!(read(&left, &left_db, &name), read(&right, &right_db, &name));
+            let sides = tokio::try_join!(
+                read(&left, &left_db, &name, kinds.0),
+                read(&right, &right_db, &name, kinds.1)
+            );
             match sides {
                 Ok((left, right)) => compare_sides(name, &left, &right),
                 Err(error) => CollectionComparison {
@@ -211,13 +224,14 @@ async fn read(
     handle: &ConnectionHandle,
     database: &str,
     collection: &str,
+    kind: CollectionKind,
 ) -> Result<Side, CoreError> {
     let namespace = Namespace {
         database: database.to_owned(),
         collection: collection.to_owned(),
     };
     Ok(Side {
-        fields: sample_fields(handle, &namespace, SAMPLE_SIZE, None).await?,
+        fields: sample_fields_of(handle, &namespace, kind, SAMPLE_SIZE, None).await?,
         indexes: indexes::list(handle, &namespace).await?,
         // Rules need listCollections on the database, which some users lack: not a failure.
         validation: get_rules(handle, &namespace).await.ok(),

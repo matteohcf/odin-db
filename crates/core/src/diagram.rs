@@ -14,9 +14,10 @@ use tokio_util::sync::CancellationToken;
 use crate::CoreError;
 use crate::browse::{CollectionKind, list_collections};
 use crate::connection::ConnectionHandle;
+use crate::sampling::{COUNT_TIME_LIMIT, sample_documents};
 use crate::schema::{FieldSummary, summarize};
 
-const SAMPLE_SIZE: i64 = 100;
+const SAMPLE_SIZE: u32 = 100;
 const CONCURRENCY: usize = 4;
 /// Fields beyond this are rarely what a diagram is read for, and make nodes unwieldy.
 const MAX_FIELDS: usize = 60;
@@ -124,8 +125,12 @@ async fn build(
         let permits = Arc::clone(&permits);
         tasks.spawn(async move {
             let _permit = permits.acquire_owned().await;
-            let sampled = sample(&collection).await;
-            let documents = collection.estimated_document_count().await.unwrap_or(0);
+            let sampled = sample_documents(&collection, info.kind, doc! {}, SAMPLE_SIZE).await;
+            let documents = collection
+                .estimated_document_count()
+                .max_time(COUNT_TIME_LIMIT)
+                .await
+                .unwrap_or(0);
             (info, documents, sampled)
         });
     }
@@ -185,17 +190,6 @@ async fn build(
         report(done, total);
     }
     Ok(DatabaseDiagram { collections, links })
-}
-
-async fn sample(collection: &mongodb::Collection<Document>) -> Result<Vec<Document>, CoreError> {
-    let mut cursor = collection
-        .aggregate([doc! { "$sample": { "size": SAMPLE_SIZE } }])
-        .await?;
-    let mut documents = Vec::new();
-    while cursor.advance().await? {
-        documents.push(cursor.deserialize_current()?);
-    }
-    Ok(documents)
 }
 
 /// ObjectId-valued paths of the sampled documents, `_id` excluded.
