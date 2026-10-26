@@ -24,6 +24,8 @@ const check = async (name, fn) => {
 };
 
 await page.goto("http://localhost:1420/");
+// The mock backend installs itself as the app starts.
+await page.waitForFunction(() => window.__TAURI_INTERNALS__);
 // Saved the way the query history and the pipeline builder save them.
 const profileId = await page.evaluate(async () => {
   const internals = window.__TAURI_INTERNALS__;
