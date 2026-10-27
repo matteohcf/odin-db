@@ -1,6 +1,6 @@
 # 0043. Database diagram
 
-- Status: Accepted
+- Status: Partly superseded by 0060
 - Date: 2026-10-24
 
 ## Context

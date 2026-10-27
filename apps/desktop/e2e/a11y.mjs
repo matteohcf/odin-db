@@ -79,7 +79,11 @@ await page.getByRole("button", { name: "Create index" }).click();
 await audit("create index dialog");
 await page.keyboard.press("Escape");
 await profileMenu("shop", "Show diagram");
+await page.getByRole("dialog", { name: "Scan shop" }).waitFor();
+await audit("new scan dialog");
+await page.getByRole("button", { name: "Start scan" }).click();
 await page.locator(".react-flow__node").first().waitFor();
+await page.getByRole("combobox", { name: "Saved scans" }).waitFor();
 await audit("diagram");
 await connect(page, "Production (Atlas)");
 // Its databases list below the open ones.

@@ -2,7 +2,7 @@
 
 use bson::doc;
 use mongodb::results::CollectionType;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
@@ -19,7 +19,7 @@ pub struct DatabaseInfo {
     pub empty: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub enum CollectionKind {

@@ -202,5 +202,18 @@
       "needsMemory": "needs {{memory}} GB of memory",
       "guide": "Accuracy is the share of 105 test requests answered with exactly the right query; time per query was measured on an Apple M3 and grows on slower machines. Larger models are more accurate but slower: the recommended one is the best balance for this computer."
     }
+  },
+  "diagrams": {
+    "title": "Diagrams",
+    "description": "Database diagram scans, saved on this computer only.",
+    "kept": "Saved scans per database",
+    "keptHint": "Older scans are deleted at the next scan of the database.",
+    "scans_one": "{{count, number}} scan",
+    "scans_other": "{{count, number}} scans",
+    "clear": "Delete all saved diagrams",
+    "clearHint": "Forgets every saved scan. Node positions and notes stay.",
+    "delete": "Delete",
+    "cleared_one": "{{count, number}} saved diagram deleted.",
+    "cleared_other": "{{count, number}} saved diagrams deleted."
   }
 }

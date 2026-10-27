@@ -23,6 +23,8 @@ export interface Settings {
   queryHistorySize: number;
   /** Server-side time limit for queries that set none; 0 for none. */
   queryTimeLimitSeconds: number;
+  /** Diagram scans kept per database; older ones are deleted at the next scan. */
+  diagramScansKept: number;
   /** Last language picked in the query code dialog. */
   queryCodeLanguage: CodeLanguage;
   /** Sidebar width in pixels, set by dragging its edge. */
@@ -79,6 +81,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shellScrollback: 10_000,
   queryHistorySize: 50,
   queryTimeLimitSeconds: 60,
+  diagramScansKept: 10,
   queryCodeLanguage: "javascript",
   sidebarWidth: 288,
   accent: "green",

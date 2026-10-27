@@ -35,8 +35,16 @@ export const commands = {
 	searchValues: (connectionId: ConnectionId, request: SearchRequest, channel: Channel<StreamEvent<SearchEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("search_values", { connectionId, request, channel })),
 	/**  Compares two databases' collections, fields, indexes and rules, as a cancellable operation. */
 	compareSchemas: (leftConnectionId: ConnectionId, rightConnectionId: ConnectionId, request: SchemaCompareRequest, channel: Channel<StreamEvent<SchemaCompareEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("compare_schemas", { leftConnectionId, rightConnectionId, request, channel })),
-	/**  Samples a database's collections and infers their references, as a cancellable operation. */
-	databaseDiagram: (connectionId: ConnectionId, database: string, channel: Channel<StreamEvent<DiagramEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("database_diagram", { connectionId, database, channel })),
+	/**
+	 *  Samples a database's collections and infers their references, as a cancellable operation,
+	 *  then saves the scan keeping the newest `keep` of the database (ADR-0060).
+	 */
+	databaseDiagram: (connectionId: ConnectionId, database: string, pace: ScanPace, keep: number, channel: Channel<StreamEvent<DiagramEvent>>) => typedError<OperationId, IpcError>(__TAURI_INVOKE("database_diagram", { connectionId, database, pace, keep, channel })),
+	/**  The database's saved scans, newest first. */
+	listDiagramScans: (profileId: ProfileId, database: string) => typedError<DiagramScanSummary[], IpcError>(__TAURI_INVOKE("list_diagram_scans", { profileId, database })),
+	getDiagramScan: (id: ScanId) => typedError<DatabaseDiagram, IpcError>(__TAURI_INVOKE("get_diagram_scan", { id })),
+	/**  Deletes every saved diagram scan; returns how many. */
+	clearDiagramScans: () => typedError<number, IpcError>(__TAURI_INVOKE("clear_diagram_scans")),
 	/**  Asks where to save a PNG rendered by the diagram, then writes it. `None` if the user cancels. */
 	saveDiagramImage: (pngBase64: string, database: string) => typedError<string | null, IpcError>(__TAURI_INVOKE("save_diagram_image", { pngBase64, database })),
 	/**  Both versions of one compared document. */
@@ -674,7 +682,7 @@ export type DiagramCollection = {
 };
 
 /**  Collections sampled and references checked so far, then exactly one `finished`. */
-export type DiagramEvent = { kind: "progress"; value: DiagramProgress } | { kind: "finished"; value: DatabaseDiagram };
+export type DiagramEvent = { kind: "progress"; value: DiagramProgress } | { kind: "finished"; value: FinishedScan };
 
 export type DiagramLink = {
 	from: string,
@@ -691,6 +699,18 @@ export type DiagramLink = {
 export type DiagramProgress = {
 	done: number | null,
 	total: number | null,
+};
+
+export type DiagramScanSummary = {
+	id: ScanId,
+	/**  Unix milliseconds. */
+	createdAt: number | null,
+	pace: ScanPace,
+	/**  Every node, views included. */
+	collections: number | null,
+	links: number | null,
+	/**  Collections that could not be sampled (time limit, permissions). */
+	skipped: number | null,
 };
 
 export type DistinctValue = {
@@ -843,6 +863,13 @@ export type FindRequest = {
 	limit: number | null,
 	batchSize: number,
 	options?: QueryOptions,
+};
+
+export type FinishedScan = {
+	diagram: DatabaseDiagram,
+	/**  `None` when saving failed: the diagram is still shown, just not kept. */
+	scan: DiagramScanSummary | null,
+	saveError: string | null,
 };
 
 export type Frequency = "hourly" | "daily" | "weekly";
@@ -1285,6 +1312,11 @@ export type RoleRef = {
 export type RunId = string;
 
 export type RunStatus = "running" | "completed" | "failed" | "cancelled";
+
+export type ScanId = string;
+
+/**  How hard a scan may press on the server (ADR-0060). */
+export type ScanPace = "fast" | "balanced" | "gentle";
 
 export type ScheduleId = string;
 

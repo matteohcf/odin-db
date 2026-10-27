@@ -46,7 +46,7 @@ docs/adr/                Architecture Decision Records
   - `shell` (the shell tab) uses `connections` for the profile and its connection;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
   - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection; `monitor` opens `indexes`' create dialog for the index advisor;
-  - `settings` (the settings tab) reads `results` and `documents` stores, uses `updates` for its update row and `ai` for model downloads; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
+  - `settings` (the settings tab) reads `results` and `documents` stores, uses `updates` for its update row, `ai` for model downloads and `diagram` to delete saved scans; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `compare` (collection and schema compare) uses `results` for the document diff;
   - `diagram` (the database diagram tab) uses `connections` for the connection and `workspace` for its tab model;
   - `connections` may use `workspace` to open tabs, and `backup`, `transfer` and `compare` for its dialogs; only `src/app` wires the top level together.
@@ -86,6 +86,7 @@ docs/adr/                Architecture Decision Records
 - **Quick charts** (ADR-0048): the results' Chart view plots loaded rows only; `results/lib/chart.ts` picks the chart from the field's role (date → line, text → bars, number → histogram or scatter). Recharts via shadcn `chart`, lazy. GeoJSON point fields go on an offline SVG map (ADR-0049), never a tile server.
 - **Diagram annotations** (ADR-0047): drawn references, hidden inferred ones, notes and areas (which carry the nodes inside them when dragged) live in `useAnnotations` (local storage, per database) and merge with the analysis through `annotate`; layout ignores them.
 - **Database diagram** (ADR-0043): `diagram::database_diagram` samples each collection and infers references from data (ObjectId values found as `_id` elsewhere), not names. The tab draws it with React Flow and dagre, loaded lazily; dragged positions persist per database.
+- **Gentle, saved diagram scans** (ADR-0060): every scan query has `maxTimeMS` and reads `secondaryPreferred`; views are never sampled; lookups are one `$in` per target. A scan runs at a `ScanPace` picked in `NewScanDialog` (`recommendPace`), and completed scans are saved in SQLite (`diagram::scans`): the tab opens the newest without querying the server.
 - **Automatic updates** (ADR-0039): `check_for_update` at launch (setting `checkForUpdates`), `install_update` as a registered long operation; nothing installs without a click.
 - **Query options** (ADR-0052): collation, hint and `maxTimeMs` travel as `QueryOptions` on find, aggregate, explain and count; `withTimeLimit` adds the `queryTimeLimitSeconds` setting when a query sets none.
 - **Collection types and views** (ADR-0053): `create_collection` takes `CollectionOptions` (capped, time series, clustered, view, collation) and sends one raw `create` command; the aggregation tab reports a pipeline through `onCreateView`, `connections`' `CreateViewDialog` creates it.

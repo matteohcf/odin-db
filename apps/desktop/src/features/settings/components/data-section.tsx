@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useClearDiagramScans } from "@/features/diagram";
 import { useQueryHistory } from "@/features/documents";
-import { call } from "@/lib/ipc";
+import { call, errorMessage } from "@/lib/ipc";
 import { useSettings } from "@/lib/settings";
 import { OptionSelect } from "./option-select";
 import { SettingRow } from "./setting-row";
@@ -19,6 +20,8 @@ export function DataSection() {
   const timeLimit = useSettings((s) => s.queryTimeLimitSeconds);
   const update = useSettings((s) => s.update);
   const clearHistory = useQueryHistory((s) => s.clearAll);
+  const scansKept = useSettings((s) => s.diagramScansKept);
+  const clearScans = useClearDiagramScans();
   const tools = useQuery({
     queryKey: ["database-tools-status"],
     queryFn: () => call(commands.databaseToolsStatus()),
@@ -64,6 +67,36 @@ export function DataSection() {
             }}
           >
             {t("data.clear")}
+          </Button>
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection title={t("diagrams.title")} description={t("diagrams.description")}>
+        <SettingRow
+          id={`${id}-diagram-scans`}
+          label={t("diagrams.kept")}
+          description={t("diagrams.keptHint")}
+        >
+          <OptionSelect
+            id={`${id}-diagram-scans`}
+            value={scansKept}
+            options={[1, 5, 10, 20, 50] as const}
+            onChange={(value) => update({ diagramScansKept: value })}
+            format={(value) => t("diagrams.scans", { count: value })}
+          />
+        </SettingRow>
+        <SettingRow label={t("diagrams.clear")} description={t("diagrams.clearHint")}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={clearScans.isPending}
+            onClick={() =>
+              clearScans.mutate(undefined, {
+                onSuccess: (count) => toast.success(t("diagrams.cleared", { count })),
+                onError: (error) => toast.error(errorMessage(error)),
+              })
+            }
+          >
+            {t("diagrams.delete")}
           </Button>
         </SettingRow>
       </SettingsSection>

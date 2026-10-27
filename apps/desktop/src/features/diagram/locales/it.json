@@ -6,7 +6,6 @@
   "cancel": "Ferma",
   "failed": "Impossibile creare il diagramma: {{message}}",
   "cancelled": "Analisi interrotta.",
-  "retry": "Analizza di nuovo",
   "empty": "Questo database non ha ancora collection.",
   "disconnected": "{{name}} non è connesso.",
   "connect": "Connetti",
@@ -29,6 +28,7 @@
   "more_one": "Ancora {{count}} campo",
   "more_other": "Ancora {{count}} campi",
   "notSampled": "Non campionata: {{message}}",
+  "viewNotSampled": "Le viste non vengono campionate",
   "open": "Apri {{collection}}",
   "view": "Vista",
   "timeseries": "Serie temporale",
@@ -69,5 +69,34 @@
     "purple": "Viola",
     "pink": "Rosa",
     "gray": "Grigio"
+  },
+  "scan": {
+    "title": "Scansiona {{database}}",
+    "size": "{{collections}} collezioni, {{size}} su disco.",
+    "pace": "Velocità",
+    "paces": {
+      "fast": "Veloce",
+      "balanced": "Bilanciata",
+      "gentle": "Delicata"
+    },
+    "hints": {
+      "fast": "Quattro collezioni alla volta, senza pause. Per database piccoli o locali.",
+      "balanced": "Due collezioni alla volta, con brevi pause tra le query.",
+      "gentle": "Una collezione alla volta, pause lunghe, campioni più piccoli e solo i riferimenti col nome di una collezione. La più sicura su server di produzione sotto carico; può richiedere un po' di tempo."
+    },
+    "recommended": "Consigliata",
+    "note": "Ogni query si ferma sul server dopo 5 secondi e legge da un secondario quando c'è. Il tab resta utilizzabile durante la scansione, e il risultato viene salvato.",
+    "start": "Avvia scansione",
+    "new": "Nuova scansione",
+    "saved": "Scansioni salvate",
+    "option_one": "{{when}} · {{pace}} · {{count}} collezione",
+    "option_other": "{{when}} · {{pace}} · {{count}} collezioni",
+    "skipped_one": "{{count}} collezione saltata",
+    "skipped_other": "{{count}} collezioni saltate",
+    "skippedHint": "Troppo costose da campionare o non leggibili: la collezione mostra il motivo.",
+    "notSaved": "Non salvata",
+    "none": "Questo database non è ancora stato scansionato.",
+    "unreadable": "Impossibile leggere questa scansione salvata: {{message}}. Avvia una nuova scansione.",
+    "failed": "Nuova scansione non riuscita"
   }
 }

@@ -39,6 +39,14 @@ await check("the database row opens its diagram", async () => {
   await page.getByRole("menuitem", { name: "Show diagram" }).click();
   const heading = page.getByRole("heading", { name: "Diagram of shop" });
   await heading.waitFor();
+  // Never scanned: it asks how first, recommending the fast pace for a small database.
+  const dialog = page.getByRole("dialog", { name: "Scan shop" });
+  await dialog.waitFor();
+  await dialog.getByText("Recommended").waitFor();
+  if (!(await dialog.getByRole("radio", { name: /^Fast/ }).isChecked()))
+    throw new Error("not fast");
+  await shot("00-new-scan");
+  await dialog.getByRole("button", { name: "Start scan" }).click();
   // The title has room: it is not cut short.
   if (await heading.evaluate((h) => h.scrollWidth > h.clientWidth)) throw new Error("truncated");
   await nodes.first().waitFor({ timeout: 15000 });
@@ -208,8 +216,10 @@ await check("an area groups collections and carries them along", async () => {
   await connect(page, "Local development");
   await name.waitFor({ timeout: 15000 });
   if ((await name.inputValue()) !== "Catalog") throw new Error("area lost");
-  await handle.hover();
-  await page.getByRole("button", { name: "Delete area" }).click();
+  // By its left end: collections may overlap the rest of the strip.
+  await handle.hover({ position: { x: 24, y: 6 } });
+  // Collections laid out beside the area may cover its delete button.
+  await page.getByRole("button", { name: "Delete area" }).dispatchEvent("click");
   await area.waitFor({ state: "detached" });
 });
 
@@ -243,6 +253,35 @@ await check(
   },
 );
 
+await check("a reload shows the saved scan without scanning again", async () => {
+  await page.reload();
+  await connect(page, "Local development");
+  await page.getByRole("heading", { name: "Diagram of shop" }).waitFor();
+  await nodes.first().waitFor({ timeout: 15000 });
+  if ((await nodes.count()) !== 8) throw new Error(`${await nodes.count()} nodes`);
+  if (await page.getByText(/^Analyzing collections/).isVisible()) throw new Error("scanning");
+  if (await page.getByRole("dialog").isVisible()) throw new Error("asked again");
+});
+
+await check("a new scan is kept beside the older ones", async () => {
+  await page.getByRole("button", { name: "New scan" }).click();
+  const dialog = page.getByRole("dialog", { name: "Scan shop" });
+  await dialog.getByRole("radio", { name: /^Gentle/ }).click();
+  await dialog.getByRole("button", { name: "Start scan" }).click();
+  await page.getByText(/^Analyzing collections/).waitFor();
+  await page.getByText(/^Analyzing collections/).waitFor({ state: "detached", timeout: 15000 });
+  const select = page.getByRole("combobox", { name: "Saved scans" });
+  await select.click();
+  const options = page.getByRole("option");
+  if ((await options.count()) !== 2) throw new Error(`${await options.count()} scans`);
+  if (!(await options.first().innerText()).includes("Gentle")) throw new Error("newest not first");
+  await shot("10-scans");
+  await options.nth(1).click();
+  await page.waitForTimeout(300);
+  if (!(await select.innerText()).includes("Fast")) throw new Error("older scan not picked");
+  if ((await nodes.count()) !== 8) throw new Error(`${await nodes.count()} nodes`);
+});
+
 await check("double-clicking a collection opens it", async () => {
   await page.getByRole("button", { name: "Fit to screen" }).click();
   await page.waitForTimeout(400);
@@ -255,6 +294,39 @@ await check("the command palette opens a database's diagram", async () => {
   await page.keyboard.type("diagram of analytics");
   await page.getByRole("option", { name: "Show diagram of analytics" }).click();
   await page.getByRole("heading", { name: "Diagram of analytics" }).waitFor();
+});
+
+await check("deleting saved diagrams leaves the tab waiting for a new scan", async () => {
+  // analytics was never scanned: its tab asked how; dismissing starts nothing.
+  await page.getByRole("dialog", { name: "Scan analytics" }).waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: "Data and tools" }).click();
+  await page
+    .locator("[data-setting-row]")
+    .filter({ hasText: "Delete all saved diagrams" })
+    .getByRole("button", { name: "Delete" })
+    .click();
+  await page.getByText("2 saved diagrams deleted.").waitFor();
+  await page.getByRole("tab").filter({ hasText: "Diagram" }).filter({ hasText: "shop" }).click();
+  await page
+    .getByText("This database has not been scanned yet.")
+    .filter({ visible: true })
+    .waitFor();
+  if (await page.getByRole("dialog").isVisible()) throw new Error("asked by itself");
+  await shot("11-cleared");
+});
+
+await check("a failed new scan is reported beside the saved diagram", async () => {
+  await page.getByRole("button", { name: "New scan" }).click();
+  await page.getByRole("button", { name: "Start scan" }).click();
+  await nodes.first().waitFor({ timeout: 15000 });
+  await page.evaluate(() => localStorage.setItem("odin-mock-diagram-fail", "1"));
+  await page.getByRole("button", { name: "New scan" }).click();
+  await page.getByRole("button", { name: "Start scan" }).click();
+  await page.getByText("New scan failed").waitFor();
+  if ((await nodes.count()) !== 8) throw new Error("saved diagram gone");
+  await page.evaluate(() => localStorage.removeItem("odin-mock-diagram-fail"));
 });
 
 console.log(results.join("\n"));

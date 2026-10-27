@@ -651,6 +651,13 @@ function channelSender(channel: unknown) {
 }
 
 const operations = new Map<string, { cancelled: boolean }>();
+// Kept across reloads, like the real backend's SQLite.
+const diagramScans = new Map<
+  string,
+  { key: string; scan: { id: string; createdAt: number }; diagram: unknown }
+>(JSON.parse(localStorage.getItem("odin-mock-diagram-scans") ?? "[]"));
+const persistScans = () =>
+  localStorage.setItem("odin-mock-diagram-scans", JSON.stringify([...diagramScans]));
 
 /** Simulates a long transfer: progress ticks, then a summary, then the terminal event. */
 function simulateTransfer(
@@ -683,7 +690,9 @@ function simulateTransfer(
       setTimeout(tick, 250);
       return;
     }
-    send({ event: "data", data: { kind: "finished", value: summary } });
+    // A function builds the result only when the operation completes.
+    const value = typeof summary === "function" ? summary() : summary;
+    send({ event: "data", data: { kind: "finished", value } });
     send({ event: "completed" });
     operations.delete(operationId);
   };
@@ -1057,7 +1066,9 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
   install_update: (args) =>
     // The real backend then restarts the app; here it just ends.
     streamProgress(args.channel, 18_000_000, (done, total) => ({ done, total })),
+  // `localStorage["odin-mock-diagram-fail"] = "1"` makes the next scans fail.
   database_diagram: (args) => {
+    if (localStorage.getItem("odin-mock-diagram-fail") === "1") fail("internal", "scan failed");
     const field = (path: string, type: string, frequency = 1) => ({
       path,
       types: [type],
@@ -1082,10 +1093,8 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     });
     const diagram = {
       collections: [
-        {
-          ...node("active_users", 412, [field("name", "string"), field("lastSeen", "date")]),
-          kind: "view" as const,
-        },
+        // Views are listed, never sampled or counted (ADR-0060).
+        { ...node("active_users", 0, []), kind: "view" as const, fields: [] },
         node("categories", 24, [
           field("name", "string"),
           field("parentId", "objectId", 0.6),
@@ -1153,7 +1162,42 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
         link("users", "favoriteIds", "products", true),
       ],
     };
-    return simulateTransfer(args.channel, 17, diagram, 1, (done) => ({ done, total: 17 }));
+    // Saved like the real backend: only once complete, keeping the newest `keep`.
+    const save = () => {
+      const key = `${String(connections.get(String(args.connectionId))?.profileId)}/${String(args.database)}`;
+      const scan = {
+        id: crypto.randomUUID(),
+        createdAt: Date.now(),
+        pace: args.pace,
+        collections: diagram.collections.length,
+        links: diagram.links.length,
+        skipped: diagram.collections.filter((c) => c.error !== null).length,
+      };
+      diagramScans.set(scan.id, { key, scan, diagram });
+      const ofDatabase = [...diagramScans.values()]
+        .filter((saved) => saved.key === key)
+        .sort((a, b) => b.scan.createdAt - a.scan.createdAt);
+      for (const old of ofDatabase.slice(Math.max(1, Number(args.keep)))) {
+        diagramScans.delete(old.scan.id);
+      }
+      persistScans();
+      return { diagram, scan, saveError: null };
+    };
+    return simulateTransfer(args.channel, 17, save, 1, (done) => ({ done, total: 17 }));
+  },
+  list_diagram_scans: (args) =>
+    [...diagramScans.values()]
+      .filter((saved) => saved.key === `${String(args.profileId)}/${String(args.database)}`)
+      .sort((a, b) => b.scan.createdAt - a.scan.createdAt)
+      .map((saved) => saved.scan),
+  get_diagram_scan: (args) => {
+    return diagramScans.get(String(args.id))?.diagram ?? fail("notFound", "diagram scan not found");
+  },
+  clear_diagram_scans: () => {
+    const count = diagramScans.size;
+    diagramScans.clear();
+    persistScans();
+    return count;
   },
   save_diagram_image: (args) => {
     // Lets UI checks look at the rendered image.

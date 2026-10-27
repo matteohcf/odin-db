@@ -10,6 +10,8 @@ use crate::CoreError;
 use crate::backup::BackupScope;
 use crate::backup::history::{RunId, RunStatus, StoredRun};
 use crate::backup::schedule::{Frequency, ScheduleId, StoredSchedule, Timing};
+use crate::diagram::ScanPace;
+use crate::diagram::scans::{DiagramScanSummary, ScanId};
 use crate::profiles::{ProfileColor, ProfileId, StoredProfile};
 use crate::ssh::SshSettings;
 
@@ -63,6 +65,21 @@ const MIGRATIONS: &[M<'static>] = &[
     ),
     // The folder a profile is listed under in the sidebar.
     M::up("ALTER TABLE connection_profiles ADD COLUMN group_name TEXT;"),
+    // Saved diagram scans (ADR-0060): the diagram as JSON, its counts for listing.
+    M::up(
+        "CREATE TABLE diagram_scans (
+            id TEXT PRIMARY KEY NOT NULL,
+            profile_id TEXT NOT NULL REFERENCES connection_profiles(id) ON DELETE CASCADE,
+            database TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            pace TEXT NOT NULL,
+            collections INTEGER NOT NULL,
+            links INTEGER NOT NULL,
+            skipped INTEGER NOT NULL,
+            diagram TEXT NOT NULL
+        ) STRICT;
+        CREATE INDEX diagram_scans_database ON diagram_scans(profile_id, database, created_at DESC);",
+    ),
 ];
 
 #[derive(Debug)]
@@ -522,6 +539,100 @@ fn ssh_json(ssh: Option<&SshSettings>) -> Result<Option<String>, CoreError> {
     ssh.map(serde_json::to_string)
         .transpose()
         .map_err(|error| CoreError::Internal(error.to_string()))
+}
+
+// Saved diagram scans (ADR-0060).
+impl Storage {
+    /// Saves a scan and deletes the database's scans beyond the newest `keep`, in one
+    /// transaction: a scan reported as not saved is never listed.
+    pub(crate) fn insert_diagram_scan(
+        &self,
+        profile_id: ProfileId,
+        database: &str,
+        scan: &DiagramScanSummary,
+        diagram: &str,
+        keep: u32,
+    ) -> Result<(), CoreError> {
+        let mut connection = self.lock();
+        let transaction = connection.transaction()?;
+        #[allow(clippy::cast_possible_truncation)]
+        transaction.execute(
+            "INSERT INTO diagram_scans
+             (id, profile_id, database, created_at, pace, collections, links, skipped, diagram)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                scan.id.to_string(),
+                profile_id.to_string(),
+                database,
+                scan.created_at as i64,
+                scan.pace.as_str(),
+                scan.collections as i64,
+                scan.links as i64,
+                scan.skipped as i64,
+                diagram,
+            ],
+        )?;
+        transaction.execute(
+            "DELETE FROM diagram_scans WHERE id IN (
+                 SELECT id FROM diagram_scans WHERE profile_id = ?1 AND database = ?2
+                 ORDER BY created_at DESC, id DESC LIMIT -1 OFFSET ?3
+             )",
+            params![profile_id.to_string(), database, keep],
+        )?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    pub(crate) fn list_diagram_scans(
+        &self,
+        profile_id: ProfileId,
+        database: &str,
+    ) -> Result<Vec<DiagramScanSummary>, CoreError> {
+        let connection = self.lock();
+        let mut statement = connection.prepare(
+            "SELECT id, created_at, pace, collections, links, skipped FROM diagram_scans
+             WHERE profile_id = ?1 AND database = ?2 ORDER BY created_at DESC, id DESC",
+        )?;
+        let rows = statement.query_map(params![profile_id.to_string(), database], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, i64>(3)?,
+                row.get::<_, i64>(4)?,
+                row.get::<_, i64>(5)?,
+            ))
+        })?;
+        rows.map(|row| {
+            let (id, created_at, pace, collections, links, skipped) = row?;
+            #[allow(clippy::cast_precision_loss)]
+            Ok(DiagramScanSummary {
+                id: ScanId::parse(&id)?,
+                created_at: created_at as f64,
+                pace: ScanPace::parse(&pace)?,
+                collections: collections as f64,
+                links: links as f64,
+                skipped: skipped as f64,
+            })
+        })
+        .collect()
+    }
+
+    pub(crate) fn get_diagram_scan(&self, id: ScanId) -> Result<String, CoreError> {
+        self.lock()
+            .query_row(
+                "SELECT diagram FROM diagram_scans WHERE id = ?1",
+                params![id.to_string()],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or(CoreError::NotFound("diagram scan"))
+    }
+
+    pub(crate) fn clear_diagram_scans(&self) -> Result<u32, CoreError> {
+        let deleted = self.lock().execute("DELETE FROM diagram_scans", [])?;
+        Ok(u32::try_from(deleted).unwrap_or(u32::MAX))
+    }
 }
 
 #[cfg(test)]

@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use bson::{Bson, Document, doc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::CoreError;
 use crate::connection::ConnectionHandle;
@@ -18,7 +18,7 @@ const MAX_FIELDS: usize = 1000;
 const MAX_VALUES: usize = 12;
 const MAX_VALUE_LENGTH: usize = 64;
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct FieldSummary {
@@ -39,7 +39,7 @@ pub struct FieldSummary {
     pub range: Option<ValueRange>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct ValueRange {

@@ -4,8 +4,10 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use odin_core::CoreError;
 use odin_core::connection::ConnectionId;
-use odin_core::diagram::{self, DatabaseDiagram, DiagramProgress};
+use odin_core::diagram::scans::{self, DiagramScanSummary, ScanId};
+use odin_core::diagram::{self, DatabaseDiagram, DiagramProgress, ScanPace};
 use odin_core::operations::{OperationId, OperationRegistry};
+use odin_core::profiles::ProfileId;
 use serde::Serialize;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
@@ -15,17 +17,27 @@ use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
 use crate::ipc::{IpcError, StreamEvent, spawn_streaming_operation};
-use crate::state::AppState;
+use crate::state::{AppState, blocking};
 
 /// Collections sampled and references checked so far, then exactly one `finished`.
 #[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(tag = "kind", content = "value", rename_all = "camelCase")]
 pub enum DiagramEvent {
     Progress(DiagramProgress),
-    Finished(DatabaseDiagram),
+    Finished(FinishedScan),
 }
 
-/// Samples a database's collections and infers their references, as a cancellable operation.
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct FinishedScan {
+    pub diagram: DatabaseDiagram,
+    /// `None` when saving failed: the diagram is still shown, just not kept.
+    pub scan: Option<DiagramScanSummary>,
+    pub save_error: Option<String>,
+}
+
+/// Samples a database's collections and infers their references, as a cancellable operation,
+/// then saves the scan keeping the newest `keep` of the database (ADR-0060).
 #[tauri::command]
 #[specta::specta]
 pub async fn database_diagram(
@@ -33,9 +45,12 @@ pub async fn database_diagram(
     registry: State<'_, Arc<OperationRegistry>>,
     connection_id: ConnectionId,
     database: String,
+    pace: ScanPace,
+    keep: u32,
     channel: Channel<StreamEvent<DiagramEvent>>,
 ) -> Result<OperationId, IpcError> {
     let handle = state.connections.get(connection_id).await?;
+    let state = Arc::clone(&state);
     Ok(spawn_streaming_operation(
         &registry,
         channel,
@@ -49,11 +64,60 @@ pub async fn database_diagram(
                     }
                 }
             });
-            let found = diagram::database_diagram(&handle, &database, progress_tx, cancel).await?;
-            let _ = tx.send(DiagramEvent::Finished(found)).await;
+            let found =
+                diagram::database_diagram(&handle, &database, pace, progress_tx, cancel).await?;
+            let profile_id = handle.info.profile_id;
+            let saved = {
+                let found = found.clone();
+                blocking(&state, move |s| {
+                    scans::save(&s.storage, profile_id, &database, pace, &found, keep)
+                })
+                .await
+            };
+            let (scan, save_error) = match saved {
+                Ok(scan) => (Some(scan), None),
+                Err(error) => (None, Some(error.to_string())),
+            };
+            let _ = tx
+                .send(DiagramEvent::Finished(FinishedScan {
+                    diagram: found,
+                    scan,
+                    save_error,
+                }))
+                .await;
             Ok(())
         },
     ))
+}
+
+/// The database's saved scans, newest first.
+#[tauri::command]
+#[specta::specta]
+pub async fn list_diagram_scans(
+    state: State<'_, Arc<AppState>>,
+    profile_id: ProfileId,
+    database: String,
+) -> Result<Vec<DiagramScanSummary>, IpcError> {
+    Ok(blocking(&state, move |s| {
+        scans::list(&s.storage, profile_id, &database)
+    })
+    .await?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_diagram_scan(
+    state: State<'_, Arc<AppState>>,
+    id: ScanId,
+) -> Result<DatabaseDiagram, IpcError> {
+    Ok(blocking(&state, move |s| scans::get(&s.storage, id)).await?)
+}
+
+/// Deletes every saved diagram scan; returns how many.
+#[tauri::command]
+#[specta::specta]
+pub async fn clear_diagram_scans(state: State<'_, Arc<AppState>>) -> Result<u32, IpcError> {
+    Ok(blocking(&state, |s| scans::clear(&s.storage)).await?)
 }
 
 /// Asks where to save a PNG rendered by the diagram, then writes it. `None` if the user cancels.

@@ -3250,12 +3250,26 @@ async fn infers_references_between_collections_from_data() {
         .await
         .expect("orders");
 
-    let (tx, _rx) = tokio::sync::mpsc::channel(64);
-    let found = diagram::database_diagram(&handle, "odin_diagram", tx, CancellationToken::new())
+    db.create_collection("big_view")
+        .view_on("orders".to_owned())
+        .pipeline(vec![doc! { "$group": { "_id": "$buyer" } }])
         .await
-        .expect("diagram");
+        .expect("view");
+
+    let scan = |pace| {
+        let (tx, _rx) = tokio::sync::mpsc::channel(64);
+        diagram::database_diagram(&handle, "odin_diagram", pace, tx, CancellationToken::new())
+    };
+    let found = scan(diagram::ScanPace::Fast).await.expect("diagram");
     let names: Vec<_> = found.collections.iter().map(|c| c.name.as_str()).collect();
-    assert_eq!(names, ["customers", "orders", "products"]);
+    assert_eq!(names, ["big_view", "customers", "orders", "products"]);
+    // Views are listed, never sampled: sampling one runs its whole pipeline.
+    let view = &found.collections[0];
+    assert!(view.fields.is_empty() && view.error.is_none(), "{view:?}");
+    let found = diagram::DatabaseDiagram {
+        collections: found.collections[1..].to_vec(),
+        ..found
+    };
     let orders = &found.collections[1];
     assert!(
         orders
@@ -3276,6 +3290,17 @@ async fn infers_references_between_collections_from_data() {
             ("items.productId", "products", true)
         ]
     );
+
+    // A gentle scan looks up only fields named after a collection.
+    let gentle = scan(diagram::ScanPace::Gentle)
+        .await
+        .expect("gentle diagram");
+    let links: Vec<_> = gentle
+        .links
+        .iter()
+        .map(|link| (link.field.as_str(), link.to.as_str()))
+        .collect();
+    assert_eq!(links, [("items.productId", "products")]);
 }
 
 #[tokio::test]

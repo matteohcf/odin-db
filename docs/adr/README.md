@@ -46,7 +46,7 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0040](0040-ai-query-assistant.md) | AI query assistant | Accepted |
 | [0041](0041-collection-compare.md) | Collection compare | Accepted |
 | [0042](0042-query-profiler.md) | Query profiler | Accepted |
-| [0043](0043-database-diagram.md) | Database diagram | Accepted |
+| [0043](0043-database-diagram.md) | Database diagram | Partly superseded by 0060 |
 | [0044](0044-index-advisor.md) | Index advisor | Accepted |
 | [0045](0045-schema-compare.md) | Schema compare | Accepted |
 | [0046](0046-live-changes.md) | Live changes | Accepted |
@@ -63,3 +63,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0057](0057-custom-roles.md) | Custom roles | Accepted |
 | [0058](0058-connection-manager.md) | Connection manager | Partly superseded by 0059 |
 | [0059](0059-sidebar-lists-every-connection.md) | The sidebar lists every connection | Accepted |
+| [0060](0060-gentle-diagram-scans.md) | Gentle, saved diagram scans | Accepted |

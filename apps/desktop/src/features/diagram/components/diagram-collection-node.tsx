@@ -80,12 +80,15 @@ export const DiagramCollectionNodeView = memo(function DiagramCollectionNodeView
         {data.kind !== "collection" && (
           <span className="shrink-0 text-[11px] text-muted-foreground">{t(data.kind)}</span>
         )}
-        <span
-          className="shrink-0 text-[11px] text-muted-foreground tabular-nums group-hover:hidden"
-          title={t("documents", { count: data.documents })}
-        >
-          {formatCompact(data.documents, i18n.language)}
-        </span>
+        {/* Views are not counted: counting one runs its pipeline. */}
+        {data.kind !== "view" && (
+          <span
+            className="shrink-0 text-[11px] text-muted-foreground tabular-nums group-hover:hidden"
+            title={t("documents", { count: data.documents })}
+          >
+            {formatCompact(data.documents, i18n.language)}
+          </span>
+        )}
         <span className="hidden group-hover:flex">
           <IconAction
             label={t("open", { collection: data.name })}
@@ -152,6 +155,13 @@ export const DiagramCollectionNodeView = memo(function DiagramCollectionNodeView
             title={data.error}
           >
             <span className="truncate">{t("notSampled", { message: data.error })}</span>
+          </li>
+        ) : data.kind === "view" && data.fields.length === 0 ? (
+          <li
+            className="flex items-center px-3 font-sans text-[11px] text-muted-foreground"
+            style={{ height: ROW_HEIGHT }}
+          >
+            {t("viewNotSampled")}
           </li>
         ) : (
           data.hidden > 0 && (

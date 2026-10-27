@@ -6,7 +6,6 @@
   "cancel": "Stop",
   "failed": "Couldn't build the diagram: {{message}}",
   "cancelled": "Analysis stopped.",
-  "retry": "Analyze again",
   "empty": "This database has no collections yet.",
   "disconnected": "{{name}} is not connected.",
   "connect": "Connect",
@@ -29,6 +28,7 @@
   "more_one": "{{count}} more field",
   "more_other": "{{count}} more fields",
   "notSampled": "Not sampled: {{message}}",
+  "viewNotSampled": "Views are not sampled",
   "open": "Open {{collection}}",
   "view": "View",
   "timeseries": "Time series",
@@ -69,5 +69,34 @@
     "purple": "Purple",
     "pink": "Pink",
     "gray": "Gray"
+  },
+  "scan": {
+    "title": "Scan {{database}}",
+    "size": "{{collections}} collections, {{size}} on disk.",
+    "pace": "Pace",
+    "paces": {
+      "fast": "Fast",
+      "balanced": "Balanced",
+      "gentle": "Gentle"
+    },
+    "hints": {
+      "fast": "Four collections at a time, no pauses. For small or local databases.",
+      "balanced": "Two collections at a time, with short pauses between queries.",
+      "gentle": "One collection at a time, long pauses, smaller samples and only references named after a collection. Safest on busy production servers; it may take a while."
+    },
+    "recommended": "Recommended",
+    "note": "Every query stops on the server after 5 seconds and reads from a secondary when there is one. The tab stays usable while it runs, and the result is saved.",
+    "start": "Start scan",
+    "new": "New scan",
+    "saved": "Saved scans",
+    "option_one": "{{when}} · {{pace}} · {{count}} collection",
+    "option_other": "{{when}} · {{pace}} · {{count}} collections",
+    "skipped_one": "{{count}} collection skipped",
+    "skipped_other": "{{count}} collections skipped",
+    "skippedHint": "Too expensive to sample or not readable: the collection shows why.",
+    "notSaved": "Not saved",
+    "none": "This database has not been scanned yet.",
+    "unreadable": "Couldn't read this saved scan: {{message}}. Run a new scan.",
+    "failed": "New scan failed"
   }
 }

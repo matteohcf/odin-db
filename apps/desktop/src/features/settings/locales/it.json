@@ -202,5 +202,18 @@
       "needsMemory": "richiede {{memory}} GB di memoria",
       "guide": "La precisione è la quota di 105 richieste di prova a cui il modello risponde con la query esatta; il tempo per query è misurato su un Apple M3 e cresce sui computer più lenti. I modelli più grandi sono più precisi ma più lenti: quello consigliato è il miglior equilibrio per questo computer."
     }
+  },
+  "diagrams": {
+    "title": "Diagrammi",
+    "description": "Scansioni dei diagrammi dei database, salvate solo su questo computer.",
+    "kept": "Scansioni salvate per database",
+    "keptHint": "Le scansioni più vecchie vengono cancellate alla scansione successiva del database.",
+    "scans_one": "{{count, number}} scansione",
+    "scans_other": "{{count, number}} scansioni",
+    "clear": "Elimina tutti i diagrammi salvati",
+    "clearHint": "Dimentica tutte le scansioni salvate. Posizioni dei nodi e note restano.",
+    "delete": "Elimina",
+    "cleared_one": "{{count, number}} diagramma salvato eliminato.",
+    "cleared_other": "{{count, number}} diagrammi salvati eliminati."
   }
 }
