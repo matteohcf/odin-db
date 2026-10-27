@@ -140,6 +140,7 @@ pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, cli
 pnpm check:changed    only the gates the changes since origin/main need (JS, Rust + bindings, or none)
 pnpm format           apply Biome fixes and formatting
 pnpm test:integration core integration tests against real MongoDB (requires Docker)
+pnpm clean            delete the Rust debug build cache (target/debug grows unbounded)
 pnpm build            production build of the desktop app
 scripts/build-database-tools.sh <target>   build the bundled mongodump/mongorestore (needs Go)
 ```
