@@ -20,6 +20,7 @@
     "check:changed": "scripts/check-changed.sh",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
     "test:integration": "cargo test --workspace -- --ignored",
+    "clean": "cargo clean --profile dev",
     "prepare": "lefthook install"
   },
   "devDependencies": {
