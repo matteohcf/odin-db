@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/matteohcf/odin-db/compare/v1.7.1...v1.7.2) (2026-10-27)
+
+
+### Bug Fixes
+
+* **core:** disconnecting returns before the client finishes closing ([17bf14e](https://github.com/matteohcf/odin-db/commit/17bf14e10233880eaffdd4e5155154867b943424))
+
 ## [1.7.1](https://github.com/matteohcf/odin-db/compare/v1.7.0...v1.7.1) (2026-10-27)
 
 
