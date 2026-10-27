@@ -201,6 +201,10 @@
   --font-sans: var(--odin-sans, "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif);
   /* `--odin-mono` is the user's own monospace font, when they pick one. */
   --font-mono: var(--odin-mono, "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace);
+  /* The app's body text is 13px: shadcn's `text-sm` (14px) made dialogs, menus and popovers
+     a size larger than the screens behind them. Same 20px line height as before. */
+  --text-sm: 13px;
+  --text-sm--line-height: 20px;
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);

@@ -45,6 +45,15 @@ await check("copy a collection within the same connection under a new name", asy
   await page.getByRole("menuitem", { name: "Copy to…" }).click();
   const dialog = page.getByRole("dialog", { name: "Copy collection" });
   await dialog.getByLabel("Collection", { exact: true }).waitFor();
+  // Dialogs read at the app's own 13px, not shadcn's larger default, and titles like page headers.
+  const sizes = await dialog.evaluate((root) =>
+    [...root.querySelectorAll("label, button, h2")].map((el) => [
+      el.tagName,
+      getComputedStyle(el).fontSize,
+    ]),
+  );
+  const wrong = sizes.filter(([tag, size]) => size !== (tag === "H2" ? "16px" : "13px"));
+  if (wrong.length) throw new Error(`font sizes ${JSON.stringify(wrong)}`);
   if ((await dialog.getByLabel("Collection", { exact: true }).inputValue()) !== "orders_copy")
     throw new Error("default name");
   await dialog.getByText("shop.orders").first().waitFor();
