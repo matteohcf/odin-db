@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.1](https://github.com/matteohcf/odin-db/compare/v1.8.0...v1.8.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **desktop:** stop server monitor polling after a failed retry ([3c67f0a](https://github.com/matteohcf/odin-db/commit/3c67f0a4006f0061573d80b25d1c4219a3a9a244))
+* **desktop:** stop server monitor polling after a failed retry ([cbca0e4](https://github.com/matteohcf/odin-db/commit/cbca0e4574cd4fc1848c6c2e67d7f810a9763368))
+* **ui:** dialogs never scroll sideways or leave a gap beside the footer ([dfdc5dc](https://github.com/matteohcf/odin-db/commit/dfdc5dc9c8c2bccf3161c0a8c349b20dd947955a))
+* **ui:** dialogs never scroll sideways or leave a gap beside the footer ([84637d8](https://github.com/matteohcf/odin-db/commit/84637d87c76f6d67e86355f4f305a6ce095813e7))
+
 ## [1.8.0](https://github.com/matteohcf/odin-db/compare/v1.7.2...v1.8.0) (2026-10-27)
 
 
