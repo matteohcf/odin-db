@@ -31,19 +31,20 @@ import {
   TableRow,
 } from "@odin-db/ui/components/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, CircleAlert, OctagonX, Pause, Play } from "lucide-react";
+import { Activity, OctagonX, Pause, Play } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { InlineError } from "@/components/inline-error";
 import { PageHeader } from "@/components/page-header";
 import { compactEJson } from "@/lib/ejson-display";
 import { formatBytes } from "@/lib/format";
 import { call, errorMessage } from "@/lib/ipc";
+import { pollUntilError } from "../lib/polling";
 import { type Rates, rates, uptime } from "../lib/rates";
 import { BusiestCollectionsSection } from "./busiest-collections-section";
 import { IndexAdvisorSection } from "./index-advisor-section";
 import { MonitorSection } from "./monitor-section";
+import { PollError } from "./poll-error";
 import { ProfilerSection } from "./profiler-section";
 import { ReplicaSetSection } from "./replica-set-section";
 import { SectionNote } from "./section-note";
@@ -72,13 +73,15 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
   const status = useQuery({
     queryKey: ["server-status", connection.id],
     queryFn: () => call(commands.serverStatus(connection.id)),
-    refetchInterval: polling,
+    refetchInterval: pollUntilError(polling),
     refetchIntervalInBackground: false,
+    retry: 1,
   });
   const ops = useQuery({
     queryKey: ["current-ops", connection.id],
     queryFn: () => call(commands.currentOps(connection.id)),
-    refetchInterval: polling,
+    refetchInterval: pollUntilError(polling),
+    retry: 1,
   });
   const kill = useMutation({
     mutationFn: (op: CurrentOp) => call(commands.killOp(connection.id, op.opid)),
@@ -145,10 +148,9 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {status.error ? (
-          <p role="alert" className="flex items-start gap-2 text-destructive text-sm selectable">
-            <CircleAlert className="mt-0.5 size-4 shrink-0" />
+          <PollError onRetry={() => void status.refetch()}>
             {t("statusFailed", { message: errorMessage(status.error) })}
-          </p>
+          </PollError>
         ) : (
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <Stat
@@ -220,7 +222,7 @@ export function MonitorView({ connection, profileName, active }: MonitorViewProp
           }
         >
           {ops.error ? (
-            <InlineError>{errorMessage(ops.error)}</InlineError>
+            <PollError onRetry={() => void ops.refetch()}>{errorMessage(ops.error)}</PollError>
           ) : ops.data?.length === 0 ? (
             <SectionNote>{t("ops.none")}</SectionNote>
           ) : (

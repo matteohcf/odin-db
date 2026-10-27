@@ -11,10 +11,11 @@ import {
 import { cn } from "@odin-db/ui/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
+import { pollUntilError } from "../lib/polling";
 import { uptime } from "../lib/rates";
 import { MonitorSection } from "./monitor-section";
+import { PollError } from "./poll-error";
 
 interface ReplicaSetSectionProps {
   connection: ConnectionInfo;
@@ -30,7 +31,8 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
   const status = useQuery({
     queryKey: ["replica-set-status", connection.id],
     queryFn: () => call(commands.replicaSetStatus(connection.id)),
-    refetchInterval: polling,
+    refetchInterval: pollUntilError(polling),
+    retry: 1,
   });
   if (status.data === null || status.isPending) return null;
   const number = (value: number) =>
@@ -46,7 +48,9 @@ export function ReplicaSetSection({ connection, polling }: ReplicaSetSectionProp
       }
     >
       {status.error ? (
-        <InlineError>{t("replica.failed", { message: errorMessage(status.error) })}</InlineError>
+        <PollError onRetry={() => void status.refetch()}>
+          {t("replica.failed", { message: errorMessage(status.error) })}
+        </PollError>
       ) : (
         <div className="overflow-hidden rounded-lg border">
           <Table className="min-w-3xl table-fixed">
