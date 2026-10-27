@@ -247,6 +247,24 @@ async fn disconnect_returns_while_a_cursor_is_still_open() {
 
 #[tokio::test]
 #[ignore = "requires Docker"]
+async fn disconnect_returns_while_the_server_does_not_answer() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    browse::list_databases(&handle).await.expect("databases");
+    let id = handle.info.id;
+    drop(handle);
+    fx.container.pause().await.expect("pauses");
+
+    let disconnected =
+        tokio::time::timeout(std::time::Duration::from_secs(2), fx.manager.disconnect(id)).await;
+    fx.container.unpause().await.expect("unpauses");
+    disconnected
+        .expect("disconnect does not wait for the server")
+        .expect("disconnects");
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
 async fn concurrent_connects_to_one_profile_share_a_connection() {
     let fx = Fixture::start().await;
     let profile = fx.profile(false);

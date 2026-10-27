@@ -191,8 +191,12 @@ impl ConnectionManager {
             .remove(&id)
             .ok_or(CoreError::NotConnected)?;
         handle.health.armed.store(false, Ordering::SeqCst);
-        // A plain shutdown waits forever for every live cursor (an open tab, a live feed) to drop.
-        handle.client.clone().shutdown().immediate(true).await;
+        // Closing talks to the server (endSessions), which can take as long as server selection
+        // when it is slow or gone: the connection is already closed for the app, so do it apart.
+        // A plain shutdown would also wait forever for every live cursor (an open tab, a live feed).
+        tokio::spawn(async move {
+            handle.client.clone().shutdown().immediate(true).await;
+        });
         Ok(())
     }
 
