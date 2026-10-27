@@ -266,10 +266,6 @@
   ::selection {
     background-color: color-mix(in oklab, var(--primary) 35%, transparent);
   }
-  /* A scrollbar that appears in a tall dialog would narrow it, rewrap it and flicker. */
-  [data-slot="dialog-content"] {
-    scrollbar-gutter: stable;
-  }
   /* Only a dialog that scrolls itself pins its footer; elsewhere sticky would latch onto the page. */
   [data-slot="dialog-content"].overflow-y-auto [data-slot="dialog-footer"] {
     position: sticky;
