@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { InlineError } from "@/components/inline-error";
 import { useTabs } from "@/features/workspace";
 import { call, errorMessage } from "@/lib/ipc";
+import { pollUntilError } from "../lib/polling";
 import { indexHint } from "../lib/profile";
 import { MonitorSection } from "./monitor-section";
 import { ProfileEntryDialog } from "./profile-entry-dialog";
@@ -82,7 +83,8 @@ export function ProfilerSection({ connection, polling }: ProfilerSectionProps) {
     queryFn: () =>
       call(commands.profileEntries(connection.id, { database, collection: null, minMillis: null })),
     enabled: database !== "",
-    refetchInterval: recording ? polling : false,
+    refetchInterval: pollUntilError(recording ? polling : false),
+    retry: 1,
   });
 
   const change = useMutation({

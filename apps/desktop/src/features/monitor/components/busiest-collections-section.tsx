@@ -10,10 +10,11 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { InlineError } from "@/components/inline-error";
 import { call, errorMessage } from "@/lib/ipc";
 import { type ActivityRate, activityRates } from "../lib/activity";
+import { pollUntilError } from "../lib/polling";
 import { MonitorSection } from "./monitor-section";
+import { PollError } from "./poll-error";
 import { SectionNote } from "./section-note";
 
 interface BusiestCollectionsSectionProps {
@@ -27,7 +28,8 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
   const activity = useQuery({
     queryKey: ["collection-activity", connection.id],
     queryFn: () => call(commands.collectionActivity(connection.id)),
-    refetchInterval: polling,
+    refetchInterval: pollUntilError(polling),
+    retry: 1,
   });
   const previous = useRef<{ at: number; sample: readonly CollectionActivity[] } | null>(null);
   const [rates, setRates] = useState<ActivityRate[] | null>(null);
@@ -53,7 +55,9 @@ export function BusiestCollectionsSection({ connection, polling }: BusiestCollec
       detail={<span className="text-muted-foreground text-xs">{t("busiest.hint")}</span>}
     >
       {activity.error ? (
-        <InlineError>{t("busiest.failed", { message: errorMessage(activity.error) })}</InlineError>
+        <PollError onRetry={() => void activity.refetch()}>
+          {t("busiest.failed", { message: errorMessage(activity.error) })}
+        </PollError>
       ) : rates === null ? (
         <SectionNote>{t("stats.measuring")}</SectionNote>
       ) : rates.length === 0 ? (

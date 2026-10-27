@@ -10,10 +10,11 @@ import {
 } from "@odin-db/ui/components/table";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { InlineError } from "@/components/inline-error";
 import { compactEJson } from "@/lib/ejson-display";
 import { call, errorMessage } from "@/lib/ipc";
+import { pollUntilError } from "../lib/polling";
 import { MonitorSection } from "./monitor-section";
+import { PollError } from "./poll-error";
 
 interface ShardingSectionProps {
   connection: ConnectionInfo;
@@ -27,7 +28,8 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
     queryKey: ["sharding-status", connection.id],
     queryFn: () => call(commands.shardingStatus(connection.id)),
     // Shards change rarely: a slower pace than the live counters.
-    refetchInterval: polling === false ? false : Math.max(polling, 10_000),
+    refetchInterval: pollUntilError(polling === false ? false : Math.max(polling, 10_000)),
+    retry: 1,
   });
   if (status.data === null || status.isPending) return null;
 
@@ -47,7 +49,9 @@ export function ShardingSection({ connection, polling }: ShardingSectionProps) {
       }
     >
       {status.error ? (
-        <InlineError>{t("sharding.failed", { message: errorMessage(status.error) })}</InlineError>
+        <PollError onRetry={() => void status.refetch()}>
+          {t("sharding.failed", { message: errorMessage(status.error) })}
+        </PollError>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="overflow-hidden rounded-lg border">
