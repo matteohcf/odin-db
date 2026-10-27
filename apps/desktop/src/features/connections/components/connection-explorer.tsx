@@ -14,11 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@odin-db/ui/components/dropdown-menu";
 import { Kbd } from "@odin-db/ui/components/kbd";
+import { Label } from "@odin-db/ui/components/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@odin-db/ui/components/popover";
+import { Switch } from "@odin-db/ui/components/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@odin-db/ui/components/tooltip";
 import {
   ChevronsDownUp,
   FileDown,
   FileUp,
+  Filter,
   LocateFixed,
   MoreHorizontal,
   Plus,
@@ -27,7 +31,7 @@ import {
   Unplug,
   X,
 } from "lucide-react";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useTabs } from "@/features/workspace";
@@ -72,6 +76,9 @@ export function ConnectionExplorer() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const filter = useExplorer((s) => s.filter);
   const setFilter = useExplorer((s) => s.setFilter);
+  const openOnly = useExplorer((s) => s.openOnly);
+  const setOpenOnly = useExplorer((s) => s.setOpenOnly);
+  const openOnlyId = useId();
   const collapseAll = useExplorer((s) => s.collapseAll);
   const reveal = useExplorer((s) => s.reveal);
   const activeCollection = useTabs((s) => {
@@ -89,6 +96,11 @@ export function ConnectionExplorer() {
   const { data: connections } = useConnections();
   const disconnectAll = useDisconnectAll();
   const exportMutation = useExportConnections();
+  const shownProfiles = openOnly
+    ? profiles?.filter((profile) =>
+        connections?.some((connection) => connection.profileId === profile.id),
+      )
+    : profiles;
 
   function reportImported(result: ImportedProfiles) {
     toast.success(
@@ -269,46 +281,74 @@ export function ConnectionExplorer() {
       />
 
       {profiles && profiles.length > 0 && (
-        <div className="relative shrink-0 px-3 pb-1.5">
-          <Search className="pointer-events-none absolute top-1/2 left-5 -mt-[3px] size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            ref={filterInput}
-            type="search"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                setFilter("");
-                event.currentTarget.blur();
+        <div className="flex shrink-0 items-center gap-1 px-3 pb-1.5">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={filterInput}
+              type="search"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setFilter("");
+                  event.currentTarget.blur();
+                }
+                // From the filter straight into the (filtered) tree.
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  scroller.current
+                    ?.querySelector<HTMLElement>("li[data-index] button:not([aria-haspopup])")
+                    ?.focus();
+                }
+              }}
+              placeholder={t("explorer.filter")}
+              title={
+                filterSidebarKeys
+                  ? `${t("explorer.filterLabel")} (${filterSidebarKeys})`
+                  : t("explorer.filterLabel")
               }
-              // From the filter straight into the (filtered) tree.
-              if (event.key === "ArrowDown") {
-                event.preventDefault();
-                scroller.current
-                  ?.querySelector<HTMLElement>("li[data-index] button:not([aria-haspopup])")
-                  ?.focus();
-              }
-            }}
-            placeholder={t("explorer.filter")}
-            title={
-              filterSidebarKeys
-                ? `${t("explorer.filterLabel")} (${filterSidebarKeys})`
-                : t("explorer.filterLabel")
-            }
-            aria-label={t("explorer.filterLabel")}
-            spellCheck={false}
-            className="h-8 w-full rounded-md border border-input bg-background pr-7 pl-7.5 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
-          />
-          {filter && (
-            <button
-              type="button"
-              aria-label={t("explorer.clearFilter")}
-              onClick={() => setFilter("")}
-              className="absolute top-1/2 right-5 -mt-[3px] -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
-            >
-              <X className="size-3" />
-            </button>
-          )}
+              aria-label={t("explorer.filterLabel")}
+              spellCheck={false}
+              className="h-8 w-full rounded-md border border-input bg-background pr-7 pl-7.5 text-[13px] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
+            />
+            {filter && (
+              <button
+                type="button"
+                aria-label={t("explorer.clearFilter")}
+                onClick={() => setFilter("")}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={t("explorer.filterOptions")}
+                className="relative size-8"
+              >
+                <Filter className="size-3.5" />
+                {openOnly && (
+                  <span className="absolute top-1 right-1 size-1.5 rounded-full bg-primary" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" side="right" className="w-auto p-3">
+              <p className="mb-2.5 font-semibold text-[11px] uppercase tracking-wide">
+                {t("explorer.filterOptions")}
+              </p>
+              <div className="flex items-center gap-2.5">
+                <Switch id={openOnlyId} checked={openOnly} onCheckedChange={setOpenOnly} />
+                <Label htmlFor={openOnlyId} className="whitespace-nowrap">
+                  {t("explorer.openOnly")}
+                </Label>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 
@@ -341,8 +381,11 @@ export function ConnectionExplorer() {
         ) : (
           <>
             <FavoritesSection />
+            {shownProfiles?.length === 0 && (
+              <p className="px-3 py-2 text-muted-foreground text-xs">{t("explorer.noneOpen")}</p>
+            )}
             <TreeList
-              profiles={profiles}
+              profiles={shownProfiles ?? []}
               scrollRef={scroller}
               onExport={(profile) => void exportConnections([profile.id])}
               onEdit={(profile) => setDialog({ type: "edit", profile })}

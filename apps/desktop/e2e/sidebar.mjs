@@ -120,6 +120,25 @@ await check("the filter matches connection names and explains no match", async (
   await page.getByText("Nothing matches “zzz-nothing”.").waitFor();
   await input.fill("");
 });
+await check("the filter options show only open connections", async () => {
+  const options = aside().getByRole("button", { name: "Filter options" });
+  const toggle = page.getByRole("switch", { name: "Show only open connections" });
+  const row = (name) => aside().getByRole("button", { name });
+  await options.click();
+  await toggle.click();
+  await row(/^Production \(Atlas\)/)
+    .first()
+    .waitFor();
+  if (await row(/^Staging \(bastion\)/).count()) throw new Error("closed connection shown");
+  if ((await toggle.getAttribute("aria-checked")) !== "true") throw new Error("switch not on");
+  await page.waitForTimeout(300);
+  await shot("open-only");
+  await toggle.click();
+  await page.keyboard.press("Escape");
+  await row(/^Staging \(bastion\)/)
+    .first()
+    .waitFor();
+});
 await check("hovering a row shows its menu button; right-click opens the row menu", async () => {
   await page.keyboard.press("Escape");
   const connection = aside()

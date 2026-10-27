@@ -17,6 +17,9 @@ interface ExplorerState {
   /** Narrows the tree to databases and collections whose name contains it. */
   filter: string;
   setFilter: (filter: string) => void;
+  /** Hides the saved connections that are not open. */
+  openOnly: boolean;
+  setOpenOnly: (openOnly: boolean) => void;
   /** A collection row the tree should scroll to, once its catalog is loaded. */
   revealing: string | null;
   reveal: (profileId: string, database: string, collection: string) => void;
@@ -56,6 +59,8 @@ export const useExplorer = create<ExplorerState>()((set) => ({
   collapseAll: (collapsed = []) => set({ expanded: new Set(collapsed) }),
   filter: "",
   setFilter: (filter) => set({ filter }),
+  openOnly: false,
+  setOpenOnly: (openOnly) => set({ openOnly }),
   revealing: null,
   reveal: (profileId, database, collection) =>
     set((state) => ({
