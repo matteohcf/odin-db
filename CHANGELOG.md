@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/matteohcf/odin-db/compare/v1.7.2...v1.8.0) (2026-10-27)
+
+
+### Features
+
+* **core:** gentle, saved diagram scans ([0817b05](https://github.com/matteohcf/odin-db/commit/0817b05555e8d6e5e6388638f44be47d41ca5d14))
+
 ## [1.7.2](https://github.com/matteohcf/odin-db/compare/v1.7.1...v1.7.2) (2026-10-27)
 
 
