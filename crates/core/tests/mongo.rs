@@ -220,6 +220,33 @@ async fn connects_lists_and_reports_server_version() {
 
 #[tokio::test]
 #[ignore = "requires Docker"]
+async fn disconnect_returns_while_a_cursor_is_still_open() {
+    let fx = Fixture::start().await;
+    let handle = fx.connect(false).await;
+    let ns = namespace("people");
+    fx.seed(&handle, &ns, 10).await;
+    // A live feed or a running operation can still hold a server-side cursor.
+    let cursor = handle
+        .client
+        .database(&ns.database)
+        .collection::<Document>(&ns.collection)
+        .find(doc! {})
+        .batch_size(2)
+        .await
+        .expect("cursor");
+
+    tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        fx.manager.disconnect(handle.info.id),
+    )
+    .await
+    .expect("disconnect does not wait for the cursor")
+    .expect("disconnects");
+    drop(cursor);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker"]
 async fn concurrent_connects_to_one_profile_share_a_connection() {
     let fx = Fixture::start().await;
     let profile = fx.profile(false);

@@ -191,7 +191,8 @@ impl ConnectionManager {
             .remove(&id)
             .ok_or(CoreError::NotConnected)?;
         handle.health.armed.store(false, Ordering::SeqCst);
-        handle.client.clone().shutdown().await;
+        // A plain shutdown waits forever for every live cursor (an open tab, a live feed) to drop.
+        handle.client.clone().shutdown().immediate(true).await;
         Ok(())
     }
 
