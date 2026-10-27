@@ -85,7 +85,8 @@ jobs:
     name: Integration (MongoDB ${{ matrix.mongo }})
     needs: changes
     if: needs.changes.outputs.rust == 'true'
-    runs-on: ubuntu-24.04
+    # MongoDB 8.0 refuses to start on Linux 6.19+ (SERVER-121912), the ubuntu-24.04 kernel.
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -95,6 +96,9 @@ jobs:
       - name: Install Rust toolchain from rust-toolchain.toml
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # Not shared with the ubuntu-24.04 jobs: their C objects need a newer glibc.
+          key: ubuntu-22.04
       - name: Install MongoDB Database Tools (pinned, hash-verified)
         env:
           TOOLS_URL: https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.19.1.tgz
@@ -115,7 +119,7 @@ jobs:
           echo "ODIN_MONGOSH=$RUNNER_TEMP/mongosh/bin/mongosh" >> "$GITHUB_ENV"
       # Parallel tests pulling the same image at once break the pull on the runner.
       - name: Pull MongoDB image
-        run: docker pull mongo:${{ matrix.mongo }}
+        run: uname -r && docker pull mongo:${{ matrix.mongo }}
       - name: Core tests against a real MongoDB (testcontainers)
         run: cargo test -p odin-core --test mongo -- --ignored
         env:
