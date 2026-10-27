@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.1](https://github.com/matteohcf/odin-db/compare/v1.7.0...v1.7.1) (2026-10-27)
+
+
+### Features
+
+* **desktop:** filter the sidebar to open connections only ([339472c](https://github.com/matteohcf/odin-db/commit/339472cfb24f61680563a72bd90b4321bb2bb305))
+
+
+### Bug Fixes
+
+* **core:** disconnecting no longer waits for open cursors ([dee7e4d](https://github.com/matteohcf/odin-db/commit/dee7e4d53353fee5c66ed1fefa88239be0aa1e4b))
+* **ui:** dialogs and popovers use the app's 13px text size ([f6400bc](https://github.com/matteohcf/odin-db/commit/f6400bc0fa1bb802ea2fe7e90049c3a0ce8eafc3))
+
 ## [1.7.0](https://github.com/matteohcf/odin-db/compare/v1.6.0...v1.7.0) (2026-10-26)
 
 

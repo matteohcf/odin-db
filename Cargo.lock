@@ -4485,7 +4485,7 @@ dependencies = [
 
 [[package]]
 name = "odin-ai"
-version = "1.7.0"
+version = "1.7.1"
 dependencies = [
  "bson",
  "jiff",
@@ -4503,7 +4503,7 @@ dependencies = [
 
 [[package]]
 name = "odin-core"
-version = "1.7.0"
+version = "1.7.1"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -4535,7 +4535,7 @@ dependencies = [
 
 [[package]]
 name = "odin-desktop"
-version = "1.7.0"
+version = "1.7.1"
 dependencies = [
  "base64 0.22.1",
  "jiff",
