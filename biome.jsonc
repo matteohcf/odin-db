@@ -1,0 +1,104 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!**/src-tauri/gen", "!**/*.gen.ts", "!.release-please-manifest.json"]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@tauri-apps/api": {
+                "message": "Import a submodule (@tauri-apps/api/core, /event, /window...): the root re-exports core, whose invoke() bypasses @odin-db/bindings (CLAUDE.md, Dependency rules)."
+              },
+              "@tauri-apps/api/index": {
+                "message": "Import a submodule (@tauri-apps/api/core, /event, /window...): the root re-exports core, whose invoke() bypasses @odin-db/bindings (CLAUDE.md, Dependency rules)."
+              },
+              "@tauri-apps/api/core": {
+                "allowImportNames": ["Channel", "isTauri"],
+                "message": "The UI talks to the backend only through @odin-db/bindings: never call invoke() with a command name (CLAUDE.md, Dependency rules)."
+              }
+            }
+          }
+        }
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // An override's options replace the root's rather than merge with them, so the backend
+      // restriction above is repeated here: change both together.
+      "includes": ["packages/ui/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@tauri-apps/api": {
+                    "message": "Import a submodule (@tauri-apps/api/core, /event, /window...): the root re-exports core, whose invoke() bypasses @odin-db/bindings (CLAUDE.md, Dependency rules)."
+                  },
+                  "@tauri-apps/api/index": {
+                    "message": "Import a submodule (@tauri-apps/api/core, /event, /window...): the root re-exports core, whose invoke() bypasses @odin-db/bindings (CLAUDE.md, Dependency rules)."
+                  },
+                  "@tauri-apps/api/core": {
+                    "allowImportNames": ["Channel", "isTauri"],
+                    "message": "The UI talks to the backend only through @odin-db/bindings: never call invoke() with a command name (CLAUDE.md, Dependency rules)."
+                  }
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "@odin-db/bindings",
+                      "@odin-db/bindings/**",
+                      "@odin-db/desktop",
+                      "@odin-db/desktop/**",
+                      "**/apps/**",
+                      "**/bindings/**"
+                    ],
+                    "message": "packages/ui holds shared components only: it never imports from apps/* or packages/bindings (CLAUDE.md, Dependency rules)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

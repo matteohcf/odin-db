@@ -35,22 +35,25 @@ docs/adr/                Architecture Decision Records
 
 - `crates/core` and `crates/ai` never depend on `tauri*`. They must compile and test standalone; `ai` may use `core`, never the reverse.
 - `src-tauri` commands are thin: deserialize → call core → map `CoreError` to `IpcError`. No business logic, no MongoDB calls.
-- `packages/ui` never imports from `apps/*` or `packages/bindings`.
-- The UI talks to the backend only through `packages/bindings`. Never call `invoke()` with string command names.
+- `packages/ui` never imports from `apps/*` or `packages/bindings` (checked by Biome's `noRestrictedImports`, `biome.jsonc`).
+- The UI talks to the backend only through `packages/bindings`. Never call `invoke()` with string command names. Checked by Biome's `noRestrictedImports`: from `@tauri-apps/api/core` the UI imports only `Channel` and `isTauri`, and the bare `@tauri-apps/api` (which re-exports `core`) or its `/index` not at all.
 - `packages/bindings` is generated. Never edit it by hand. Regenerate with `pnpm bindings`.
-- Features import other features only through their `index.ts`, and dependencies point one way:
+- Features import other features only through their `index.ts`, and dependencies point one way (checked by `apps/desktop/src/app/feature-boundaries.test.ts`, whose `FEATURE_DEPENDENCIES` is this list as a table: change both together; Vitest's module cache can hide a brand-new file from it locally until `vitest --clearCache`):
   - `workspace` and `results` know no other feature (`workspace` gets render props from the app);
   - `documents` and `aggregation` build on `results` and open `transfer` dialogs; `documents` shows `ai`'s Ask button; `indexes` stands alone;
   - `ai` (the query assistant) uses `workspace` only, to open its settings page;
-  - `collection` (the collection tab) composes `documents`, `aggregation`, `schema`, `indexes` and `changes` (the live feed) with `connections`;
-  - `shell` (the shell tab) uses `connections` for the profile and its connection;
+  - `collection` (the collection tab) composes `documents`, `aggregation`, `schema`, `indexes` and `changes` (the live feed) with `connections`, and uses `workspace` for its tab model;
+  - `shell` (the shell tab) uses `connections` for the profile and its connection, and `workspace` for its tab model;
   - `backups` (history and schedules) uses `connections` and `backup`; `connections` opens it through `workspace` only;
-  - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection; `monitor` opens `indexes`' create dialog for the index advisor;
+  - `monitor` (the server status tab) and `users` (users and roles) use `connections` for the profile and its connection, and `workspace` for their tab model (`monitor` also opens collection tabs); `monitor` opens `indexes`' create dialog for the index advisor;
   - `settings` (the settings tab) reads `results` and `documents` stores, uses `updates` for its update row, `ai` for model downloads and `diagram` to delete saved scans; preferences themselves live in `src/lib/settings.ts` so any feature can read them;
   - `compare` (collection and schema compare) uses `results` for the document diff;
   - `diagram` (the database diagram tab) uses `connections` for the connection and `workspace` for its tab model;
+  - `queries` (saved queries and pipelines) reads `documents`' history and `aggregation`'s saved pipelines, and opens them through `connections` and `workspace`;
+  - `backup`, `transfer`, `schema`, `changes`, `updates` and `perf-lab` (the benchmarks) know no other feature;
   - `connections` may use `workspace` to open tabs, and `backup`, `transfer` and `compare` for its dialogs; only `src/app` wires the top level together.
-- Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree.
+- Shared code (`src/lib`, `src/components`, `src/hooks`, `src/dev`, `main.tsx`) knows no feature; `src/lib/i18n.ts` only registers each feature's `locales/*.json`. `src/app` reaches inside a feature only to lazy-load a page with `import()`.
+- Imports use the `@/` alias for `src/`; relative imports only within the same folder subtree (checked by `feature-boundaries.test.ts`).
 
 ## Core concepts
 
