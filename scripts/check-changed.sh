@@ -23,27 +23,11 @@ run_rust=false
 if printf '%s\n' "$files" | grep -qE "$js_pattern"; then run_js=true; fi
 if printf '%s\n' "$files" | grep -qE "$rust_pattern"; then run_rust=true; fi
 
-if $run_js; then
-  echo "▸ JS gates"
-  # One per line: under `set -e` a failing `a && b` chain would not stop the script.
-  pnpm lint
-  pnpm typecheck
-  pnpm knip
-  pnpm test
-fi
-if $run_rust; then
-  echo "▸ Rust gates"
-  pnpm check:rust
-  # Rust types cross into TypeScript: the bindings must follow. Compared with the file as it
-  # is, not as committed, so freshly regenerated bindings pass before the commit.
-  bindings=packages/bindings/src/bindings.gen.ts
-  before=$(shasum "$bindings")
-  pnpm bindings
-  if [ "$(shasum "$bindings")" != "$before" ]; then
-    echo "The bindings were out of date; they are regenerated now: review and commit them."
-    exit 1
-  fi
-fi
 if ! $run_js && ! $run_rust; then
   echo "Only docs or other files changed: nothing to check."
+  exit 0
 fi
+source scripts/lib/gates.sh
+if $run_js; then js_gates; fi
+if $run_rust; then rust_gates; fi
+summary

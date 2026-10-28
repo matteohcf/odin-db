@@ -23,7 +23,7 @@ To work on the UI without a database, `pnpm --filter @odin-db/desktop dev:web` r
 - Branch from `main`. One logical change per PR.
 - Commits and PR titles follow [Conventional Commits](https://www.conventionalcommits.org): `feat(core): ...`, `fix(desktop): ...`. Scopes: `core`, `desktop`, `ui`, `bindings`, `ci`, `deps`, `docs`. Release notes are generated from them.
 - Changed a Rust type or command used by the UI? Run `pnpm bindings` and commit the result. CI fails if bindings are stale.
-- Run `pnpm check` before pushing (or `pnpm check:changed` for only the gates your change needs). It runs the same gates as CI.
+- Run `pnpm check` before pushing (or `pnpm check:changed` for only the gates your change needs). It runs the same gates as CI, all of them even when one fails, and lists the failed ones at the end. On Windows the scripts run in the bash that comes with Git for Windows.
 
 ## Pull request checklist
 

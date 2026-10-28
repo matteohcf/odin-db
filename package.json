@@ -16,10 +16,9 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "knip": "knip",
-    "check": "pnpm lint && pnpm typecheck && pnpm knip && pnpm test && pnpm check:rust",
-    "check:changed": "scripts/check-changed.sh",
+    "check": "node scripts/run-sh.mjs scripts/check.sh",
+    "check:changed": "node scripts/run-sh.mjs scripts/check-changed.sh",
     "check:docs": "node scripts/check-doc-refs.mjs",
-    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
     "test:integration": "cargo test --workspace -- --ignored",
     "clean": "cargo clean --profile dev",
     "prepare": "lefthook install"

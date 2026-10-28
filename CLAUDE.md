@@ -142,8 +142,11 @@ pnpm dev              run the desktop app in dev mode
 pnpm --filter @odin-db/desktop dev:web   UI only, in a browser, with the mock backend
 pnpm --filter @odin-db/desktop e2e       Playwright UI checks (needs dev:web running)
 pnpm bindings         regenerate packages/bindings from Rust
-pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, clippy, cargo test
-pnpm check:changed    only the gates the changes since origin/main need (JS, Rust + bindings, or none)
+pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, clippy, cargo test, bindings;
+                      runs them all and lists the failed ones at the end (scripts/check.sh);
+                      Ctrl-C stops the whole run; on Windows it runs in Git's bash (scripts/run-sh.mjs)
+pnpm check:changed    only the gates the changes since origin/main need (JS, Rust + bindings, or none),
+                      reporting failures the same way
 pnpm check:docs       report paths the living docs name that resolve to nothing (never fails)
 pnpm format           apply Biome fixes and formatting
 pnpm test:integration core integration tests against real MongoDB (requires Docker)
