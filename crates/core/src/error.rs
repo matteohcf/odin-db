@@ -71,7 +71,20 @@ impl CoreError {
             Self::UnknownHostKey(fingerprint) | Self::HostKeyChanged(fingerprint) => {
                 Some(fingerprint.clone())
             }
-            _ => None,
+            Self::Cancelled
+            | Self::Validation(_)
+            | Self::NotFound(_)
+            | Self::NotConnected
+            | Self::ReadOnly
+            | Self::Auth(_)
+            | Self::Network(_)
+            | Self::CursorExpired
+            | Self::TimeLimit(_)
+            | Self::Database(_)
+            | Self::Storage(_)
+            | Self::SecretStore(_)
+            | Self::Integrity(_)
+            | Self::Internal(_) => None,
         }
     }
 
@@ -104,6 +117,10 @@ const CURSOR_NOT_FOUND: i32 = 43;
 const MAX_TIME_EXPIRED: i32 = 50;
 
 impl From<mongodb::error::Error> for CoreError {
+    #[expect(
+        clippy::wildcard_enum_match_arm,
+        reason = "the driver's ErrorKind is non-exhaustive; other kinds are database errors"
+    )]
     fn from(error: mongodb::error::Error) -> Self {
         use mongodb::error::{ErrorKind as Kind, WriteFailure};
 

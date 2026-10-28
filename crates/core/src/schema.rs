@@ -54,6 +54,10 @@ enum Ordered {
     Date,
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "only numeric and date BSON types can be ordered"
+)]
 fn ordered(value: &Bson) -> Option<(Ordered, f64)> {
     #[allow(clippy::cast_precision_loss)]
     match value {
@@ -229,6 +233,10 @@ fn collect(document: &Document, prefix: &str, depth: usize, seen: &mut HashMap<S
     }
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "only BSON arrays and documents need more than the value itself"
+)]
 fn record(value: &Bson, path: &str, depth: usize, seen: &mut HashMap<String, Seen>) {
     let found = seen.entry(path.to_owned()).or_default();
     let kind = type_name(value);

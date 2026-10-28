@@ -271,6 +271,10 @@ pub(super) async fn write_batch(
     }
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the driver's ErrorKind is non-exhaustive; only InsertMany is a partial insert"
+)]
 async fn insert_batch(
     collection: &mongodb::Collection<Document>,
     batch: Vec<(u64, Document)>,

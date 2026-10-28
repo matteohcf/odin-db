@@ -10,6 +10,10 @@ use crate::commands::backup::remember_path;
 use crate::events::{DroppedFile, FileDragChanged, FilesDropped};
 use crate::state::AppState;
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "tauri's DragDropEvent is non-exhaustive; Over and future events need nothing"
+)]
 pub fn on_drag_drop(app: &AppHandle, event: &DragDropEvent) {
     match event {
         DragDropEvent::Enter { .. } => {

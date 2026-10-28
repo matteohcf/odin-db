@@ -74,6 +74,10 @@ pub fn parse_cell(text: &str, kind: CsvType) -> Result<Option<Bson>, String> {
 }
 
 /// A cell for export: scalars as plain text, structures as relaxed Extended JSON.
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "every other BSON type is written as Extended JSON"
+)]
 pub fn format_cell(value: &Bson) -> String {
     match value {
         Bson::String(text) => text.clone(),
@@ -133,6 +137,10 @@ pub fn get_path<'a>(document: &'a Document, path: &str) -> Option<&'a Bson> {
 }
 
 /// Writes a dotted path, creating intermediate documents.
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "a parent must be a BSON document; every other type is a conflict"
+)]
 pub fn set_path(document: &mut Document, path: &str, value: Bson) -> Result<(), String> {
     match path.split_once('.') {
         None => {

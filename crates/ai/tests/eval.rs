@@ -5,6 +5,10 @@
 //!     --test eval -- --ignored --nocapture
 
 #![allow(clippy::unwrap_used)]
+#![expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "test code matching serde_json and BSON values"
+)]
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;

@@ -57,6 +57,10 @@ struct Answer {
 
 /// Turns the model's JSON answer into a query, or explains why it cannot be used.
 /// `fields` repairs a common slip of small models: dates and ids written as plain strings.
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "every BSON type other than a document is rejected the same way"
+)]
 pub fn parse_answer(text: &str, fields: &[FieldHint]) -> Result<GeneratedQuery, CoreError> {
     let unusable = |reason: String| {
         CoreError::Validation(format!(
@@ -106,6 +110,10 @@ fn forbidden_operator(document: &Document) -> Option<&'static str> {
     })
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "only BSON documents and arrays can hold an operator"
+)]
 fn forbidden_in(value: &Bson) -> Option<&'static str> {
     match value {
         Bson::Document(document) => forbidden_operator(document),

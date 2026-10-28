@@ -168,6 +168,10 @@ fn entry(document: &Document) -> ProfileEntry {
 }
 
 /// Servers report these counters as Int32, Int64 or Double depending on version.
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "every non-numeric BSON type counts as 0"
+)]
 fn integer(value: &Bson) -> i64 {
     match value {
         Bson::Int32(value) => i64::from(*value),

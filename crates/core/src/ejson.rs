@@ -73,6 +73,10 @@ impl TryFrom<EJsonDocument> for Document {
 
 /// Any BSON number as `f64` (what crosses IPC); `0` for other types.
 #[allow(clippy::cast_precision_loss)]
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "every non-numeric BSON type counts as 0"
+)]
 pub(crate) fn number_of(value: &Bson) -> f64 {
     match value {
         Bson::Int32(n) => f64::from(*n),

@@ -29,6 +29,10 @@ pub(super) fn filter(document: &mut Document, fields: &[FieldHint]) {
     }
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "only BSON strings, operator documents and arrays need repair"
+)]
 fn convert(value: &mut Bson, field: &FieldHint) {
     match value {
         Bson::String(text) => {

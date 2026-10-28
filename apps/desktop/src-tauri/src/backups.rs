@@ -95,7 +95,21 @@ pub async fn run_backup(
 fn clone_error(error: &CoreError) -> CoreError {
     match error {
         CoreError::Cancelled => CoreError::Cancelled,
-        other => CoreError::Internal(other.to_string()),
+        other @ (CoreError::Validation(_)
+        | CoreError::NotFound(_)
+        | CoreError::NotConnected
+        | CoreError::ReadOnly
+        | CoreError::Auth(_)
+        | CoreError::Network(_)
+        | CoreError::CursorExpired
+        | CoreError::TimeLimit(_)
+        | CoreError::Database(_)
+        | CoreError::Storage(_)
+        | CoreError::SecretStore(_)
+        | CoreError::Integrity(_)
+        | CoreError::UnknownHostKey(_)
+        | CoreError::HostKeyChanged(_)
+        | CoreError::Internal(_)) => CoreError::Internal(other.to_string()),
     }
 }
 

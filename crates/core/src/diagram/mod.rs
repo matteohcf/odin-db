@@ -338,6 +338,10 @@ fn candidates_of(collection: &str, documents: &[Document]) -> Vec<Candidate> {
     candidates
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "only ObjectIds and the BSON containers that can hold them matter"
+)]
 fn walk(
     value: &Bson,
     path: &str,

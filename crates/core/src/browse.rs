@@ -62,6 +62,10 @@ pub async fn list_collections(
     collections_of(&handle.client, database).await
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "the driver's CollectionType is non-exhaustive; anything else is a plain collection"
+)]
 async fn collections_of(
     client: &mongodb::Client,
     database: &str,

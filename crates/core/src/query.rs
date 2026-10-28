@@ -99,6 +99,10 @@ impl QueryOptions {
         parse_collation(self.collation.clone())
     }
 
+    #[expect(
+        clippy::wildcard_enum_match_arm,
+        reason = "a hint is a BSON string or document; every other type is invalid"
+    )]
     pub(crate) fn hint(&self) -> Result<Option<Hint>, CoreError> {
         let Some(hint) = self.hint.clone() else {
             return Ok(None);

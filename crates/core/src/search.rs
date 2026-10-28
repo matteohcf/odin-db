@@ -130,6 +130,10 @@ impl Matcher {
         }
     }
 
+    #[expect(
+        clippy::wildcard_enum_match_arm,
+        reason = "only text, ids, numbers and BSON containers can match"
+    )]
     fn walk_value(&self, value: &Bson, path: &str, found: &mut Vec<Found>) {
         match value {
             Bson::String(text) => {

@@ -328,6 +328,10 @@ async fn index_usage(
 }
 
 #[allow(clippy::cast_precision_loss)]
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "every non-numeric BSON type has no count"
+)]
 fn as_f64(value: &Bson) -> Option<f64> {
     match value {
         Bson::Int32(n) => Some(f64::from(*n)),
