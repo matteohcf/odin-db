@@ -1045,9 +1045,9 @@ export type ModelSpec = {
 	benchmark: Benchmark | null,
 };
 
-export type ModelState = { state: "absent" } | 
+export type ModelState = { kind: "absent" } | 
 /**  A paused or interrupted download, resumable from `received` bytes. */
-{ state: "partial"; received: number | null } | { state: "installed" };
+{ kind: "partial"; received: number | null } | { kind: "installed" };
 
 export type MongoshStatus = {
 	available: boolean,

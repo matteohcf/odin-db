@@ -1556,10 +1556,10 @@ const handlers: Record<string, (args: Record<string, unknown>) => unknown> = {
     models: MOCK_MODELS.map((spec) => ({
       spec,
       state: mockAi.installed.has(spec.id)
-        ? { state: "installed" }
+        ? { kind: "installed" }
         : mockAi.partial.has(spec.id)
-          ? { state: "partial", received: mockAi.partial.get(spec.id) ?? 0 }
-          : { state: "absent" },
+          ? { kind: "partial", received: mockAi.partial.get(spec.id) ?? 0 }
+          : { kind: "absent" },
     })),
     hardware: { memoryGib: 8, gpu: true },
     recommended: "qwen2.5-coder-1.5b",

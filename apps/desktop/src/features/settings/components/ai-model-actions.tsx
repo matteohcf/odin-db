@@ -21,7 +21,7 @@ export function AiModelActions({ entry: { spec, state } }: { entry: ModelEntry }
           <Pause />
           {t("ai.pause")}
         </Button>
-      ) : state.state === "installed" ? (
+      ) : state.kind === "installed" ? (
         selected ? (
           <span className="flex items-center gap-1 px-2 font-medium text-primary text-xs">
             <Check className="size-3.5" />
@@ -34,11 +34,11 @@ export function AiModelActions({ entry: { spec, state } }: { entry: ModelEntry }
         )
       ) : (
         <Button variant="outline" size="sm" onClick={() => void actions.download()}>
-          {state.state === "partial" ? <Play /> : <Download />}
-          {state.state === "partial" ? t("ai.resume") : t("ai.download")}
+          {state.kind === "partial" ? <Play /> : <Download />}
+          {state.kind === "partial" ? t("ai.resume") : t("ai.download")}
         </Button>
       )}
-      {!downloading && state.state !== "absent" && (
+      {!downloading && state.kind !== "absent" && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

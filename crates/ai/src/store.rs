@@ -25,7 +25,7 @@ pub struct ModelDownloadProgress {
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
-#[serde(rename_all = "camelCase", tag = "state")]
+#[serde(tag = "kind", rename_all = "camelCase")]
 pub enum ModelState {
     Absent,
     /// A paused or interrupted download, resumable from `received` bytes.

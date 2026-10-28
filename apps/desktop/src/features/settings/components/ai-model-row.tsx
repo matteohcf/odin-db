@@ -23,7 +23,7 @@ export function AiModelRow({ entry, recommended, memoryGib }: AiModelRowProps) {
   // f64 crosses IPC as nullable (NaN has no JSON form).
   const total = spec.size ?? 0;
   const received =
-    download?.progress?.received ?? (state.state === "partial" ? state.received : 0) ?? 0;
+    download?.progress?.received ?? (state.kind === "partial" ? state.received : 0) ?? 0;
   const seconds = spec.benchmark?.secondsPerQuery;
   const speed = seconds
     ? t("ai.table.seconds", { seconds: seconds.toLocaleString(i18n.language) })
