@@ -144,6 +144,7 @@ pnpm --filter @odin-db/desktop e2e       Playwright UI checks (needs dev:web run
 pnpm bindings         regenerate packages/bindings from Rust
 pnpm check            every gate CI runs: Biome, tsc, knip, Vitest, rustfmt, clippy, cargo test
 pnpm check:changed    only the gates the changes since origin/main need (JS, Rust + bindings, or none)
+pnpm check:docs       report paths the living docs name that resolve to nothing (never fails)
 pnpm format           apply Biome fixes and formatting
 pnpm test:integration core integration tests against real MongoDB (requires Docker)
 pnpm clean            delete the Rust debug build cache (target/debug grows unbounded)
