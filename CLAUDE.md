@@ -103,6 +103,7 @@ docs/adr/                Architecture Decision Records
 - Errors: `thiserror` enums per domain, unified in `CoreError` (with a stable `ErrorKind` for the UI). No `anyhow` in core. No `unwrap()`/`expect()` outside tests (clippy enforces it; `clippy.toml` allows them in tests).
 - IPC-facing core types derive `specta::Type` only behind the `specta` feature: `#[cfg_attr(feature = "specta", derive(specta::Type))]`.
 - Matches on our own enums list every variant, never `_ =>`, so a new variant breaks the build. `wildcard_enum_match_arm` sees only the top-level scrutinee: a wildcard over our enum inside a tuple, an `Option` (`Some(Our::X) => .., _ =>`), `matches!` or `if let` still compiles, so list variants there by hand. Foreign enums get `#[expect]` on the fn with a `reason`; it covers the whole fn, so keep such fns small and never match our enums inside one.
+- IPC serde shapes: camelCase keys and literals, and enums with data tagged by `kind` (the ADR-0006 envelope by `event`), checked by `packages/bindings/src/contract.test.ts`. Adjacent enums use `content = "value"`; the test cannot see that, nor one-variant or untagged enums.
 - IDs are newtypes (`ConnectionId`, `ProfileId`, `OperationId`), never bare `String`/`Uuid`.
 - Secrets use a wrapper type with a redacting `Debug` impl. Connection strings are redacted before logging.
 - Logging with `tracing` (structured fields, no `println!`).
