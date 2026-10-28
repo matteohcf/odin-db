@@ -16,6 +16,7 @@ mod drops;
 mod events;
 mod ipc;
 mod quit;
+mod single_instance;
 mod state;
 
 // One list of every command: long by nature, and clearer whole than split.
@@ -174,6 +175,10 @@ pub fn run() {
     let builder = specta_builder();
 
     let result = tauri::Builder::default()
+        // First, so a second launch exits before any other plugin or the setup runs.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            single_instance::focus_main_window(app);
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
