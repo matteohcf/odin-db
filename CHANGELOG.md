@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/matteohcf/odin-db/compare/v1.8.1...v1.8.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **desktop:** single instance ([ebd446e](https://github.com/matteohcf/odin-db/commit/ebd446e33dcd709d3aa89cb95bef59ed18cd3e5f))
+
 ## [1.8.1](https://github.com/matteohcf/odin-db/compare/v1.8.0...v1.8.1) (2026-10-27)
 
 
