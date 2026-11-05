@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.3](https://github.com/matteohcf/odin-db/compare/v1.8.2...v1.8.3) (2026-11-05)
+
+
+### Bug Fixes
+
+* **core:** allow the platform-dependent wildcard in tunnel_target ([53da723](https://github.com/matteohcf/odin-db/commit/53da723a7139e9acd385ae4e1951637afe3647d2))
+* **desktop:** draw the macOS title bar inside the window ([152bdcf](https://github.com/matteohcf/odin-db/commit/152bdcfb4af0ca8187e622fa1dab70ded0521d0e))
+
 ## [1.8.2](https://github.com/matteohcf/odin-db/compare/v1.8.1...v1.8.2) (2026-10-28)
 
 
