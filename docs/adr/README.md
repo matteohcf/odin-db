@@ -65,3 +65,4 @@ Format: `template.md`. Accepted ADRs are immutable; supersede them with a new AD
 | [0059](0059-sidebar-lists-every-connection.md) | The sidebar lists every connection | Accepted |
 | [0060](0060-gentle-diagram-scans.md) | Gentle, saved diagram scans | Accepted |
 | [0061](0061-single-instance.md) | One running instance | Accepted |
+| [0062](0062-overlay-title-bar.md) | Overlay title bar on macOS | Accepted |
