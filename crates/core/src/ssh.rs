@@ -269,6 +269,9 @@ pub fn tunneled_uri(uri: &str, local_port: u16) -> Result<String, CoreError> {
 }
 
 /// Host and port to forward to: the first host of the connection string.
+// `ServerAddress::Unix` exists only on Unix targets, so the other kinds cannot be named
+// on every platform.
+#[allow(clippy::wildcard_enum_match_arm)]
 pub fn tunnel_target(uri: &str) -> Result<(String, u16), CoreError> {
     let parsed = mongodb::options::ConnectionString::parse(uri.trim())
         .map_err(|error| CoreError::Validation(format!("invalid connection string: {error}")))?;
