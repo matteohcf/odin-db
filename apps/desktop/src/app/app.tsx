@@ -25,8 +25,10 @@ import { QueriesButton } from "./queries-button";
 import { QuitDialog } from "./quit-dialog";
 import { SettingsButton } from "./settings-button";
 import { SidebarResizer } from "./sidebar-resizer";
+import { TitleBarRow } from "./title-bar-row";
 import { usePruneRestoredTabs } from "./use-prune-restored-tabs";
 import { useReconnectRestoredTabs } from "./use-reconnect-restored-tabs";
+import { useWindowChrome } from "./use-window-chrome";
 import { useWindowTitle } from "./use-window-title";
 import { Welcome } from "./welcome";
 
@@ -71,6 +73,7 @@ export function App() {
   useReconnectRestoredTabs();
   useWindowTitle();
   useUpdateNotifier();
+  const { overlayTitleBar } = useWindowChrome();
   if (perfAutorun) {
     return (
       <Suspense fallback={null}>
@@ -86,6 +89,7 @@ export function App() {
         className="relative flex shrink-0 flex-col border-r bg-sidebar"
         style={{ width: sidebarWidth }}
       >
+        {overlayTitleBar && <TitleBarRow />}
         <div className="min-h-0 flex-1">
           <ConnectionExplorer />
         </div>
@@ -98,7 +102,23 @@ export function App() {
         </footer>
       </section>
       <main className="min-w-0 flex-1">
-        <WorkspaceTabs renderTab={renderTab} renderLabel={renderLabel} emptyState={<Welcome />} />
+        <WorkspaceTabs
+          renderTab={renderTab}
+          renderLabel={renderLabel}
+          emptyState={
+            overlayTitleBar ? (
+              // Without tabs there is no tab bar to move the window by.
+              <div className="flex h-full flex-col">
+                <TitleBarRow />
+                <div className="min-h-0 flex-1">
+                  <Welcome />
+                </div>
+              </div>
+            ) : (
+              <Welcome />
+            )
+          }
+        />
       </main>
       <ShortcutsDialog onCustomize={() => openSettings("keyboard")} />
       <QuitDialog />

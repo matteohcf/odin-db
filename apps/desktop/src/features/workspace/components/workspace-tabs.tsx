@@ -75,7 +75,11 @@ export function WorkspaceTabs({ renderTab, renderLabel, emptyState }: WorkspaceT
 
   return (
     <div className="flex h-full min-w-0 flex-col">
-      <div className="flex h-9 shrink-0 items-end border-b bg-sidebar">
+      {/* Its empty space moves the window, as a title bar would (ADR-0062). */}
+      <div
+        data-tauri-drag-region="deep"
+        className="flex h-9 shrink-0 items-end border-b bg-sidebar"
+      >
         <div
           role="tablist"
           aria-label={t("tabs.label")}
